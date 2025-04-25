@@ -13,8 +13,8 @@ import time
 MMP = mmpPeter.mmp(
     argMmpNum       = 4,                # 使用するHC4067の個数
     argMmpAnaPins   = 1,                # 使用するHC4067のPin数
-    #argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
-    argMmpAdrPins   = (2,3,4,5),        # Arduino
+    argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
+    #argMmpAdrPins   = (2,3,4,5),        # Arduino
     argRundNum      = 20                # アナログ値の丸め
     )
 #│
@@ -40,9 +40,11 @@ elif mode == 1:
 
 elif mode == 2:
     #〇PWMエキスパンダのテスト（0,15チャンネル）
-    for i in range(0,230):
+    print("PWMテスト")
+    for i in range(7,200):
         MMP.digital_PWX( 0,i)
         MMP.digital_PWX(15,i)
+        print(i)
         time.sleep(0.02)
 
 #→デジタル出力

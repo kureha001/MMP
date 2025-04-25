@@ -22,7 +22,7 @@ MMP = mmpPeter.mmp(
 MMP.autoConnect()
 #│
 #◇MMPをテストする。
-mode = 0
+mode = 2
  #→アナログ入力（繰返）
 if mode == 0:
     #〇繰り返しテスト（先頭と最終のチャンネルのみ表示）
@@ -37,6 +37,13 @@ elif mode == 1:
     #〇1回テスト（全チャンネル表示）
     MMP.analog_IN_Each(0)
     print(MMP.mmpAnaVal[0])
+
+elif mode == 2:
+    #〇PWMエキスパンダのテスト（0,15チャンネル）
+    for i in range(0,230):
+        MMP.digital_PWX( 0,i)
+        MMP.digital_PWX(15,i)
+        time.sleep(0.02)
 
 #→デジタル出力
 elif mode == -1:

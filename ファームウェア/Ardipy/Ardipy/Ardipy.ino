@@ -1,8 +1,8 @@
 //=============================================================================
 //  Ardipy MMPエディション
 //-----------------------------------------------------------------------------
-// Ver 0.01.002　2025/04/28 By Takanari.Kureha
-//      1.PWMエキスパンダ(PCA9685)を4枚から最大の62枚に対応
+// Ver 0.01.006　2025/04/28 By Takanari.Kureha
+//      1.PCA9685が48枚超で動作しないのでアドレスパターンを減らした
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>            //PCA9685用ヘッダーファイル（秋月電子通商作成）
@@ -14,7 +14,8 @@ int input_count = 0;
 
 //=============================================================================
 //PCA9685のアドレス・パターン
-PCA9685 PWM[62] = {
+const int PWM_COUNT = 48;
+PCA9685 PWM[PWM_COUNT] = {
     PCA9685(0x40), PCA9685(0x41), PCA9685(0x42), PCA9685(0x43), PCA9685(0x44),
     PCA9685(0x45), PCA9685(0x46), PCA9685(0x47), PCA9685(0x48), PCA9685(0x49),
     PCA9685(0x4A), PCA9685(0x4B), PCA9685(0x4C), PCA9685(0x4D), PCA9685(0x4E),
@@ -24,10 +25,7 @@ PCA9685 PWM[62] = {
     PCA9685(0x5E), PCA9685(0x5F), PCA9685(0x60), PCA9685(0x61), PCA9685(0x62),
     PCA9685(0x63), PCA9685(0x64), PCA9685(0x65), PCA9685(0x66), PCA9685(0x67),
     PCA9685(0x68), PCA9685(0x69), PCA9685(0x6A), PCA9685(0x6B), PCA9685(0x6C),
-    PCA9685(0x6D), PCA9685(0x6E), PCA9685(0x6F), PCA9685(0x70), PCA9685(0x71),
-    PCA9685(0x72), PCA9685(0x73), PCA9685(0x74), PCA9685(0x75), PCA9685(0x76),
-    PCA9685(0x77), PCA9685(0x78), PCA9685(0x79), PCA9685(0x7A), PCA9685(0x7B),
-    PCA9685(0x7C), PCA9685(0x7D)
+    PCA9685(0x6D), PCA9685(0x6E)
     };
 
 #define SERVOMIN 150            //最小パルス幅 (標準的なサーボパルスに設定)
@@ -40,9 +38,9 @@ void setup(){
     Serial.begin(BAUDRATE);
 
     //★PCA9685
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < PWM_COUNT; i++) {
       PWM[i].begin();         //初期設定
-      PWM[i].setPWMFreq(60);  //PWM周期を60Hzに設定 (アドレス0x40用)
+      PWM[i].setPWMFreq(60);  //PWM周期を60Hzに設定
     }
 }
 
@@ -57,7 +55,7 @@ void loop() {
   int   i;
 
   //★PCA9685
-  int   pwmNo;    // 使用ポート
+  int   pwmNo;   // 使用ポート
   int   pwmAn;   // 角度
   int   pwmID;   // 角度
   int   pwmCh;   // 角度
@@ -98,8 +96,13 @@ void loop() {
           pwmAn = map(pwmAn, 0, 180, SERVOMIN, SERVOMAX);
           pwmID = pwmNo / 16;           // PCA9685の位置
           pwmCh = pwmNo - (16 * pwmID); // チャンネル位置
-          PWM[pwmID].setPWM(pwmCh, 0, pwmAn);
-          Serial.print("!!!!!");
+
+          if (pwmID < PWM_COUNT){
+            PWM[pwmID].setPWM(pwmCh, 0, pwmAn);
+            Serial.print("!!!!!");
+          }else{
+            Serial.print("----!");        
+          }
       }
 
       //=======================================================================

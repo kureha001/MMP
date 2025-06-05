@@ -1,6 +1,9 @@
 #====================================================== 
 # ＭＭＰライブラリ Ver 0.02 ペーター
 #------------------------------------------------------
+# Ver 0.02.006　2025/06/05 By Takanari.Kureha
+#       1.不要なimportを削除
+#------------------------------------------------------
 # Ver 0.02.005　2025/04/28 By Takanari.Kureha
 #       1.PWMエキスパンダ(PCA9685)マルチ対応
 #------------------------------------------------------
@@ -23,12 +26,8 @@
 #====================================================== 
 # インクルード
 #====================================================== 
-import sys
 import serial
-import binascii
 import time
-
-Arduino_FW_Version = "1.0"
 
 #====================================================== 
 # クラス
@@ -39,7 +38,6 @@ Arduino_FW_Version = "1.0"
 #=============
 class ConnectException(Exception):
     pass
-
 
 #=============
 # 本体クラス
@@ -52,7 +50,7 @@ class mmp:
     #〇└┐初期化：
     def __init__( 
         self,
-        argMmpNum           = 2,                # 使用するHC4067の個数
+        argMmpNum           = 4,                # 使用するHC4067の個数
         argMmpAnaPins       = 1,                # 使用するHC4067のPin数
         argMmpAdrPins       = (10,11,12,13),    # RP2040-Zero
         #argMmpAdrPins      = (2,3,4,5),         # Arduino
@@ -184,7 +182,7 @@ class mmp:
                 data4 = int(data4 / self.mmpRoundNum) * self.mmpRoundNum
             return data4
         except:
-            print("エラー:[",argPin,"][1:",data,"][2:",data2,"][3:",data3,"]")
+            print("エラー:[",argAnaPin,"][1:",data,"][2:",data2,"][3:",data3,"]")
         #┴
     #┴
     #---------------------------------------------------------------------
@@ -301,12 +299,7 @@ class mmp:
         if self.ser.port == 'COM99':
             raise ConnectException()
 
-        #Version Check
-        if( self.versionCheck() == False ):
-            raise ConnectException()
-
         print("接続済み")
-        print(self.versionCheck,"\n")
         self.connect_flag = True
         return com_str
     #---------------------------------------------------------------------
@@ -317,8 +310,6 @@ class mmp:
         except:
             raise ConnectException()
         time.sleep(2)
-        if( ar.versionCheck() == False ):
-            raise ConnectException()
         self.connect_flag = True
     #---------------------------------------------------------------------
     def disconnect(self):
@@ -328,16 +319,6 @@ class mmp:
     def reset(self):
         self.ser.write(str.encode("!"))
         data = self.ser.read(5)
-    #---------------------------------------------------------------------
-    def versionCheck(self):
-        self.ser.write(str.encode('VER!'))
-        data = self.ser.read(5)
-        sdata = data.decode('utf-8')
-        self.version = sdata
-
-        if(sdata.split('.')[0] != Arduino_FW_Version.split('.')[0] ):
-            return False
-        return True
 
     #=====================================================================
     # i2c

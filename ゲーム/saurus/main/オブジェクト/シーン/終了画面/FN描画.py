@@ -23,7 +23,7 @@ class 描画クラス:
     def 実行(self):
       #┬
       #〇画面を描画する
-      描画文字 = "- GAME OVER -"
-      pyxel.text(36, 79, 描画文字, 5)
-      pyxel.text(35, 78, 描画文字, pyxel.frame_count % 16)
+      描画文字 = "- TIME UP -"
+      pyxel.text(40, 79, 描画文字, 5)
+      pyxel.text(39, 78, 描画文字, pyxel.frame_count % 16)
       #┴

@@ -6,6 +6,7 @@ class 情報クラス:
         self.フレーム数 = 0
         self.シーン     = None
         self.プレイ時間 = 0
+        self.人数       = 0
         self.得点       = [0,0]
         self.モード     = 0
         self.音楽データ = None

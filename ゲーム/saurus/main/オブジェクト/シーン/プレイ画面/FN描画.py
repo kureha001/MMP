@@ -35,14 +35,22 @@ class 描画クラス:
     #└───────────────────────────────────
     def Fn発電機(self):
         #┬
+        出力 = DS.情報.プレイ時間
+        pyxel.text(54, 2, f"{str(出力).zfill(3)}", 10)
         #◎└┐発電機のサイクルを描画する
         x=0
         for i in range(2):
-            出力 = DS.obj.発電機[i].情報.回転速度
-            pyxel.text(x,  9, f"POWER:{出力}", 8)
+            出力 = DS.obj.発電機[i].情報.発電容量
+            pyxel.text(x,  9, f"POWER:{出力}", 7)
 
-#            出力 = DS.obj.運搬機[i].情報.救出数
-#            pyxel.text(x, 18, f"SAVE :{出力}", 8)
+            出力 = DS.obj.運搬機[i].情報.救出数
+            pyxel.text(x, 18, f"SAVE :{出力}", 7)
+
+            出力 = DS.obj.運搬機[i].情報.入力
+            pyxel.text(x, 27, f"IN  :{出力}", 8)
+
+            出力 = DS.obj.運搬機[i].情報.出力
+            pyxel.text(x, 36, f"OUT  :{出力}", 8)
 
             x+=75
         #┴　┴

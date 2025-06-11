@@ -29,9 +29,12 @@ class 本体:
         #│
         #〇ゲーム情報（得点／難易度）を描画する
         if len(DS.obj.運搬機) > 0:
-            pyxel.text( 5, 2, f"TEAM1:{DS.obj.運搬機[0].情報.救出数}", 7)
-            pyxel.text(82, 2, f"TEAM2:{DS.obj.運搬機[1].情報.救出数}", 7)
+            救出数1 = DS.obj.運搬機[0].情報.救出数 * 10
+            救出数2 = DS.obj.運搬機[1].情報.救出数 * 10
         else:
-            pyxel.text( 5, 2, "TEAM1:0", 7)
-            pyxel.text(82, 2, "TEAM2:0", 7)
+            救出数1 = 0
+            救出数2 = 0
+            
+        pyxel.text( 2, 2, f"TEAM1:{str(救出数1).zfill(4)}", 7)
+        pyxel.text(78, 2, f"TEAM2:{str(救出数1).zfill(4)}", 7)
         #┴

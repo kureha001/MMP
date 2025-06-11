@@ -4,11 +4,9 @@
 #┃移動プロセス➡発射プロセス➡衝突プロセス➡出現プロセスの順に
 #┃実行する
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
 import  main.GAME共通                   as 共通処理
 from .P移動 import P移動生成
 from .P救出 import P救出生成
-import time
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -29,7 +27,7 @@ class 本体:
     def 実行(self):
         #┬
         共通処理.入出力.MMP.analog_IN_All()
-        print("取得値：",共通処理.入出力.MMP.mmpAnaVal)
+#        print("取得値：",共通処理.入出力.MMP.mmpAnaVal)
 
         #◎└┐アクションを実行する
         for 各アクション in self.アクション一覧:

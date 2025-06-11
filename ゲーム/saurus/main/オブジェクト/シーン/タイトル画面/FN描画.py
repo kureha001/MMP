@@ -22,13 +22,21 @@ class 描画クラス:
     def 実行(self):
         #┬
         #〇画面を描画する
-        pyxel.blt(1,5, 2, 0,0, 15*8-1,11*8-1, 15)
+        pyxel.blt(0,10, 2, 0,0, 119,79, 0)
+        pyxel.blt( 8,77, 0, 0,0,  50,49, 7)
+        pyxel.blt(62,77, 0, 0,64, 50,99, 7)
 
-        左1  = 5
-        左2  = 31
-        改行 = 9
+        描画文字 = "Please select the number"
+        縦 = 132
+        pyxel.text(14, 縦  , 描画文字, 5)
+        pyxel.text(13, 縦-1, 描画文字, 7)
 
-        描画文字 = "<< Select the team 1 or 2 >>"
-        縦 = 96
-        pyxel.text(左1  , 縦  , 描画文字, 5)
-        pyxel.text(左1-1, 縦-1, 描画文字, 7)
+        描画文字 = " of players per team"
+        縦 = 140
+        pyxel.text(19, 縦  , 描画文字, 5)
+        pyxel.text(18, 縦-1, 描画文字, 7)
+
+        描画文字 = "press key:[1][2][3][4]"
+        縦 = 150
+        pyxel.text(18, 縦, 描画文字, 8)
+        pyxel.text(17, 縦, 描画文字, 7)

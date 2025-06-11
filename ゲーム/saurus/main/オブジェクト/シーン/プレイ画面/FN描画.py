@@ -36,11 +36,15 @@ class 描画クラス:
     def Fn発電機(self):
         #┬
         #◎└┐発電機のサイクルを描画する
-        出力 = DS.obj.発電機[0].情報.回転速度
-        pyxel.text(0,  9, f"POWER:{出力}", 8)
+        x=0
+        for i in range(2):
+            出力 = DS.obj.発電機[i].情報.回転速度
+            pyxel.text(x,  9, f"POWER:{出力}", 8)
 
-        出力 = DS.obj.発電機[1].情報.回転速度
-        pyxel.text(75,  9, f"POWER:{出力}", 8)
+#            出力 = DS.obj.運搬機[i].情報.救出数
+#            pyxel.text(x, 18, f"SAVE :{出力}", 8)
+
+            x+=75
         #┴　┴
 
     #┌───────────────────────────────────

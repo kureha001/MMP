@@ -36,5 +36,5 @@ class 本体:
         self.FN移動 = 移動クラス(self,引数_ポート)
         #│
         #○用意済みのインスタンスに生成する
-        DS.obj.発電機.append(self)
+        DS.obj.発電機.insert(0,self)
         #┴

@@ -28,6 +28,10 @@ class 本体:
         DS.obj.シーン[ DS.情報.シーン].FN描画.実行()
         #│
         #〇ゲーム情報（得点／難易度）を描画する
-        pyxel.text( 5, 2, f"TEAM1:{DS.情報.得点[0]}", 7)
-        pyxel.text(82, 2, f"TEAM2:{DS.情報.得点[0]}", 7)
+        if len(DS.obj.運搬機) > 0:
+            pyxel.text( 5, 2, f"TEAM1:{DS.obj.運搬機[0].情報.救出数}", 7)
+            pyxel.text(82, 2, f"TEAM2:{DS.obj.運搬機[1].情報.救出数}", 7)
+        else:
+            pyxel.text( 5, 2, "TEAM1:0", 7)
+            pyxel.text(82, 2, "TEAM2:0", 7)
         #┴

@@ -54,49 +54,66 @@ class BGM():
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃入力走査
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class 操作手段():
+class 入出力():
 	#────────────────────────────────────
-    MMP_ON  = [
-            [False,False,False,False],
-            [False,False,False,False],
-            [False,False,False,False]
+    MMP     = None          # MMPオブジェクト
+    MMP_ON  = [             # Chごとの状態：ON(True)/OFF(False) 
+            [False,False],  # ポート0用
+            [False,False],  # ポート1用
+            [False,False],  # ポート2用
+            [False,False],  # ポート3用
+            [False,False],  # ポート4用
+            [False,False],  # ポート5用
+            [False,False],  # ポート6用
+            [False,False]   # ポート7用
             ]
-    MMP_BTN = ( (20,100) , (450,500) , (260,300) , (50,100) )
-
-	#────────────────────────────────────
-    def 入力走査(引数_種類,引数_番号):
-
-        操作手段.MMP.analog_IN_Each(引数_番号)
-
-		#○結果を初期化する
-        概要 = [ False, False ]
-        測定 = [ 0,0,0,0 ]
-        入力値 = 操作手段.MMP.mmpAnaVal[引数_番号]
-		#│
-        #〇縦移動を測定する
-        測定[0] = (1) if 入力値[0] < 700 else (0)
-        測定[1] = (1) if 入力値[0] > 700 else (0)
-		#│
-		#◎└┐概要を求める
-        for i in  測定:
-            if i != 0:
-                概要 = [ True, True ]
-                break
-            #┴
-		#│
-        #▼結果を返す
-        return (概要,測定)
 	#────────────────────────────────────    
     def MMP_初期化():
         #┬
         #〇MMPを実体化する。
-        操作手段.MMP = Perter.mmp(
+        入出力.MMP = Perter.mmp(
                 argMmpNum       = 4,                # 使用するHC4067の個数
-                argMmpAnaPins   = DS.情報.人数,     # 使用するHC4067のPin数
+                argMmpAnaPins   = 10,               # 使用するHC4067のPin数
                 argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
                 argRundNum      = 20                # アナログ値の丸め
                 )
         #│
         #〇MMPを接続する
-        操作手段.MMP.autoConnect()
+        入出力.MMP.autoConnect()
         #┴
+	#────────────────────────────────────
+    def 入力走査(引数_ポートNo):
+		#┬
+		#○結果を初期化する
+        概要 = [ False, False ]     # ONしている，OFFした直後
+        測定 = [ 0,0 ]              # Chごとの ON(1)/OFF(-1) 
+		#│
+        ポートNo    = 引数_ポートNo
+        入力値      = 入出力.MMP.analog_IN_Each(ポートNo)
+		#│
+		#◎└┐すべてのChを測定する
+        for 各Ch in range(2):
+            #│
+            #◇┐移動予定の座標を求める
+            if 入力値 > 700:
+                #○概要(ON)を『YES』にする
+                #○状態を『ONしている』にする
+                #○測定を『ON』にする
+                概要[0] = True
+                入出力.MMP_ON[ポートNo][各Ch] = True
+                測定[各Ch] = 1
+
+            elif 入出力.MMP_ON[ポートNo][各Ch]:
+            #　├┐（全壊の状態が『ON』の場合）
+                #↓
+                #○概要(OFF)を『YES』にする
+                #○状態を『OFF』にする
+                #○測定を『OFFした直後』にする
+                概要[1] = True
+                入出力.MMP_ON[ポートNo][各Ch] = False
+                測定[各Ch] = -1
+            #　└┐（その他）
+                #┴
+		#│
+        #▼結果を返す
+        return (概要,測定)

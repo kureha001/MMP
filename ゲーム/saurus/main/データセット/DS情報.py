@@ -9,5 +9,3 @@ class 情報クラス:
         self.得点       = [0,0]
         self.モード     = 0
         self.音楽データ = None
-        self.MMP中央値   = 500
-        self.MMP反応率   = 5

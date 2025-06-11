@@ -8,6 +8,7 @@ import  pyxel
 import  main.GAME共通       as 共通処理
 from    main.データセット   import データセット as DS
 from    ..DB                import シーンID
+import time
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様
@@ -77,9 +78,9 @@ class 移動クラス:
     #└───────────────────────────────────
     def Fn次シーン準備(self):
         #┬
-        #○インスタンスを初期化する
-        DS.obj.発電機.clear()
-        DS.obj.運搬機.clear()
+        共通処理.入出力.MMP.PWM_VALUE(0,-1) # コンベア
+        共通処理.入出力.MMP.PWM_VALUE(1,-1) 
+#        共通処理.入出力.MMP.digital_OUT(0,1)
         #│
         #○インスタンスを初期化する
         DS.情報.操作手段 = None

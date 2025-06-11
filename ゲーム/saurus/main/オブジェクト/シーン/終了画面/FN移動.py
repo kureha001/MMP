@@ -81,8 +81,10 @@ class 移動クラス:
         for PWMポートNo in range(4):
             共通処理.入出力.MMP.PWM_VALUE(PWMポートNo,-1)
 
+        DS.obj.運搬機 = []
+        DS.obj.発電機 = []
+
         #○インスタンスを初期化する
-        DS.情報.操作手段 = None
         DS.情報.人数     = 0
         #│
         #○開始時間を初期化する

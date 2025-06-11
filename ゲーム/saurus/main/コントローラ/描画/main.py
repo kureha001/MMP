@@ -35,6 +35,6 @@ class 本体:
             救出数1 = 0
             救出数2 = 0
             
-        pyxel.text( 2, 2, f"TEAM1:{str(救出数1).zfill(4)}", 7)
-        pyxel.text(78, 2, f"TEAM2:{str(救出数1).zfill(4)}", 7)
+        pyxel.text(18, 2, str(救出数1).zfill(4), 7)
+        pyxel.text(88, 2, str(救出数2).zfill(4), 7)
         #┴

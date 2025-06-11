@@ -102,8 +102,6 @@ class 移動クラス:
         for i in range(DS.情報.人数):
             チーム1.append(i)
             チーム2.append(i + DS.情報.人数)
-        print(チーム1)
-        print(チーム2)
         発電機生成(チーム2)
         発電機生成(チーム1)
         #│

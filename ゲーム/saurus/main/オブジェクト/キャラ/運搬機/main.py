@@ -39,7 +39,7 @@ class 本体:
         #│
         #≫処理セットを用意する
         self.FN移動 = 移動クラス(self)
-        self.FN移動 = 救出クラス(self)
+        self.FN救出 = 救出クラス(self)
         #│
         #○用意済みのインスタンスに生成する
         DS.obj.運搬機.append(self)

@@ -72,7 +72,7 @@ class 入出力():
         #┬
         #〇MMPを実体化する。
         入出力.MMP = Perter.mmp(
-                argMmpNum       = 4,                # 使用するHC4067の個数
+                argMmpNum       = 2,                # 使用するHC4067の個数
                 argMmpAnaPins   = 10,               # 使用するHC4067のPin数
                 argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
                 argRundNum      = 20                # アナログ値の丸め
@@ -88,14 +88,15 @@ class 入出力():
         概要 = [ False, False ]     # ONしている，OFFした直後
         測定 = [ 0,0 ]              # Chごとの ON(1)/OFF(-1) 
 		#│
-        ポートNo    = 引数_ポートNo
-        入力値      = 入出力.MMP.analog_IN_Each(ポートNo)
+        ポートNo = 引数_ポートNo
+        入出力.MMP.analog_IN_Each(ポートNo)
+        入力値 = 入出力.MMP.mmpAnaVal[ポートNo]
 		#│
 		#◎└┐すべてのChを測定する
         for 各Ch in range(2):
             #│
             #◇┐移動予定の座標を求める
-            if 入力値 > 700:
+            if 入力値[各Ch] > 700:
                 #○概要(ON)を『YES』にする
                 #○状態を『ONしている』にする
                 #○測定を『ON』にする

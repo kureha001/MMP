@@ -3,7 +3,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import  pyxel
 import  json
-import  main.汎用部品.mmpPeter  as Perter
+import  main.汎用部品.mmpRottenmeier  as Rottenmeier
 from    .データセット           import データセット as DS
 from    .オブジェクト.シーン    import シーンID
 
@@ -78,7 +78,7 @@ class 入出力():
     def MMP_初期化():
         #┬
         #〇MMPを実体化する。
-        入出力.MMP = Perter.mmp(
+        入出力.MMP = Rottenmeier.mmp(
                 argMmpNum       = 2,                # 使用するHC4067の個数
                 argMmpAnaPins   = 10,               # 使用するHC4067のPin数
                 argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero

@@ -8,7 +8,7 @@
 #====================================================== 
 # インクルード
 #====================================================== 
-import mmpPeter
+import mmpRottenmeier
 import time
 
 
@@ -17,7 +17,7 @@ import time
 #====================================================== 
 #┬
 #〇MMPを実体化する。
-MMP = mmpPeter.mmp(
+MMP = mmpRottenmeier.mmp(
     argMmpNum       = 2,                # 使用するHC4067の個数
     argMmpAnaPins   = 2,                # 使用するHC4067のPin数
     argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero

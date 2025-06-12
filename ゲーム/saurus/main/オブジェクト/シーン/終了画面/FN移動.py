@@ -78,6 +78,10 @@ class 移動クラス:
     #└───────────────────────────────────
     def Fn次シーン準備(self):
         #┬
+        if len(DS.obj.運搬機) > 0:
+            for PWMポートNo in range(2):
+                共通処理.入出力.MMP.PWM_VALUE(DS.obj.運搬機[PWMポートNo].仕様.電飾No, -1)
+
         for PWMポートNo in range(4):
             共通処理.入出力.MMP.PWM_VALUE(PWMポートNo,-1)
 

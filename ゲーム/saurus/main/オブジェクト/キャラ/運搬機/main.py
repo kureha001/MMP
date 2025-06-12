@@ -18,6 +18,11 @@ class 仕様クラス:
         self.ポートNo   = 引数_ポートNo
         self.動力No     = 引数_送電No[0]
         self.電飾No     = 引数_送電No[1]
+        print("--------------------")
+        print("[運搬機]")
+        print(" PORT :",self.ポートNo)
+        print(" MOTOR:",self.動力No)
+        print(" LED  :",self.電飾No)
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：情報

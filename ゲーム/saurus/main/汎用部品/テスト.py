@@ -19,7 +19,7 @@ import time
 #〇MMPを実体化する。
 MMP = mmpPeter.mmp(
     argMmpNum       = 2,                # 使用するHC4067の個数
-    argMmpAnaPins   = 1,                # 使用するHC4067のPin数
+    argMmpAnaPins   = 2,                # 使用するHC4067のPin数
     argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
     #argMmpAdrPins   = (2,3,4,5),        # Arduino
     argRundNum      = 10                # アナログ値の丸め
@@ -34,7 +34,7 @@ mode = 0
 if mode == 0:
     #〇繰り返しテスト（先頭と最終のチャンネルのみ表示）
     MMP.analog_Test(
-        argLoop = 400,      # アドレス切替回数
+        argLoop = 10,      # アドレス切替回数
         argWait = 0.05,     # ウェイト(秒)
         argAll  = True      # True:全件表示／False:先頭末尾のみ表示
         )
@@ -43,14 +43,15 @@ if mode == 0:
 #　├→（アナログ入力（1回））
 elif mode == 1:
     print("アナログ入力")
-    for i in range(0,1):
+    for i in range(2):
         #〇1回テスト（全チャンネル表示）
         MMP.analog_IN_Each(i)
         値 = ""
 
         for j in range(4):
             区切 = "" if j==0 else " , "
-            値 = f"{値}{区切}{str(MMP.mmpAnaVal[i][j]).zfill(4)}"
+            #値 = f"{値}{区切}{str(MMP.mmpAnaVal[i][j]).zfill(4)}"
+            値 = f"{値}{区切}{str(MMP.mmpAnaVal[i][j])}"
 
         print(f"{str(i).zfill(2)}ch：{値}")
         time.sleep(0.1)
@@ -88,6 +89,33 @@ elif mode == 4:
         MMP.PWM_VALUE( 番号, 最小 )
         time.sleep(停止)
         MMP.PWM_VALUE( 番号, 0 )
+
+#　├→（DFPlayer）
+elif mode == 5:
+    print("ＤＦＰｌｅｙｅｒ")
+
+    print("・ボリューム設定")
+    MMP.DFP_Volume(20)
+
+    print("・連続再生")
+    for track in [1, 2, 3]:
+        MMP.DFP_Play(track)
+        time.sleep(3)
+
+    print("・１曲目を再生")
+    MMP.DFP_Play(1)
+    time.sleep(5)
+
+    print("・一時停止")
+    MMP.DFP_Pause()
+    time.sleep(3)
+
+    print("・再開")
+    MMP.DFP_Resume()
+    time.sleep(5)
+
+    print("・停止")
+    MMP.DFP_Stop()
 #│
 #〇MMPを切断する。
 MMP.disconnect

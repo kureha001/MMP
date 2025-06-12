@@ -44,6 +44,7 @@ class mmp:
         print("\n１．接続準備")
         self.ser = serial.Serial()
         self.ser.baudrate   = 921600
+        self.ser.baudrate   = 115200
         self.connect_flag   = False
         self.version = ""
         #│
@@ -226,6 +227,7 @@ class mmp:
     def PWM_ANGLE(self, argPort, argValue):
         data = "PWA:%02x:%01x!" % (argPort, argValue)
         self.ser.write(str.encode(data))
+        data = self.ser.read(5)
 
     #=====================================================================
     # デジタル入出力
@@ -244,11 +246,24 @@ class mmp:
     # 出力
     #---------------------------------------------------------------------
     def digital_OUT(self, argPort, argValue):
-        data = "POW:%02x:%01x!" % (argPort, argValue)
-        self.ser.write(str.encode(data))
+        cmd = "POW:%02x:%01x!" % (argPort, argValue)
+        self.ser.reset_input_buffer()  # 念のためバッファをクリア
+        self.ser.write(cmd.encode("ascii"))       
         data = self.ser.read(5)
-        data2 = data.decode('utf-8')
-        data3 = data2.replace('!', '')
+        try:
+            response = data.decode("ascii")
+        except UnicodeDecodeError:
+            print(f"受信データが不正: {data}")
+            return False
+
+        if response == "!!!!!":
+            return True
+        elif response == "----!":
+            print(f"[エラー] 無効なポートまたは設定: {cmd}")
+            return False
+        else:
+            print(f"[警告] 予期しない応答: {response}")
+            return False
     #---------------------------------------------------------------------
     # 入力
     #---------------------------------------------------------------------
@@ -269,6 +284,76 @@ class mmp:
             s += d
 
     #=====================================================================
+    # ＭＰ３プレイヤー
+    #=====================================================================
+    # 指定トラック再生
+    def DFP_Play(self, track_num):
+        cmd = f"DPL:{track_num:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 停止
+    def DFP_Stop(self):
+        cmd = "DSP!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 一時停止
+    def DFP_Pause(self):
+        cmd = "DPA!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 再生再開
+    def DFP_Resume(self):
+        cmd = "DPR!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 音量設定（0〜30）
+    def DFP_Volume(self, vol):
+        cmd = f"VOL:{vol:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 再生中トラック番号取得（戻り値は16進数）
+    def DFP_get_current_track(self):
+        cmd = "DQT!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 再生状態：0停止, 1再生, 2一時停止
+    def DFP_get_play_state(self):
+        cmd = "DST!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 全トラック数取得
+    def DFP_get_file_count(self):
+        cmd = "DTC!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # イコライザー設定：0〜5
+    def DFP_set_eq(self, eq_mode):
+        # 0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
+        cmd = f"DEF:{eq_mode:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 指定フォルダ内トラック再生
+    def DFP_play_folder_track(self, folder, track):
+        cmd = f"DIR:{folder:02x}:{track:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 指定トラックのループ再生開始
+    def DFP_loop_play_mode(self, track_num):
+        cmd = f"DRP:{track_num:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    #=====================================================================
     # 接続処理
     #=====================================================================
     def autoConnect(self):
@@ -285,7 +370,8 @@ class mmp:
         if self.ser.port == 'COM99':
             raise ConnectException()
 
-        print("接続済み")
+        版数 = self.バージョン()
+        print(f"接続済み(Ver.{版数})")
         self.connect_flag = True
         return com_str
     #---------------------------------------------------------------------
@@ -302,10 +388,14 @@ class mmp:
         self.ser.close()
         self.connect_flag = False
     #---------------------------------------------------------------------
-    def reset(self):
-        self.ser.write(str.encode("!"))
+    def バージョン(self):
+        self.ser.reset_input_buffer()  # ゴミを捨てる
+        self.ser.write(b'VER!')
         data = self.ser.read(5)
-
+        sdata = data.decode('ascii')
+        print(f"受信データ: '{sdata}'")
+        結果 = f"{sdata[0]}.{sdata[1]}.{sdata[2:4]}"
+        return 結果
     #=====================================================================
     # i2c
     #=====================================================================

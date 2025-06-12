@@ -19,7 +19,7 @@ import time
 #〇MMPを実体化する。
 MMP = mmpPeter.mmp(
     argMmpNum       = 2,                # 使用するHC4067の個数
-    argMmpAnaPins   = ,                # 使用するHC4067のPin数
+    argMmpAnaPins   = 1,                # 使用するHC4067のPin数
     argMmpAdrPins   = (10,11,12,13),    # RP2040-Zero
     #argMmpAdrPins   = (2,3,4,5),        # Arduino
     argRundNum      = 10                # アナログ値の丸め

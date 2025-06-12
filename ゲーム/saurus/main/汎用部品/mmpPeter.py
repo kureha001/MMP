@@ -136,8 +136,6 @@ class mmp:
     #┬
     #〇└┐アナログ測定（全アドレス）：
     def analog_IN_All(self):
-        self.ser.reset_input_buffer
-        self.ser.reset_output_buffer
         #◎└┐繰り返し読取る。
         for cntAnaPin in range(self.mmpAnaPins):
             #〇1アドレス読取る。
@@ -150,8 +148,6 @@ class mmp:
     #┬
     #〇└┐アナログ測定（１アドレス）：
     def analog_IN_Each(self, argAnaPin):
-        self.ser.reset_input_buffer
-        self.ser.reset_output_buffer
         #◎└┐アドレスをセットする。
         for cntBit in range(4):
             #〇当該ビットにBitパターンをセットする。
@@ -172,8 +168,6 @@ class mmp:
     #┬
     #〇└┐アナログ測定（１ポート）：
     def analog_IN(self, argAnaPin):
-        self.ser.reset_input_buffer
-        self.ser.reset_output_buffer
         #◎└┐アドレスをセットする。
         data3=''
         while data3=='----' or data3=='':
@@ -241,23 +235,15 @@ class mmp:
     # ＰＷＭ(PCA9685)：PWM値指定
     #---------------------------------------------------------------------
     def PWM_VALUE(self, argPort, argValue):
-        self.ser.reset_input_buffer
-        self.ser.reset_output_buffer
         data = "PWM:%02x:%01x!" % (argPort, argValue)
         self.ser.write(str.encode(data))
-        data    = self.ser.read(5)
-        data    = self.ser.read(5)
-#        data2   = data.decode('utf-8')
-#        data3   = data2.replace('!', '')
+        data = self.ser.read(5)
     #---------------------------------------------------------------------
     # ＰＷＭ(PCA9685)：角度指定
     #---------------------------------------------------------------------
     def PWM_ANGLE(self, argPort, argValue):
         data = "PWA:%02x:%01x!" % (argPort, argValue)
         self.ser.write(str.encode(data))
-#        data    = self.ser.read(5)
-#        data2   = data.decode('utf-8')
-#        data3   = data2.replace('!', '')
 
     #=====================================================================
     # デジタル入出力

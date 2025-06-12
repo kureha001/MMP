@@ -335,8 +335,8 @@ class mmp:
         return self.ser.read(5).decode("ascii")
 
     # イコライザー設定：0〜5
+    # 0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
     def DFP_set_eq(self, eq_mode):
-        # 0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
         cmd = f"DEF:{eq_mode:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
@@ -396,6 +396,7 @@ class mmp:
         print(f"受信データ: '{sdata}'")
         結果 = f"{sdata[0]}.{sdata[1]}.{sdata[2:4]}"
         return 結果
+
     #=====================================================================
     # i2c
     #=====================================================================

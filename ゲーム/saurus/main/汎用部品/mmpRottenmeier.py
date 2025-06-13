@@ -1,7 +1,7 @@
 #====================================================== 
-# ＭＭＰライブラリ Ver 0.02 ペーター
+# ＭＭＰライブラリ Ver 0.03 mmpRottenmeier 
 #------------------------------------------------------
-# Ver 0.02.007　2025/06/012 By Takanari.Kureha
+# Ver 0.03.001　2025/06/01 By Takanari.Kureha
 #       1.ファームウェア修正に伴いリカバコードを削除
 #====================================================== 
 
@@ -27,193 +27,194 @@ class ConnectException(Exception):
 class mmp:
     #=====================================================================
     # 初期化処理
+    #argMmpAdrPins      = (10,11,12,13),    # RP2040-Zero
+    #argMmpAdrPins      = (2,3,4,5),         # Arduino
+    #argMmpAdrPins      = (6,7,8,9),         # PiZero
     #=====================================================================
     #┬
     #〇└┐初期化：
-    def __init__( 
-        self,
-        argMmpNum           = 4,                # 使用するHC4067の個数
-        argMmpAnaPins       = 1,                # 使用するHC4067のPin数
-        argMmpAdrPins       = (10,11,12,13),    # RP2040-Zero
-        #argMmpAdrPins      = (2,3,4,5),         # Arduino
-        #argMmpAdrPins      = (6,7,8,9),         # PiZero
-        argRundNum = 5                          # アナログ値の丸め
-        ):
+    def __init__(self):
         #│
         #〇接続する。
-        print("\n１．接続準備")
+        print("\n<<接続準備>>")
         self.ser = serial.Serial()
-        self.ser.baudrate   = 921600
+#        self.ser.baudrate   = 921600
         self.ser.baudrate   = 115200
         self.connect_flag   = False
         self.version = ""
         #│
-        #〇アナログPinの使用範囲(HC4067)
-        print("２．アナログ入力準備")
-        self.mmpNum         = argMmpNum 
-        self.mmpAnaPins     = argMmpAnaPins
-        print("　・HC4067 使用個数        : %i"  % self.mmpNum  )
-        print("　・HC4067 使用ポート数    : %i"  % self.mmpAnaPins  )
-        #│
-        #〇HC4067アドレス指定のデジタルPin(ボード)
-        self.mmpAdrPins     = argMmpAdrPins
-        print("　・HC4067 アドレス指定Pin : "   , self.mmpAdrPins)
-        #│
-        #〇データの丸め
-        self.mmpRoundNum    = int(argRundNum)
-        if argRundNum < 1 : argRundNum = 1
-        print("　・アナログ値の丸め処理   : "   , self.mmpRoundNum)
-        #│
-        #〇Bitパターン(4Bit)を登録する。
-        self.initANA_BitList()
-        #│
-        #〇測定データをゼロ初期する。
-        self.initANA_Value()
+        #〇アナログパラメータを初期化する
+        self.参加総人数  = None
+        self.スイッチ数  = None 
+        self.丸め        = None
         #┴
-    #┴
+
+    #=====================================================================
+    # 接続処理
+    #=====================================================================
+    def 通信接続_自動(self):
+        print("\n接続中...")
+        for i in range(100):
+            com_str = 'COM%d'%i
+            try:
+                self.ser.port = com_str
+                self.ser.open()
+                break
+            except:
+                i = i
+        time.sleep(2)
+        if self.ser.port == 'COM99':
+            raise ConnectException()
+
+        self.version = self.バージョン()
+        print(f"接続済み(Ver.{self.version})")
+        self.connect_flag = True
+        return com_str
     #---------------------------------------------------------------------
-    #┬
-    #〇└┐１．Bitパターン：
-    def initANA_BitList(self):
-        #◎└┐アドレスごとのBitパターンを定義する。
-        self.mmpBit = [] 
-        for cntAnaPin in range(2**4):
-            #◎└┐Bitパターンを作成する。
-            tmpBit = [0,0,0,0]
-            for cntBit in range(4):
-                #〇当該桁のBitを更新する。
-                tmpBit[cntBit]  = int(bin((cntAnaPin >> cntBit) & 0b1)[2:])
-                #┴
-            #│
-            #〇当該アドレスのBitパターンを追加する。
-            self.mmpBit.append(tmpBit)
-            #┴
-        #┴
-    #┴
+    def 通信接続(self, comm_num):
+        try:
+            self.ser.port = comm_num
+            self.ser.open()
+        except:
+            raise ConnectException()
+        time.sleep(2)
+        self.connect_flag = True
     #---------------------------------------------------------------------
-    #┬
-    #〇└┐２．測定データ：
-    def initANA_Value(self):
-        #◎└┐1アドレス分の空データを作る。
-        tmpValAnaPin = [] 
-        for cntMmpNo in range(self.mmpNum):
-            #〇読取値の初期値(ゼロ)を追加する。
-            tmpValAnaPin.append(0)
-            #┴
-        #│
-        #◎└┐全アドレスの測定データに空データをセットする。
-        self.mmpAnaVal = [] 
-        for cntAnaPin in range(self.mmpAnaPins):
-            #〇測定データ(初期値)を追加する。
-            self.mmpAnaVal.append(tmpValAnaPin.copy())
-            #┴
-        #┴
-    #┴
+    def 通信切断(self):
+        self.ser.close()
+        self.connect_flag = False
+    #---------------------------------------------------------------------
+    def バージョン(self):
+        self.ser.reset_input_buffer()  # ゴミを捨てる
+        self.ser.write(b'VER!')
+        data = self.ser.read(5)
+        sdata = data.decode('ascii')
+        print(f"受信データ: '{sdata}'")
+        結果 = f"{sdata[0]}.{sdata[1]}.{sdata[2:4]}"
+        return 結果
 
     #=====================================================================
     # アナログ入力
     #=====================================================================
     #---------------------------------------------------------------------
-    # 全アドレス(チャンネル)
+    # 設定コマンド
     #---------------------------------------------------------------------
     #┬
-    #〇└┐アナログ測定（全アドレス）：
-    def analog_IN_All(self):
-        #◎└┐繰り返し読取る。
-        for cntAnaPin in range(self.mmpAnaPins):
-            #〇1アドレス読取る。
-            self.analog_IN_Each(cntAnaPin)
+    #〇└┐測定データ：
+    def アナログ初期化(self):
+        #◎└┐1アドレス分の空データを作る。
+        tmpスイッチ = [] 
+        for cntMmpNo in range(self.スイッチ数):
+            #〇読取値の初期値(ゼロ)を追加する。
+            tmpスイッチ.append(0)
             #┴
-    #┴
-    #---------------------------------------------------------------------
-    # 全モジュールの特定アドレス
-    #---------------------------------------------------------------------
-    #┬
-    #〇└┐アナログ測定（１アドレス）：
-    def analog_IN_Each(self, argAnaPin):
-        #◎└┐アドレスをセットする。
-        for cntBit in range(4):
-            #〇当該ビットにBitパターンをセットする。
-            tmpPort = self.mmpAdrPins[cntBit]
-            tmpBit  = self.mmpBit[argAnaPin][cntBit]
-            self.digital_OUT(tmpPort,tmpBit)
         #│
-        #◎└┐当該アドレスの全アナログ・ポートを読み取る。
-        for cntMmpID in range(self.mmpNum):
-            tmpData = self.analog_IN(cntMmpID)
-            self.mmpAnaVal[argAnaPin][cntMmpID] = tmpData
-            #┴
-        #┴
-    #┴
+        #◎└┐全アドレスの測定データに空データをセットする。
+        self.mmpAnaVal = [] 
+        for cntAnaPin in range(self.参加総人数):
+            #〇測定データ(初期値)を追加する。
+            self.mmpAnaVal.append(tmpスイッチ.copy())
+    #┴　┴　┴
     #---------------------------------------------------------------------
-    # マイコンの特定ANAチャンネル
-    #---------------------------------------------------------------------
-    #┬
-    #〇└┐アナログ測定（１ポート）：
-    def analog_IN(self, argAnaPin):
-        #◎└┐アドレスをセットする。
-        data3=''
-        while data3=='----' or data3=='':
-            data = "ADR:%02x!" % (argAnaPin)
-            self.ser.write(str.encode(data))
-            data = self.ser.read(5)
-            data2 = data.decode('utf-8')
-            data3 = data2.replace('!', '')
-        try:
-            data4 = int(data3, 16) 
-            if self.mmpRoundNum != 1 :
-                data4 = int(data4 / self.mmpRoundNum) * self.mmpRoundNum
-            return data4
-        except:
-            print("エラー:[",argAnaPin,"][1:",data,"][2:",data2,"][3:",data3,"]")
-        #┴
-    #┴
+    # 設定コマンド
     #---------------------------------------------------------------------
     #┬
-    #〇└┐テスト（アナログ測定）：
-    def analog_Test(
-        self,
-        argLoop = 100,      # アドレス切替回数
-        argWait = 0.0,      # ウェイト(秒)
-        argAll  = False     # True:全件表示／False:先頭末尾のみ表示
-        ):
-        #◎└┐繰り返し読み取る。
-        print("--------------------")
-        print(" アナログ入力テスト")
-        print("--------------------")
-        print("(測定データ)")
-        tmpLoop = int(argLoop / self.mmpAnaPins) + 1 
-        time_start = time.time()
-        for cntLoop in range(tmpLoop):        
-            #◎└┐全アドレスから読み取る。
-            self.analog_IN_All()
-
-            if argWait > 0 : time.sleep(argWait)
-
-            #◇データを表示する。
-            if argAll:
-                print("　%03i" % cntLoop,":", self.mmpAnaVal)
-            else:
-                print("　%03i" % cntLoop,":", self.mmpAnaVal[0],"～", self.mmpAnaVal[-1])
-
-        #◇結果を表示する。
-        time_end = time.time()
-        time_diff = time_end - time_start
-
-        print("\n(実施条件)")
-        print("・繰返回数         : %i" % (tmpLoop                      ))
-        print("・アドレス変更回数 : %i" % (self.mmpAnaPins * tmpLoop    ))
- 
-        print("\n(測定結果)")
-        cntTtl = tmpLoop * self.mmpNum * self.mmpAnaPins
-        print("・合計時間   : %02.06f秒"       % (time_diff             ))
-        print("・データ平均 : %01.06f秒\n"   % (time_diff/cntTtl        ))
+    #〇└┐アナログ測定：
+    def アナログ設定(self  ,
+            argスイッチ数 = 4, # 使用するHC4067の個数(1～4)
+            arg参加人数   = 1, # 使用するHC4067のPin数(1～16)
+            arg丸め       = 5  # アナログ値の丸め
+            ):
+        #│
+        #〇アナログパラメータをセットする
+        print("<<アナログ入力準備>>")
+        self.参加総人数  = arg参加人数
+        self.スイッチ数  = argスイッチ数 
+        self.丸め        = int(arg丸め)
+        #│
+        print(" ・HC4067 使用個数     : %i"  % self.スイッチ数  )
+        print(" ・HC4067 使用ポート数 : %i"  % self.参加総人数  )
+        print(" ・アナログ値の丸め処理: "   , self.丸め)
+        #│
+        #〇測定データをゼロ初期する。
+        self.アナログ初期化()
+        #│
+        data = f"ANS:{self.参加総人数:02X}:{self.スイッチ数:02X}!"
+        print(data)
+        self.ser.write(str.encode(data))
+        data = self.ser.read(5)
         #┴
-    #┴
+    #---------------------------------------------------------------------
+    # 読取コマンド
+    #---------------------------------------------------------------------
+    #┬
+    #〇└┐アナログ測定：
+    def アナログ読取(self):
+        data = "ANU!"
+        self.ser.write(str.encode(data))
+        data = self.ser.read(5)
+
+        #◎└┐プレイヤー分を読み取る。
+        for pl in range(self.参加総人数):
+
+            #◎└┐スイッチ分を読み取る。
+            for sw in range(self.スイッチ数):
+
+                data = "ANR:%02x:%01x!" % (pl, sw)
+                self.ser.write(str.encode(data))
+                data = self.ser.read(5)
+                data = data.decode('utf-8')
+                data = data.replace('!', '')
+                data = int(data, 16)
+                data = int(data / self.丸め) * self.丸め
+                self.mmpAnaVal[pl][sw] = data
+        #┴　┴　┴
 
     #=====================================================================
     # デジタル入出力
     #=====================================================================
+    #---------------------------------------------------------------------
+    # ＰＷＭ(PCA9685)：接続状態確認（機器No.0～15）
+    #---------------------------------------------------------------------
+    def PWM_機器確認(self):
+        cmd = "PWS!"
+        self.ser.write(cmd.encode("ascii"))
+        res = self.ser.read(5).decode('ascii').replace("!", "")
+        try:
+            各機状況 = int(res, 16)
+            self.PWM機器状況 = [(各機状況 >> i) & 1 == 1 for i in range(16)]
+            return self.PWM機器状況
+        except ValueError:
+            print(f"PCA9685ステータス取得失敗:{res}")
+            self.PWM機器状況 = [False] * 16
+            return self.PWM機器状況
+    #---------------------------------------------------------------------
+    # ＰＷＭ(PCA9685)：接続状態確認（チャンネルNo.0～255）
+    #---------------------------------------------------------------------
+    def PWM_チャンネル確認(self):
+        # まず接続状況を確認（16個分）
+        self.PWM_機器確認()  # ← self.PWM機器状況 が更新される（長さ16）
+        
+        # 使用可能なPWMチャンネル（0〜255）をTrue/Falseで保持
+        self.PWMチャンネル状況 = [False] * 256
+        for 各機器No in range(16):
+            if self.PWM機器状況[各機器No]:
+                オフセット = 各機器No * 16
+                for チャンネル in range(16):
+                    self.PWMチャンネル状況[オフセット + チャンネル] = True
+    #---------------------------------------------------------------------
+    # 指定したPWMチャンネル（0〜255）が使用可能かを確認
+    #---------------------------------------------------------------------
+    def PWM_チャンネル状況(self, channel):
+        if not (0 <= channel <= 255):
+            raise ValueError("PWMチャンネルは 0〜255 の範囲で指定")
+        
+        pwm_id = channel // 16  # 0〜15 の PCA9685番号
+        if len(self.PWM機器状況) != 16:
+            print("PWMステータスが未取得")
+            return False
+        
+        return self.PWM機器状況[pwm_id]
     #---------------------------------------------------------------------
     # ＰＷＭ(PCA9685)：PWM値指定
     #---------------------------------------------------------------------
@@ -233,7 +234,7 @@ class mmp:
     # デジタル入出力
     #=====================================================================
     #---------------------------------------------------------------------
-    # 入出力(デジタル)
+    # 入出力(デジタル) ※出力後に入力する
     #---------------------------------------------------------------------
     def digital_IO(self, argPort, argValue):
         data = "IO:%02x:%01x!" % (argPort, argValue)
@@ -352,50 +353,6 @@ class mmp:
         cmd = f"DRP:{track_num:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
-
-    #=====================================================================
-    # 接続処理
-    #=====================================================================
-    def autoConnect(self):
-        print("\n接続中...")
-        for i in range(100):
-            com_str = 'COM%d'%i
-            try:
-                self.ser.port = com_str
-                self.ser.open()
-                break
-            except:
-                i = i
-        time.sleep(2)
-        if self.ser.port == 'COM99':
-            raise ConnectException()
-
-        版数 = self.バージョン()
-        print(f"接続済み(Ver.{版数})")
-        self.connect_flag = True
-        return com_str
-    #---------------------------------------------------------------------
-    def connect(self, comm_num):
-        try:
-            self.ser.port = comm_num
-            self.ser.open()
-        except:
-            raise ConnectException()
-        time.sleep(2)
-        self.connect_flag = True
-    #---------------------------------------------------------------------
-    def disconnect(self):
-        self.ser.close()
-        self.connect_flag = False
-    #---------------------------------------------------------------------
-    def バージョン(self):
-        self.ser.reset_input_buffer()  # ゴミを捨てる
-        self.ser.write(b'VER!')
-        data = self.ser.read(5)
-        sdata = data.decode('ascii')
-        print(f"受信データ: '{sdata}'")
-        結果 = f"{sdata[0]}.{sdata[1]}.{sdata[2:4]}"
-        return 結果
 
     #=====================================================================
     # i2c

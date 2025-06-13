@@ -64,7 +64,8 @@
 
 初期化時の処理（`setup()`関数内）：
 
-```cpp
+```
+cpp
 #define SERIAL_SELECT_PIN 2
 pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);
 delay(10);
@@ -79,6 +80,7 @@ if (useUSB) {
   Serial1.begin(115200);
   serialPort = &Serial1;
 }
+```
 
 ## 接続方法
 

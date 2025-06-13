@@ -46,3 +46,36 @@
 | `I2R`    | `ADDR`, `REG`                     | I2Cバスから1バイト読み込み     | `XXXX!`       |
 | `VER`    | なし                               | バージョンを返す              | `9999!`       |
 
+
+# シリアル切替機能
+
+## 概要
+
+`mmpRottenmeier` ファームウェアでは、**起動時に使用するシリアルポート（USB または GPIOシリアル）を自動選択**する仕組みを備えています。これにより、ユーザーは配線や用途に応じて柔軟に通信方法を切り替えることが可能です。
+
+---
+
+## 選択方法
+
+| シリアル種別 | 使用ピン     | 抵抗状態             | 使用ポート    |
+|--------------|--------------|----------------------|----------------|
+| USBシリアル   | GPIO2        | **プルアップ状態**（HIGH） | `Serial`       |
+| GPIOシリアル  | GPIO2        | **プルダウン or オープン**（LOW） | `Serial1` (`TX=0`, `RX=1`) |
+
+初期化時の処理（`setup()`関数内）：
+
+```cpp
+#define SERIAL_SELECT_PIN 2
+pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);
+delay(10);
+bool useUSB = digitalRead(SERIAL_SELECT_PIN);
+
+if (useUSB) {
+  Serial.begin(115200);
+  serialPort = &Serial;
+} else {
+  Serial1.setTX(0);
+  Serial1.setRX(1);
+  Serial1.begin(115200);
+  serialPort = &Serial1;
+}

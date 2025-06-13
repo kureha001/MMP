@@ -1,5 +1,5 @@
 #====================================================== 
-# ＭＭＰライブラリ Ver 0.03 mmpRottenmeier 
+# ＭＭＰライブラリ Ver 0.03 Rottenmeier
 #------------------------------------------------------
 # Ver 0.03.001　2025/06/01 By Takanari.Kureha
 #       1.ファームウェア修正に伴いリカバコードを削除
@@ -207,11 +207,11 @@ class mmp:
     #---------------------------------------------------------------------
     def PWM_チャンネル状況(self, channel):
         if not (0 <= channel <= 255):
-            raise ValueError("PWMチャンネルは 0〜255 の範囲で指定")
+            raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
         
         pwm_id = channel // 16  # 0〜15 の PCA9685番号
         if len(self.PWM機器状況) != 16:
-            print("PWMステータスが未取得")
+            print("[警告] PWMステータスが未取得")
             return False
         
         return self.PWM機器状況[pwm_id]

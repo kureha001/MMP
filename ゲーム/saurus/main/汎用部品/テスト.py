@@ -24,7 +24,7 @@ MMP.通信接続_自動()
 #│
 #◇┐MMPをテストする。
 #　├→（アナログ入力（繰返））
-mode = 0
+mode = 5
 if mode == 0:
     繰返回数 = 1000    # アドレス切替回数
     待時間   = 0  # ウェイト(秒)
@@ -101,28 +101,28 @@ elif mode == 5:
     print("ＤＦＰｌｅｙｅｒ")
 
     print("・ボリューム設定")
-    MMP.DFP_Volume(20)
+    print(MMP.DFP_Volume(20))
 
     print("・連続再生")
     for track in [1, 2, 3]:
-        MMP.DFP_Play(track)
+        print(MMP.DFP_Play(track))
         time.sleep(3)
 
     print("・１曲目を再生")
-    MMP.DFP_Play(1)
+    print(MMP.DFP_Play(1))
     time.sleep(5)
 
     print("・一時停止")
-    MMP.DFP_Pause()
+    print(MMP.DFP_Pause())
     time.sleep(3)
 
     print("・再開")
-    MMP.DFP_Resume()
+    print(MMP.DFP_Resume())
     time.sleep(5)
 
     print("・停止")
-    MMP.DFP_Stop()
+    print(MMP.DFP_Stop())
 #│
 #〇MMPを切断する。
-MMP.disconnect
+MMP.通信切断
 #┴

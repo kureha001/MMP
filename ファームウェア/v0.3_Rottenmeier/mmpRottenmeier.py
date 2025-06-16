@@ -287,70 +287,76 @@ class mmp:
     #=====================================================================
     # ＭＰ３プレイヤー
     #=====================================================================
+    # 機器情報
+    def DFP_Info(self, 引数_devNo):
+        cmd = f"DPX:{引数_devNo:01x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
     # 指定トラック再生
-    def DFP_Play(self, track_num):
-        cmd = f"DPL:{track_num:02x}!"
+    def DFP_Play(self, 引数_devNo, track_num):
+        cmd = f"DPL:{引数_devNo:01x}:{track_num:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 停止
-    def DFP_Stop(self):
-        cmd = "DSP!"
+    def DFP_Stop(self, 引数_devNo):
+        cmd = f"DSP:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 一時停止
-    def DFP_Pause(self):
-        cmd = "DPA!"
+    def DFP_Pause(self, 引数_devNo):
+        cmd = f"DPA:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 再生再開
-    def DFP_Resume(self):
-        cmd = "DPR!"
+    def DFP_Resume(self, 引数_devNo):
+        cmd = f"DPR:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 音量設定（0〜30）
-    def DFP_Volume(self, vol):
-        cmd = f"VOL:{vol:02x}!"
+    def DFP_Volume(self, 引数_devNo, vol):
+        cmd = f"VOL:{引数_devNo:01x}:{vol:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 再生中トラック番号取得（戻り値は16進数）
-    def DFP_get_current_track(self):
-        cmd = "DQT!"
+    def DFP_get_current_track(self, 引数_devNo):
+        cmd = f"DQT:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 再生状態：0停止, 1再生, 2一時停止
-    def DFP_get_play_state(self):
-        cmd = "DST!"
+    def DFP_get_play_state(self, 引数_devNo):
+        cmd = f"DST:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 全トラック数取得
-    def DFP_get_file_count(self):
-        cmd = "DTC!"
+    def DFP_get_file_count(self, 引数_devNo):
+        cmd = f"DTC:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # イコライザー設定：0〜5
     # 0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
-    def DFP_set_eq(self, eq_mode):
-        cmd = f"DEF:{eq_mode:02x}!"
+    def DFP_set_eq(self, 引数_devNo, eq_mode):
+        cmd = f"DEF:{引数_devNo:01x}:{eq_mode:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 指定フォルダ内トラック再生
-    def DFP_play_folder_track(self, folder, track):
-        cmd = f"DIR:{folder:02x}:{track:02x}!"
+    def DFP_play_folder_track(self, 引数_devNo, folder, track):
+        cmd = f"DIR:{引数_devNo:01x}:{folder:02x}:{track:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
     # 指定トラックのループ再生開始
-    def DFP_loop_play_mode(self, track_num):
-        cmd = f"DRP:{track_num:02x}!"
+    def DFP_loop_play_mode(self, 引数_devNo, track_num):
+        cmd = f"DRP:{引数_devNo:01x}:{track_num:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 

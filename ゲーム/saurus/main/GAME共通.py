@@ -3,6 +3,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import  pyxel
 import  json
+import  time
 import  main.汎用部品.mmpRottenmeier  as Rottenmeier
 from    .データセット           import データセット as DS
 from    .オブジェクト.シーン    import シーンID
@@ -26,19 +27,34 @@ class 効果音():
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ＢＧＭ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class BGM():
+class BGM_DFP():
 	#────────────────────────────────────
     def 自動選択():
-
-        pyxel.stop()
-
         シーン  = DS.情報.シーン
-
-        if シーン == シーンID.タイトル画面: BGM.JSON再生("タイトル")
-        elif シーン == シーンID.プレイ画面: BGM.JSON再生("プレイ")
-        elif シーン == シーンID.終了画面  : BGM.JSON再生("終了")
+        if   シーン == シーンID.タイトル画面: BGM_DFP.演奏(1)
+        elif シーン == シーンID.プレイ画面: BGM_DFP.演奏(2)
+        elif シーン == シーンID.終了画面  : BGM_DFP.演奏(3)
 	#────────────────────────────────────
-    def JSON再生(引数_ファイル名):
+    def 演奏(引数_ファイル番号):
+        入出力.MMP.DFP_Stop(1)
+        time.sleep(0.5)
+        入出力.MMP.DFP_PlayFolderTrack(1,2,引数_ファイル番号)
+	#────────────────────────────────────
+    def 指定曲(引数_ファイル番号):
+        入出力.MMP.DFP_Stop(1)
+        time.sleep(0.5)
+        入出力.MMP.DFP_PlayFolderTrack(1,3,引数_ファイル番号)
+
+class BGM_JSON():
+	#────────────────────────────────────
+    def 自動選択():
+        pyxel.stop()
+        シーン  = DS.情報.シーン
+        if   シーン == シーンID.タイトル画面: BGM_JSON.演奏("タイトル")
+        elif シーン == シーンID.プレイ画面: BGM_JSON.演奏("プレイ")
+        elif シーン == シーンID.終了画面  : BGM_JSON.演奏("終了")
+	#────────────────────────────────────
+    def 演奏(引数_ファイル名):
 
         with open(f"./オーディオ/{引数_ファイル名}.json", "rt") as fin:
             DS.情報.音楽データ = json.loads(fin.read())

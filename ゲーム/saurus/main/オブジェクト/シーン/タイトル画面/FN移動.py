@@ -95,14 +95,18 @@ class 移動クラス:
     def Fn画面遷移(self):
         #┬ 
         #●BGMを鳴らす
-        pyxel.stop()
-        for PWMポートNo in range(2):
-            共通処理.入出力.MMP.PWM_VALUE(DS.obj.運搬機[PWMポートNo].仕様.電飾No, 4095)
-        time.sleep(7)
+#        pyxel.stop()
+#        for PWMポートNo in range(2):
+#            共通処理.入出力.MMP.PWM_VALUE(DS.obj.運搬機[PWMポートNo].仕様.電飾No, 4095)
+#        time.sleep(7)
         #│
         #○ゲーム情報をリセットする
         DS.情報.プレイ時間  = DS.仕様.ゲーム.プレイ時間
         #│
         #○シーンを『プレイ画面』に進行する
         DS.情報.シーン = シーンID.プレイ画面
+        共通処理.BGM_DFP.指定曲(1)
+        time.sleep(2)
+        共通処理.BGM_DFP.自動選択()
+        time.sleep(3)
         #┴

@@ -4,10 +4,10 @@
 #┃更新コントローラが移動プロセスで実行するアクション・メソッド
 #┃・下位にデータセット･クラス(仕様｜情報)を持つ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  main.GAME共通       as 共通処理
-from    main.データセット   import データセット as DS
-from    ..DB                import シーンID
+import time
+import main.GAME共通     as 共通処理
+from   main.データセット import データセット as DS
+from   ..DB              import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：情報
@@ -51,6 +51,14 @@ class 移動クラス:
         #○タイマーをリセットする
         self.情報.開始時間  = None
         #│
+        共通処理.BGM_DFP.指定曲(2)
+        time.sleep(2)
+        共通処理.BGM_DFP.指定曲(2)
+        time.sleep(2)
+        #│
         #○シーンを『終了画面』に進行する
         self._情報.シーン   = シーンID.終了画面
+        #│
+        #○持続カウントを開始する
+        共通処理.BGM_DFP.自動選択()
         #┴

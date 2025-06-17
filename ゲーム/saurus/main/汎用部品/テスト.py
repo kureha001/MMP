@@ -24,10 +24,10 @@ MMP.通信接続_自動()
 #│
 #◇┐MMPをテストする。
 #　├→（アナログ入力（繰返））
-mode = 310
+mode = 320
 if mode == 100:
     繰返回数 = 1000    # アドレス切替回数
-    待時間   = 0  # ウェイト(秒)
+    待時間   = 0.05  # ウェイト(秒)
     全権表示 = True  # True:全件表示／False:先頭末尾のみ表示
 
     print("--------------------")
@@ -138,6 +138,20 @@ elif mode == 310:
 
     print("・１曲目を再生")
     print(MMP.DFP_Play(機器番号,1))
+    time.sleep(5)
+
+    print("・停止")
+    print(MMP.DFP_Stop(機器番号))
+
+#　├→（DFPlayer）
+elif mode == 320:
+    print("ｍｐ３プレイヤー")
+
+    機器番号 = 1 # 1 or 2
+
+    print("・１曲目を再生")
+#    print(MMP.DFP_Play(機器番号,1))
+    print(MMP.DFP_PlayFolderTrack(機器番号,3,1))
     time.sleep(5)
 
     print("・停止")

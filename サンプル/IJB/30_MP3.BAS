@@ -1,10 +1,22 @@
-10 UART 1
-20 ? "DPL:01!" ' 1曲目を再生
-30 WAIT 10
-40 ? "VOL:10!" ' 音量を16に設定
-50 WAIT 10
-60 ? "DPA!"    ' 一時停止
-70 WAIT 10
-80 ? "DPR!"    ' 再開
-90 WAIT 10
-100 ? "DSP!"   ' 停止
+100 CLS:CLV
+110 ?"MMP mp3(DFPlayer mini)"
+120 ?"------------------------"
+130 UART1
+140 ?"VER!";:GSB900
+150 '----------
+200 ?"VOL:20!";:GSB900
+210 ?"DPL:1!" ;:WAIT500:GSB900
+220 ?"DPL:2!" ;:WAIT100:GSB900
+230 ?"DPL:3!" ;:WAIT500:GSB900
+240 ?"DPL:4!" ;:WAIT500:GSB900
+250 ?"DPL:5!" ;:WAIT200:GSB900
+260 ?"DSP!"   ;:GSB900
+700 '----------
+800 ?"VER!";:GSB900
+810 UART0:?"":?"- END -":END
+820 '----------
+900 WAIT5
+910 FOR I=0 TO 4:[I]=INKEY():NEXT
+920 UART0:?" = ";
+930 FOR I=0 TO 4:?CHR$([I]);:NEXT
+940 ?"":UART1:RTN

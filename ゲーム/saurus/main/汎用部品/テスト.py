@@ -24,8 +24,8 @@ MMP.通信接続_自動()
 #│
 #◇┐MMPをテストする。
 #　├→（アナログ入力（繰返））
-mode = 4
-if mode == 0:
+mode = 310
+if mode == 100:
     繰返回数 = 1000    # アドレス切替回数
     待時間   = 0  # ウェイト(秒)
     全権表示 = True  # True:全件表示／False:先頭末尾のみ表示
@@ -63,7 +63,7 @@ if mode == 0:
     print("・データ平均 : %01.06f秒\n"   % (time_diff/cntTtl        ))
 
 #　├→（ＰＷＤ：ＤＣモータ）
-elif mode ==1:
+elif mode ==200:
     print("ＰＷＤ：ＤＣモータ")
     番号    = 0     #恐竜ランドのDCモータ
     最小    = 1800
@@ -86,7 +86,7 @@ elif mode ==1:
     MMP.PWM_VALUE( 番号, -1 )
 
 #　├→（ＰＷＤ：電力供給）
-elif mode == 2:
+elif mode == 210:
     print("ＰＷＤ：電力供給")
     番号    = 1     #恐竜ランドの音声モジュール＆LED
     最小    = 4095  #4095:デューティー比100%
@@ -97,7 +97,7 @@ elif mode == 2:
         MMP.PWM_VALUE( 番号, 0 )
 
 #　├→（DFPlayer）
-elif mode == 3:
+elif mode == 300:
     print("ｍｐ３プレイヤー")
 
     print("・ボリューム設定")
@@ -124,7 +124,7 @@ elif mode == 3:
     print(MMP.DFP_Stop())
 
 #　├→（DFPlayer）
-elif mode == 4:
+elif mode == 310:
     print("ｍｐ３プレイヤー")
 
     機器番号 = 1 # 1 or 2

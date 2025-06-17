@@ -1,10 +1,19 @@
-10 UART 1
-20 ? "STA!"     ' DFPlayer接続ステータス（1または0）
-30 WAIT 10
-40 ? "PWS!"     ' PCA9685接続ステータス（ビット列）
-50 WAIT 10
-60 ? "VER!"     ' ファームウェアバージョン
-70 WAIT 10
-80 IF INKEY()>0 GOTO 100
-90 GOTO 20
-100 A=INKEY():?CHR$(A)
+100 CLS:CLV
+110 ?"MMP SYS-INFO"
+120 ?"------------"
+130 UART1
+140 ?"VER!"  ;:GSB900
+150 '----------
+200 ?"PWX:1!";:GSB900
+210 ?"PWX:1!";:GSB900
+220 ?"FDX:1!";:GSB900
+230 ?"FDX:2!";:GSB900
+700 '----------
+800 ?"VER!";:GSB900
+810 UART0:?"":?"- END -":END
+820 '----------
+900 WAIT5
+910 FOR I=0 TO 4:[I]=INKEY():NEXT
+920 UART0:?" = ";
+930 FOR I=0 TO 4:?CHR$([I]);:NEXT
+940 ?"":UART1:RTN

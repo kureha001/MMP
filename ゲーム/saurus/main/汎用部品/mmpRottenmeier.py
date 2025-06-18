@@ -205,7 +205,7 @@ class mmp:
     #---------------------------------------------------------------------
     # 指定したPWMチャンネル（0〜255）が使用可能かを確認
     #---------------------------------------------------------------------
-    def PWM_チャンネル状況(self, channel):
+    def PWM_チャンネル確認(self, channel):
         if not (0 <= channel <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
         
@@ -216,17 +216,27 @@ class mmp:
         
         return self.PWM機器状況[pwm_id]
     #---------------------------------------------------------------------
-    # ＰＷＭ(PCA9685)：PWM値指定
+    # PWM出力値指定
+    #  コマンド書式： PWM:<Ch通番>:<PWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_VALUE(self, argPort, argValue):
-        data = "PWM:%02x:%01x!" % (argPort, argValue)
+    def PWM_VALUE(self, argPort, argPWM):
+        data = "PWM:%02x:%02x!" % (argPort, argPWM)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
     #---------------------------------------------------------------------
-    # ＰＷＭ(PCA9685)：角度指定
+    # サーボ定格設定
+    #  コマンド書式：PWI:<0度のPWM出力値>:<180度のPWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_ANGLE(self, argPort, argValue):
-        data = "PWA:%02x:%01x!" % (argPort, argValue)
+    def PWM_INIT(self, argPwmMin, argPwmMax):
+        data = "PWI:%02x:%03x:%02x!" % (argPort, argPwmMin, argPwmMax)
+        self.ser.write(str.encode(data))
+        data = self.ser.read(5)
+    #---------------------------------------------------------------------
+    # 角度指定
+    #  コマンド書式：PWA:<Ch通番>:<角度>!
+    #---------------------------------------------------------------------
+    def PWM_ANGLE(self, argPort, argAngle):
+        data = "PWA:%02x:%02x!" % (argPort, argAngle)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
 

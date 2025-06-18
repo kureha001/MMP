@@ -22,3 +22,25 @@
 ゲーム/saurus/main/オブジェクト/シーン/__pycache__/
 
 ゲーム/saurus/main/汎用部品/__pycache__/
+
+
+ゲーム/balets/main/__pycache__/
+ゲーム/balets/main/オブジェクト/キャラ/敵機/__pycache__/
+ゲーム/balets/main/オブジェクト/キャラ/弾/__pycache__/
+ゲーム/balets/main/オブジェクト/キャラ/自機/__pycache__/
+
+ゲーム/balets/main/オブジェクト/シーン/__pycache__/
+ゲーム/balets/main/オブジェクト/シーン/タイトル画面/__pycache__/
+ゲーム/balets/main/オブジェクト/シーン/プレイ画面/__pycache__/
+ゲーム/balets/main/オブジェクト/シーン/終了画面/__pycache__/
+ゲーム/balets/main/オブジェクト/演出/爆発/__pycache__/
+ゲーム/balets/main/オブジェクト/演出/背景/__pycache__/
+ゲーム/balets/main/オブジェクト/管理/特殊効果/__pycache__/
+ゲーム/balets/main/コントローラ/描画/__pycache__/
+ゲーム/balets/main/コントローラ/更新/__pycache__/
+ゲーム/balets/main/コントローラ/更新/P出現/__pycache__/
+ゲーム/balets/main/コントローラ/更新/P発射/__pycache__/
+ゲーム/balets/main/コントローラ/更新/P移動/__pycache__/
+ゲーム/balets/main/コントローラ/更新/P衝突/__pycache__/
+ゲーム/balets/main/データセット/__pycache__/
+ゲーム/balets/main/汎用部品/__pycache__/

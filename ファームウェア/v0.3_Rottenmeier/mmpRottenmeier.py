@@ -299,6 +299,18 @@ class mmp:
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
+    # 指定トラックのループ再生開始
+    def DFP_PlayLoop(self, 引数_devNo, track_num):
+        cmd = f"DRP:{引数_devNo:01x}:{track_num:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # 指定フォルダ内トラック再生
+    def DFP_PlayFolderTrack(self, 引数_devNo, folder, track):
+        cmd = f"DIR:{引数_devNo:01x}:{folder:02x}:{track:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
     # 停止
     def DFP_Stop(self, 引数_devNo):
         cmd = f"DSP:{引数_devNo:01x}!"
@@ -345,18 +357,6 @@ class mmp:
     # 0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
     def DFP_set_eq(self, 引数_devNo, eq_mode):
         cmd = f"DEF:{引数_devNo:01x}:{eq_mode:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 指定フォルダ内トラック再生
-    def DFP_play_folder_track(self, 引数_devNo, folder, track):
-        cmd = f"DIR:{引数_devNo:01x}:{folder:02x}:{track:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 指定トラックのループ再生開始
-    def DFP_loop_play_mode(self, 引数_devNo, track_num):
-        cmd = f"DRP:{引数_devNo:01x}:{track_num:02x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 

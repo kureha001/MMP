@@ -10,3 +10,4 @@ class 情報クラス:
         self.得点       = [0,0]
         self.モード     = 0
         self.音楽データ = None
+        self.再生時間   = None

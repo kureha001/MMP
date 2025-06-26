@@ -4,12 +4,11 @@
 #┃移動プロセス➡発射プロセス➡衝突プロセス➡出現プロセスの順に
 #┃実行する
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  main.GAME共通                                   as 共通処理
-from main.オブジェクト.シーン.DB    import シーンID
-from main.データセット              import データセット as DS
-from .P移動                         import P移動生成
-from .P救出                         import P救出生成
+import pyxel
+import main.GAME共通                         as 共通処理
+from   main.データセット import データセット as DS
+from   .P移動            import P移動生成
+from   .P救出            import P救出生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

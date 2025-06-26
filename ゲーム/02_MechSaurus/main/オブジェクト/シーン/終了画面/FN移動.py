@@ -4,11 +4,10 @@
 #┃更新コントローラが移動プロセスで実行するアクション・メソッド
 #┃・下位にデータセット･クラス(仕様｜情報)を持つ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  main.GAME共通       as 共通処理
-from    main.データセット   import データセット as DS
-from    ..DB                import シーンID
-import time
+import pyxel
+import main.GAME共通                         as 共通処理
+from   main.データセット import データセット as DS
+from   ..DB              import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様

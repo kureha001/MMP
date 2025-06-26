@@ -3,13 +3,13 @@
 #┠─────────────────────────────────────
 #┃更新コントローラが移動プロセスで実行するアクション・メソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  time
-import  main.GAME共通                   as 共通処理
-from    main.データセット               import データセット as DS
-from    main.オブジェクト.キャラ.発電機 import 発電機生成
-from    main.オブジェクト.キャラ.運搬機 import 運搬機生成
-from    ..DB                            import シーンID
+import pyxel
+import time
+import main.GAME共通                                       as 共通処理
+from   main.データセット               import データセット as DS
+from   main.オブジェクト.キャラ.発電機 import 発電機生成
+from   main.オブジェクト.キャラ.運搬機 import 運搬機生成
+from   ..DB                            import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様
@@ -85,7 +85,7 @@ class 移動クラス:
         運搬機生成(8,(0,1))
         #│
         #○各チームのペダル一覧(MMPポート番号)を設定する
-        チーム2 = list(range(DS.情報.人数, DS.情報.人数 + DS.情報.人数))
+        チーム2 = list(range(DS.情報.人数, (DS.情報.人数 + DS.情報.人数)))
         チーム1 = list(range(DS.情報.人数))
         #│
         #●各チームの発電機オブジェクトを生成する
@@ -95,7 +95,7 @@ class 移動クラス:
 	#────────────────────────────────────
     def Fn画面遷移(self):
         #┬ 
-        #●運搬機のモジュールを起動する
+        #●運搬機の電飾制御を起動する
         pyxel.stop()                    # BGMを停止する
         共通処理.運搬機.電飾制御(True)  
         time.sleep(7)                   # インターバルをとる

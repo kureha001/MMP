@@ -7,8 +7,8 @@
 import pyxel
 import main.GAME共通                         as 共通処理
 from   main.データセット import データセット as DS
-from   .P移動            import P移動生成
-from   .P救出            import P救出生成
+from   .P移動            import 本体         as P移動生成
+from   .P救出            import 本体         as P救出生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

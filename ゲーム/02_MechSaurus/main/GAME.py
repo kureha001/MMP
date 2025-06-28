@@ -2,8 +2,8 @@
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import  pyxel
+import  main.GAME共通                               as 共通処理
 from    .データセット           import データセット as DS
-import  main.GAME共通                   as 共通処理
 from    .コントローラ.更新      import 更新コントローラ生成
 from    .コントローラ.描画      import 描画コントローラ生成
 from    .オブジェクト.シーン    import *

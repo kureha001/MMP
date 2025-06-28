@@ -19,19 +19,14 @@
 ゲーム/01_MechBullets/main/汎用部品/__pycache__/
 
 
-ライブラリ/v0.2_Peter/__pycache__/
 ゲーム/02_MechSaurus/main/__pycache__/
 ゲーム/02_MechSaurus/main/データセット/__pycache__/
 ゲーム/02_MechSaurus/main/コントローラ/更新/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/更新/P移動/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/更新/P救出/__pycache__/
 ゲーム/02_MechSaurus/main/コントローラ/描画/__pycache__/
+ゲーム/02_MechSaurus/main/オブジェクト/キャラ/発電機/__pycache__/
+ゲーム/02_MechSaurus/main/オブジェクト/キャラ/運搬機/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/タイトル画面/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/プレイ画面/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/終了画面/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/動作/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/更新/P発電/__pycache__/
-ゲーム/02_MechSaurus/main/オブジェクト/キャラ/発電機/__pycache__/
-ゲーム/02_MechSaurus/main/オブジェクト/キャラ/運搬機/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/__pycache__/
 ゲーム/02_MechSaurus/main/汎用部品/__pycache__/

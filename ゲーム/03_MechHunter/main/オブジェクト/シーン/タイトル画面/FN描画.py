@@ -28,7 +28,7 @@ class 描画クラス:
         pyxel.text(35, 縦  , 描画文字, 5)
         pyxel.text(34, 縦-1, 描画文字, 7)
 
-        描画文字 = " of players per team"
+        描画文字 = " of targets per team"
         縦 = 100
         pyxel.text(40, 縦  , 描画文字, 5)
         pyxel.text(39, 縦-1, 描画文字, 7)

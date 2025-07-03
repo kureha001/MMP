@@ -40,15 +40,11 @@ class 入出力():
 
     MMP     = None          # MMPオブジェクト
 
-    MMP_ON  = [             # Chごとの状態：ON(True)/OFF(False) 
-            [False,False],  # ポート0用
-            [False,False],  # ポート1用
-            [False,False],  # ポート2用
-            [False,False],  # ポート3用
-            [False,False],  # ポート4用
-            [False,False],  # ポート5用
-            [False,False],  # ポート6用
-            [False,False]]  # ポート7用
+    MMP_ON  = [     # Chごとの状態：ON(True)/OFF(False) 
+            False,  # ポート0用 [Ch0]
+            False,  # ポート1用 [Ch0]
+            False,  # ポート2用 [Ch0]
+            False]  # ポート3用 [Ch0]
 
 	#────────────────────────────────────    
     def MMP_初期化():
@@ -70,39 +66,36 @@ class 入出力():
     def 入力走査(引数_ポートNo):
 		#┬
 		#○結果を初期化する
-        概要 = [ False, False ]     # ONしている，OFFした直後
-        測定 = [ 0,0 ]              # Chごとの ON(1)/OFF(-1) 
+        概要 = [ False, False ] # ONしている，OFFした直後
+        測定 = 0                # 測定値(1:ON/-1:OFFになった/0:通常のOFF) 
 		#│
         #○ポートのアナログ値を用意する
         ポートNo = 引数_ポートNo
-        入力値 = 入出力.MMP.mmpAnaVal[ポートNo]
+        入力値   = 入出力.MMP.mmpAnaVal[ポートNo]
 		#│
-		#◎└┐ON/OFF状態を求める
-        for 各Ch in range(2):
-            #│
-            #◇┐移動予定の座標を求める
-            if 入力値[各Ch] < 800:
-            #　├┐（状態が『ON』の場合）
-                #↓
-                #○状態を『ONしている』にする
-                #○測定を『ON』にする
-                #○概要(ON)を『YES』にする
-                入出力.MMP_ON[ポートNo][各Ch] = True
-                測定[各Ch] = 1
-                概要[0] = True
-                #┴
-            elif 入出力.MMP_ON[ポートNo][各Ch]:
-            #　├┐（前回の状態が『ON』の場合）
-                #↓
-                #○状態を『OFF』にする
-                #○測定を『OFFした直後』にする
-                #○概要(OFF)を『YES』にする
-                入出力.MMP_ON[ポートNo][各Ch] = False
-                測定[各Ch] = -1
-                概要[1] = True
-                #┴
-            #　└┐（その他）
-                #┴
+        #◇┐移動予定の座標を求める
+        if 入力値[0] < 800:
+        #　├┐（状態が『ON』の場合）
+            #↓
+            #○状態を『ONしている』にする
+            #○概要(ON)を『YES』にする
+            #○測定を『ON』にする
+            入出力.MMP_ON[ポートNo] = True
+            概要[0] = True
+            測定    = 1
+            #┴
+        elif 入出力.MMP_ON[ポートNo]:
+        #　├┐（前回の状態が『ON』の場合）
+            #↓
+            #○状態を『OFF』にする
+            #○概要(OFF)を『YES』にする
+            #○測定を『OFFした直後』にする
+            入出力.MMP_ON[ポートNo] = False
+            概要[1] = True
+            測定    = -1
+            #┴
+        #　└┐（その他）
+            #┴
 		#│
         #▼結果を返す
         return (概要,測定)

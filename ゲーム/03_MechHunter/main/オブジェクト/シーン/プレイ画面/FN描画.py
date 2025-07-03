@@ -24,5 +24,5 @@ class 描画クラス:
         #┬
         #〇プレイ時間を表示する
         出力 = DS.情報.プレイ時間
-        pyxel.text(84, 2, f"{str(出力).zfill(3)}", 10)
+        pyxel.text(84,13, f"{str(出力).zfill(3)}", 10)
         #┴

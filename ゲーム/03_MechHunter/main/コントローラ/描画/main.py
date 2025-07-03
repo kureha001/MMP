@@ -47,6 +47,6 @@ class 本体:
             #┴
         #│
         #〇ゲーム情報（得点）を描画する
-        pyxel.text(  3, 2, str(命中回数1).zfill(4), 7)
-        pyxel.text(162, 2, str(命中回数2).zfill(4), 7)
+        pyxel.text( 35, 2, str(命中回数1).zfill(4), 7)
+        pyxel.text(129, 2, str(命中回数2).zfill(4), 7)
         #┴

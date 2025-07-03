@@ -25,9 +25,9 @@ class 描画クラス:
     #└───────────────────────────────────
     def 実行(self):
         #┬
-        #〇命中エフェクトを画面に描画する
-        if self._仕様.所有者 == 1: self.描画_照準( 42,60)
-        else                     : self.描画_照準(136,60)
+        #〇照準を描画する
+        中心位置 = (42) if self._仕様.所有者 ==1 else (136)
+        self.FN照準(中心位置,65)
         #│
         #○状態を確認する
         if self._情報.命中タイマ <= 0: return
@@ -39,30 +39,31 @@ class 描画クラス:
         self._情報.命中タイマ -= 1
         #│
         #◇┐撃たれたカモロボを描画する
-        if self._仕様.所有者 == 1: pyxel.blt( 2,20, 0,  0,0,  79,79, 0)
-        else                     : pyxel.blt(98,20, 0, 80,0, 159,79, 0)
+        if self._仕様.所有者 == 1: pyxel.blt( 2,25, 0,  0,0,  79,79, 0)
+        else                     : pyxel.blt(98,25, 0, 80,0, 159,79, 0)
         #┴
-
-    def 描画_照準(self,cx, cy):
-
+	#────────────────────────────────────
+    def FN照準(self,cx, cy):
+        #┬
         radius = 40     # 外円の半径
         color_main = 7  # メインの色（白）
         color_aux = 5   # 補助線の色（グレー）
-
-        # 外円
+        #│
+        #○外円を描く
         pyxel.circb(cx, cy, radius, color_main)
-
-        # クロスライン
+        #│
+        #○クロスラインを描く
         pyxel.line(cx - radius, cy, cx + radius, cy, color_main)  # 横線
         pyxel.line(cx, cy - radius, cx, cy + radius, color_main)  # 縦線
-
-        # 中心の点
+        #│
+        #○中心の点を描く
         pyxel.circ(cx, cy, 2, color_main)
-
-        # 補助目盛（円形の目印）
+        #│
+        #○補助目盛（円形の目印）を描く
         for r in range(10, radius, 10):  # 半径10, 20, 30
             pyxel.circb(cx, cy, r, color_aux)
-
-        # 補助目盛（斜めライン）
+        #│
+        #○補助目盛（斜めライン）を描く
         for dx, dy in [(-10, -10), (10, -10), (-10, 10), (10, 10)]:
             pyxel.line(cx + dx, cy + dy, cx + dx//2, cy + dy//2, color_main)
+        #┴

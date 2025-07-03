@@ -21,19 +21,24 @@ class 描画クラス:
     def 実行(self):
         #┬
         #〇画面を描画する
-        pyxel.blt(0,0, 2, 0,0, 159,119, 0)  # メインタイトル
+        pyxel.blt(0,0, 1, 0,0, 180,120, 0)  # メインタイトル
 
         描画文字 = "Please select the number"
         縦 = 92
-        pyxel.text(35, 縦  , 描画文字, 5)
-        pyxel.text(34, 縦-1, 描画文字, 7)
+        pyxel.text(45, 縦  , 描画文字, 5)
+        pyxel.text(44, 縦-1, 描画文字, 7)
 
         描画文字 = " of targets per team"
         縦 = 100
-        pyxel.text(40, 縦  , 描画文字, 5)
-        pyxel.text(39, 縦-1, 描画文字, 7)
+        pyxel.text(50, 縦  , 描画文字, 5)
+        pyxel.text(49, 縦-1, 描画文字, 7)
 
-        描画文字 = "press key:[1][2][3][4]"
+        描画文字 = "press key:"
         縦 = 110
-        pyxel.text(39, 縦, 描画文字, 8)
-        pyxel.text(38, 縦, 描画文字, 7)
+        pyxel.text(49, 縦, 描画文字, 5)
+        pyxel.text(48, 縦, 描画文字, 7)
+
+        描画文字 = "[1][2][3][4]"
+        縦 = 110
+        pyxel.text(89, 縦+1, 描画文字, 0)
+        pyxel.text(88, 縦, 描画文字, 7)

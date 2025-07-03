@@ -39,7 +39,7 @@ class 開始:
         pyxel.init(
                 DS.仕様.画面幅,
                 DS.仕様.画面高,
-                title="Ver.2025/06/25-00")
+                title="Ver.2025/07/03-00")
         #│
         #○リソースファイルを読み込む
         pyxel.load("./リソース.pyxres")

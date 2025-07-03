@@ -25,6 +25,9 @@ class 本体:
         pyxel.cls(0)
         #│
         #●描画アクションを実行する
+        if len(DS.obj.カモロボ) > 0:
+            for 各カモロボ in DS.obj.カモロボ:各カモロボ.FN描画.実行()
+
         DS.obj.シーン[ DS.情報.シーン].FN描画.実行()
         #│
         #△┐ゲーム情報（得点／難易度）を描画する
@@ -44,6 +47,6 @@ class 本体:
             #┴
         #│
         #〇ゲーム情報（得点）を描画する
-        pyxel.text(  2, 2, str(命中回数1).zfill(4), 7)
-        pyxel.text(142, 2, str(命中回数2).zfill(4), 7)
+        pyxel.text(  3, 2, str(命中回数1).zfill(4), 7)
+        pyxel.text(162, 2, str(命中回数2).zfill(4), 7)
         #┴

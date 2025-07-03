@@ -24,6 +24,6 @@ class 描画クラス:
       #┬
       #〇画面を描画する
       描画文字 = "- TIME UP -"
-      pyxel.text(60, 60, 描画文字, 5)
-      pyxel.text(59, 59, 描画文字, pyxel.frame_count % 16)
+      pyxel.text(70,13, 描画文字, 5)
+      pyxel.text(69,12, 描画文字, pyxel.frame_count % 16)
       #┴

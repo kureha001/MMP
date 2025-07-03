@@ -41,14 +41,14 @@ class 入出力():
     MMP     = None          # MMPオブジェクト
 
     MMP_ON  = [             # Chごとの状態：ON(True)/OFF(False) 
-            [False,False],  # ポート0用
-            [False,False],  # ポート1用
-            [False,False],  # ポート2用
-            [False,False],  # ポート3用
-            [False,False],  # ポート4用
-            [False,False],  # ポート5用
-            [False,False],  # ポート6用
-            [False,False]]  # ポート7用
+            [False,False],  # ポート0用 [Ch0,Ch1]
+            [False,False],  # ポート1用 [Ch0,Ch1]
+            [False,False],  # ポート2用 [Ch0,Ch1]
+            [False,False],  # ポート3用 [Ch0,Ch1]
+            [False,False],  # ポート4用 [Ch0,Ch1]
+            [False,False],  # ポート5用 [Ch0,Ch1]
+            [False,False],  # ポート6用 [Ch0,Ch1]
+            [False,False]]  # ポート7用 [Ch0,Ch1]
 
 	#────────────────────────────────────    
     def MMP_初期化():
@@ -71,7 +71,7 @@ class 入出力():
 		#┬
 		#○結果を初期化する
         概要 = [ False, False ]     # ONしている，OFFした直後
-        測定 = [ 0,0 ]              # Chごとの ON(1)/OFF(-1) 
+        測定 = [ 0,0 ]              # 概要ごとの ON(1)/OFF(-1) 
 		#│
         #○ポートのアナログ値を用意する
         ポートNo = 引数_ポートNo

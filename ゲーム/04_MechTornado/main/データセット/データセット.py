@@ -1,9 +1,9 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-from  .DSコンテナ   import *
-from  .DS仕様       import *
-from  .DS情報       import *
+from .DSコンテナ import *
+from .DS仕様     import *
+from .DS情報     import *
 
 obj  = コンテナクラス()
 仕様 = 仕様クラス()

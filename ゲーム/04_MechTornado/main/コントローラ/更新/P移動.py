@@ -15,5 +15,6 @@ class 本体:
     def 実行(self):
         #┬
         #≫アクション・メソッドでオブジェクト(シーン)を移動する
+        if DS.obj.選手 is not None: DS.obj.選手.FN移動.実行()
         DS.obj.シーン[ DS.情報.シーン ].FN移動.実行()
         #┴ 

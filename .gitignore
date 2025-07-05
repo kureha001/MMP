@@ -42,3 +42,14 @@
 ゲーム/03_MechHunter/main/コントローラ/描画/__pycache__/
 ゲーム/03_MechHunter/main/コントローラ/更新/__pycache__/
 ゲーム/03_MechHunter/main/データセット/__pycache__/
+
+ゲーム/04_MechTornado/main/__pycache__/
+ゲーム/04_MechTornado/main/オブジェクト/シーン/
+ゲーム/04_MechTornado/main/オブジェクト/キャラ/選手/__pycache__/
+ゲーム/04_MechTornado/main/オブジェクト/シーン/タイトル画面/__pycache__/
+ゲーム/04_MechTornado/main/オブジェクト/シーン/プレイ画面/__pycache__/
+ゲーム/04_MechTornado/main/オブジェクト/シーン/終了画面/__pycache__/
+ゲーム/04_MechTornado/main/コントローラ/描画/__pycache__/
+ゲーム/04_MechTornado/main/コントローラ/更新/__pycache__/
+ゲーム/04_MechTornado/main/データセット/__pycache__/
+ゲーム/04_MechTornado/main/汎用部品/__pycache__/

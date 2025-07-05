@@ -21,10 +21,6 @@ MMP = mmpRottenmeier.mmp()
 #〇MMPを接続する。
 MMP.通信接続_自動()
 #│
-繰返回数 = 20    # アドレス切替回数
-待時間   = 0.1  # ウェイト(秒)
-全権表示 = True  # True:全件表示／False:先頭末尾のみ表示
-
 MMP.アナログ設定(
         2, # 使用するHC4067の個数(1～4)
         1, # 使用するHC4067のPin数(1～16)
@@ -32,31 +28,26 @@ MMP.アナログ設定(
         )
 time_start = time.time()
 
-#◎└┐繰り返し読み取る。
-MMP.PWM_VALUE( 0, 100 )
+#----- 人形の脚 -----
 MMP.PWM_VALUE( 1, 4095 )
-for cntLoop in range(繰返回数):        
-    #◎└┐全アドレスから読み取る。
-    MMP.アナログ読取()
-    if 待時間 > 0 : time.sleep(待時間)
-    if 全権表示 : print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
-    else        : print("  %03i" % cntLoop,":", MMP.mmpAnaVal[0],"～", MMP.mmpAnaVal[-1])
-MMP.PWM_VALUE( 0, -1 )
+time.sleep(2)
 MMP.PWM_VALUE( 1, -1 )
 
-#◇結果を表示する。
-time_end = time.time()
-time_diff = time_end - time_start
+#----- 鉄棒のロック -----
+MMP.PWM_VALUE( 0, 100)
+time.sleep(1)
+for i in range(100,650,10):
+    print(i)
+    time.sleep(0.05)
+    MMP.PWM_VALUE( 0, i )
+MMP.PWM_VALUE( 0, 100)
 
-print("\n(実施条件)")
-print("・繰返回数         : %i" % (繰返回数))
-print("・アドレス変更回数 : %i" % (MMP.参加総人数 * 繰返回数))
-
-print("\n(測定結果)")
-cntTtl = 繰返回数 * MMP.スイッチ数 * MMP.参加総人数
-print("・合計時間   : %02.06f秒"       % (time_diff             ))
-print("・データ平均 : %01.06f秒\n"   % (time_diff/cntTtl        ))
-
+#----- フットスイッチ -----
+for cntLoop in range(100):        
+    #◎└┐全アドレスから読み取る。
+    MMP.アナログ読取()
+    time.sleep(0.1)
+    print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
 #│
 #〇MMPを切断する。
 MMP.通信切断

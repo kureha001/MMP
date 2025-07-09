@@ -37,7 +37,8 @@ git clone https://github.com/kureha001/Learn_Pyxel.git
 cd Learn_Pyxel
 
 # 必要なライブラリをインストール
-pip install -r requirements.txt
+pip install -U pyxel
+pip install -U pyserial
 
 # プログラムを実行
 python main.py

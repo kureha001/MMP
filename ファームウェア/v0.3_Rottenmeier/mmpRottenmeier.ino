@@ -1,21 +1,29 @@
 //=============================================================================
-//  mmpRottenmeier（DFPlayer + PCA9685 + DigitalIO + I2C）
+//  mmpRottenmeier（HC4067/PCA9685/DigitalIO/I2C/DFPlayer）
 //----------------------------------------------------------------------------- 
-// Ver 0.3.02 - 2025/06/12 By Takanari.Kureha
-//   ・ボーレート変更の機能を追加
-//   ・DFPlayerを2台構成に対応 ※2台目はGPIOシリアルと排他利用
-//   ・もろもろリファクタリング
+// ボード情報：Waveshae RP2040 Zero
+// ボード情報：Generic RP2350
+//----------------------------------------------------------------------------- 
+// Ver 0.3.05 - 2025/07/17 By Takanari.Kureha
+//   ・RGB LED点灯を追加
+//   ・シリアルにインターバルを追加
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
 #include <DFRobotDFPlayerMini.h>
-const char* Version = "0301!";
+const char* Version = "0304!";
+int inp_cnt = 0;            // 受信データ・カウンタ
+
+//----------------------------------------------------------
+// RGB LED
+//----------------------------------------------------------
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel pixels(1, 16, NEO_GRB + NEO_KHZ800);
 
 //----------------------------------------------------------
 // シリアル通信
 //----------------------------------------------------------
-Stream* serialPort; // インスタンス
-int inp_cnt = 0;    // コマンド＋引数の個数
+Stream* serialPort;         // インスタンス
 
 // 切り替えスイッチのGPIO
 #define SERIAL_SELECT_PIN 2 // スイッチ１：通信方式切替
@@ -31,9 +39,8 @@ int inp_cnt = 0;    // コマンド＋引数の個数
 //----------------------------------------------------------
 // ＰＷＭ機器(PCA9685)
 //----------------------------------------------------------
-#define SERVOMIN 150  // サーボの最低PWM出力
-#define SERVOMAX 600  // サーボの最大PWM出力
-#define PWM_COUNT 16  // 扱えるPCA9685の機器の最大個数
+#define PWM_COUNT 16            // 扱えるPCA9685の機器の最大個数
+bool PWM_Connected[PWM_COUNT];  // 機器ごとの接続済みフラグ(True:接続済み／False:未接続)
 
 // 対応するPCA9685のアドレス(この順番が機器番号)
 PCA9685 PWM[PWM_COUNT] = {
@@ -43,8 +50,11 @@ PCA9685 PWM[PWM_COUNT] = {
   PCA9685(0x4C), PCA9685(0x4D), PCA9685(0x4E), PCA9685(0x4F)
 };
 
-// 機器ごとの接続済みフラグ(True:接続済み／False:未接続)
-bool PWM_Connected[PWM_COUNT];
+// サーボモータの定格（デフォルト値）
+int servoRS = 0;   // 有効開始角度
+int servoRE = 180; // 有効終了角度
+int servoPS = 150; // 有効開始角度のPWM出力値
+int servoPE = 600; // 有効開始角度のPWM出力値
 
 //----------------------------------------------------------
 // mp3機器(DFPlayer)
@@ -55,7 +65,8 @@ bool dfConnected[2] = { false, false }; // 接続済みフラグ
 //----------------------------------------------------------
 // アナログ入力機器(HC4067)
 //----------------------------------------------------------
-const int analogGPIOs[4] = {26, 27, 28, 29}; //アドレスバス
+const int addressBusGPIOs[4] = {10, 11, 12, 13};  // アドレスバス用GPIO
+const int analogGPIOs[4] = {26, 27, 28, 29};      //データバス用GPIO
 int anaSwitchCnt = 4; // デフォルト値(マルチプレクサ数)
 int anaPlayerCnt = 1; // デフォルト値(プレイヤー数=チャンネル数)
 int anaValues[16][4]; // 取得値バッファ
@@ -78,21 +89,23 @@ void setup() {
 
   // スイッチ１によるシリアル通信方式の選択
   pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);
-  delay(10);
+  delay(100);
   bool useUSB = digitalRead(SERIAL_SELECT_PIN);
   if (useUSB) {
     Serial.begin(selectedBaud);
     serialPort = &Serial;
   } else {
-    Serial1.setTX(0);
-    Serial1.setRX(1);
+    //Serial1.setTx(0); //STM32
+    //Serial1.setRx(1); //STM32
+    Serial1.setTX(0); //RP2350,RP2040
+    Serial1.setRX(1); //RP2350,RP2040
     Serial1.begin(selectedBaud);
     serialPort = &Serial1;
   }
 
   // PCA9685 16台を初期化、接続済フラグをONにする
   Wire.begin();
-  delay(1000);
+  delay(100);
   for (int i = 0; i < PWM_COUNT; i++) {
     PWM[i].begin();
     PWM[i].setPWMFreq(60);
@@ -100,19 +113,19 @@ void setup() {
   }
 
   // DFPlayer(1台目)：Serial2に(規定値：GPIO8,9)で接続
-  //  Serial2.setTX(6);
-  //  Serial2.setRX(7);
   Serial2.begin(9600);      // 規定ボーレートで接続
+  delay(100);
   if (dfPlayer[0].begin(Serial2)) {
     dfPlayer[0].volume(20); // 音量を20にセット
     dfConnected[0] = true;  // 接続済フラグをONにする
   }
 
-  // DFPlayer(2台目)：：Serial1に(規定値：GPIO0,1)で接続
+  // DFPlayer(2台目)：Serial1に(規定値：GPIO0,1)で接続
   if (useUSB) {
     Serial1.begin(9600);      // 規定ボーレートで接続
+    delay(100);
     if (dfPlayer[1].begin(Serial1)) {
-      dfPlayer[1].volume(20); // 音量を20にセット
+      dfPlayer[1].volume(20); // 音量を20にセット      
       dfConnected[1] = true;  // 接続済フラグをONにする
     }
   }
@@ -122,16 +135,41 @@ void setup() {
     for (int j = 0; j < 4; j++)
       anaValues[i][j] = 0;
 
-  // マルチプレクサのアドレスバス用ピンを設定
-  pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(12, OUTPUT);
-  pinMode(13, OUTPUT);
+  // マルチプレクサのアドレスバスのGPIOを設定
+  for (int i = 0; i < 4; i++) {
+    pinMode(addressBusGPIOs[i], OUTPUT);
+  }
+
+  // RGB LED
+  pixels.begin();
+  pixels.clear();
+  pixels.setPixelColor(0, pixels.Color(10,0,10));
+  pixels.show();
 }
 
+//----------------------------------------------------------
+// 10進数→16進数変換
+//----------------------------------------------------------
 int atoi16(const char *NumberString) {
   char *stopString;
   return strtol(NumberString, &stopString, 16);
+}
+
+//----------------------------------------------------------
+// DFPlayer関連コマンドのバリデーション
+//----------------------------------------------------------
+bool validateDFPlayer(int index, const char* cmdName) {
+  if (index >= 0 && index < 2 && dfConnected[index]) {
+    return true;
+  } else {
+    char err[6];
+    strncpy(err, cmdName, 3);
+    err[3] = '!';
+    err[4] = '!';
+    err[5] = '\0';
+    serialPort->print(err);
+    return false;
+  }
 }
 
 //===========================================================
@@ -141,15 +179,17 @@ void loop() {
 
   // 送受信関連
   static char input[30] = {0};  // 受信データ・バッファ
-  char dat[5][10], *div_dat;    // [0]:コマンド，[1～]:引数
+  char dat[5][10], *div_dat;    // [0]:コマンド，[1～5]:引数
   int dat_cnt;                  // コマンド＋引数の個数
   char rets[30];                // リターン値バッファ
 
   // ＰＣＡ９６８５関連
-  int pwmNo;  // 通しチャンネル番号
-  int pwmVal; // ＰＷＭ出力値
-  int pwmID;  // PCA9685番号
-  int pwmCh;  // PCA9685番号別のチャンネル番号
+  int pwmNo;    // 通しチャンネル番号
+  int pwmVal;   // ＰＷＭ出力値
+  int pwmID;    // PCA9685番号
+  int pwmCh;    // PCA9685番号別のチャンネル番号
+  int pwmRDiff; // 角度差
+  int pwmPDiff; // PWM値差
 
   //----------------------------------------------------------
   // 受信したら、１バイトずつ受信データ・バッファに追加格納
@@ -191,25 +231,15 @@ void loop() {
       // 返却値　　　："!!!!!" 正常 ／ "ANS!!" エラー
       //----------------------------------------------------------
       if (strcmp(dat[0], "ANS") == 0 && dat_cnt >= 3) {
-
-        // 引数からHC4067の構成を設定
         int newPl = atoi16(dat[1]);
         int newSw = atoi16(dat[2]);
-
         if (newPl >= 1 && newPl <= 16 && newSw >= 1 && newSw <= 4) {
-
-          // カレント・アドレスをセット
           anaSwitchCnt = newSw;
           anaPlayerCnt = newPl;
-
-          // カレント・アドレスのアナログ値バッファをクリア
           for (int i = 0; i < 16; i++)
             for (int j = 0; j < 4; j++)
               anaValues[i][j] = 0;
-
-          // 正常返信
           serialPort->print("!!!!!");
-        // エラー返信
         } else serialPort->print("ANS!!");
       //----------------------------------------------------------
       // 機能　　　　：値バッファ更新（ANU）
@@ -217,25 +247,16 @@ void loop() {
       // 返却値　　　："!!!!!" 正常
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "ANU") == 0) {
-
         for (int ch = 0; ch < anaPlayerCnt; ch++) {
-
-          // アドレス・バスをセット
-          digitalWrite(10, (ch >> 0) & 1);
-          digitalWrite(11, (ch >> 1) & 1);
-          digitalWrite(12, (ch >> 2) & 1);
-          digitalWrite(13, (ch >> 3) & 1);
+          for (int i = 0; i < 4; i++) {
+            digitalWrite(addressBusGPIOs[i], (ch >> i) & 1);
+          }
           delayMicroseconds(10);
-
-          // 同じアドレス・バスで全HC4067のアナログ値を読み取り
-          // アナログ値バッファに格納
           for (int sw = 0; sw < anaSwitchCnt; sw++) {
             int pin = analogGPIOs[sw];
             anaValues[ch][sw] = analogRead(pin);
           }
         }
-
-        // 正常返信
         serialPort->print("!!!!!");
       //----------------------------------------------------------
       // 機能　　　　：値バッファ参照（ANR）
@@ -243,17 +264,11 @@ void loop() {
       // 返却値　　　：アナログ値 ／ "ANR!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "ANR") == 0 && dat_cnt >= 2) {
-
-        // 引数を取得
         int pl = atoi16(dat[1]);
         int sw = atoi16(dat[2]);
-
-        // 正常(値)返信
         if (pl < 16 && sw < 4) {
           sprintf(rets, "%04X!", anaValues[pl][sw]);
           serialPort->print(rets);
-
-        // エラー返信
         } else serialPort->print("ANR!!");
 
       //===========================================================
@@ -262,7 +277,7 @@ void loop() {
       //----------------------------------------------------------
       // 出力コマンド
       // 機能　　　　：ＰＷＭ出力（PWM）
-      // コマンド形式：PWM:<ＰＷＭ値0～4095>!
+      // コマンド形式：PWM:<Ch通番><ＰＷＭ値0～4095>!
       // 返却値　　　："!!!!!" 正常 ／ "PWS!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "PWM") == 0 && dat_cnt >= 3) {
@@ -274,6 +289,40 @@ void loop() {
           PWM[pwmID].setPWM(pwmCh, 0, pwmVal);
           serialPort->print("!!!!!");
         } else serialPort->print("PWS!!");
+      //----------------------------------------------------------
+      // 出力コマンド
+      // 機能　　　　：ＰＷＭ出力 角度指定（PWA）
+      // コマンド形式：PWM:<Ch通番>:<角度0～180>!
+      // 返却値　　　："!!!!!" 正常 ／ "PWS!!" エラー
+      //----------------------------------------------------------
+      } else if (strcmp(dat[0], "PWA") == 0 && dat_cnt >= 3) {
+        pwmNo   = atoi16(dat[1]);
+        pwmID   = pwmNo / 16;
+        pwmCh   = pwmNo % 16;
+        if (pwmID < PWM_COUNT && PWM_Connected[pwmID]) {
+          int pwmAngle = atoi16(dat[2]);  // 指定角度
+          pwmRDiff = servoRE - servoRS;   // 角度差(開始～終了)
+          pwmPDiff = servoPE - servoPS;   // PWM値差(開始～終了)
+          // PWM値 ＝ 開始PWM値 ＋ 角度率 * PWM値差
+          pwmVal   = servoPS + int( (pwmAngle - servoRS) / pwmRDiff * pwmPDiff );
+          PWM[pwmID].setPWM(pwmCh, 0, pwmVal);
+          serialPort->print("!!!!!");
+        } else serialPort->print("PWA!!");
+      //----------------------------------------------------------
+      // 出力コマンド
+      // 機能　　　　：ＰＷＭ出力 サーボ定格設定（PWI）
+      // コマンド形式：PWM:<開始角0~360>:<終了角0～360>:<開始PWM0～4095>:<終了PWM0～4095>!
+      // 返却値　　　："!!!!!" 正常／ "PWI!!" エラー
+      //----------------------------------------------------------
+      } else if (strcmp(dat[0], "PWI") == 0 && dat_cnt >= 5) {
+        servoRS = atoi16(dat[1]); // サーボの有効開始角度
+        servoRE = atoi16(dat[2]); // サーボの有効終了角度
+        servoPS = atoi16(dat[3]); // サーボの有効開始角度でのPWM値
+        servoPE = atoi16(dat[4]); // サーボの有効終了角度でのPWM値
+        // 開始・終了の大小チェック
+        if (servoRS < servoRE && servoPS < servoPE) {
+          serialPort->print("!!!!!");
+        } else serialPort->print("PWI!!");
 
       //===========================================================
       // ｉ２ｃ関連
@@ -282,37 +331,25 @@ void loop() {
       // 出力コマンド
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "I2W") == 0 && dat_cnt >= 4) {
-
-        // 引数を取得
         int addr = atoi16(dat[1]);
         int reg = atoi16(dat[2]);
         int val = atoi16(dat[3]);
-
-        // レジスタに値を送信
         Wire.beginTransmission(addr);
         Wire.write(reg);
         Wire.write(val);
         Wire.endTransmission();
-
-        // 正常返信
         serialPort->print("!!!!!");
       //----------------------------------------------------------
       // 入力コマンド
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "I2R") == 0 && dat_cnt >= 3) {
-
-        // 引数を取得
         int addr = atoi16(dat[1]);
         int reg = atoi16(dat[2]);
-
-        // レジスタの値を受信
         Wire.beginTransmission(addr);
         Wire.write(reg);
         Wire.endTransmission(false);
         Wire.requestFrom(addr, 1);
         int val = Wire.available() ? Wire.read() : 0xFF;
-
-        // 正常(値)返信
         sprintf(rets, "%04X!", val);
         serialPort->print(rets);
 
@@ -323,51 +360,31 @@ void loop() {
       // 出力コマンド：ポート番号：出力値
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "POW") == 0 && dat_cnt >= 3) {
-
-        // 引数を取得
         int port = atoi16(dat[1]);
         int val = atoi16(dat[2]);
-
-        // デジタル・ピンに値を出力
         pinMode(port, OUTPUT);
         digitalWrite(port, val);
-
-        // 正常返信
         serialPort->print("!!!!!");
       //----------------------------------------------------------
       // 入力コマンド：ポート番号
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "POR") == 0 && dat_cnt >= 2) {
-
-        // 引数を取得
         int port = atoi16(dat[1]);
-
-        // デジタル・ピンから値を入力
         pinMode(port, INPUT);
         int val = digitalRead(port);
-
-        // 正常(値)返信
         sprintf(rets, "%04X!", val);
         serialPort->print(rets);
       //----------------------------------------------------------
       // 入出力コマンド：ポート番号：出力値　※出力後に入力する
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "IO") == 0 && dat_cnt >= 3) {
-
-        // 引数を取得
         int port = atoi16(dat[1]);
         int val = atoi16(dat[2]);
-
-        // デジタル・ピンに値を出力
         pinMode(port, OUTPUT);
         digitalWrite(port, val);
-
-        // デジタル・ピンから値を入力
         delayMicroseconds(10);
         pinMode(port, INPUT);
         int result = digitalRead(port);
-
-        // 正常(値)返信
         sprintf(rets, "%04X!", result);
         serialPort->print(rets);
 
@@ -376,107 +393,132 @@ void loop() {
       //  <コマンド>:<機器番号1または2>:<その他引数>!
       //===========================================================
       //----------------------------------------------------------
-      // 再生：指定トラック
+      // 機能　　　　：指定トラック再生
+      // コマンド形式：DPL:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DPL!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DPL") == 0 && dat_cnt >= 3) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].play(atoi16(dat[2]));
           serialPort->print("!!!!!");
-        } else serialPort->print("DPL!!");
+        }
       //----------------------------------------------------------
-      // 再生：指定トラック（ループ）
+      // 機能　　　　：指定トラックをループ再生
+      // コマンド形式：DRP:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DRP!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DRP") == 0 && dat_cnt >= 3) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) dfPlayer[n].loop(atoi16(dat[2]));
-        serialPort->print("!!!!!");
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].loop(atoi16(dat[2]));
+          serialPort->print("!!!!!");
+        }
       //----------------------------------------------------------
-      // 再生：指定フォルダ内トラック
+      // 機能　　　　：指定フォルダ内トラック再生
+      // コマンド形式：DIR:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DIR!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DIR") == 0 && dat_cnt >= 4) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) dfPlayer[n].playFolder(atoi16(dat[2]), atoi16(dat[3]));
-        serialPort->print("!!!!!");
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].playFolder(atoi16(dat[2]), atoi16(dat[3]));
+          serialPort->print("!!!!!");
+        }
       //----------------------------------------------------------
-      // 停止
+      // 機能　　　　：停止
+      // コマンド形式：DSP:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DSP!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DSP") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].stop();
           serialPort->print("!!!!!");
-        } else serialPort->print("DSP!!");
+        }
       //----------------------------------------------------------
-      // 一時停止
+      // 機能　　　　：一時停止
+      // コマンド形式：DPA:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DPA!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DPA") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) dfPlayer[n].pause();
-        serialPort->print("!!!!!");
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].pause();
+          serialPort->print("!!!!!");
+        }
       //----------------------------------------------------------
-      // 再生再開
+      // 機能　　　　：再生再開
+      // コマンド形式：DPR:<機器番号0～1>!
+      // 返却値　　　："!!!!!" 正常 ／ "DPR!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DPR") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) dfPlayer[n].start();
-        serialPort->print("!!!!!");
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].start();
+          serialPort->print("!!!!!");
+        }
       //----------------------------------------------------------
-      // 再生状態：0停止, 1再生, 2一時停止
+      // 機能　　　　：再生状態取得
+      // コマンド形式：DST:<機器番号0～1>!
+      // 返却値　　　："<状態番号>!" 正常 ／ "DST!!" エラー
+      //              状態番号(0停止, 1再生, 2一時停止)
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DST") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           int state = dfPlayer[n].readState();
           sprintf(rets, "%04X!", state);
           serialPort->print(rets);
-        } else serialPort->print("----!");
+        }
       //----------------------------------------------------------
-      // 再生中トラック番号取得（戻り値は16進数）
+      // 機能　　　　：再生中トラック番号取得
+      // コマンド形式：DQT:<機器番号0～1>!
+      // 返却値　　　："<トラック番号;16進数>!" 正常 ／ "DQT!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DQT") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           int val = dfPlayer[n].readCurrentFileNumber();
           sprintf(rets, "%04X!", val);
           serialPort->print(rets);
-        } else serialPort->print("----!");
+        }
       //----------------------------------------------------------
       // 機能　　　　：全トラック数取得（DTC）
       // コマンド形式：DTC:<機器番号0～1>!
-      // 返却値　　　："!!!!!" 正常 ／ "----!" エラー
+      // 返却値　　　："<トラック数;16進数>!" 正常 ／ "DTC!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DTC") == 0 && dat_cnt >= 2) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           int count = dfPlayer[n].readFileCounts();
           sprintf(rets, "%04X!", count);
           serialPort->print(rets);
-        } else serialPort->print("----!");
+        }
       //----------------------------------------------------------
       // 機能　　　　：イコライザー設定（DEF）
       // コマンド形式：DEF:<機器番号0～1>:<タイプ0～30>!
       //              0: Normal, 1: Pop, 2: Rock,
       //              3: Jazz, 4: Classic, 5: Bass
-      // 返却値　　　："!!!!!" 正常 ／ "----!" エラー
-      // イコライザー設定：0〜5
+      // 返却値　　　："!!!!!" 正常 ／ "DEF!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DEF") == 0 && dat_cnt >= 3) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) dfPlayer[n].EQ(atoi16(dat[2]));
-        serialPort->print("!!!!!");
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].EQ(atoi16(dat[2]));
+          serialPort->print("!!!!!");
+        }
       //----------------------------------------------------------
       // 機能　　　　：音量設定（VOL）
       // コマンド形式：VOL:<機器番号0～1>:<音量0～30>!
-      // 返却値　　　："!!!!!" 正常 ／ "----!" エラー
+      // 返却値　　　："!!!!!" 正常 ／ "VOL!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "VOL") == 0 && dat_cnt >= 3) {
         int n = atoi16(dat[1]) - 1;
-        if (n >= 0 && n < 2 && dfConnected[n]) {
+        if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].volume(atoi16(dat[2]));
           serialPort->print("!!!!!");
-        // エラー返信
-        } else serialPort->print("VOL!!");
+        }
 
       //===========================================================
       // 情報

@@ -25,15 +25,16 @@ class 移動クラス:
     #└───────────────────────────────────
     def 実行(self):
         #┬
-        #●足を運動する(SW-ON:足仕上げ／OFF:足まっすぐ)
-        入力値 = 共通処理.入出力.MMP.mmpAnaVal[0][0]  # Port:0/Ch:1
-        判定   = (入力値 < DS.仕様.スイッチ閾値)
-        PWM値  = (DS.仕様.モータ最大) if 判定 else (DS.仕様.モータ最小)
-        self._情報.姿勢 = (1) if 判定 else (0)
-        共通処理.入出力.MMP.PWM_VALUE(1, PWM値)         # 鉄棒サーボモータ
-        #│
-        #●手を運動する(SW-ON:捕まる／OFF:離す)
-        入力値 = 共通処理.入出力.MMP.mmpAnaVal[0][1]  # Port:0/Ch:0
+        #●選手の足を運動する(SW-OFF:足仕上げ／ON:足まっすぐ)
+        入力値 = 共通処理.入出力.MMP.mmpAnaVal[0][0]  # Port:0/Ch:0
         判定   = (入力値 > DS.仕様.スイッチ閾値)
+        self._情報.姿勢 = (0) if 判定 else (1)
+        PWM値  = (DS.仕様.モータ最小) if 判定 else (DS.仕様.モータ最大)
+        共通処理.入出力.MMP.PWM_VALUE(0, PWM値)
+        #│
+        #●選手の手を運動する(SW-ON:鉄棒を掴む／OFF:鉄棒を離す)
+        入力値 = 共通処理.入出力.MMP.mmpAnaVal[0][1]  # Port:0/Ch:1
+        判定   = (入力値 < DS.仕様.スイッチ閾値)
         PWM値  = (DS.仕様.サーボ最小) if 判定 else (DS.仕様.サーボ最大)
-        共通処理.入出力.MMP.PWM_VALUE(0, PWM値)         # 選手モータ
+        共通処理.入出力.MMP.PWM_VALUE(1, PWM値)
+        #┴

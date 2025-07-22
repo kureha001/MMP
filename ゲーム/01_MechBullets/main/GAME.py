@@ -41,6 +41,7 @@ class 開始:
                 DS.仕様.基本.画面幅,
                 DS.仕様.基本.画面高,
                 title="Mega Wing  Ver.2025/06/18-00")
+        pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む
         pyxel.load("./リソース.pyxres")

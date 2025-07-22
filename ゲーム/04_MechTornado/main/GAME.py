@@ -40,6 +40,7 @@ class 開始:
                 DS.仕様.画面幅,
                 DS.仕様.画面高,
                 title="Ver.2025/07/21-00")
+        pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む
         pyxel.load("./リソース.pyxres")

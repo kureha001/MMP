@@ -4,6 +4,8 @@
 #┃更新コントローラが移動プロセスで実行するアクション・メソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
+from   main.データセット import データセット as DS
+import main.GAME共通                         as 共通処理
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -25,8 +27,16 @@ class 描画クラス:
     def 実行(self):
         #┬
         #選手の姿勢を描画する
-        姿勢 =  self._情報.姿勢
-        if   姿勢 == 0: pyxel.blt( 80,20, 0,  0,0, 23,119, 0)
-        elif 姿勢 == 1: pyxel.blt( 60,20, 0, 24,0, 39,119, 0)
-        else          : pyxel.blt( 60,20, 0, 48,0, 39,119, 0)
+        if self._情報.姿勢 == 1: pyxel.blt( 60,20, 0, 24,0, 39,119, 0)
+        else                   : pyxel.blt( 80,20, 0,  0,0, 23,119, 0)
+        #│
+        #●脚を動作する
+        PWM_No = DS.仕様.PWM_Ch_屈伸
+        PWM値  = (DS.仕様.モータ最大) if self._情報.姿勢 == 1 else (DS.仕様.モータ最小)
+        共通処理.入出力.MMP.PWM_VALUE(PWM_No, PWM値)
+        #│
+        #●両手を動作する
+        PWM_No = DS.仕様.PWM_Ch_フィニッシュ
+        PWM値  = (DS.仕様.サーボ最小) if self._情報.姿勢 == 2 else (DS.仕様.サーボ最大)
+        共通処理.入出力.MMP.PWM_VALUE(PWM_No, PWM値)
         #┴

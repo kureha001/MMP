@@ -11,33 +11,21 @@
 import mmpRottenmeier
 import time
 
+#────────────────────────────────────    
+def ぺダル():
 
-#====================================================== 
-# メイン処理
-#====================================================== 
-#┬
-#〇MMPを実体化する。
-MMP = mmpRottenmeier.mmp()
-#│
-#〇MMPを接続する。
-MMP.通信接続_自動()
-#│
-#◇┐MMPをテストする。
-#　├→（アナログ入力（繰返））
-mode = 100
-if mode == 100:
-    繰返回数 = 100    # アドレス切替回数
+    繰返回数 = 50   # アドレス切替回数
     待時間   = 0.2  # ウェイト(秒)
-    全権表示 = True  # True:全件表示／False:先頭末尾のみ表示
+    全表示 = True   # True:全件表示／False:先頭末尾のみ表示
 
-    print("--------------------")
-    print(" アナログ入力テスト")
-    print("--------------------")
+    print("-------")
+    print(" ペダル")
+    print("-------")
     print("(測定データ)")
     MMP.アナログ設定(
-            1, # 使用するHC4067の個数(1～4)
-            1, # 使用するHC4067のPin数(1～16)
-            5 # アナログ値の丸め(この数値以下は切り捨て)
+            2, # 使用するHC4067の個数(1～4)
+            2, # 使用するHC4067のPin数(1～16)
+            5  # アナログ値の丸め(この数値以下は切り捨て)
             )
     time_start = time.time()
 
@@ -46,8 +34,8 @@ if mode == 100:
         #◎└┐全アドレスから読み取る。
         MMP.アナログ読取()
         if 待時間 > 0 : time.sleep(待時間)
-        if 全権表示 : print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
-        else        : print("  %03i" % cntLoop,":", MMP.mmpAnaVal[0],"～", MMP.mmpAnaVal[-1])
+        if 全表示 : print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
+        else      : print("  %03i" % cntLoop,":", MMP.mmpAnaVal[0],"～", MMP.mmpAnaVal[-1])
 
     #◇結果を表示する。
     time_end = time.time()
@@ -62,101 +50,145 @@ if mode == 100:
     print("・合計時間   : %02.06f秒"   % (time_diff       ))
     print("・データ平均 : %01.06f秒\n" % (time_diff/cntTtl))
 
-#　├→（ＰＷＤ：ＤＣモータ）
-elif mode ==200:
-    print("ＰＷＤ：ＤＣモータ")
-    番号    = 0     #恐竜ランドのDCモータ
-    最小    = 1800
-    最大    = 3800  #4095がデューティー比100%で最大になる
-    間隔S   = 30
-    間隔E   = -50
-    停止    = 0.2
+#────────────────────────────────────
+def 恐竜ランド():
+#　├→（ＰＷＤ：エスカレータのＤＣモータ）
+    print("----------")
+    print("恐竜ランド")
+    print("----------")
+
+    基盤  = (1,3) #恐竜ランドの基盤
+    モータ  = (0,2) #恐竜ランドのDCモータ
+    最小  = 1800
+    最大  = 3500 
+    間隔S = 50
+    間隔E = -100
+    停止  = 0.2
+
+    for i in range(2): MMP.PWM_VALUE(基盤[i], 4095)
 
     for val in range(最小,最大,間隔S):
         print("PWM:",val)
-        MMP.PWM_VALUE( 番号, val )
+        for i in range(2): MMP.PWM_VALUE(モータ[i], val )
         time.sleep(停止)
 
-    time.sleep(2)
+    time.sleep(1)
 
     for val in range(最大,最小,間隔E):
         print("PWM:",val)
-        MMP.PWM_VALUE( 番号, val )
+        for i in range(2): MMP.PWM_VALUE(モータ[i], val )
         time.sleep(停止)
-    MMP.PWM_VALUE( 番号, -1 )
 
-#　├→（ＰＷＤ：電力供給）
-elif mode == 210:
-    print("ＰＷＤ：電力供給")
-    番号    = 1     #恐竜ランドの音声モジュール＆LED
-    最小    = 4095  #4095:デューティー比100%
-    停止    = 20
-    for i in range(1):
-        MMP.PWM_VALUE( 番号, 最小 )
-        time.sleep(停止)
-        MMP.PWM_VALUE( 番号, 0 )
+    for i in range(2):
+        MMP.PWM_VALUE(モータ[i], -1)
+        MMP.PWM_VALUE(基盤[i], -1)
 
-#　├→（DFPlayer）
-elif mode == 300:
-    print("ｍｐ３プレイヤー")
+#────────────────────────────────────
+def 小屋の恐竜():
+    print("------------")
+    print("小屋の恐竜")
+    print("------------")
+    モータ = (4,8) #小屋の恐竜のサーボモータ
+    最小 = 200
+    最大 = 400
+    サーボ(モータ,最小,最大)
 
-    print("・ボリューム設定")
-    print(MMP.DFP_Volume(20))
+#────────────────────────────────────
+def 小屋のメータ():
+    print("------------")
+    print("小屋のメータ")
+    print("------------")
+    メータ = (6,10) #小屋の恐竜のサーボモータ
+    最小 = 200
+    最大 = 400
+    サーボ(メータ,最小,最大)
 
-    print("・連続再生")
-    for track in [1, 2, 3]:
-        print(MMP.DFP_Play(track))
-        time.sleep(3)
+#────────────────────────────────────
+def 小屋の点数():
+    print("------------")
+    print("小屋の点数")
+    print("------------")
+    点数 = (5,9) #小屋の恐竜のサーボモータ
+    最小 = 100
+    最大 = 500
+    サーボ(点数,最小,最大)
 
-    print("・１曲目を再生")
-    print(MMP.DFP_Play(1))
-    time.sleep(5)
+#────────────────────────────────────
+def ジオラマ():
+    print("--------")
+    print("ジオラマ")
+    print("--------")
+    砂時計 = 12    #ジオラマの砂時計のサーボモータ
+    砂時計_最小   = 120
+    砂時計_最大   = 560
+    砂時計_増分   = 2
+    砂時計_間隔   = 0.001
 
-    print("・一時停止")
-    print(MMP.DFP_Pause())
-    time.sleep(3)
+    for val in range(砂時計_最小,砂時計_最大,砂時計_増分):
+        MMP.PWM_VALUE(砂時計,val)
+        time.sleep(砂時計_間隔)
 
-    print("・再開")
-    print(MMP.DFP_Resume())
-    time.sleep(5)
+    time.sleep(1)
 
-    print("・停止")
-    print(MMP.DFP_Stop())
+    恐竜 = (13,14) #時計台の恐竜のサーボモータ
+    最小 = 230
+    最大 = 370
+    増分 = 1
+    間隔 = 0.001
+    サーボ(恐竜,最小,最大,増分,間隔)
 
-#　├→（DFPlayer）
-elif mode == 310:
-    print("ｍｐ３プレイヤー")
+    time.sleep(1)
 
-    機器番号 = 1 # 1 or 2
+    for val in range(砂時計_最大,砂時計_最小,-砂時計_増分):
+        MMP.PWM_VALUE(砂時計,val)
+        time.sleep(砂時計_間隔)
 
-    print("・機器情報")
-    print("1台目：",MMP.DFP_Info(1))
-    print("2台目：",MMP.DFP_Info(2))
+#────────────────────────────────────
+def サーボ(
+        モータ,
+        最小,
+        最大,
+        増分 = 2,
+        間隔 = 0.02,
+        待ち = 1
+        ):
 
-    print("・ボリューム設定")
-    print(MMP.DFP_Volume(機器番号,20))
+    中央 = 300
 
-    print("・１曲目を再生")
-    print(MMP.DFP_Play(機器番号,1))
-    time.sleep(5)
+    for i in モータ:MMP.PWM_VALUE(i,中央)
 
-    print("・停止")
-    print(MMP.DFP_Stop(機器番号))
+    for val in range(中央,最大,増分):
+        for i in モータ:MMP.PWM_VALUE(i,val)
+        time.sleep(間隔)
+    time.sleep(待ち)
 
-#　├→（DFPlayer）
-elif mode == 320:
-    print("ｍｐ３プレイヤー")
+    for val in range(最大,最小,-増分):
+        for i in モータ:MMP.PWM_VALUE(i,val)
+        time.sleep(間隔)
+    time.sleep(待ち)
 
-    機器番号 = 1 # 1 or 2
+    for i in range(2):MMP.PWM_VALUE(モータ[i],中央)
 
-    print("・１曲目を再生")
-#    print(MMP.DFP_Play(機器番号,1))
-    print(MMP.DFP_PlayFolderTrack(機器番号,3,1))
-    time.sleep(5)
 
-    print("・停止")
-    print(MMP.DFP_Stop(機器番号))
+
+#====================================================== 
+# メイン処理
+#====================================================== 
+#┬
+#〇MMPを実体化する。
+MMP = mmpRottenmeier.mmp()
+#│
+#〇MMPを接続する。
+MMP.通信接続_自動()
+#│
+#〇テストする。
+#ぺダル()
+恐竜ランド()
+小屋の恐竜()
+小屋のメータ()
+#小屋の点数()
+ジオラマ()
 #│
 #〇MMPを切断する。
-MMP.通信切断
+MMP.通信切断()
 #┴

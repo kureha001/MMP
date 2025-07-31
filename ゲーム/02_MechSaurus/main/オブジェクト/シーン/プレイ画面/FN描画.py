@@ -28,7 +28,7 @@ class 描画クラス:
     def 実行(self):
         #┬
         #〇残り時間を画面表示する
-        #pyxel.text(54, 2, f"{str(DS.情報.プレイ時間).zfill(3)}", 10)
+        pyxel.text(54, 2, f"{str(DS.情報.プレイ時間).zfill(3)}", 10)
         #│
         #◎└┐発電機のサイクルを描画する
         for チーム in range(2):

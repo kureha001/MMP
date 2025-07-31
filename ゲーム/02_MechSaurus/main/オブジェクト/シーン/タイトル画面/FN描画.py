@@ -4,6 +4,7 @@
 #┃描画コントローラが描画プロセスで実行するアクション・メソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
+from   main.データセット               import データセット as DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -25,17 +26,30 @@ class 描画クラス:
         pyxel.blt( 8,77, 0, 0,0,  50,49, 7) # 恐竜(左側)
         pyxel.blt(62,77, 0, 0,64, 50,99, 7) # 恐竜(右側)
 
-        描画文字 = "Please select the number"
+        描画文字 = "<<TIME>>"
+        縦 = 124
+        pyxel.text(44, 縦  , 描画文字, 5)
+        pyxel.text(44, 縦-1, 描画文字, 7)
+
         縦 = 132
-        pyxel.text(14, 縦  , 描画文字, 5)
-        pyxel.text(13, 縦-1, 描画文字, 7)
+        描画文字 = "30sec <-"
+        背景色 = (8) if DS.情報.プレイ時間 == DS.仕様.プレイ時間 * 1 else (3)
+        pyxel.text(28, 縦  , 描画文字, 背景色)
+        pyxel.text(27, 縦-1, 描画文字, 7)
 
-        描画文字 = " of players per team"
-        縦 = 140
-        pyxel.text(19, 縦  , 描画文字, 5)
-        pyxel.text(18, 縦-1, 描画文字, 7)
+        描画文字 = "-> 1min"
+        背景色 = (8) if DS.情報.プレイ時間 == DS.仕様.プレイ時間 * 2 else (3)
+        pyxel.text(61, 縦  , 描画文字, 背景色)
+        pyxel.text(60, 縦-1, 描画文字, 7)
 
-        描画文字 = "press key:[1][2][3][4]"
+        描画文字 = "<<MEMBER>>"
+        縦 = 142
+        pyxel.text(41, 縦, 描画文字, 5)
+        pyxel.text(40, 縦, 描画文字, 7)
+
         縦 = 150
-        pyxel.text(18, 縦, 描画文字, 8)
-        pyxel.text(17, 縦, 描画文字, 7)
+        for i in range(1,5):
+            d = i * 15
+            背景色 = (8) if i == DS.情報.人数 else (3)
+            pyxel.text(17 + d, 縦, f"[%d]" % i, 背景色)
+            pyxel.text(16 + d, 縦, f"[%d]" % i, 7)

@@ -16,39 +16,45 @@ def ぺダル():
 
     繰返回数 = 50   # アドレス切替回数
     待時間   = 0.2  # ウェイト(秒)
-    全表示 = True   # True:全件表示／False:先頭末尾のみ表示
 
-    print("-------")
-    print(" ペダル")
-    print("-------")
-    print("(測定データ)")
+    print("------")
+    print("ペダル")
+    print("------")
     MMP.アナログ設定(
-            2, # 使用するHC4067の個数(1～4)
-            2, # 使用するHC4067のPin数(1～16)
-            5  # アナログ値の丸め(この数値以下は切り捨て)
+            2,  # 使用するHC4067の個数(1～4)
+            2,  # 使用するHC4067のPin数(1～16)
+            200 # アナログ値の丸め(この数値以下は切り捨て)
             )
-    time_start = time.time()
-
     #◎└┐繰り返し読み取る。
     for cntLoop in range(繰返回数):        
         #◎└┐全アドレスから読み取る。
         MMP.アナログ読取()
         if 待時間 > 0 : time.sleep(待時間)
-        if 全表示 : print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
-        else      : print("  %03i" % cntLoop,":", MMP.mmpAnaVal[0],"～", MMP.mmpAnaVal[-1])
+        print("  %03i" % cntLoop,":", MMP.mmpAnaVal)
 
-    #◇結果を表示する。
-    time_end = time.time()
-    time_diff = time_end - time_start
+#────────────────────────────────────    
+def 通過センサ():
 
-    print("\n(実施条件)")
-    print("・繰返回数         : %i" % (繰返回数))
-    print("・アドレス変更回数 : %i" % (MMP.参加総人数 * 繰返回数))
+    繰返回数 = 50   # アドレス切替回数
+    待時間   = 0.2  # ウェイト(秒)
+    全表示 = True   # True:全件表示／False:先頭末尾のみ表示
 
-    print("\n(測定結果)")
-    cntTtl = 繰返回数 * MMP.スイッチ数 * MMP.参加総人数
-    print("・合計時間   : %02.06f秒"   % (time_diff       ))
-    print("・データ平均 : %01.06f秒\n" % (time_diff/cntTtl))
+    print("----------")
+    print("通過センサ")
+    print("----------")
+    MMP.アナログ設定(
+            2,  # 使用するHC4067の個数(1～4)
+            10, # 使用するHC4067のPin数(1～16)
+            100 # アナログ値の丸め(この数値以下は切り捨て)
+            )
+    #◎└┐繰り返し読み取る。
+    for cntLoop in range(繰返回数):        
+        #◎└┐全アドレスから読み取る。
+        MMP.アナログ読取()
+        if 待時間 > 0 : time.sleep(待時間)
+        センサ値1 = (MMP.mmpAnaVal[8][0],MMP.mmpAnaVal[8][1])
+        センサ値2 = (MMP.mmpAnaVal[9][0],MMP.mmpAnaVal[9][1])
+        print("  %03i" % cntLoop,": 1=", センサ値1,"／ 2=", センサ値2)
 
 #────────────────────────────────────
 def 恐竜ランド():
@@ -177,10 +183,11 @@ MMP = mmpRottenmeier.mmp()
 MMP.通信接続_自動()
 #│
 #○テストする。
-#ぺダル()
+ぺダル()
+#通過センサ()
 #恐竜ランド()
 #小屋の恐竜()
-小屋のメータ()
+#小屋のメータ()
 #ジオラマ()
 #│
 #○MMPを切断する。

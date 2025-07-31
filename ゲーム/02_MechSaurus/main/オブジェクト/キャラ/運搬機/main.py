@@ -27,13 +27,13 @@ class 仕様クラス:
             引数_送電No     ):  #② (動力[PWMポート番号] , 電飾[PWポート番号])
 
         #□ ポート情報リスト
-        self.ポートNo   = 引数_ポートNo     # MMPポート番号
-        self.動力No     = 引数_送電No[0]    # モータのPWMポート番号
-        self.電飾No     = 引数_送電No[1]    # 電飾のPWMポート番号
+        self.ポートNo   = 引数_ポートNo  # MMPポート番号
+        self.動力No     = 引数_送電No[0] # モータのPWMポート番号
+        self.電飾No     = 引数_送電No[1] # 電飾のPWMポート番号
 
         print("--------------------")
         print("[運搬機]")
-        print(" PORT :",self.ポートNo)
+        print(" MMP  :",self.ポートNo)
         print(" MOTOR:",self.動力No)
         print(" LED  :",self.電飾No)
 

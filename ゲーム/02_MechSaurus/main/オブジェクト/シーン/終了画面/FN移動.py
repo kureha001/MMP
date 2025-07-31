@@ -5,6 +5,7 @@
 #┃・下位にデータセット･クラス(仕様｜情報)を持つ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
+import time
 import main.GAME共通                         as 共通処理
 from   main.データセット import データセット as DS
 from   ..DB              import シーンID

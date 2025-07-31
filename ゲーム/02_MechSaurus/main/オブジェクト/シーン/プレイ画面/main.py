@@ -13,8 +13,8 @@ from .FN描画 import 描画クラス
 class 仕様クラス:
 
     def __init__(self):
-      self.首   = (4,8)   # 小屋の恐竜のサーボ
-      self.骨   = (6,10)  # 小屋のメータのサーボ
+      self.首   = (4,6)   # 小屋の恐竜のサーボ
+      self.骨   = (5,7)  # 小屋のメータのサーボ
       self.最小 = 140     # 首=左、骨=MAX
       self.最大 = 380     # 首=右、骨=MIN
       self.範囲 = self.最大 - self.最小 # PWMの幅

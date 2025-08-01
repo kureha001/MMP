@@ -1,12 +1,12 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  main.GAME共通                            as 共通処理
-from    .データセット        import データセット as DS
-from    .コントローラ.更新   import 更新コントローラ生成
-from    .コントローラ.描画   import 描画コントローラ生成
-from    .オブジェクト.シーン import *
+import pyxel
+import main.GAME共通                            as 共通処理
+from   .データセット        import データセット as DS
+from   .コントローラ.更新   import 更新コントローラ生成
+from   .コントローラ.描画   import 描画コントローラ生成
+from   .オブジェクト.シーン import *
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -41,7 +41,7 @@ class 開始:
         pyxel.init(
                 DS.仕様.画面幅,
                 DS.仕様.画面高,
-                title="Ver.2025/06/25-00")
+                title="Ver.2025/08/01-00")
         pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む
@@ -63,8 +63,7 @@ class 開始:
             シーンID.終了画面     : 終了画面生成()    }
         #│
         #≫更新コントローラを生成する
-        self.CTRL更新 = 更新コントローラ生成()
-        #│
         #≫描画コントローラを生成する
+        self.CTRL更新 = 更新コントローラ生成()
         self.CTRL描画 = 描画コントローラ生成()
         #┴

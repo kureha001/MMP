@@ -12,12 +12,12 @@ from   main.データセット import データセット as DS
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class 仕様クラス:
 
-    #□人数一覧：人数選択におけるキーと人数の対応表
+    #□人数一覧：人数選択における数字キーと人数の対応表
     人数一覧  = {
-        pyxel.KEY_1: 1,     # 1人同士の対戦プレイ(合計2名)
-        pyxel.KEY_2: 2,     # 2人同士の対戦プレイ(合計4名)
-        pyxel.KEY_3: 3,     # 3人同士の対戦プレイ(合計6名)
-        pyxel.KEY_4: 4      # 4人同士の対戦プレイ(合計8名)
+        pyxel.KEY_1: 1, # 1人同士の対戦プレイ(合計2名)
+        pyxel.KEY_2: 2, # 2人同士の対戦プレイ(合計4名)
+        pyxel.KEY_3: 3, # 3人同士の対戦プレイ(合計6名)
+        pyxel.KEY_4: 4  # 4人同士の対戦プレイ(合計8名)
         }
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -34,7 +34,7 @@ class 移動クラス:
         self._仕様  = 引数_個体.仕様
         self._情報  = 引数_個体.情報
         #│
-        #○個体オブジェクトのリファレンスを用意する
+        #≫データセットを用意する
         self.仕様  = 仕様クラス()
         #┴
     #┌───────────────────────────────────
@@ -55,19 +55,22 @@ class 移動クラス:
         self.Fn選択_チーム人数()
         #│
         #○選択内容を調べる
-        if DS.情報.プレイ時間 == 0 or DS.情報.人数 == 0 : return
+        if not pyxel.btnr(pyxel.KEY_SPACE)  : return
+        if self._情報.時間番号 == 0         : return
+        if DS.情報.人数 == 0                : return
         #│＼（プレイ時間かチーム人数が未選択の場合）
         #│ ↓
         #│ ▼処理を中断する
         #│
         #○シーンの遷移を指示する
         DS.情報.遷移要否 = True
+        self.Fn選択音()
         #┴
 	#────────────────────────────────────
     def Fn選択_砂時計の向き(self):
         #┬ 
         #◇┐発電した電気を運搬機に供給する
-        if pyxel.btn(pyxel.KEY_UP):
+        if pyxel.btnr(pyxel.KEY_UP):
         #　├┐（フレーム処理タイミングの場合）
             #↓
             #●赤を上にする
@@ -75,7 +78,7 @@ class 移動クラス:
             共通処理.入出力.MMP.PWM_VALUE(self._仕様.砂時計,self._仕様.最小)
             self.Fn選択音()
             #┴
-        elif pyxel.btn(pyxel.KEY_DOWN):
+        elif pyxel.btnr(pyxel.KEY_DOWN):
         #　└┐（その他）
             #↓
             #●赤を下にする
@@ -86,7 +89,8 @@ class 移動クラス:
 	#────────────────────────────────────
     def Fn選択_クリア(self):
         #┬ 
-        if not pyxel.btn(pyxel.KEY_SPACE): return
+        if not pyxel.btnr(pyxel.KEY_0): return
+        self._情報.時間番号 = 0
         DS.情報.プレイ時間  = 0
         DS.情報.人数        = 0
         self.Fn選択音()
@@ -95,18 +99,21 @@ class 移動クラス:
     def Fn選択_プレイ時間(self):
         #┬ 
         #◇┐発電した電気を運搬機に供給する
-        if   pyxel.btn(pyxel.KEY_LEFT ):
+        if pyxel.btnr(pyxel.KEY_LEFT ):
         #　├┐（フレーム処理タイミングの場合）
             #↓
-            #○30秒にする
-            DS.情報.プレイ時間 = DS.仕様.プレイ時間
+            #○時間を減らす
+            増減 = (1) if self._情報.時間番号 > 0 else (0)
+            self._情報.時間番号 -= 増減
             self.Fn選択音()
             #┴
-        elif pyxel.btn(pyxel.KEY_RIGHT):
+        if pyxel.btnr(pyxel.KEY_RIGHT):
         #　└┐（その他）
             #↓
-            #○1分にする
-            DS.情報.プレイ時間 = DS.仕様.プレイ時間 * 2
+            #○時間を増やす
+            上限 = len(self._仕様.時間一覧) - 1
+            増減 = (1) if self._情報.時間番号 < 上限 else (0)
+            self._情報.時間番号 += 増減
             self.Fn選択音()
         #┴　┴
 	#────────────────────────────────────

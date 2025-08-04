@@ -2,8 +2,8 @@
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
-import main.GAME共通                            as 共通処理
-from   .データセット        import データセット as DS
+import main.GAME共通                              as 共通処理
+from   .データセット        import データセット   as DS
 from   .コントローラ.変更   import 変更機能の生成
 from   .コントローラ.結果   import 結果機能の生成
 from   .オブジェクト.シーン import *
@@ -41,7 +41,7 @@ class 開始:
         pyxel.init(
                 DS.仕様.画面幅,
                 DS.仕様.画面高,
-                title="Ver.2025/08/01-01")
+                title="Ver.2025/08/04-00")
         pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む

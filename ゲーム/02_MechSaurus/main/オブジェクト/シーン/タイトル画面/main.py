@@ -6,7 +6,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 from main.データセット import データセット as DS
 from .FN移動           import 移動クラス
-from .FN描画           import 描画クラス
+from .FN表現           import 表現クラス
 from .FN遷移           import 遷移クラス
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -54,6 +54,6 @@ class 本体:
         #│
         #≫機能を用意する
         self.FN移動 = 移動クラス(self)
-        self.FN描画 = 描画クラス(self)
+        self.FN表現 = 表現クラス(self)
         self.FN遷移 = 遷移クラス(self)
         #┴

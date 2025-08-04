@@ -3,8 +3,8 @@
 #┠─────────────────────────────────────
 #┃各オブジェクトのアクション・メソッドを実行する
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-from    main.データセット import データセット as DS
+import pyxel
+from   main.データセット import データセット as DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -25,6 +25,6 @@ class 本体:
         pyxel.cls(0)
         #│
         #●描画アクションを実行する
-        if DS.obj.選手 is not None: DS.obj.選手.FN描画.実行()
-        DS.obj.シーン[ DS.情報.シーン].FN描画.実行()
+        if DS.obj.選手 is not None: DS.obj.選手.FN表現.実行()
+        DS.obj.シーン[ DS.情報.シーン].FN表現.実行()
         #┴

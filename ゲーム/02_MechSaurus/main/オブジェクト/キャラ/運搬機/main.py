@@ -73,7 +73,7 @@ class 本体:
         #≫機能を用意する
         self.FN移動 = 移動クラス(self)
         self.FN救出 = 救出クラス(self)
-        self.FN表現 = 表現クラス(self)
+        self.FN表現 = 表現クラス()
         #│
         #≫用意済みのインスタンスに生成する
         DS.obj.運搬機.insert(0,self)

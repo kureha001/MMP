@@ -4,7 +4,10 @@
 from  .DSコンテナ   import *
 from  .DS仕様       import *
 from  .DS情報       import *
+from  .DSサーボ仕様 import *
 
-obj  = コンテナクラス()
-仕様 = 仕様クラス()
-情報 = 情報クラス()
+
+obj     = コンテナクラス()
+仕様    = 仕様クラス()
+情報    = 情報クラス()
+サーボ  = サーボ仕様クラス()

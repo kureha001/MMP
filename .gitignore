@@ -20,19 +20,18 @@
 
 
 ゲーム/02_MechSaurus/main/__pycache__/
-ゲーム/02_MechSaurus/main/データセット/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/変更/__pycache__/
-ゲーム/02_MechSaurus/main/コントローラ/結果/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/キャラ/発電機/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/キャラ/運搬機/__pycache__/
+ゲーム/02_MechSaurus/main/オブジェクト/シーン/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/タイトル画面/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/プレイ画面/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/シーン/終了画面/__pycache__/
-ゲーム/02_MechSaurus/main/オブジェクト/シーン/__pycache__/
+ゲーム/02_MechSaurus/main/コントローラ/変更/__pycache__/
+ゲーム/02_MechSaurus/main/コントローラ/結果/__pycache__/
+ゲーム/02_MechSaurus/main/データセット/__pycache__/
 ゲーム/02_MechSaurus/main/汎用部品/__pycache__/
 
 
-ゲーム/03_MechHunter/main/汎用部品/__pycache__/
 ゲーム/03_MechHunter/main/__pycache__/
 ゲーム/03_MechHunter/main/オブジェクト/キャラ/カモロボ/__pycache__/
 ゲーム/03_MechHunter/main/オブジェクト/シーン/__pycache__/
@@ -42,6 +41,8 @@
 ゲーム/03_MechHunter/main/コントローラ/描画/__pycache__/
 ゲーム/03_MechHunter/main/コントローラ/更新/__pycache__/
 ゲーム/03_MechHunter/main/データセット/__pycache__/
+ゲーム/03_MechHunter/main/汎用部品/__pycache__/
+
 
 ゲーム/04_MechTornado/main/__pycache__/
 ゲーム/04_MechTornado/main/オブジェクト/キャラ/選手/__pycache__/

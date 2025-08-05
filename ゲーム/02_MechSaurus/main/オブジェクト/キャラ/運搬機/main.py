@@ -8,6 +8,7 @@
 from main.データセット import データセット as DS
 from .FN移動           import 移動クラス
 from .FN救出           import 救出クラス
+from .FN表現           import 表現クラス
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
@@ -72,6 +73,7 @@ class 本体:
         #≫機能を用意する
         self.FN移動 = 移動クラス(self)
         self.FN救出 = 救出クラス(self)
+        self.FN表現 = 表現クラス(self)
         #│
         #≫用意済みのインスタンスに生成する
         DS.obj.運搬機.insert(0,self)

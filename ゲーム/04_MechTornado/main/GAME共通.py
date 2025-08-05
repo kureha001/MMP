@@ -53,5 +53,5 @@ class 入出力():
         #┴
 	#────────────────────────────────────    
     def 停止():
-        入出力.MMP.PWM_VALUE(DS.仕様.PWM_Ch_屈伸,         DS.仕様.モータ最小)
-        入出力.MMP.PWM_VALUE(DS.仕様.PWM_Ch_フィニッシュ, DS.仕様.サーボ最大)
+        入出力.MMP.PWM_VALUE(DS.ハード.PWM_Ch_屈伸, DS.ハード.モータ最小)
+        入出力.MMP.PWM_VALUE(DS.ハード.PWM_Ch_着地, DS.ハード.サーボ最大)

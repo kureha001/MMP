@@ -31,7 +31,7 @@ class 本体:
       self.仕様  = 仕様クラス()
       #│
       #≫機能を用意する
-      self.FN移動 = 移動クラス(self)
+      self.FN移動 = 移動クラス()
       self.FN表現 = 表現クラス(self)
       self.FN遷移 = 遷移クラス(self)
       #┴

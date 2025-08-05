@@ -96,7 +96,7 @@ class 遷移クラス:
         time.sleep(2)
         #│
         #●BGMを切替える
-        共通処理.BGM_DFP.自動選択()     # FDPlayer
-        共通処理.運搬機.電飾制御(False) # 内臓モジュール
+        共通処理.BGM_DFP.自動選択()    # FDPlayer
+        共通処理.運搬機.電飾制御(True) # 内臓モジュール
         time.sleep(3)
         #┴

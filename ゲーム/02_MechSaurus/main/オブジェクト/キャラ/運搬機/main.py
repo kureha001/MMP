@@ -6,9 +6,9 @@
 #┃・下位に機能クラス(移動｜衝突｜発射｜描画)をもつ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 from main.データセット import データセット as DS
-from .FN移動           import 移動クラス
-from .FN救出           import 救出クラス
-from .FN表現           import 表現クラス
+from .FN動作           import 本体         as 動作機能の生成
+from .FN救出           import 本体         as 救出機能の生成
+from .FN表現           import 本体         as 表現機能の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
@@ -71,9 +71,9 @@ class 本体:
         self.情報 = 情報クラス()
         #│
         #≫機能を用意する
-        self.FN移動 = 移動クラス(self)
-        self.FN救出 = 救出クラス(self)
-        self.FN表現 = 表現クラス()
+        self.FN動作 = 動作機能の生成(self)
+        self.FN救出 = 救出機能の生成(self)
+        self.FN表現 = 表現機能の生成()
         #│
         #≫用意済みのインスタンスに生成する
         DS.obj.運搬機.insert(0,self)

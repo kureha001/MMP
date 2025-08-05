@@ -50,7 +50,7 @@ class 本体:
         self.情報  = 情報クラス()
         #│
         #≫機能を用意する
-        self.FN動作 = 動作機能の生成()
-        self.FN表現 = 表現機能の生成()
-        self.FN遷移 = 遷移機能の生成()
+        self.FN動作 = 動作機能の生成(self)
+        self.FN表現 = 表現機能の生成(self)
+        self.FN遷移 = 遷移機能の生成(self)
         #┴

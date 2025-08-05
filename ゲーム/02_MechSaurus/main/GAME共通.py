@@ -1,6 +1,7 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃共通処理
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import pyxel
 import time
 from   main.汎用部品        import mmp
 from   .データセット        import データセット as DS

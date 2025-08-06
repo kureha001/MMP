@@ -70,8 +70,8 @@ class 本体:
         self.情報   = 情報クラス()
         #│
         #≫機能を用意する
-        self.FN衝突 = 命中機能の生成(self)
-        self.FN表現 = 表現機能の生成()
+        self.FN命中 = 命中機能の生成(self)
+        self.FN表現 = 表現機能の生成(self)
         #│
         #○用意済みのインスタンスに生成する
         DS.obj.カモロボ.insert(0,self)

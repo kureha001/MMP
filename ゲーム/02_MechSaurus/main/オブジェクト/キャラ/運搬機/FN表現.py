@@ -91,7 +91,7 @@ class 本体:
     def Fn救出数_画面(self, チーム):
         #┬
         #●救出数を表示する
-        救出数 = DS.obj.運搬機[チーム].情報.救出数
-        位置   = (18) if チーム == 0 else (88)
-        pyxel.text(位置, 2, str(救出数).zfill(4), 7)
+        回数 = DS.obj.運搬機[チーム].情報.救出数
+        位置 = (18) if チーム == 0 else (88)
+        pyxel.text(位置, 2, str(回数).zfill(4), 7)
         #┴

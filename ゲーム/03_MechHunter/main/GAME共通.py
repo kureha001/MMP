@@ -3,9 +3,9 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
 import time
-from   main.汎用部品        import mmp
-from   .データセット        import データセット as DS
-from   .オブジェクト.シーン import シーンID
+from   main.汎用部品 import mmp
+from   .データセット import データセット as DS
+from   .シーン       import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃効果音

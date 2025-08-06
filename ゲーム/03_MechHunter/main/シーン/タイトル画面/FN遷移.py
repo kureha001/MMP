@@ -3,9 +3,9 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import time
 import main.GAME共通                                         as 共通処理
-from   main.データセット                 import データセット as DS
-from   main.オブジェクト.キャラ.カモロボ import カモロボの生成
-from   ..DB                              import シーンID
+from   main.データセット          import データセット as DS
+from   main.オブジェクト.カモロボ import カモロボの生成
+from   ..DB                       import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

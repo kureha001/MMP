@@ -2,11 +2,11 @@
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import  pyxel
-import  main.GAME共通                            as 共通処理
-from    .データセット        import データセット as DS
-from   .コントローラ.変更    import 変更コントローラの生成
-from   .コントローラ.結果    import 結果コントローラの生成
-from    .オブジェクト.シーン import *
+import  main.GAME共通                         as 共通処理
+from    .データセット     import データセット as DS
+from   .コントローラ.変更 import 変更コントローラの生成
+from   .コントローラ.結果 import 結果コントローラの生成
+from    .シーン           import *
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

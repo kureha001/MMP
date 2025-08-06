@@ -2,8 +2,8 @@
 #┃結果機能→表現プロセスのアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
-from   main.データセット           import データセット as DS
-from   main.オブジェクト.シーン.DB import シーンID
+from   main.データセット import データセット as DS
+from   main.シーン.DB    import シーンID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

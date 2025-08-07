@@ -2,12 +2,12 @@
 #┃結果機能→遷移プロセスのアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import time
-from   ...データセット          import データセット as DS
-from   ...汎用部品              import MMP
-from   ...汎用部品              import 音声
-from   ...                      import 共通部品
-from   ...オブジェクト.発電機 import 発電機の生成
-from   ...オブジェクト.運搬機 import 運搬機の生成
+import sys; sys.path.append('..'); import 共通.MMP
+import sys; sys.path.append('..'); import 共通.音声
+from   ...                         import 共通部品
+from   ...データセット             import データセット as DS
+from   ...オブジェクト.発電機      import 発電機の生成
+from   ...オブジェクト.運搬機      import 運搬機の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -91,18 +91,18 @@ class 本体:
         #│
         #◎└┐準備した情報に従い、砂時計を動かす
         for val in range(開始, 終了, 増分):
-            MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
+            共通.MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
             time.sleep(0.002)
         #┴
 	#────────────────────────────────────
     def Fn音声を再生(self):
         #┬ 
         #●恐竜の鳴き声を鳴らす
-        音声.個別指定(2,1)
+        共通.音声.個別指定(2,1)
         time.sleep(2)
         #│
         #●BGMを切替える
-        音声.自動再生()    # FDPlayer
+        共通.音声.自動再生(DS.情報.シーン)
         共通部品.運搬機.電飾制御(True) # 内臓モジュール
         time.sleep(3)
         #┴

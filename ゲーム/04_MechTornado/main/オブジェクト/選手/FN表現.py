@@ -3,7 +3,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
 import sys; sys.path.append('..'); import 共通.MMP
-from   ...データセット import データセット as DS
+from   ...データセット             import データセット as DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

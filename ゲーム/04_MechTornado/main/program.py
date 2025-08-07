@@ -3,10 +3,11 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
 import sys; sys.path.append('..'); import 共通.MMP
-from   .データセット      import データセット   as DS
-from   .コントローラ.変更 import 変更コントローラの生成
-from   .コントローラ.結果 import 結果コントローラの生成
-from   .シーン            import *
+import sys; sys.path.append('..'); import 共通.音声
+from   .データセット               import データセット   as DS
+from   .シーン                     import *
+from   .コントローラ.変更          import 変更コントローラの生成
+from   .コントローラ.結果          import 結果コントローラの生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -49,6 +50,9 @@ class 開始:
             DS.仕様.ハード設定.HC4067の個数,
             DS.仕様.ハード設定.HC4067のCh数,
             DS.仕様.ハード設定.HC4067の丸め)
+        #│
+        #●MMPの音声モジュールを初期化する
+        共通.音声.情報.BGM一覧 = DS.仕様.BGM一覧
         #┴
 
     #┌───────────────────────────────────

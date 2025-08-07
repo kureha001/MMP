@@ -2,9 +2,9 @@
 #┃シーン：タイトル画面
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 from main.データセット import データセット as DS
-from .FN動作           import 本体 as 動作機能の生成
-from .FN表現           import 本体 as 表現機能の生成
-from .FN遷移           import 本体 as 遷移機能の生成
+from .FN動作           import 本体         as 動作機能の生成
+from .FN表現           import 本体         as 表現機能の生成
+from .FN遷移           import 本体         as 遷移機能の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様

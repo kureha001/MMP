@@ -2,11 +2,12 @@
 #┃結果機能→遷移プロセスのアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import time
-import main.GAME共通                                       as 共通処理
-from   main.データセット               import データセット as DS
-from   main.オブジェクト.キャラ.発電機 import 発電機の生成
-from   main.オブジェクト.キャラ.運搬機 import 運搬機の生成
-from   ..DB                            import シーンID
+from   ...データセット          import データセット as DS
+from   ...汎用部品              import MMP
+from   ...汎用部品              import 音声
+from   ...                      import 共通部品
+from   ...オブジェクト.発電機 import 発電機の生成
+from   ...オブジェクト.運搬機 import 運搬機の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -40,7 +41,7 @@ class 本体:
     def Fnゲーム情報を初期化(self):
         #┬ 
         #○シーンを『プレイ画面』に遷移する
-        DS.情報.シーン = シーンID.プレイ画面
+        DS.情報.シーン = DS.仕様.シーンID.プレイ画面
         #│
         #○得点を初期化する
         DS.情報.得点=[0,0]
@@ -90,18 +91,18 @@ class 本体:
         #│
         #◎└┐準備した情報に従い、砂時計を動かす
         for val in range(開始, 終了, 増分):
-            共通処理.入出力.MMP.PWM_VALUE(self._仕様.砂時計,val)
+            MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
             time.sleep(0.002)
         #┴
 	#────────────────────────────────────
     def Fn音声を再生(self):
         #┬ 
         #●恐竜の鳴き声を鳴らす
-        共通処理.BGM_DFP.指定曲(1)      # FDPlayer
+        音声.個別指定(2,1)
         time.sleep(2)
         #│
         #●BGMを切替える
-        共通処理.BGM_DFP.自動選択()    # FDPlayer
-        共通処理.運搬機.電飾制御(True) # 内臓モジュール
+        音声.自動再生()    # FDPlayer
+        共通部品.運搬機.電飾制御(True) # 内臓モジュール
         time.sleep(3)
         #┴

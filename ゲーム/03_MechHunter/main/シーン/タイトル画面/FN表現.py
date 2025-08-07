@@ -20,22 +20,13 @@ class 本体:
         #〇画面を描画する
         pyxel.blt(0,0, 1, 0,0, 180,120, 0)  # メインタイトル
 
-        描画文字 = "Please select the number"
-        縦 = 92
-        pyxel.text(45, 縦  , 描画文字, 5)
-        pyxel.text(44, 縦-1, 描画文字, 7)
-
-        描画文字 = " of targets per team"
-        縦 = 100
-        pyxel.text(50, 縦  , 描画文字, 5)
-        pyxel.text(49, 縦-1, 描画文字, 7)
+        色 = pyxel.frame_count % 16
+        縦 = 112
 
         描画文字 = "press key:"
-        縦 = 110
         pyxel.text(49, 縦, 描画文字, 5)
-        pyxel.text(48, 縦, 描画文字, 7)
+        pyxel.text(48, 縦, 描画文字, 色)
 
         描画文字 = "[1][2][3][4]"
-        縦 = 110
         pyxel.text(89, 縦+1, 描画文字, 0)
         pyxel.text(88, 縦, 描画文字, 7)

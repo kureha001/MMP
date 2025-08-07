@@ -4,7 +4,7 @@
 import time
 from   ...データセット          import データセット as DS
 from   ...オブジェクト.カモロボ import カモロボの生成
-from   ...共通部品              import カモロボ
+from   ...                      import 共通部品
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -55,10 +55,10 @@ class 本体:
     def Fn立体物を初期化(self):
         #┬ 
         #●カムロボの電源をOFFにする
-        カモロボ.電飾制御(False)
+        共通部品.電飾制御(False)
         time.sleep(1)
         #│
         #●カムロボの電源をONにする
-        カモロボ.電飾制御(True)  
+        共通部品.電飾制御(True)  
         time.sleep(2)
         #┴

@@ -1,37 +1,37 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃汎用部品：入力
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-from .                 import MMP
-from main.データセット import データセット as DS
+from . import MMP
 
 #────────────────────────────────────
 class 情報:
-    状態  = [     # Chごとの状態：ON(True)/OFF(False) 
-        [False,False],  # ポート0用 [Ch0,Ch1]
-        [False,False],  # ポート1用 [Ch0,Ch1]
-        [False,False],  # ポート2用 [Ch0,Ch1]
-        [False,False],  # ポート3用 [Ch0,Ch1]
-        [False,False],  # ポート4用 [Ch0,Ch1]
-        [False,False],  # ポート5用 [Ch0,Ch1]
-        [False,False],  # ポート6用 [Ch0,Ch1]
-        [False,False]]  # ポート7用 [Ch0,Ch1]
+
+    # 16ポート毎・4Chごとの状態：ON(True)/OFF(False) 
+    状態 = tuple([False] * 4 for _ in range(16))
 
 #────────────────────────────────────
-def 入力走査(引数_ポートNo):
+def 入力走査(
+        引数_ポートNo   ,   #① ポート番号
+        引数_Ch一覧     ,   #② チャンネルNo一覧
+        引数_閾値       ):  #③ ＋値：大きければON／－値：大きければOFF
     #┬
     #○結果を初期化する
-    概要 = [ False, False ]     # ONしている，OFFした直後
-    測定 = [ 0,0 ]              # Chごとの測定値(1:ON/-1:OFFになった/0:通常のOFF) 
+    概要 = [ False, False ] # ONしている，OFFした直後
+    測定 = [ 0,0,0,0 ]      # Chごとの測定値(1:ON/-1:OFFになった/0:通常のOFF) 
     #│
     #○ポートのアナログ値を用意する
     ポートNo = 引数_ポートNo
     入力値 = MMP.接続.mmpAnaVal[ポートNo]
     #│
-    #◎└┐ON/OFF状態を求める
-    for 各Ch in range(2):
+    #◎└┐チャンネルごとのON/OFF状態を求める
+    for 各Ch in 引数_Ch一覧:
+        #│
+        #○スイッチ状態を求める
+        if 引数_閾値 > 0: 判定 = (入力値[各Ch] >  引数_閾値)
+        else            : 判定 = (入力値[各Ch] < -引数_閾値)
         #│
         #◇┐入力状況を走査する
-        if 入力値[各Ch] > DS.仕様.ハード設定.スイッチ閾値:
+        if 判定:
         #　├┐（状態が『ON』の場合）
             #↓
             #○状態を『ONしている』にする

@@ -4,7 +4,6 @@
 class 本体:
 
     フレーム数 = 0
-    再生時間   = None
 
     シーン     = None
     遷移要否   = False

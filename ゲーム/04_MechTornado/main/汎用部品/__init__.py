@@ -1,4 +1,4 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃共通モジュール
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-from .mmpRottenmeier    import *
+from .mmpRottenmeier import *

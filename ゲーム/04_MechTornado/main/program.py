@@ -42,7 +42,7 @@ class 開始:
                 title="Ver.2025/08/06-00")
         #│
         #○リソースファイルを読み込む
-        pyxel.load("./リソース.pyxres")
+        pyxel.load("./resource.pyxres")
         #│
         #●MMPを初期化する
         MMP.初期化()

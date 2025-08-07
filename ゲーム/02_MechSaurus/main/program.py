@@ -45,7 +45,7 @@ class 開始:
         pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む
-        pyxel.load("./リソース.pyxres")
+        pyxel.load("./リソresourceース.pyxres")
         #│
         #●MMPを初期化する
         共通処理.入出力.MMP_初期化()

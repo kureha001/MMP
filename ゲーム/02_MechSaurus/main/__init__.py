@@ -1,6 +1,6 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃処理
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-from .GAME          import 開始
+from .program       import 開始
 from .データセット  import *
 from .GAME共通      import *

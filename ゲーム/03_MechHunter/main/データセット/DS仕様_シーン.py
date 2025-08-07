@@ -3,7 +3,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 from enum import IntEnum, auto
 
-class シーンID(IntEnum):
+class 本体(IntEnum):
 	#┬
 	#□シーン
 	タイトル画面	= 100

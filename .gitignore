@@ -41,7 +41,6 @@
 ゲーム/03_MechHunter/main/コントローラ/変更/__pycache__/
 ゲーム/03_MechHunter/main/コントローラ/結果/__pycache__/
 ゲーム/03_MechHunter/main/データセット/__pycache__/
-ゲーム/03_MechHunter/main/汎用部品/__pycache__/
 
 
 ゲーム/04_MechTornado/main/__pycache__/
@@ -54,3 +53,5 @@
 ゲーム/04_MechTornado/main/コントローラ/結果/__pycache__/
 ゲーム/04_MechTornado/main/データセット/__pycache__/
 ゲーム/04_MechTornado/main/汎用部品/__pycache__/
+
+ゲーム/共通/__pycache__/

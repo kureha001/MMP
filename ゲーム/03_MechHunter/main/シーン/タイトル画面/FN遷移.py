@@ -2,8 +2,8 @@
 #┃結果機能→遷移プロセスのアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import time
+import sys; sys.path.append('..'); import 共通.音声
 from   ...データセット          import データセット as DS
-from   ...汎用部品              import 音声
 from   ...                      import 共通部品
 from   ...オブジェクト.カモロボ import カモロボの生成
 
@@ -66,6 +66,6 @@ class 本体:
     def Fn音声を再生(self):
         #┬
         #●BGMを切替える
-        音声.自動再生()
+        共通.音声.自動再生(DS.情報.シーン, DS.仕様.BGM一覧)
         time.sleep(2)
         #┴

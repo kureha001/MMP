@@ -1,8 +1,8 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃共通部品
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import sys; sys.path.append('..'); import 共通.MMP
 from .データセット import データセット as DS
-from .汎用部品     import MMP
 
 def 電飾制御(引数_活性可否): #① True:活性化／False:非活性化
     #┬
@@ -18,6 +18,6 @@ def 電飾制御(引数_活性可否): #① True:活性化／False:非活性化
     #≫カモロボの電飾を活性制御する
     for i in range(2):
         for 各ポート in DS.obj.カモロボ[i].仕様.ポート一覧:
-            MMP.接続.PWM_VALUE(各ポート, PWM値)
+            共通.MMP.接続.PWM_VALUE(各ポート, PWM値)
             print("カモロボ(",i,")：",引数_活性可否)
     #┴

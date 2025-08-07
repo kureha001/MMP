@@ -2,7 +2,7 @@
 # MECH TORNADO用 テストプログラム
 #====================================================== 
 import time
-import mmpRottenmeier
+import sys; sys.path.append('..'); import 共通.mmpRottenmeier
 
 #────────────────────────────────────    
 def 命中確認():
@@ -49,7 +49,7 @@ def 電源供給():
 #====================================================== 
 #┬
 #○MMPを実体化する。
-MMP = mmpRottenmeier.mmp()
+MMP = 共通.mmpRottenmeier.mmp()
 #│
 #○MMPを接続する。
 MMP.通信接続_自動()

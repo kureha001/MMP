@@ -2,7 +2,7 @@
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
-from   .汎用部品          import MMP
+import sys; sys.path.append('..'); import 共通.MMP
 from   .データセット      import データセット as DS
 from   .コントローラ.変更 import 変更コントローラの生成
 from   .コントローラ.結果 import 結果コントローラの生成
@@ -46,7 +46,10 @@ class 開始:
         pyxel.load("./resource.pyxres")
         #│
         #●MMPを初期化する
-        MMP.初期化()
+        共通.MMP.初期化(
+            DS.仕様.ハード設定.HC4067の個数,
+            DS.仕様.ハード設定.HC4067のCh数,
+            DS.仕様.ハード設定.HC4067の丸め)
         #┴
 
     #┌───────────────────────────────────

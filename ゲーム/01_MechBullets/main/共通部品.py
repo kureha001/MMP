@@ -127,7 +127,7 @@ class 入出力():
 		#○結果を初期化する
         概要 = [ False, False ]
         測定 = [ 0,0,0,0 ]
-        入力値 = 入出力.MMP.mmpAnaVal[引数_番号]
+        入力値 = 共通.MMP.接続.mmpAnaVal[引数_番号]
 		#│
         中央値  = DS.情報.MMP中央値
         閾値    = (DS.情報.MMP反応率/100) * 中央値
@@ -160,7 +160,7 @@ class 入出力():
 		#│
         #○ポートのアナログ値を用意する
         ポートNo = 引数_ポートNo
-        入力値 = 入出力.MMP.mmpAnaVal[ポートNo][2]
+        入力値 = 共通.MMP.接続.mmpAnaVal[ポートNo][2]
 		#│
 		#◎└┐ON/OFF状態を求める
         for 各Ch in range(4):

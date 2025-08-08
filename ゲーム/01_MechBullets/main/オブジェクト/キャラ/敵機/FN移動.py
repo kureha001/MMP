@@ -88,7 +88,7 @@ class 移動クラス:
     def Fn場外(self):
         #┬
         #○位置を確認する
-        if (self._情報.Y < DS.仕様.基本.画面高): return
+        if (self._情報.Y < DS.仕様.画面高): return
         #│＼（画面内の場合）
         #│ ↓
         #│ ▼処理を中断する

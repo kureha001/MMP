@@ -62,8 +62,8 @@ class 移動クラス:
         x = self._情報.X
         y = self._情報.Y
         r = self.仕様.最大半径
-        確認X = (x < -r or x > r + DS.仕様.基本.画面幅  )
-        確認Y = (y < -r or y > r + DS.仕様.基本.画面高 )
+        確認X = (x < -r or x > r + DS.仕様.画面幅  )
+        確認Y = (y < -r or y > r + DS.仕様.画面高 )
         if 確認X or 確認Y:
         #│ ＼（画面内の場合）
             #↓

@@ -5,9 +5,11 @@
 #┃実行する
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import  pyxel
-import  main.GAME共通                                as 共通処理
-from main.データセット           import データセット as DS
-from main.オブジェクト.シーン.DB import シーンID
+import sys; sys.path.append('..'); import 共通.MMP
+import sys; sys.path.append('..'); import 共通.音声
+import main.共通部品 as 共通部品
+from   ...データセット             import データセット as DS
+
 from .P移動 import P移動生成
 from .P発射 import P発射生成
 from .P衝突 import P衝突生成
@@ -36,7 +38,7 @@ class 本体:
     def 実行(self):
         #┬
         #●アナログ値を読み取る
-        共通処理.入出力.MMP.アナログ読取()
+        共通.MMP.接続.アナログ読取()
         #│
         #●ＢＧＭをリピート再生する
         self.FnリピートBGM()
@@ -72,21 +74,21 @@ class 本体:
         DS.情報.再生時間 = None
         #│
         #△┐ＢＧＭを再生する
-        if DS.情報.シーン == シーンID.タイトル画面 or DS.情報.シーン == シーンID.終了画面:
+        if DS.情報.シーン == DS.仕様.シーンID.タイトル画面 or DS.情報.シーン == DS.仕様.シーンID.終了画面:
         #　├┐（タイトル画面／終了画面の場合）
             #↓
-            #●ＢＧＭを再生する
-            共通処理.BGM_DFP.自動選択()
+            #●ＢＧＭを繰返し再生する
+            共通.音声.繰返し再生()
             #┴
         elif DS.情報.ボスシーン is None:
         #　├┐（ボス画面の場合）
             #↓
             #●ＢＧＭを再生する
-            共通処理.BGM_DFP.指定曲ザコ()
+            共通部品.BGM_DFP.指定曲ザコ()
             #┴
         else:
         #　└┐（その他）
             #↓
             #●ＢＧＭを再生する
-            共通処理.BGM_DFP.指定曲ボス()
+            共通部品.BGM_DFP.指定曲ボス()
         #┴　┴

@@ -3,11 +3,11 @@
 #┠─────────────────────────────────────
 #┃更新コントローラが発射プロセスで実行するアクション・メソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-import  main.GAME共通                   as 共通処理
-from    main.データセット               import データセット as DS
-from    main.オブジェクト.管理.特殊効果 import 効果ID
-from    ..弾                            import 弾生成
+import pyxel
+import main.共通部品 as 共通部品
+from   main.データセット               import データセット as DS
+from   main.オブジェクト.管理.特殊効果 import 効果ID
+from   ..弾                            import 弾生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：情報
@@ -79,7 +79,7 @@ class 発射クラス:
     def Fn可否確認(self): #【戻り値】 True:不許可／False：許可
         #┬
         #●発射指力操作.走示を確認する
-        操作 = 共通処理.入出力
+        操作 = 共通部品.入出力
         結果 = 操作.入力走査(操作.ID_発射, self._仕様.番号)
         発射法 = (1) if 効果ID.連射 in self.特情.発動中 else (-1)
         if 結果[1][3] != 発射法: return True

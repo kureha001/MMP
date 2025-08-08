@@ -17,10 +17,10 @@ RMDIR /s /q  .\main\オブジェクト\キャラ\敵機\__pycache__\
 RMDIR /s /q  .\main\オブジェクト\キャラ\弾\__pycache__\
 RMDIR /s /q  .\main\オブジェクト\演出\爆発\__pycache__\
 RMDIR /s /q  .\main\オブジェクト\演出\背景\__pycache__\
-RMDIR /s /q  .\main\オブジェクト\シーン\__pycache__\
-RMDIR /s /q  .\main\オブジェクト\シーン\プレイ画面\__pycache__\
-RMDIR /s /q  .\main\オブジェクト\シーン\タイトル画面\__pycache__\
-RMDIR /s /q  .\main\オブジェクト\シーン\終了画面\__pycache__\
+RMDIR /s /q  .\main\シーン\__pycache__\
+RMDIR /s /q  .\main\シーン\プレイ画面\__pycache__\
+RMDIR /s /q  .\main\シーン\タイトル画面\__pycache__\
+RMDIR /s /q  .\main\シーン\終了画面\__pycache__\
 RMDIR /s /q  .\main\オブジェクト\管理\特殊効果\__pycache__\
 RMDIR /s /q  .\main\汎用部品\__pycache__\
 CD ..

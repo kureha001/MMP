@@ -1,5 +1,4 @@
 ゲーム/01_MechBullets/main/__pycache__/
-
 ゲーム/01_MechBullets/main/オブジェクト/キャラ/敵機/__pycache__/
 ゲーム/01_MechBullets/main/オブジェクト/キャラ/弾/__pycache__/
 ゲーム/01_MechBullets/main/オブジェクト/キャラ/自機/__pycache__/
@@ -18,7 +17,6 @@
 ゲーム/01_MechBullets/main/コントローラ/変更/P衝突/__pycache__/
 ゲーム/01_MechBullets/main/コントローラ/変更/P発射/__pycache__/
 ゲーム/01_MechBullets/main/コントローラ/変更/P動作/__pycache__/
-
 ゲーム/01_MechBullets/main/データセット/__pycache__/
 ゲーム/01_MechBullets/main/汎用部品/__pycache__/
 

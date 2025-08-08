@@ -5,18 +5,18 @@
 #┃・下位にデータセット･クラス(仕様｜情報)を持つ
 #┃・下位に機能クラス(移動｜衝突｜発射｜描画)をもつ
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-from    main.データセット   import データセット as DS
-from   .DB                  import 機体ID, 敵機DB, ボスDB
-from   .FN移動              import 移動クラス
-from   .FN衝突              import 衝突クラス
-from   .FN発射              import 発射クラス
-from   .FN描画              import 描画クラス
+import pyxel
+from   main.データセット import データセット as DS
+from  .DB                import 機体ID, 敵機DB, ボスDB
+from  .FN移動            import 本体 as 移動機能の生成
+from  .FN衝突            import 本体 as 衝突機能の生成
+from  .FN発射            import 本体 as 発射機能の生成
+from  .FN表現            import 本体 as 表現機能の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class 仕様クラス:
+class 仕様:
     def __init__(self           ,
             引数_種類ID         ,   #① 機体 または アイテム を識別するID
             引数_アイテム区分   ,   #② アイテムをし区別する区分
@@ -69,7 +69,7 @@ class 仕様クラス:
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：情報
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class 情報クラス:
+class 情報:
     def __init__(self   ,
             引数_X座標  ,	#① 画面位置(X座標)
             引数_Y座標  ,   #② 画面位置(Y座標)
@@ -108,14 +108,14 @@ class 本体:
         引数_ボス区分 = False   ):  #⑤ ボスキャラを区別
         #┬
         #≫データセットを用意する
-        self.仕様 = 仕様クラス(引数_種類ID, 引数_アイテム区分, 引数_ボス区分)
-        self.情報 = 情報クラス(引数_X座標, 引数_Y座標, self.仕様)
+        self.仕様 = 仕様(引数_種類ID, 引数_アイテム区分, 引数_ボス区分)
+        self.情報 = 情報(引数_X座標, 引数_Y座標, self.仕様)
         #│
         #≫処理セットを用意する
-        self.FN移動 = 移動クラス(self)
-        self.FN衝突 = 衝突クラス(self)
-        self.FN発射 = 発射クラス(self)
-        self.FN描画 = 描画クラス(self)
+        self.FN移動 = 移動機能の生成(self)
+        self.FN衝突 = 衝突機能の生成(self)
+        self.FN発射 = 発射機能の生成(self)
+        self.FN表現 = 表現機能の生成(self)
         #│
         #○用意済みのインスタンスに生成する
         self.仕様.格納先.append(self)

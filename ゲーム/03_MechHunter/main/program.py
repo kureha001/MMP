@@ -40,7 +40,7 @@ class 開始:
         pyxel.init(
                 DS.仕様.画面幅,
                 DS.仕様.画面高,
-                title="Ver.2025/08/06-00")
+                title = DS.仕様.バージョン)
         pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む

@@ -5,7 +5,7 @@
 import pyxel
 
 # [ゲーム共通]
-from main            import 共通部品
+import main.共通部品 as 共通部品
 from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -174,7 +174,7 @@ class 本体:
             #│
             #○自機を削除する
             #●爆発音を鳴らす
-            DS.obj.自機 = []
+            DS.obj.自機.clear()
             共通部品.効果音.爆発(2)
             #┴
         #　└┐（その他）

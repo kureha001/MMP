@@ -6,10 +6,10 @@ import sys; sys.path.append('..'); import 共通.mmpRottenmeier
 
 #───────────────────────────    
 #┬
-#〇MMPを実体化する。
+#○MMPを実体化する。
 MMP = 共通.mmpRottenmeier.mmp()
 #│
-#〇MMPを接続する。
+#○MMPを接続する。
 MMP.通信接続_自動()
 #│
 #◇┐MMPをテストする。
@@ -84,6 +84,6 @@ elif mode == 320:
 #    print("・停止")
 #    print(MMP.DFP_Stop(機器番号))
 #│
-#〇MMPを切断する。
+#○MMPを切断する。
 MMP.通信切断
 #┴

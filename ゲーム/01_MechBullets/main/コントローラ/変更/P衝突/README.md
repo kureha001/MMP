@@ -22,8 +22,8 @@
 ### `本体.実行()`
 ```python
 def 実行(self):
-    Act実行_攻撃( [main.DB.obj敵機, main.DB.obj弾_敵機] )
-    Act実行_体当たり( [main.DB.objアイテム, main.DB.obj敵機, main.DB.obj弾_敵機] )
+    Act実行_攻撃( [DS.obj.敵機, DS.obj.弾_敵機] )
+    Act実行_体当たり( [DS.obj.アイテム, DS.obj.敵機, DS.obj.弾_敵機] )
 ```
 
 ### `Act実行_攻撃()`

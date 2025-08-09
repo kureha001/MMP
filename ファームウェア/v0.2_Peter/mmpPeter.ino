@@ -97,23 +97,23 @@ void loop() {
   if (Serial.available()) {
   //├→(シリアル通信が有効な場合)
 
-    //〇シリアルデータを配列変数に格納する
+    //○シリアルデータを配列変数に格納する
     input[inp_cnt] = Serial.read();
 
     //◇１通信を受信し終えたら、コマンド処理する。
     if (inp_cnt > 30 || input[inp_cnt] == '!') {
     //├→(30データ以上 または 終端文字を検出)
 
-      //〇末尾データを終端文字で上書きする
+      //○末尾データを終端文字で上書きする
       input[inp_cnt] = '\0';
 
-      //〇カウンタをゼロ初期化する
+      //○カウンタをゼロ初期化する
       inp_cnt = 0;
       dat_cnt = 0;
 
       //◎受信文字列を項目単位に分割する
       for(div_dat = strtok(input, ":"); div_dat; div_dat = strtok(NULL, ":")) {
-        //〇項目データに格納する
+        //○項目データに格納する
         strcpy(dat[dat_cnt], div_dat);
         dat_cnt++;
       }
@@ -266,7 +266,7 @@ void loop() {
         Serial.print( "----!" );                                // 異常を返信
       }
     } else {
-      //〇受信項目数を増やす
+      //○受信項目数を増やす
       inp_cnt++;
     }
   }

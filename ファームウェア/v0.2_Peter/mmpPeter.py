@@ -47,7 +47,7 @@ class mmp:
     # 初期化処理
     #=====================================================================
     #┬
-    #〇└┐初期化：
+    #○└┐初期化：
     def __init__( 
         self,
         argMmpNum           = 4,                # 使用するHC4067の個数
@@ -58,39 +58,39 @@ class mmp:
         argRundNum = 5                          # アナログ値の丸め
         ):
         #│
-        #〇接続する。
+        #○接続する。
         print("\n１．接続準備")
         self.ser = serial.Serial()
         self.ser.baudrate   = 921600
         self.connect_flag   = False
         self.version = ""
         #│
-        #〇アナログPinの使用範囲(HC4067)
+        #○アナログPinの使用範囲(HC4067)
         print("２．アナログ入力準備")
         self.mmpNum         = argMmpNum 
         self.mmpAnaPins     = argMmpAnaPins
         print("　・HC4067 使用個数        : %i"  % self.mmpNum  )
         print("　・HC4067 使用ポート数    : %i"  % self.mmpAnaPins  )
         #│
-        #〇HC4067アドレス指定のデジタルPin(ボード)
+        #○HC4067アドレス指定のデジタルPin(ボード)
         self.mmpAdrPins     = argMmpAdrPins
         print("　・HC4067 アドレス指定Pin : "   , self.mmpAdrPins)
         #│
-        #〇データの丸め
+        #○データの丸め
         self.mmpRoundNum    = int(argRundNum)
         if argRundNum < 1 : argRundNum = 1
         print("　・アナログ値の丸め処理   : "   , self.mmpRoundNum)
         #│
-        #〇Bitパターン(4Bit)を登録する。
+        #○Bitパターン(4Bit)を登録する。
         self.initANA_BitList()
         #│
-        #〇測定データをゼロ初期する。
+        #○測定データをゼロ初期する。
         self.initANA_Value()
         #┴
     #┴
     #---------------------------------------------------------------------
     #┬
-    #〇└┐１．Bitパターン：
+    #○└┐１．Bitパターン：
     def initANA_BitList(self):
         #◎└┐アドレスごとのBitパターンを定義する。
         self.mmpBit = [] 
@@ -98,30 +98,30 @@ class mmp:
             #◎└┐Bitパターンを作成する。
             tmpBit = [0,0,0,0]
             for cntBit in range(4):
-                #〇当該桁のBitを更新する。
+                #○当該桁のBitを更新する。
                 tmpBit[cntBit]  = int(bin((cntAnaPin >> cntBit) & 0b1)[2:])
                 #┴
             #│
-            #〇当該アドレスのBitパターンを追加する。
+            #○当該アドレスのBitパターンを追加する。
             self.mmpBit.append(tmpBit)
             #┴
         #┴
     #┴
     #---------------------------------------------------------------------
     #┬
-    #〇└┐２．測定データ：
+    #○└┐２．測定データ：
     def initANA_Value(self):
         #◎└┐1アドレス分の空データを作る。
         tmpValAnaPin = [] 
         for cntMmpNo in range(self.mmpNum):
-            #〇読取値の初期値(ゼロ)を追加する。
+            #○読取値の初期値(ゼロ)を追加する。
             tmpValAnaPin.append(0)
             #┴
         #│
         #◎└┐全アドレスの測定データに空データをセットする。
         self.mmpAnaVal = [] 
         for cntAnaPin in range(self.mmpAnaPins):
-            #〇測定データ(初期値)を追加する。
+            #○測定データ(初期値)を追加する。
             self.mmpAnaVal.append(tmpValAnaPin.copy())
             #┴
         #┴
@@ -134,11 +134,11 @@ class mmp:
     # 全アドレス(チャンネル)
     #---------------------------------------------------------------------
     #┬
-    #〇└┐アナログ測定（全アドレス）：
+    #○└┐アナログ測定（全アドレス）：
     def analog_IN_All(self):
         #◎└┐繰り返し読取る。
         for cntAnaPin in range(self.mmpAnaPins):
-            #〇1アドレス読取る。
+            #○1アドレス読取る。
             self.analog_IN_Each(cntAnaPin)
             #┴
     #┴
@@ -146,11 +146,11 @@ class mmp:
     # 全モジュールの特定アドレス
     #---------------------------------------------------------------------
     #┬
-    #〇└┐アナログ測定（１アドレス）：
+    #○└┐アナログ測定（１アドレス）：
     def analog_IN_Each(self, argAnaPin):
         #◎└┐アドレスをセットする。
         for cntBit in range(4):
-            #〇当該ビットにBitパターンをセットする。
+            #○当該ビットにBitパターンをセットする。
             tmpPort = self.mmpAdrPins[cntBit]
             tmpBit  = self.mmpBit[argAnaPin][cntBit]
             self.digital_OUT(tmpPort,tmpBit)
@@ -166,7 +166,7 @@ class mmp:
     # マイコンの特定ANAチャンネル
     #---------------------------------------------------------------------
     #┬
-    #〇└┐アナログ測定（１ポート）：
+    #○└┐アナログ測定（１ポート）：
     def analog_IN(self, argAnaPin):
         #◎└┐アドレスをセットする。
         data3=''
@@ -187,7 +187,7 @@ class mmp:
     #┴
     #---------------------------------------------------------------------
     #┬
-    #〇└┐テスト（アナログ測定）：
+    #○└┐テスト（アナログ測定）：
     def analog_Test(
         self,
         argLoop = 100,      # アドレス切替回数

@@ -10,11 +10,11 @@
 
 ## 処理対象
 以下のような移動対象が含まれます（一例）：
-- `main.DB.obj自機`
-- `main.DB.obj敵機`
-- `main.DB.obj弾_自機`, `main.DB.obj弾_敵機`
-- `main.DB.obj爆破`, `main.DB.obj背景`, `main.DB.obj特殊効果`
-- `main.DB.objシーン`
+- `DS.obj.自機`
+- `DS.obj.敵機`
+- `DS.obj.弾_自機`, `DS.obj.弾_敵機`
+- `DS.obj.爆破`, `DS.obj.背景`, `DS.obj.特殊効果`
+- `DS.obj.シーン`
 
 ## 処理の流れ
 

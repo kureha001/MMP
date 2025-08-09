@@ -1,9 +1,16 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃キャラクター：敵機
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
 import pyxel
+
+# [ゲーム共通]
 from   main.データセット import DS
+
+# [データベース]
 from  .DB                import 機体ID, 敵機DB, ボスDB
+
+# [要素クラス]
 from  .FN動作            import 本体 as 動作機能の生成
 from  .FN衝突            import 本体 as 衝突機能の生成
 from  .FN発射            import 本体 as 発射機能の生成

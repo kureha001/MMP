@@ -1,10 +1,15 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃背景
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import  pyxel
-from    main.データセット   import DS
-from .FN動作           import 本体 as 動作機能の生成
-from .FN表現           import 本体 as 表現機能の生成
+# [システム共通]
+import pyxel
+
+# [ゲーム共通]
+from main.データセット import DS
+
+# [要素クラス]
+from .FN動作 import 本体 as 動作機能の生成
+from .FN表現 import 本体 as 表現機能の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様

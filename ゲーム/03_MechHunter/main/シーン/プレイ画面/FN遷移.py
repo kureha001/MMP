@@ -2,8 +2,8 @@
 #┃結果機能(遷移プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import sys; sys.path.append('..'); import 共通.音声
-from ...                           import 共通部品
-from main.データセット             import データセット as DS
+from main                           import 共通部品
+from main.データセット             import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

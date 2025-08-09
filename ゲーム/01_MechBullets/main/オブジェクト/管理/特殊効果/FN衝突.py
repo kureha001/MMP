@@ -5,7 +5,7 @@
 #┃※アイテムを取得した場合のみ更新コントローラからキックされる
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import sys; sys.path.append('..'); import 共通.音声
-from   main.データセット   import データセット as DS
+from   main.データセット   import DS
 from   .DB                 import *
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

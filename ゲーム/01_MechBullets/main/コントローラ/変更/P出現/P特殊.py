@@ -8,11 +8,11 @@ import  pyxel
 import  random
 
 # [ゲーム共通]
-from ....データセット import データセット as DS
+from main.データセット import DS
 
 # [別クラス]
-from ....オブジェクト.キャラ.敵機   import 敵機生成
-from ....オブジェクト.管理.特殊効果 import アイテムDB
+from main.オブジェクト.キャラ.敵機   import 敵機生成
+from main.オブジェクト.管理.特殊効果 import アイテムDB
 
 #┌───────────────────────────────────
 #│アクション・メソッド実行

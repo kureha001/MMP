@@ -7,8 +7,8 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
 import sys; sys.path.append('..'); import 共通.MMP
-from   ...データセット             import データセット as DS
-from   ...                         import 共通部品
+from   main.データセット             import DS
+from   main                        import 共通部品
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

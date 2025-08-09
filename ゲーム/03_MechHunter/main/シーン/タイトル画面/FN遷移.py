@@ -3,9 +3,9 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import time
 import sys; sys.path.append('..'); import 共通.音声
-from   ...                         import 共通部品
-from   ...データセット             import データセット as DS
-from   ...オブジェクト.カモロボ    import カモロボの生成
+from   main                        import 共通部品
+from   main.データセット           import DS
+from   main.オブジェクト.カモロボ  import カモロボの生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

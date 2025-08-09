@@ -2,7 +2,7 @@
 #┃キャラクター：敵機
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
-from   main.データセット import データセット as DS
+from   main.データセット import DS
 from  .DB                import 機体ID, 敵機DB, ボスDB
 from  .FN動作            import 本体 as 動作機能の生成
 from  .FN衝突            import 本体 as 衝突機能の生成

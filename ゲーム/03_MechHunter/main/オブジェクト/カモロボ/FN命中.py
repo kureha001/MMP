@@ -7,7 +7,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import sys; sys.path.append('..'); import 共通.入力
 import sys; sys.path.append('..'); import 共通.音声
-from ...データセット               import データセット as DS
+from main.データセット               import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

@@ -4,8 +4,8 @@
 import pyxel
 import time
 import sys; sys.path.append('..'); import 共通.音声
-from   ...                         import 共通部品
-from   ...データセット             import データセット as DS
+import main.共通部品 as 共通部品
+from   main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

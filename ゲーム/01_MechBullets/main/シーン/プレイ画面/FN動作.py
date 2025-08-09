@@ -5,8 +5,8 @@
 import pyxel
 
 # [ゲーム共通]
-from ...             import 共通部品
-from ...データセット import データセット as DS
+from main            import 共通部品
+from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

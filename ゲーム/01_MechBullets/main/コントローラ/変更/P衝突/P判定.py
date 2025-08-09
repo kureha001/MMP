@@ -4,11 +4,11 @@
 #┃衝突による関係オブジェクトのアクション・メソッド実行を指示
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [ゲーム共通]
-from ....         import 共通部品
-from ....汎用部品 import 位置関係
+from main          import 共通部品
+from main.汎用部品 import 位置関係
 
 # [別クラス]
-from ....オブジェクト.キャラ.敵機 import 機体ID
+from main.オブジェクト.キャラ.敵機 import 機体ID
 
 # [要素クラス]
 from .P実行 import *

@@ -4,8 +4,8 @@
 import time
 import pyxel
 import sys; sys.path.append('..'); import 共通.音声
-from   ...データセット             import データセット as DS
-from   ...オブジェクト.選手        import 選手の生成
+from   main.データセット             import DS
+from   main.オブジェクト.選手        import 選手の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

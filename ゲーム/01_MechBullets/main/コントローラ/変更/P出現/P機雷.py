@@ -7,11 +7,11 @@
 import pyxel
 
 # [ゲーム共通]
-from ....データセット import データセット as DS
+from main.データセット import DS
 
 # [別クラス]
-from ....オブジェクト.キャラ.敵機 import 敵機生成
-from ....オブジェクト.キャラ.敵機 import 機体ID
+from main.オブジェクト.キャラ.敵機 import 敵機生成
+from main.オブジェクト.キャラ.敵機 import 機体ID
 
 #┌───────────────────────────────────
 #│アクション・メソッド実行

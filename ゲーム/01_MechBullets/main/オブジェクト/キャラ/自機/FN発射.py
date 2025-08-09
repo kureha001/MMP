@@ -5,7 +5,7 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import pyxel
 import main.共通部品 as 共通部品
-from   main.データセット               import データセット as DS
+from   main.データセット               import DS
 from   main.オブジェクト.管理.特殊効果 import 効果ID
 from   ..弾                            import 弾生成
 

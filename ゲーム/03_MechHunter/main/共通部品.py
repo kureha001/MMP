@@ -2,7 +2,7 @@
 #┃共通部品
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import sys; sys.path.append('..'); import 共通.MMP
-from .データセット import データセット as DS
+from .データセット import DS
 
 def 電飾制御(引数_活性可否): #① True:活性化／False:非活性化
     #┬

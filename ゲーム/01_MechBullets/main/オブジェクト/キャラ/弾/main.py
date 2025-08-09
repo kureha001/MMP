@@ -1,7 +1,7 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃キャラクタ：弾
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-from main.データセット  import データセット as DS
+from main.データセット  import DS
 from .FN動作           import 本体 as 動作機能の生成
 from .FN衝突           import 本体 as 衝突機能の生成
 from .FN表現           import 本体 as 表現機能の生成

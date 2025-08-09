@@ -4,7 +4,7 @@
 import pyxel
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   .データセット               import データセット as DS
+from   .データセット               import DS
 from   .シーン                     import *
 from   .コントローラ.変更          import 変更コントローラの生成
 from   .コントローラ.結果          import 結果コントローラの生成

@@ -4,7 +4,7 @@
 import pyxel
 import sys; sys.path.append('..'); import 共通.MMP
 from   .汎用部品                   import 入力操作
-from   .データセット               import データセット as DS
+from   .データセット               import DS
 from   .オブジェクト.演出.爆発     import 爆発生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

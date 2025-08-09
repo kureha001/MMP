@@ -5,7 +5,7 @@
 #┃※特殊効果(防御)が発動している場合はダメージを緩和する
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import main.共通部品 as 共通部品
-from   main.データセット               import データセット as DS
+from   main.データセット               import DS
 from   main.オブジェクト.管理.特殊効果 import 効果ID
 from   main.オブジェクト.演出.爆発     import 爆発生成
 

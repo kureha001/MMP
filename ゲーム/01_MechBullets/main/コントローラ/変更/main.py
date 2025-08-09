@@ -9,8 +9,8 @@ import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
 
 # [ゲーム共通]
-from ...             import 共通部品
-from ...データセット import データセット as DS
+from main            import 共通部品
+from main.データセット import DS
 
 # [要素クラス]
 from .P動作 import 動作プロセスの生成

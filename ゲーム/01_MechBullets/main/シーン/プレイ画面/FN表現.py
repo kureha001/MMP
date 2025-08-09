@@ -7,10 +7,10 @@
 import pyxel
 
 # [ゲーム共通]
-from ...データセット import データセット as DS
+from main.データセット import DS
 
 # [別クラス]
-from ...オブジェクト.管理.特殊効果 import 効果ID
+from main.オブジェクト.管理.特殊効果 import 効果ID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

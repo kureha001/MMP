@@ -4,10 +4,10 @@
 import time
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   ...                         import 共通部品
-from   ...データセット             import データセット as DS
-from   ...オブジェクト.発電機      import 発電機の生成
-from   ...オブジェクト.運搬機      import 運搬機の生成
+from   main                        import 共通部品
+from   main.データセット             import DS
+from   main.オブジェクト.発電機      import 発電機の生成
+from   main.オブジェクト.運搬機      import 運搬機の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

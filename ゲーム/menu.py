@@ -4,21 +4,15 @@ from pathlib import Path
 
 # 2階層メニュー: {カテゴリ番号: (カテゴリ名, {プログラム番号: (フォルダ, ファイル, タイトル)})}
 MENU = {
-    "1": ("ツール", {
-        "1": ("prog1", "main.py", "データ処理ツール"),
-        "2": ("prog2", "main.py", "画像変換ツール"),
+    "1": ("ゲーム", {
+        "1": ("01_MechBullets"  , "main.py", "メック・バレット"     ),
+        "2": ("02_MechSaurus"   , "main.py", "メック・サウルス"     ),
+        "3": ("03_MechHunter"   , "main.py", "メック・ハンター"     ),
+        "4": ("04_MechTornado"  , "main.py", "メック・トルネード"   ),
     }),
-    "2": ("ゲーム", {
-        "1": ("01_MechBullets"  , "main.py", "メック・バレット"),
-        "2": ("02_MechSaurus"   , "main.py", "メック・サウルス"),
-        "3": ("03_MechHunter"   , "main.py", "メック・ハンター"),
-        "4": ("04_MechTornado"  , "main.py", "メック・トルネード"),
-    }),
-    "3": ("ゲーム(テスト))", {
-        "1": ("01_MechBullets"  , "test.py", "メック・バレット"),
-        "2": ("02_MechSaurus"   , "test.py", "メック・サウルス"),
-        "3": ("03_MechHunter"   , "test.py", "メック・ハンター"),
-        "4": ("04_MechTornado"  , "test.py", "メック・トルネード"),
+    "2": ("ツール", {
+        "1": ("01_TOOLS", "HC4067.py" , "アナログ入力"),
+        "2": ("01_TOOLS", "PCA9865.py", "ＰＷＭ出力"),
     }),
 }
 
@@ -54,8 +48,9 @@ def main():
     for cat_num in sorted(MENU, key=lambda x: int(x)):
         cat_name = MENU[cat_num][0]
         print(f"{int(cat_num):02d}. {cat_name}")
+    print("")
     print("00. 終了")
-
+    print("")
     cat_choice = input("カテゴリ番号を入力してください: ").lstrip("0") or "0"
     if cat_choice == "0":
         print("終了します。")
@@ -70,8 +65,9 @@ def main():
     for prog_num in sorted(programs, key=lambda x: int(x)):
         _, _, title = programs[prog_num]
         print(f"{int(prog_num):02d}. {title}")
+    print("")
     print("00. 戻る")
-
+    print("")
     prog_choice = input("プログラム番号を入力してください: ").lstrip("0") or "0"
     if prog_choice == "0":
         print("メニューに戻るには、このランチャーを再実行してください。")

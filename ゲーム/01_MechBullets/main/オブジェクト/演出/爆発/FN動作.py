@@ -61,8 +61,9 @@ class 本体:
         x = self._情報.X
         y = self._情報.Y
         r = self.仕様.最大半径
-        確認X = (x < -r or x > r + DS.仕様.画面幅  )
-        確認Y = (y < -r or y > r + DS.仕様.画面高 )
+        画面仕様 = DS.仕様.リソース.画面
+        確認X = (x < -r or x > r + 画面仕様.幅)
+        確認Y = (y < -r or y > r + 画面仕様.高)
         if 確認X or 確認Y:
         #│ ＼（画面内の場合）
             #↓

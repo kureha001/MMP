@@ -1,11 +1,19 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃結果機能(遷移プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
 import time
 import pyxel
+
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.音声
-from   main.データセット             import DS
-from   main.オブジェクト.選手        import 選手の生成
+
+# [ゲーム共通]
+from main.データセット import DS
+
+# [別クラス]
+from main.データセット      import DS
+from main.オブジェクト.選手 import 選手の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
@@ -76,6 +84,6 @@ class 本体:
     def Fn音声を再生(self):
         #┬
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン)
+        共通.音声.自動再生(DS.情報.シーン, 引数_停止 = True)
         time.sleep(2)
         #┴

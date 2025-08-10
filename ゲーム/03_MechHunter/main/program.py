@@ -13,8 +13,8 @@ from main.データセット import DS
 from main.シーン       import *
 
 # [要素]
-from main.コントローラ.変更      import 変更コントローラの生成
-from main.コントローラ.結果      import 結果コントローラの生成
+from main.コントローラ.変更 import 変更コントローラの生成
+from main.コントローラ.結果 import 結果コントローラの生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン
@@ -44,10 +44,11 @@ class 開始:
     def 初期化_リソース(self):
         #┬
         #○画面を初期化する
+        ID = DS.仕様.システム         
         pyxel.init(
-                DS.仕様.リソース.画面.幅,
-                DS.仕様.リソース.画面.高,
-                title = DS.仕様.バージョン)
+            DS.仕様.リソース.画面.幅,
+            DS.仕様.リソース.画面.高,
+            title = f"{ID.名称} : Ver.{ID.版数}")
         pyxel.screen_mode(1)
         #│
         #○リソースファイルを読み込む

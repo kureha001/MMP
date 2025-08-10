@@ -1,13 +1,20 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃結果機能(遷移プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
 import time
+
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   main                        import 共通部品
-from   main.データセット             import DS
-from   main.オブジェクト.発電機      import 発電機の生成
-from   main.オブジェクト.運搬機      import 運搬機の生成
+
+# [ゲーム共通]
+import main.共通部品 as 共通部品
+from main.データセット import DS
+
+# [別クラス]
+from main.オブジェクト.発電機 import 発電機の生成
+from main.オブジェクト.運搬機 import 運搬機の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
@@ -93,11 +100,11 @@ class 本体:
     def Fn音声を再生(self):
         #┬ 
         #●恐竜の鳴き声を鳴らす
-        共通.音声.個別指定(2,1)
+        共通.音声.個別指定(1, 2, 引数_一時停止 = True)
         time.sleep(2)
         #│
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン)
+        共通.音声.自動再生(DS.情報.シーン, 引数_停止 = True)
         共通部品.運搬機.電飾制御(True) # 内臓モジュール
         time.sleep(3)
         #┴

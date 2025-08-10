@@ -1,10 +1,13 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃結果機能(遷移プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   main                         import 共通部品
-from   main.データセット             import DS
+
+# [ゲーム共通]
+import main.共通部品 as 共通部品
+from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様
@@ -98,5 +101,5 @@ class 本体:
     def Fn音声を再生(self):
         #┬ 
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン)
+        共通.音声.自動再生(DS.情報.シーン, 引数_停止 = True)
         #┴

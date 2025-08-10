@@ -6,9 +6,12 @@
 #┃・得点を加算
 #┃・チャタリングを防止するため、スキャンのインターバルを設ける
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   main.データセット             import DS
+
+# [ゲーム共通]
+from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

@@ -1,14 +1,21 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃ゲーム本体
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
 import pyxel
+
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
-from   .データセット               import DS
-from   .シーン                     import *
-from   .コントローラ.変更          import 変更コントローラの生成
-from   .コントローラ.結果          import 結果コントローラの生成
-from   .オブジェクト.演出.背景     import 背景の生成
+
+# [ゲーム共通]
+from main.データセット import DS
+from main.シーン       import *
+
+# [要素]
+from main.コントローラ.変更      import 変更コントローラの生成
+from main.コントローラ.結果      import 結果コントローラの生成
+from main.オブジェクト.演出.背景 import 背景の生成
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃メイン

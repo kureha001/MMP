@@ -2,13 +2,13 @@
 #┃結果機能(表現プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [システム共通]
-import  pyxel
+import pyxel
 
 # [ゲーム共通]
-from    main.データセット               import DS
+from main.データセット import DS
 
 # [別クラス]
-from    main.オブジェクト.管理.特殊効果 import 効果ID
+from main.オブジェクト.管理.特殊効果 import 効果ID
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃仕様

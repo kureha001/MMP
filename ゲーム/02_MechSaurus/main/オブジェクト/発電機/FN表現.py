@@ -5,10 +5,15 @@
 #┃・物理体：小屋の『恐竜の首(サーボ）』を制御
 #┃・画　面：足跡の画像で表示
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
 import pyxel
+
+# [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
-from   main.データセット             import DS
-from   main                        import 共通部品
+
+# [ゲーム共通]
+import main.共通部品 as 共通部品
+from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃データセット：仕様

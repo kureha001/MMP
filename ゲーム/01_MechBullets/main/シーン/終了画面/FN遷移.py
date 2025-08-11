@@ -67,6 +67,8 @@ class 本体:
         DS.obj.アイテム.clear()
         DS.obj.弾_自機.clear()
         DS.obj.弾_敵機.clear()
+        DS.obj.自機共通 = None
+        DS.obj.特殊効果 = None    
         #┴
 	#────────────────────────────────────
     def Fn音声を再生(self):

@@ -103,4 +103,17 @@ class 本体:
         #○ゲーム情報（得点／難易度）を描画する
         pyxel.text( 5, 2, f"SCORE:{ DS.情報.得点   }", 7)
         pyxel.text(82, 2, f"STAGE:{ DS.情報.難易度 }", 7)
+        #│
+        #○チートを描画する
+        if DS.情報.シーン != DS.仕様.シーンID.タイトル画面: return
+        色 = 8
+        横 = 22
+        for i in range(2):
+            横 -= 1
+            if DS.情報.チート.スキップ != 1 : pyxel.text(横,30,f"[F1/F2] STAGE:{DS.情報.チート.スキップ}",色)
+            if DS.情報.チート.時短          : pyxel.text(横,40, "   [F3] SHORT TIME ",色)
+            if DS.情報.チート.フル発射      : pyxel.text(横,50, "   [F4] FULL WEAPON",色)
+            if DS.情報.チート.フルオプション: pyxel.text(横,60, "   [F5] FULL OPTION",色)
+            if DS.情報.チート.消えない      : pyxel.text(横,70, "   [F6] NO DESTROY ",色)
+            色 = 7
         #┴

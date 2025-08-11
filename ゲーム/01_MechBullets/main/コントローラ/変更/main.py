@@ -1,9 +1,15 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃コントローラ：変更機能
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# [システム共通]
+import pyxel
+
 # [アプリ共通]
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
+
+# [ゲーム共通]
+from   main.データセット import DS
 
 # [要素クラス]
 from .P動作 import 動作プロセスの生成
@@ -57,4 +63,9 @@ class 本体:
         #│
         #●プロセス一覧を実行する
         for プロセス in self.プロセス一覧:プロセス.実行()
+        #│
+        #○自爆する
+        if DS.obj.自機共通 is None      : return
+        if not pyxel.btnr(pyxel.KEY_F10): return
+        DS.obj.自機共通.情報.シールド = 0
         #┴

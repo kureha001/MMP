@@ -10,6 +10,7 @@ import pyxel
 import sys; sys.path.append('..'); import 共通.音声
 
 # [ゲーム共通]
+import main.共通部品 as 共通部品
 from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -59,11 +60,15 @@ class 本体:
         #●MMPをキャリブレーションする
         self.実行_MMP調整()
         #│
+        #●チート機能を選択する
+        self.実行_チート選択()
+        #│
         #○選択状況を確認する
-        判定1 = (DS.情報.人数 == 0)                               #人数選択
-        判定2 = (DS.情報.操作手段 is None)                        #操作選択
-        判定3 = ((DS.情報.人数 == 3) and (DS.情報.操作手段 != 2)) #MMPパッド条件
-        if 判定1 or 判定2 or 判定3: return
+        if not pyxel.btnr(pyxel.KEY_SPACE)                  : return
+        if DS.情報.人数 == 0                                : return #人数選択
+        if DS.情報.操作手段 is None                         : return #操作選択
+        if (DS.情報.人数 >= 2) and (DS.情報.操作手段 == 0)  : return #キーボード条件
+        if (DS.情報.人数 >= 3) and (DS.情報.操作手段 != 2)  : return #MMPパッド条件
         #│＼（未選択の場合）
         #│ ↓
         #│ ▼処理を中断する
@@ -75,6 +80,40 @@ class 本体:
         共通.音声.クリック音()
         #┴
         #┴
+	#────────────────────────────────────
+    def 実行_チート選択(self):
+
+        if pyxel.btnr(pyxel.KEY_F1 ):
+            DS.情報.チート.スキップ -= 1
+            if DS.情報.チート.スキップ <  1: DS.情報.チート.スキップ = 30
+            共通.音声.ゲット音()
+
+        if pyxel.btnr(pyxel.KEY_F2):
+            DS.情報.チート.スキップ += 1
+            if DS.情報.チート.スキップ > 30: DS.情報.チート.スキップ =  1
+            共通.音声.ゲット音()
+
+        チート = DS.情報.チート.時短
+        if pyxel.btnr(pyxel.KEY_F3):
+            DS.情報.チート.時短             = (False) if チート else (True)
+            共通.音声.ゲット音()
+
+        チート = DS.情報.チート.フル発射
+        if pyxel.btnr(pyxel.KEY_F4):
+            DS.情報.チート.フル発射         = (False) if チート else (True)
+            共通.音声.ゲット音()
+
+        チート = DS.情報.チート.フルオプション
+        if pyxel.btnr(pyxel.KEY_F5):
+            DS.情報.チート.フルオプション   = (False) if チート else (True)
+            共通.音声.ゲット音()
+
+        チート = DS.情報.チート.消えない
+        if pyxel.btnr(pyxel.KEY_F6):
+            DS.情報.チート.消えない         = (False) if チート else (True)
+            共通.音声.ゲット音()
+
+
 	#────────────────────────────────────
     def 実行_人数選択(self):
         #┬

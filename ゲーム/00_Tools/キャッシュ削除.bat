@@ -1,7 +1,7 @@
 RMDIR /s /q .\共通\__pycache__\
 
 
-CD .\01_MechBullets
+CD ..\01_MechBullets
 RMDIR /s /q  .\__pycache__\
 RMDIR /s /q  .\main\__pycache__\
 RMDIR /s /q  .\main\データセット\__pycache__\
@@ -25,7 +25,7 @@ RMDIR /s /q  .\main\オブジェクト\管理\特殊効果\__pycache__\
 RMDIR /s /q  .\main\汎用部品\__pycache__\
 CD ..
 
-CD .\02_MechSaurus
+CD ..\02_MechSaurus
 RMDIR /s /q .\__pycache__\
 RMDIR /s /q .\main\__pycache__\
 RMDIR /s /q .\main\データセット\__pycache__\
@@ -40,7 +40,7 @@ RMDIR /s /q .\main\シーン\プレイ画面\__pycache__\
 RMDIR /s /q .\main\シーン\終了画面\__pycache__\
 CD ..
 
-CD .\03_MechHunter
+CD ..\03_MechHunter
 RMDIR /s /q .\__pycache__\
 RMDIR /s /q .\main\__pycache__\
 RMDIR /s /q .\main\データセット\__pycache__\
@@ -55,7 +55,7 @@ RMDIR /s /q .\main\シーン\終了画面\__pycache__\
 CD ..
 
 
-CD .\04_MechTornado
+CD ..\04_MechTornado
 RMDIR /s /q .\__pycache__\
 RMDIR /s /q .\main\__pycache__\
 RMDIR /s /q .\main\データセット\__pycache__\

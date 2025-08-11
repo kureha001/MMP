@@ -1,9 +1,9 @@
-import tkinter as tk
-from tkinter import messagebox
-import threading
-import subprocess
-import sys
-from pathlib import Path
+import  tkinter     as tk
+from    tkinter     import messagebox
+import  threading
+import  subprocess
+import  sys
+from    pathlib     import Path
 
 # === メニュー構造 {カテゴリ番号: (カテゴリ名, {プログラム番号: (フォルダ, ファイル, タイトル)})} ===
 MENU = {
@@ -49,7 +49,7 @@ def run_external_program(folder: str, file: str, root: tk.Tk):
 class MenuApp:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("2階層メニュー（外部実行）")
+        self.root.title("ＭＭＰアプリ・ラウンチャー")
         self.root.geometry("360x300")
         self.show_main_menu()
 

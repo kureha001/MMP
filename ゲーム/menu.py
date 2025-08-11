@@ -43,7 +43,7 @@ def run_external_program(folder: str, file: str, root: tk.Tk):
             # cwd=target_dir により「フォルダに移動してから起動」
             proc = subprocess.Popen([sys.executable, file], cwd=target_dir)
             ret = proc.wait()
-            root.after(0, lambda: messagebox.showinfo("完了", f"終了コード: {ret}"))
+            #root.after(0, lambda: messagebox.showinfo("完了", f"終了コード: {ret}"))
         except Exception as e:
             root.after(0, lambda: messagebox.showerror("エラー", f"実行に失敗しました:\n{e!r}"))
 

@@ -37,7 +37,7 @@ MECH_BULLETS_DIRS = [
     "main/シーン/終了画面/__pycache__",
     "main/オブジェクト/管理/特殊効果/__pycache__",
     "main/汎用部品/__pycache__",
-]
+    ]
 
 MECH_SAURUS_DIRS = [
     "__pycache__",
@@ -52,7 +52,7 @@ MECH_SAURUS_DIRS = [
     "main/シーン/タイトル画面/__pycache__",
     "main/シーン/プレイ画面/__pycache__",
     "main/シーン/終了画面/__pycache__",
-]
+    ]
 
 MECH_HUNTER_DIRS = [
     "__pycache__",
@@ -66,7 +66,7 @@ MECH_HUNTER_DIRS = [
     "main/シーン/タイトル画面/__pycache__",
     "main/シーン/プレイ画面/__pycache__",
     "main/シーン/終了画面/__pycache__",
-]
+    ]
 
 MECH_TORNADO_DIRS = [
     "__pycache__",
@@ -80,16 +80,24 @@ MECH_TORNADO_DIRS = [
     "main/シーン/タイトル画面/__pycache__",
     "main/シーン/プレイ画面/__pycache__",
     "main/シーン/終了画面/__pycache__",
-]
+    ]
+
+TEST_TOOL = [
+    "__pycache__",
+    "CLI/__pycache__",
+    "plugins/__pycache__",
+    ]
 
 def get_target_map(base: Path) -> dict[str, list[Path]]:
     return {
-        "共通": [base / "../共通" / "__pycache__"],
-        "01_MechBullets": [base / "../01_MechBullets" / p for p in MECH_BULLETS_DIRS],
-        "02_MechSaurus":  [base / "../02_MechSaurus"  / p for p in MECH_SAURUS_DIRS],
-        "03_MechHunter":  [base / "../03_MechHunter"  / p for p in MECH_HUNTER_DIRS],
-        "04_MechTornado": [base / "../04_MechTornado" / p for p in MECH_TORNADO_DIRS],
-    }
+        "共通"          : [base / "../共通"             / "__pycache__"],
+        "00_Test"       : [base / "../00_Test"          / p for p in TEST_TOOL],
+        "00_Tools"      : [base / "../00_Tools"         / "__pycache__"],
+        "01_MechBullets": [base / "../01_MechBullets"   / p for p in MECH_BULLETS_DIRS],
+        "02_MechSaurus" : [base / "../02_MechSaurus"    / p for p in MECH_SAURUS_DIRS],
+        "03_MechHunter" : [base / "../03_MechHunter"    / p for p in MECH_HUNTER_DIRS],
+        "04_MechTornado": [base / "../04_MechTornado"   / p for p in MECH_TORNADO_DIRS],
+        }
 
 def rmdir_quiet(path: Path) -> tuple[bool, str]:
     if not path.exists():
@@ -204,19 +212,23 @@ class App(tk.Tk):
                 self.listbox.insert(tk.END, f"  {rel}")
         self.status.set("対象プレビューを更新しました。")
 
-    # ------------ チェック操作 ------------
+    # ------------ 全選択 ------------
     def select_all(self):
+
         for var in self.group_vars.values():
             var.set(True)
         self.refresh_preview_list()
 
+    # ------------ 全解除 ------------
     def clear_all(self):
+
         for var in self.group_vars.values():
             var.set(False)
         self.refresh_preview_list()
 
-    # ------------ 実行 ------------
+    # ------------ 削除実行 ------------
     def run_cleanup(self):
+
         base = Path(self.base_dir.get())
         tmap = get_target_map(base)
 

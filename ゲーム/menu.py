@@ -14,10 +14,7 @@ MENU = {
         "4": ("04_MechTornado"  , "main.py", "メック・トルネード"   ),
     }),
     "2": ("テスト", {
-        "1": ("00_Test", "01_MechBullets.py", "メック・バレット"    ),
-        "2": ("00_Test", "02_MechSaurus.py", "メック・サウルス"     ),
-        "3": ("00_Test", "03_MechHunter.py", "メック・ハンター"     ),
-        "4": ("00_Test", "04_MechTornado.py", "メック・トルネード"  ),
+        "1": ("00_Test", "game.py", "ゲームの周辺機器"    ),
     }),
     "9": ("ツール", {
         "1": ("00_Tools", "ＳＤカード作成.py" , "FDPlayer用 SDカード作成"),

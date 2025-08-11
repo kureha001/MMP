@@ -33,15 +33,15 @@
 
 ## フォルダ構成例
 ```
-├─ launcher.py # このランチャープログラム
+├─ menu.py # このランチャープログラム
 ├─ prog1/
 │ └─ main.py
 ├─ prog2/
 │ └─ main.py
 ├─ game1/
-│ └─ start.py
+│ └─ main.py
 └─ game2/
-└─ main.py
+   └─ main.py
 ```
 
 ## 修正方法

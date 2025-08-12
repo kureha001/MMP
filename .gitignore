@@ -57,6 +57,7 @@
 
 ゲーム/__pycache__/
 ゲーム/共通/__pycache__/
+ゲーム/00_PV/
 ゲーム/00_Tools/__pycache__/
 ゲーム/00_Test/__pycache__/
 ゲーム/00_Test/plugins/__pycache__/

@@ -3,4 +3,4 @@
 #┃リソースエディタ起動  ： pyxel edit ".\main\resource.pyxres"
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import main
-ゲーム = main.開始()
+main.開始()

@@ -33,7 +33,7 @@ class mmp:
         self.ser = serial.Serial()
 #        self.ser.baudrate   = 921600
         self.ser.baudrate   = 115200
-        self.connect_flag   = False
+        self.接続済   = False
         self.version = ""
         #│
         #○アナログパラメータを初期化する
@@ -61,7 +61,7 @@ class mmp:
 
         self.version = self.バージョン()
         print(f"接続済み(Ver.{self.version})")
-        self.connect_flag = True
+        self.接続済 = True
         return com_str
     #---------------------------------------------------------------------
     def 通信接続(self, comm_num):
@@ -71,12 +71,12 @@ class mmp:
         except:
             raise ConnectException()
         time.sleep(2)
-        self.connect_flag = True
+        self.接続済 = True
     #---------------------------------------------------------------------
     def 通信切断(self):
         print("\n<<切断>>")
         self.ser.close()
-        self.connect_flag = False
+        self.接続済 = False
     #---------------------------------------------------------------------
     def バージョン(self):
         self.ser.reset_input_buffer()  # ゴミを捨てる

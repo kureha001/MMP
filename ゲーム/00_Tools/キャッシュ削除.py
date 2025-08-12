@@ -82,16 +82,18 @@ MECH_TORNADO_DIRS = [
     "main/シーン/終了画面/__pycache__",
     ]
 
-TEST_TOOL = [
+TEST_TOOL_DIRS = [
     "__pycache__",
     "CLI/__pycache__",
     "plugins/__pycache__",
     ]
 
+
 def get_target_map(base: Path) -> dict[str, list[Path]]:
     return {
         "共通"          : [base / "../共通"             / "__pycache__"],
-        "00_Test"       : [base / "../00_Test"          / p for p in TEST_TOOL],
+        "00_PV"         : [base / "../00_PV"            / "__pycache__"],
+        "00_Test"       : [base / "../00_Test"          / p for p in TEST_TOOL_DIRS],
         "00_Tools"      : [base / "../00_Tools"         / "__pycache__"],
         "01_MechBullets": [base / "../01_MechBullets"   / p for p in MECH_BULLETS_DIRS],
         "02_MechSaurus" : [base / "../02_MechSaurus"    / p for p in MECH_SAURUS_DIRS],

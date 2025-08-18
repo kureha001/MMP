@@ -5,8 +5,8 @@
 // ボード情報：Generic RP2350
 //----------------------------------------------------------------------------- 
 // Ver 0.3.05 - 2025/07/17 By Takanari.Kureha
-//   ・RGB LED点灯を追加
-//   ・シリアルにインターバルを追加
+//   ・DFPlayerのステータス系を1つの関数にまとめた
+//   ・RGB LED点滅を追加（ANA系:紫/PWM系:青/MP3系:緑）
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
@@ -143,7 +143,7 @@ void setup() {
   // RGB LED
   pixels.begin();
   pixels.clear();
-  pixels.setPixelColor(0, pixels.Color(10,0,10));
+  pixels.setPixelColor(0, pixels.Color(10,10,10));
   pixels.show();
 }
 
@@ -231,6 +231,10 @@ void loop() {
       // 返却値　　　："!!!!!" 正常 ／ "ANS!!" エラー
       //----------------------------------------------------------
       if (strcmp(dat[0], "ANS") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(10,0,10));
+        pixels.show();
+
         int newPl = atoi16(dat[1]);
         int newSw = atoi16(dat[2]);
         if (newPl >= 1 && newPl <= 16 && newSw >= 1 && newSw <= 4) {
@@ -241,12 +245,20 @@ void loop() {
               anaValues[i][j] = 0;
           serialPort->print("!!!!!");
         } else serialPort->print("ANS!!");
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：値バッファ更新（ANU）
       // コマンド形式：ANU!
       // 返却値　　　："!!!!!" 正常
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "ANU") == 0) {
+
+        pixels.setPixelColor(0, pixels.Color(10,0,10));
+        pixels.show();
+
         for (int ch = 0; ch < anaPlayerCnt; ch++) {
           for (int i = 0; i < 4; i++) {
             digitalWrite(addressBusGPIOs[i], (ch >> i) & 1);
@@ -258,18 +270,29 @@ void loop() {
           }
         }
         serialPort->print("!!!!!");
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：値バッファ参照（ANR）
       // コマンド形式：ANR:<プレイヤー番号1～16>:<スイッチ番号1～4>!
       // 返却値　　　：アナログ値 ／ "ANR!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "ANR") == 0 && dat_cnt >= 2) {
+
+        pixels.setPixelColor(0, pixels.Color(10,0,10));
+        pixels.show();
+
         int pl = atoi16(dat[1]);
         int sw = atoi16(dat[2]);
         if (pl < 16 && sw < 4) {
           sprintf(rets, "%04X!", anaValues[pl][sw]);
           serialPort->print(rets);
         } else serialPort->print("ANR!!");
+
+        pixels.clear();
+        pixels.show();
 
       //===========================================================
       // ＰＷＭ関連(PCA9685)
@@ -281,6 +304,10 @@ void loop() {
       // 返却値　　　："!!!!!" 正常 ／ "PWS!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "PWM") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,0,50));
+        pixels.show();
+
         pwmNo   = atoi16(dat[1]);
         pwmVal  = atoi16(dat[2]);
         pwmID   = pwmNo / 16;
@@ -289,6 +316,10 @@ void loop() {
           PWM[pwmID].setPWM(pwmCh, 0, pwmVal);
           serialPort->print("!!!!!");
         } else serialPort->print("PWS!!");
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 出力コマンド
       // 機能　　　　：ＰＷＭ出力 角度指定（PWA）
@@ -296,6 +327,10 @@ void loop() {
       // 返却値　　　："!!!!!" 正常 ／ "PWS!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "PWA") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,0,50));
+        pixels.show();
+
         pwmNo   = atoi16(dat[1]);
         pwmID   = pwmNo / 16;
         pwmCh   = pwmNo % 16;
@@ -308,6 +343,10 @@ void loop() {
           PWM[pwmID].setPWM(pwmCh, 0, pwmVal);
           serialPort->print("!!!!!");
         } else serialPort->print("PWA!!");
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 出力コマンド
       // 機能　　　　：ＰＷＭ出力 サーボ定格設定（PWI）
@@ -315,6 +354,10 @@ void loop() {
       // 返却値　　　："!!!!!" 正常／ "PWI!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "PWI") == 0 && dat_cnt >= 5) {
+
+        pixels.setPixelColor(0, pixels.Color(0,0,50));
+        pixels.show();
+
         servoRS = atoi16(dat[1]); // サーボの有効開始角度
         servoRE = atoi16(dat[2]); // サーボの有効終了角度
         servoPS = atoi16(dat[3]); // サーボの有効開始角度でのPWM値
@@ -323,6 +366,9 @@ void loop() {
         if (servoRS < servoRE && servoPS < servoPE) {
           serialPort->print("!!!!!");
         } else serialPort->print("PWI!!");
+
+        pixels.clear();
+        pixels.show();
 
       //===========================================================
       // ｉ２ｃ関連
@@ -393,28 +439,6 @@ void loop() {
       //  <コマンド>:<機器番号1または2>:<その他引数>!
       //===========================================================
       //----------------------------------------------------------
-      // 機能　　　　：指定トラック再生
-      // コマンド形式：DPL:<機器番号0～1>!
-      // 返却値　　　："!!!!!" 正常 ／ "DPL!!" エラー
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DPL") == 0 && dat_cnt >= 3) {
-        int n = atoi16(dat[1]) - 1;
-        if (validateDFPlayer(n, dat[0])) {
-          dfPlayer[n].play(atoi16(dat[2]));
-          serialPort->print("!!!!!");
-        }
-      //----------------------------------------------------------
-      // 機能　　　　：指定トラックをループ再生
-      // コマンド形式：DRP:<機器番号0～1>!
-      // 返却値　　　："!!!!!" 正常 ／ "DRP!!" エラー
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DRP") == 0 && dat_cnt >= 3) {
-        int n = atoi16(dat[1]) - 1;
-        if (validateDFPlayer(n, dat[0])) {
-          dfPlayer[n].loop(atoi16(dat[2]));
-          serialPort->print("!!!!!");
-        }
-      //----------------------------------------------------------
       // 機能　　　　：指定フォルダ内トラック再生
       // コマンド形式：DIR:<機器番号0～1>!
       // 返却値　　　："!!!!!" 正常 ／ "DIR!!" エラー
@@ -425,76 +449,116 @@ void loop() {
           dfPlayer[n].playFolder(atoi16(dat[2]), atoi16(dat[3]));
           serialPort->print("!!!!!");
         }
+
+        pixels.clear();
+        pixels.show();
+
+      //----------------------------------------------------------
+      // 機能　　　　：状態取得
+      // コマンド形式：DST:<機器番号0～1>!
+      // 返却値　　　："<状態番号>!" 正常 ／ "DST!!" エラー
+      //              状態番号(0停止, 1再生, 2一時停止)
+      //----------------------------------------------------------
+      } else if (strcmp(dat[0], "DST") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,10,0));
+        pixels.show();
+
+        int n = atoi16(dat[1]) - 1;
+        int s = atoi16(dat[2]);
+        int state = 0;
+
+        if (validateDFPlayer(n, dat[0])) {
+          switch (s) {
+            case 1:
+              state = dfPlayer[n].readState();
+              if (state<=0) {state=0;}
+              break;
+            case 2:
+              state = dfPlayer[n].readVolume();
+              break;
+            case 3:
+              state = dfPlayer[n].readEQ();
+              break;
+            case 4:
+              state = dfPlayer[n].readFileCounts();
+              break;
+            case 5:
+              state = dfPlayer[n].readCurrentFileNumber();
+              break;
+            default:
+              break;
+          }
+          if (state<0) {
+            serialPort->print("!!!!!");
+          } else {
+            sprintf(rets, "%04X!", state);
+            serialPort->print(rets);
+          }
+        } else {
+          serialPort->print("!!!!!");
+        }
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：停止
       // コマンド形式：DSP:<機器番号0～1>!
       // 返却値　　　："!!!!!" 正常 ／ "DSP!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DSP") == 0 && dat_cnt >= 2) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
         int n = atoi16(dat[1]) - 1;
         if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].stop();
           serialPort->print("!!!!!");
         }
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：一時停止
       // コマンド形式：DPA:<機器番号0～1>!
       // 返却値　　　："!!!!!" 正常 ／ "DPA!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DPA") == 0 && dat_cnt >= 2) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
         int n = atoi16(dat[1]) - 1;
         if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].pause();
           serialPort->print("!!!!!");
         }
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：再生再開
       // コマンド形式：DPR:<機器番号0～1>!
       // 返却値　　　："!!!!!" 正常 ／ "DPR!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DPR") == 0 && dat_cnt >= 2) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
         int n = atoi16(dat[1]) - 1;
         if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].start();
           serialPort->print("!!!!!");
         }
-      //----------------------------------------------------------
-      // 機能　　　　：再生状態取得
-      // コマンド形式：DST:<機器番号0～1>!
-      // 返却値　　　："<状態番号>!" 正常 ／ "DST!!" エラー
-      //              状態番号(0停止, 1再生, 2一時停止)
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DST") == 0 && dat_cnt >= 2) {
-        int n = atoi16(dat[1]) - 1;
-        if (validateDFPlayer(n, dat[0])) {
-          int state = dfPlayer[n].readState();
-          sprintf(rets, "%04X!", state);
-          serialPort->print(rets);
-        }
-      //----------------------------------------------------------
-      // 機能　　　　：再生中トラック番号取得
-      // コマンド形式：DQT:<機器番号0～1>!
-      // 返却値　　　："<トラック番号;16進数>!" 正常 ／ "DQT!!" エラー
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DQT") == 0 && dat_cnt >= 2) {
-        int n = atoi16(dat[1]) - 1;
-        if (validateDFPlayer(n, dat[0])) {
-          int val = dfPlayer[n].readCurrentFileNumber();
-          sprintf(rets, "%04X!", val);
-          serialPort->print(rets);
-        }
-      //----------------------------------------------------------
-      // 機能　　　　：全トラック数取得（DTC）
-      // コマンド形式：DTC:<機器番号0～1>!
-      // 返却値　　　："<トラック数;16進数>!" 正常 ／ "DTC!!" エラー
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DTC") == 0 && dat_cnt >= 2) {
-        int n = atoi16(dat[1]) - 1;
-        if (validateDFPlayer(n, dat[0])) {
-          int count = dfPlayer[n].readFileCounts();
-          sprintf(rets, "%04X!", count);
-          serialPort->print(rets);
-        }
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：イコライザー設定（DEF）
       // コマンド形式：DEF:<機器番号0～1>:<タイプ0～30>!
@@ -503,22 +567,37 @@ void loop() {
       // 返却値　　　："!!!!!" 正常 ／ "DEF!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "DEF") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
         int n = atoi16(dat[1]) - 1;
         if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].EQ(atoi16(dat[2]));
           serialPort->print("!!!!!");
         }
+
+        pixels.clear();
+        pixels.show();
+
       //----------------------------------------------------------
       // 機能　　　　：音量設定（VOL）
       // コマンド形式：VOL:<機器番号0～1>:<音量0～30>!
       // 返却値　　　："!!!!!" 正常 ／ "VOL!!" エラー
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "VOL") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
         int n = atoi16(dat[1]) - 1;
         if (validateDFPlayer(n, dat[0])) {
           dfPlayer[n].volume(atoi16(dat[2]));
           serialPort->print("!!!!!");
         }
+
+        pixels.clear();
+        pixels.show();
 
       //===========================================================
       // 情報

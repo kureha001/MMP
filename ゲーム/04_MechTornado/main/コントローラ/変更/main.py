@@ -5,6 +5,9 @@
 import sys; sys.path.append('..'); import 共通.MMP
 import sys; sys.path.append('..'); import 共通.音声
 
+# [ゲーム共通]
+from   main.データセット import DS
+
 # [要素]
 from .P動作 import 本体 as 動作プロセスの生成
 
@@ -42,7 +45,7 @@ class 本体:
     def 実行(self):
         #┬
         #●アナログ値を読み取る
-        共通.MMP.接続.アナログ読取()
+        if DS.情報.シーン == DS.仕様.シーンID.プレイ画面: 共通.MMP.接続.アナログ読取()
         #│
         #●ＢＧＭをリピート再生する                
         共通.音声.リピート再生()

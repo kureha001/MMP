@@ -1,19 +1,12 @@
 #====================================================== 
 # ＭＭＰライブラリ Ver 0.03 Rottenmeier
 #------------------------------------------------------
-# Ver 0.03.001　2025/06/01 By Takanari.Kureha
-#       1.ファームウェア修正に伴いリカバコードを削除
+# Ver 0.03.002　2025/08/19 By Takanari.Kureha
+#   ・DFPlayerのステータス系を1つの関数にまとめた
 #====================================================== 
-
-#====================================================== 
-# インクルード
-#====================================================== 
+# [システム共通]
 import serial
 import time
-
-#====================================================== 
-# クラス
-#====================================================== 
 
 #=============
 # 例外クラス
@@ -40,7 +33,7 @@ class mmp:
         self.ser = serial.Serial()
 #        self.ser.baudrate   = 921600
         self.ser.baudrate   = 115200
-        self.connect_flag   = False
+        self.接続済   = False
         self.version = ""
         #│
         #○アナログパラメータを初期化する
@@ -68,7 +61,7 @@ class mmp:
 
         self.version = self.バージョン()
         print(f"接続済み(Ver.{self.version})")
-        self.connect_flag = True
+        self.接続済 = True
         return com_str
     #---------------------------------------------------------------------
     def 通信接続(self, comm_num):
@@ -78,11 +71,12 @@ class mmp:
         except:
             raise ConnectException()
         time.sleep(2)
-        self.connect_flag = True
+        self.接続済 = True
     #---------------------------------------------------------------------
     def 通信切断(self):
+        print("\n<<切断>>")
         self.ser.close()
-        self.connect_flag = False
+        self.接続済 = False
     #---------------------------------------------------------------------
     def バージョン(self):
         self.ser.reset_input_buffer()  # ゴミを捨てる
@@ -205,7 +199,7 @@ class mmp:
     #---------------------------------------------------------------------
     # 指定したPWMチャンネル（0〜255）が使用可能かを確認
     #---------------------------------------------------------------------
-    def PWM_チャンネル状況(self, channel):
+    def PWM_チャンネル確認(self, channel):
         if not (0 <= channel <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
         
@@ -216,17 +210,27 @@ class mmp:
         
         return self.PWM機器状況[pwm_id]
     #---------------------------------------------------------------------
-    # ＰＷＭ(PCA9685)：PWM値指定
+    # PWM出力値指定
+    #  コマンド書式： PWM:<Ch通番>:<PWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_VALUE(self, argPort, argValue):
-        data = "PWM:%02x:%01x!" % (argPort, argValue)
+    def PWM_VALUE(self, argPort, argPWM):
+        data = "PWM:%02x:%02x!" % (argPort, argPWM)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
     #---------------------------------------------------------------------
-    # ＰＷＭ(PCA9685)：角度指定
+    # サーボ定格設定
+    #  コマンド書式：PWI:<0度のPWM出力値>:<180度のPWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_ANGLE(self, argPort, argValue):
-        data = "PWA:%02x:%01x!" % (argPort, argValue)
+    def PWM_INIT(self, argPwmMin, argPwmMax):
+        data = "PWI:%02x:%03x:%02x!" % (argPort, argPwmMin, argPwmMax)
+        self.ser.write(str.encode(data))
+        data = self.ser.read(5)
+    #---------------------------------------------------------------------
+    # 角度指定
+    #  コマンド書式：PWA:<Ch通番>:<角度>!
+    #---------------------------------------------------------------------
+    def PWM_ANGLE(self, argPort, argAngle):
+        data = "PWA:%02x:%02x!" % (argPort, argAngle)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
 
@@ -293,21 +297,15 @@ class mmp:
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
-    # 指定トラック再生
-    def DFP_Play(self, 引数_devNo, track_num):
-        cmd = f"DPL:{引数_devNo:01x}:{track_num:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 指定トラックのループ再生開始
-    def DFP_PlayLoop(self, 引数_devNo, track_num):
-        cmd = f"DRP:{引数_devNo:01x}:{track_num:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
     # 指定フォルダ内トラック再生
     def DFP_PlayFolderTrack(self, 引数_devNo, folder, track):
         cmd = f"DIR:{引数_devNo:01x}:{folder:02x}:{track:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # ステータス 1:MP3/2:音量/3:イコライザ/4:ファイル番号(総合計)/4:ファイル番号(フォルダ内)
+    def DFP_get_play_state(self, 引数_devNo, 引数_stNo):
+        cmd = f"DST:{引数_devNo:01x}:{引数_stNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
@@ -332,24 +330,6 @@ class mmp:
     # 音量設定（0〜30）
     def DFP_Volume(self, 引数_devNo, vol):
         cmd = f"VOL:{引数_devNo:01x}:{vol:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 再生中トラック番号取得（戻り値は16進数）
-    def DFP_get_current_track(self, 引数_devNo):
-        cmd = f"DQT:{引数_devNo:01x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 再生状態：0停止, 1再生, 2一時停止
-    def DFP_get_play_state(self, 引数_devNo):
-        cmd = f"DST:{引数_devNo:01x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 全トラック数取得
-    def DFP_get_file_count(self, 引数_devNo):
-        cmd = f"DTC:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 

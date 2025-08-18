@@ -1,8 +1,8 @@
 #====================================================== 
 # ＭＭＰライブラリ Ver 0.03 Rottenmeier
 #------------------------------------------------------
-# Ver 0.03.001　2025/06/01 By Takanari.Kureha
-#       1.ファームウェア修正に伴いリカバコードを削除
+# Ver 0.03.002　2025/08/19 By Takanari.Kureha
+#   ・DFPlayerのステータス系を1つの関数にまとめた
 #====================================================== 
 # [システム共通]
 import serial
@@ -297,21 +297,15 @@ class mmp:
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
-    # 指定トラック再生
-    def DFP_Play(self, 引数_devNo, track_num):
-        cmd = f"DPL:{引数_devNo:01x}:{track_num:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 指定トラックのループ再生開始
-    def DFP_PlayLoop(self, 引数_devNo, track_num):
-        cmd = f"DRP:{引数_devNo:01x}:{track_num:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
     # 指定フォルダ内トラック再生
     def DFP_PlayFolderTrack(self, 引数_devNo, folder, track):
         cmd = f"DIR:{引数_devNo:01x}:{folder:02x}:{track:02x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+
+    # ステータス 1:MP3/2:音量/3:イコライザ/4:ファイル番号(総合計)/4:ファイル番号(フォルダ内)
+    def DFP_get_play_state(self, 引数_devNo, 引数_stNo):
+        cmd = f"DST:{引数_devNo:01x}:{引数_stNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 
@@ -336,24 +330,6 @@ class mmp:
     # 音量設定（0〜30）
     def DFP_Volume(self, 引数_devNo, vol):
         cmd = f"VOL:{引数_devNo:01x}:{vol:02x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 再生中トラック番号取得（戻り値は16進数）
-    def DFP_get_current_track(self, 引数_devNo):
-        cmd = f"DQT:{引数_devNo:01x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 再生状態：0停止, 1再生, 2一時停止
-    def DFP_get_play_state(self, 引数_devNo):
-        cmd = f"DST:{引数_devNo:01x}!"
-        self.ser.write(cmd.encode("ascii"))
-        return self.ser.read(5).decode("ascii")
-
-    # 全トラック数取得
-    def DFP_get_file_count(self, 引数_devNo):
-        cmd = f"DTC:{引数_devNo:01x}!"
         self.ser.write(cmd.encode("ascii"))
         return self.ser.read(5).decode("ascii")
 

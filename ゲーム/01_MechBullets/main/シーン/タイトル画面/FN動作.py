@@ -10,7 +10,6 @@ import pyxel
 import sys; sys.path.append('..'); import 共通.音声
 
 # [ゲーム共通]
-import main.共通部品 as 共通部品
 from main.データセット import DS
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -23,7 +23,7 @@ class 本体:
     得点       = 0
     人数       = 0
 
-    操作手段   = None
+    操作手段   = None # 0:KEY/1:JOY/2:MMP
     MMP中央値  = 500
     MMP反応率  = 10
 

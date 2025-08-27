@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 #======================================================
 # ラウンチャー（MicroPython版）
-#   - ドライバ: mmpRottenmeier_micro（マイコン用）
-#   - 実行したいテスト本体（MechXX_...）だけをコメント解除
 #======================================================
-import mmpRottenmeier_micro as drv
+import mmpRottenmeier_micro as ライブラリ
 
 #------------------------------------------------------
 # テストしたいアプリをコメントアウトで選択
@@ -17,6 +14,6 @@ from Mech01_Bullets import テスト実行
 
 if __name__ == "__main__":
     # ミドルウェア生成関数だけ渡す（必要なら引数をここで指定可能）
-    実行_接続込み(lambda: drv.mmp())
+    テスト実行(lambda: ライブラリ.mmp())
     # 例）UARTを変えるなら：
     # 実行_接続込み(lambda: drv.mmp(uart_id=1, tx_pin=0, rx_pin=1, baud=115200))

@@ -1,9 +1,9 @@
 #====================================================== 
 # ＭＭＰライブラリ Ver 0.03 Rottenmeier
 #------------------------------------------------------
-# Ver 0.03.002　2025/08/19 By Takanari.Kureha
-#   ・DFPlayerのステータス系を1つの関数にまとめた
-#====================================================== 
+# Ver 0.03.003　2025/08/27 By Takanari.Kureha
+#   - UART通信速度をコンストラクタ引数で指定可能に変更
+#======================================================
 # [システム共通]
 import serial
 import time
@@ -18,21 +18,17 @@ class ConnectException(Exception):
 # 本体クラス
 #=============
 class mmp:
-    #=====================================================================
-    # 初期化処理
-    #argMmpAdrPins      = (10,11,12,13),    # RP2040-Zero
-    #argMmpAdrPins      = (2,3,4,5),         # Arduino
-    #argMmpAdrPins      = (6,7,8,9),         # PiZero
-    #=====================================================================
     #┬
     #○└┐初期化：
-    def __init__(self):
+    def __init__(
+            self,
+            arg通信速度 = 115200    # 通信速度(単位：bps)
+            ):
         #│
         #○接続する。
         print("\n<<接続準備>>")
         self.ser = serial.Serial()
-#        self.ser.baudrate   = 921600
-        self.ser.baudrate   = 115200
+        self.ser.baudrate   = arg通信速度
         self.接続済   = False
         self.version = ""
         #│
@@ -55,10 +51,7 @@ class mmp:
                 break
             except:
                 i = i
-        time.sleep(2)
-        if self.ser.port == 'COM99':
-            raise ConnectException()
-
+        if self.ser.port == 'COM99': raise ConnectException()
         self.version = self.バージョン()
         print(f"接続済み(Ver.{self.version})")
         self.接続済 = True
@@ -70,7 +63,8 @@ class mmp:
             self.ser.open()
         except:
             raise ConnectException()
-        time.sleep(2)
+        self.version = self.バージョン()
+        print(f"接続済み(Ver.{self.version})")
         self.接続済 = True
     #---------------------------------------------------------------------
     def 通信切断(self):
@@ -79,7 +73,6 @@ class mmp:
         self.接続済 = False
     #---------------------------------------------------------------------
     def バージョン(self):
-        self.ser.reset_input_buffer()  # ゴミを捨てる
         self.ser.write(b'VER!')
         data = self.ser.read(5)
         sdata = data.decode('ascii')
@@ -168,7 +161,16 @@ class mmp:
     # デジタル入出力
     #=====================================================================
     #---------------------------------------------------------------------
+    # ＰＷＭ(PCA9685)：機器情報（機器No.0～15）
+    #  コマンド書式：PWX!<機器No.0～15>!
+    #---------------------------------------------------------------------
+    def PWM_Info(self, arg機器No):
+        cmd = f"PWX:{arg機器No:01x}!"
+        self.ser.write(cmd.encode("ascii"))
+        return self.ser.read(5).decode("ascii")
+    #---------------------------------------------------------------------
     # ＰＷＭ(PCA9685)：接続状態確認（機器No.0～15）
+    #  コマンド書式：PWS!<機器No.0～15>!
     #---------------------------------------------------------------------
     def PWM_機器確認(self):
         cmd = "PWS!"
@@ -199,11 +201,11 @@ class mmp:
     #---------------------------------------------------------------------
     # 指定したPWMチャンネル（0〜255）が使用可能かを確認
     #---------------------------------------------------------------------
-    def PWM_チャンネル確認(self, channel):
-        if not (0 <= channel <= 255):
+    def PWM_チャンネル確認(self, argCh通番):
+        if not (0 <= argCh通番 <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
-        
-        pwm_id = channel // 16  # 0〜15 の PCA9685番号
+
+        pwm_id = argCh通番 // 16  # 0〜15 の PCA9685番号
         if len(self.PWM機器状況) != 16:
             print("[警告] PWMステータスが未取得")
             return False
@@ -211,26 +213,26 @@ class mmp:
         return self.PWM機器状況[pwm_id]
     #---------------------------------------------------------------------
     # PWM出力値指定
-    #  コマンド書式： PWM:<Ch通番>:<PWM出力値>!
+    #  コマンド書式：PWM！<Ch通番>:<PWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_VALUE(self, argPort, argPWM):
-        data = "PWM:%02x:%02x!" % (argPort, argPWM)
+    def PWM_VALUE(self, argCh通番, argPWM):
+        data = "PWM:%02x:%04x!" % (argCh通番, argPWM)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
     #---------------------------------------------------------------------
     # サーボ定格設定
-    #  コマンド書式：PWI:<0度のPWM出力値>:<180度のPWM出力値>!
+    #  コマンド書式：PWI!<0度のPWM出力値>:<180度のPWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_INIT(self, argPwmMin, argPwmMax):
-        data = "PWI:%02x:%03x:%02x!" % (argPort, argPwmMin, argPwmMax)
+    def PWM_INIT(self, arg開始角度, arg終了角度, arg開始PWM, arg終了PWM):
+        data = "PWI:%02x:%03x:%02x!" % (arg開始角度, arg終了角度, arg開始PWM, arg終了PWM)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
     #---------------------------------------------------------------------
     # 角度指定
-    #  コマンド書式：PWA:<Ch通番>:<角度>!
+    #  コマンド書式：PWA!<Ch通番>:<角度>!
     #---------------------------------------------------------------------
-    def PWM_ANGLE(self, argPort, argAngle):
-        data = "PWA:%02x:%02x!" % (argPort, argAngle)
+    def PWM_ANGLE(self, argCh通番, arg角度):
+        data = "PWA:%02x:%02x!" % (argCh通番, arg角度)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
 
@@ -252,7 +254,6 @@ class mmp:
     #---------------------------------------------------------------------
     def digital_OUT(self, argPort, argValue):
         cmd = "POW:%02x:%01x!" % (argPort, argValue)
-        self.ser.reset_input_buffer()  # 念のためバッファをクリア
         self.ser.write(cmd.encode("ascii"))       
         data = self.ser.read(5)
         try:
@@ -284,8 +285,7 @@ class mmp:
         s = ''
         while self.ser.inWaiting():
             d = self.ser.read()
-            if( d == '!'):
-                return s
+            if( d == '!'): return s
             s += d
 
     #=====================================================================
@@ -354,23 +354,6 @@ class mmp:
     #---------------------------------------------------------------------
     def i2cRead(self, slave_addr, addr):
         data = "I2R:%02x:%02x:1!" % (slave_addr, addr)
-        self.ser.write(str.encode(data))
-        data = self.ser.read(5)
-        data2 = data.decode('utf-8')
-        data3 = data2.replace('!', '')
-        return int(data3, 16)
-    #---------------------------------------------------------------------
-    def i2cWrite_word(self, slave_addr, addr, val):
-        data = "I2W:%02x:%02x:%02x:2!" % (slave_addr, addr, val)
-        self.ser.write(str.encode(data))
-        data = self.ser.read(5)
-        if( data.decode('utf-8') != '----!'):
-            return True
-        else:
-            return False
-    #---------------------------------------------------------------------
-    def i2cRead_word(self, slave_addr, addr):
-        data = "I2R:%02x:%02x:2!" % (slave_addr, addr)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         data2 = data.decode('utf-8')

@@ -1,7 +1,8 @@
 #======================================================
-# ＭＭＰライブラリ Rottenmeier (MicroPython クライアント版)
+# ＭＭＰライブラリ Rottenmeier (MicroPython版)
 #------------------------------------------------------
 # Ver 0.03.000　2025/08/27 By Takanari.Kureha
+#   ・初版作成
 #======================================================
 from machine import UART, Pin
 import time
@@ -167,8 +168,8 @@ class mmp:
         self.スイッチ数 = int(argスイッチ数)
         self.丸め = int(arg丸め)
 
-        print(" ・HC4067 使用個数     : %d" % self.スイッチ数)
-        print(" ・HC4067 使用ポート数 : %d" % self.参加総人数)
+        print(" ・スイッチ数(HC4067使用個数): %d" % self.スイッチ数)
+        print(" ・参加総人数(HC4067使用Ch数): %d" % self.参加総人数)
         print(" ・アナログ値の丸め処理: %d" % self.丸め)
 
         self.アナログ初期化()
@@ -218,31 +219,31 @@ class mmp:
         if not self.PWM機器状況 or len(self.PWM機器状況) != 16:
             self.PWM_機器確認()
         pwm_id = channel // 16  # 0..15
-        可 = bool(self.PWM機器状況[pwm_id])
-        print(f"PWM_チャンネル使用可否 ch={channel} → {可}")
-        return 可
+        可否 = bool(self.PWM機器状況[pwm_id])
+        print(f"PWM_チャンネル使用可否 ch={channel} → {可否}")
+        return 可否 
 
     def PWM_VALUE(self, argPort, argPWM):
         cmd = f"PWM:{int(argPort):02X}:{int(argPWM):04X}!"
         print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_VALUE 応答なし")
+        print("受信:", resp)
+        return resp == "!!!!!"
 
     def PWM_INIT(self, rs, re, ps, pe):
-        # RS/RE/PS/PE の4引数方式（将来の per-ch 拡張を見据え）
         cmd = f"PWI:{int(rs):03X}:{int(re):03X}:{int(ps):04X}:{int(pe):04X}!"
         print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_INIT 応答なし")
+        print("受信:", resp)
+        return resp == "!!!!!"
 
     def PWM_ANGLE(self, argPort, argAngle):
         cmd = f"PWA:{int(argPort):02X}:{int(argAngle):03X}!"
         print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_ANGLE 応答なし")
+        print("受信:", resp)
+        return resp == "!!!!!"
+
 
     #======================================================
     # デジタル I/O

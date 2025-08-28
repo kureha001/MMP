@@ -67,3 +67,7 @@
 ゲーム/00_Test/plugins/__pycache__/
 
 ゲーム/共通/__pycache__/
+
+_work/
+.vscode/
+ゲーム/02_MechSaurus/その他/

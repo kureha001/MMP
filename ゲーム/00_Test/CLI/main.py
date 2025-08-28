@@ -14,6 +14,6 @@ from Mech01_Bullets import テスト実行
 
 if __name__ == "__main__":
     # ミドルウェア生成関数だけ渡す（必要なら引数をここで指定可能）
+    # 例）UARTを変える場合：
+    # テスト実行(lambda: ライブラリ.mmp(uart_id=1, tx_pin=0, rx_pin=1, baud=115200))
     テスト実行(lambda: ライブラリ.mmp())
-    # 例）UARTを変えるなら：
-    # 実行_接続込み(lambda: drv.mmp(uart_id=1, tx_pin=0, rx_pin=1, baud=115200))

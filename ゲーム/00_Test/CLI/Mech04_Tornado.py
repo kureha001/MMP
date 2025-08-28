@@ -17,9 +17,9 @@ def テスト実行(new_mmp):
     MMP.通信接続()
 
     try:
-        print("--------")
-        print("スイッチ")
-        print("--------")
+        print("--------------")
+        print("Switch(ANA-IN)")
+        print("--------------")
         アナログ入力測定(
             MMP,
             スイッチ数  = 4     , # 押しスイッチ×4
@@ -29,30 +29,30 @@ def テスト実行(new_mmp):
             待時間      = 0.1   , # ウェイト(秒)
         )
 
-        print("--------")
-        print("人形の脚")
-        print("--------")
-        print("-> 屈伸(足上げ;DCモータON)")
-        PWM_電源_ON(MMP, 0)     # ON（4095）
+        print("---------")
+        print("Doll Legs")
+        print("---------")
+        print("-> Lift (DC Motor:ON)")
+        PWM_電源_ON(MMP, 0)
         time.sleep(2)
-        print("-> まっすぐ(足さげ;DCモータOFF)")
-        PWM_電源_OFF(MMP, 0)    # OFF（0）
+        print("-> Down (DC Motor:OFF)")
+        PWM_電源_OFF(MMP, 0)
 
-        print("------------")
-        print("鉄棒のロック")
-        print("------------")
-        print("-> 解除(サーボモータHIGH)")
+        print("--------")
+        print("Bar Lock")
+        print("--------")
+        print("-> Free (Servo Motor:HIGH)")
         PWM_出力(MMP, 1, 160)
         time.sleep(2)
-        print("-> ロック(サーボモータLOW)")
+        print("-> Lock (Servo Motor:LOW)")
         PWM_出力(MMP, 1, 100)
         time.sleep(2)
-        print("-> 解除(サーボモータHIGH)")
+        print("-> Free (Servo Motor:HIGH)")
         PWM_出力(MMP, 1, 160)
 
-        print("----------")
-        print("ＭＰ３再生")
-        print("----------")
+        print("--------")
+        print("BGM(MP3)")
+        print("--------")
         MP3_再生(
             MMP,
             再生リスト=[

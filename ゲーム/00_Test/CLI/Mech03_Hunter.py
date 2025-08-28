@@ -17,14 +17,14 @@ def テスト実行(new_mmp):
 
     try:
         print("--------")
-        print("電源ＯＮ")
+        print("Power ON")
         print("--------")
         PWM_電源_ON(MMP, (0, 1)) # カモロボ2体
         time.sleep(3)            # カモロボの安定待ち
 
-        print("--------")
-        print("命中判定")
-        print("--------")
+        print("-----------")
+        print("Hit(ANA-IN)")
+        print("-----------")
         アナログ入力測定(
             MMP,
             スイッチ数  = 1     , # カモロボのベロスイッチ1個
@@ -34,15 +34,14 @@ def テスト実行(new_mmp):
             待時間      = 0.05  , # ウェイト(秒)
             )
 
-        # 電源OFF
         print("----------")
-        print("電源ＯＦＦ")
+        print("Power OFF")
         print("----------")
         PWM_電源_OFF(MMP, (0, 1)) # カモロボ2体
 
-        print("----------")
-        print("ＭＰ３再生")
-        print("----------")
+        print("--------")
+        print("BGM(MP3)")
+        print("--------")
         MP3_再生(
             MMP,
             再生リスト=[
@@ -53,10 +52,6 @@ def テスト実行(new_mmp):
             )
 
     finally:
-        # 電源OFF
-        print("----------")
-        print("電源ＯＦＦ")
-        print("----------")
-        PWM_電源_OFF(MMP, (0, 1)) # カモロボ2体
-
+        try: PWM_電源_OFF(MMP, (0, 1)) # カモロボ2体
+        except Exception: pass
         MMP.通信切断()

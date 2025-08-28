@@ -46,15 +46,11 @@ def アナログ入力測定(
     表示スイッチ    = None    # 例：(0, 1)。Noneなら無指定
     ):
 
-    print("--------------------")
-    print(" アナログ入力テスト")
-    print("--------------------")
-
     # 設定
     MMP.アナログ設定(スイッチ数, 参加人数, 丸め)
 
     # 計測・取得
-    print("(測定データ)")
+    print(" 1.Analog values")
     t0 = 時刻開始()
     for cnt in range(繰返回数):
         MMP.アナログ読取()
@@ -86,37 +82,20 @@ def アナログ入力測定(
 
     # 結果表示
     sec = 経過秒(t0)
-    print("\n(実施条件)")
-    print("・繰返回数         : %d" % (繰返回数))
-    print("・アドレス変更回数 : %d" % (MMP.参加総人数 * 繰返回数))
+    print("\n 2.Conditions")
+    print(" - Repeat Read   : %d times" % (繰返回数))
+    print(" - Address Change: %d times" % (MMP.参加総人数 * 繰返回数))
 
-    print("\n(測定結果)")
+    print("\n 3.Results")
     件数 = 繰返回数 * MMP.スイッチ数 * MMP.参加総人数
     平均 = (sec / 件数) if 件数 else 0.0
-    print("・合計時間   : %02.06f秒"   % (sec))
-    print("・データ平均 : %01.06f秒\n" % (平均))
+    print("  - Total  : %02.06f sec"   % (sec))
+    print("  - Average: %01.06f sec\n" % (平均))
 
 
 #======================================================
 # MP3(DFPlayer)
 #======================================================
-#------------------------------------------------------
-# DFPlayer：1曲再生（フォルダ指定）
-#------------------------------------------------------
-def MP3_1曲再生(
-        MMP         , # MMPサーバーの mmp インスタンス
-        機器番号=1  , # 1 or 2
-        フォルダ=1  , # DFPlayer のフォルダ番号
-        トラック=1    # DFPlayer のトラック番号
-    ):
-
-    print("・フォルダ{}のトラック{}を再生".format(フォルダ, トラック))
-    応答 = MMP.DFP_PlayFolderTrack(機器番号, フォルダ, トラック)
-    print("  → 応答:", 応答)
-
-#------------------------------------------------------
-# DFPlayer：再生（情報→音量→再生→停止）
-#------------------------------------------------------
 def MP3_再生(
     MMP,                # MMPサーバーの mmp インスタンス
     再生リスト,         # [(フォルダ, トラック), ...]
@@ -125,21 +104,21 @@ def MP3_再生(
     再生時間    = 3     # 1曲の再生時間(単位：秒)
     ):
 
-    print("------------")
-    print("DFPlayer制御")
-    print("------------")
+    print(" 1.Device Status")
+    print("   - 1st: ", MMP.DFP_Info(1))
+    print("   - 2nd: ", MMP.DFP_Info(2))
 
-    print("・機器情報")
-    print("  1台目：", MMP.DFP_Info(1))
-    print("  2台目：", MMP.DFP_Info(2))
+    print(f" 2.Volume: {音量}")
+    MMP.DFP_Volume(機器番号, 音量)
 
-    print("・ボリューム設定 →", MMP.DFP_Volume(機器番号, 音量))
-
+    print(" 3.Play MP3")
     for (f, t) in 再生リスト:
-        MP3_1曲再生(MMP, 機器番号, f, t)
+        print(f"  - Folder={f} Track={t}")
+        MMP.DFP_PlayFolderTrack(機器番号, f, t)
         time.sleep(再生時間)
 
-    print("・停止 →", MMP.DFP_Stop(機器番号))
+    print(" 4.Stop")
+    MMP.DFP_Stop(機器番号)
 
 
 #======================================================
@@ -162,7 +141,6 @@ def _pwm_set_value(MMP, ch_or_list, value):
     ok_all = True
 
     for ch in _to_ch_list(ch_or_list):
-        # 失敗時のみ表示（視認性のため簡潔に）
         ok = bool(MMP.PWM_VALUE(ch, value))
         if not ok:
             print("NG: PWM 電源{}  CH={:02X} 値={:04X}".format(
@@ -173,42 +151,22 @@ def _pwm_set_value(MMP, ch_or_list, value):
     return ok_all
 #------------------------------------------------------
 def PWM_電源_ON(MMP, ch_or_list):
-    """電源用途：ON（4095固定）"""
     return _pwm_set_value(MMP, ch_or_list, 0x0FFF)
 #------------------------------------------------------
 def PWM_電源_OFF(MMP, ch_or_list):
-    """電源用途：OFF（0固定）"""
     return _pwm_set_value(MMP, ch_or_list, 0x0000)
-
 
 #------------------------------------------------------
 # 指定値をそのまま出力
 #------------------------------------------------------
 def PWM_出力(MMP, ch_or_list, pwm値):
-    """
-    MMP.PWM_VALUE をそのまま呼びます。
-    - ch_or_list : 単一CH(int) または 複数CH(リスト/タプル/セット)
-    - pwm値      : 0～4095（将来ファーム側でチェック予定。ここでは未チェック）
-    戻り値: すべて成功なら True、いずれか失敗で False（失敗時のみprint）
-    """
-
     chs = _to_ch_list(ch_or_list)
     ok_all = True
-
     for ch in chs:
-
-        try:
-            ok = bool(MMP.PWM_VALUE(ch, pwm値))
-
-        except Exception:
-            ok = False
-
-        if not ok:
-            # 失敗時のみ表示（方針通り）
-            try:
-                print("NG: CH={} PWM={:04X}".format(ch, int(pwm値) & 0xFFFF))
-            except Exception:
-                print("NG: CH={} PWM={}".format(ch, pwm値))
-            ok_all = False
-
+        try             : ok = bool(MMP.PWM_VALUE(ch, pwm値))
+        except Exception: ok = False
+        if ok: continue
+        try             : print("NG: CH={} PWM={:04X}".format(ch, int(pwm値) & 0xFFFF))
+        except Exception: print("NG: CH={} PWM={}".format(ch, pwm値))
+        ok_all = False
     return ok_all

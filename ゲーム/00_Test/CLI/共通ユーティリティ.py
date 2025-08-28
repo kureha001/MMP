@@ -142,11 +142,13 @@ def _pwm_set_value(MMP, ch_or_list, value):
 
     for ch in _to_ch_list(ch_or_list):
         ok = bool(MMP.PWM_VALUE(ch, value))
-        if not ok:
-            print("NG: PWM 電源{}  CH={:02X} 値={:04X}".format(
+        if ok: continue
+        print(
+            "NG: PWM 電源{}  CH={:02X} 値={:04X}".format(
                 "ON" if value else "OFF", ch, value
-            ))
-            ok_all = False
+                )
+            )
+        ok_all = False
 
     return ok_all
 #------------------------------------------------------

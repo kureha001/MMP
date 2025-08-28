@@ -17,7 +17,8 @@ def テスト実行(new_mmp):
     MMP.通信接続()
 
     try:
-        print("--------------")
+
+        print("\n--------------")
         print("Switch(ANA-IN)")
         print("--------------")
         アナログ入力測定(
@@ -29,28 +30,28 @@ def テスト実行(new_mmp):
             待時間      = 0.1   , # ウェイト(秒)
         )
 
-        print("---------")
+        print("\n---------")
         print("Doll Legs")
         print("---------")
-        print("-> Lift (DC Motor:ON)")
+        print("  1.Lift (DC Motor:ON)")
         PWM_電源_ON(MMP, 0)
         time.sleep(2)
-        print("-> Down (DC Motor:OFF)")
+        print("  2.Down (DC Motor:OFF)")
         PWM_電源_OFF(MMP, 0)
 
-        print("--------")
+        print("\n--------")
         print("Bar Lock")
         print("--------")
-        print("-> Free (Servo Motor:HIGH)")
+        print("  1.Free (Servo Motor:HIGH)")
         PWM_出力(MMP, 1, 160)
         time.sleep(2)
-        print("-> Lock (Servo Motor:LOW)")
+        print("  2.Lock (Servo Motor:LOW)")
         PWM_出力(MMP, 1, 100)
         time.sleep(2)
-        print("-> Free (Servo Motor:HIGH)")
+        print("  3.Free (Servo Motor:HIGH)")
         PWM_出力(MMP, 1, 160)
 
-        print("--------")
+        print("\n--------")
         print("BGM(MP3)")
         print("--------")
         MP3_再生(

@@ -16,6 +16,25 @@ def テスト実行(new_mmp):
     MMP = new_mmp()
     MMP.通信接続()
 
+    def サーボスイープ(chs, vmin, vmax, center_offset=0, step=2, wait=0.02, hold=1.0):
+        center = int((vmin + vmax) / 2) + center_offset
+        print("  1/4.PWM: Cnter")
+        PWM_出力(MMP, chs, center); time.sleep(hold)
+
+        print("  2/4.PWM: Cnter to Max")
+        for v in range(center, vmax, step):
+            PWM_出力(MMP, chs, v); time.sleep(wait)
+        time.sleep(hold)
+
+        print("  3/4.PWM: Max   to Min")
+        for v in range(vmax, vmin, -step):
+            PWM_出力(MMP, chs, v); time.sleep(wait)
+        time.sleep(hold)
+
+        print("  4/4.PWM: Min   to Center")
+        for v in range(vmin, center, step):
+            PWM_出力(MMP, chs, v); time.sleep(wait)
+
     try:
         print("-------------------")
         print("Foot pedals(ANA-IN)")
@@ -59,14 +78,14 @@ def テスト実行(new_mmp):
         print("  1/4.Power ON")
         PWM_電源_ON(MMP, 基盤CH)
 
-        print("  2/4.DC Motor：PWM min to max")
+        print("  2/4.DC Motor: PWM min to max")
         for val in range(最小, 最大, 間隔S):
             PWM_出力(MMP, モータCH, val)
             time.sleep(停止s)
 
         time.sleep(1)
 
-        print("  3/4.DC Motor：PWM max to min")
+        print("  3/4.DC Motor: PWM max to min")
         for val in range(最大, 最小, 間隔E):
             PWM_出力(MMP, モータCH, val)
             time.sleep(停止s)
@@ -78,11 +97,10 @@ def テスト実行(new_mmp):
         print("------------")
         print("Hut:Dinosaur")
         print("------------")
-        恐竜CH = (1, 13)
+        恐竜CH       = (1, 13)
         最小v, 最大v = 120, 380
-        中央補正 = -18
+        中央補正     = -18
         増分, 間隔s, 待ちs = 2, 0.02, 1.0
-
         サーボスイープ(恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("---------")
@@ -124,24 +142,6 @@ def テスト実行(new_mmp):
                 ]
             )
 
-        def サーボスイープ(chs, vmin, vmax, center_offset=0, step=2, wait=0.02, hold=1.0):
-            center = int((vmin + vmax) / 2) + center_offset
-            print("  1/4.PWM: Cnter")
-            PWM_出力(MMP, chs, center); time.sleep(hold)
-
-            print("  2/4.PWM: Cnter to Max")
-            for v in range(center, vmax, step):
-                PWM_出力(MMP, chs, v); time.sleep(wait)
-            time.sleep(hold)
-
-            print("  3/4.PWM: Max   to Min")
-            for v in range(vmax, vmin, -step):
-                PWM_出力(MMP, chs, v); time.sleep(wait)
-            time.sleep(hold)
-
-            print("  4/4.PWM: Min   to Center")
-            for v in range(vmin, center, step):
-                PWM_出力(MMP, chs, v); time.sleep(wait)
 
     finally:
         try:

@@ -30,14 +30,14 @@ MMPは、多数の入出力コマンドを用意しています。
 - [オブジェクト     ](./README/6_オブジェクト.md)
 - [データ設計       ](./README/7_データ設計.md)
 
-### 3.開発者情報：ファームウェア・ミドルウェア編
+### 3.開発者情報：マイコン移植編
 初めてMMPアプリ開発する場合に読んでおく情報です。
 - [ファームウェア   ](./ファームウェア/v0.3_Rottenmeier/README.MD)
-- [ミドルウェア：Python用           ](./ミドルウェア/Python/README.MD)
-- [ミドルウェア：MicroPython用      ](./ミドルウェア/Python-mic/README.MD)
-- [ミドルウェア：Machikania Type-P用](./ミドルウェア/MK-P/README.MD)
-- [ミドルウェア：IchigoJam  Type-P用](./ミドルウェア/IJB-P/README.MD)
-- [ミドルウェア：IchigoJam  Type-R用](./ミドルウェア/IJB-R/README.MD)
+- [ミドルウェア：Python用           ](./ファームウェア/v0.3_Rottenmeier/Library.md)
+- [ミドルウェア：MicroPython用      ](./ファームウェア/v0.3_Rottenmeier/Library.md))
+- [ミドルウェア：Machikania Type-P用](./移植中/MK-P/README.MD)
+- [ミドルウェア：IchigoJam  Type-P用](./移植中/IJB-P/README.MD)
+- [ミドルウェア：IchigoJam  Type-R用](./移植中/IJB-R/README.MD)
 
 ### 4.開発者情報：ハードウェア編
 MMPハード開発に必要な情報です。

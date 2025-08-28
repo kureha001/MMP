@@ -51,7 +51,7 @@ def clear():
 def main():
     #┬
     #○MMPを接続する。
-    MMP.通信接続_自動()
+    MMP.通信接続()
     #│
     #◎メニュー
     while True:

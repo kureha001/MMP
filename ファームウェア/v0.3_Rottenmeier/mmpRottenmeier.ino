@@ -143,7 +143,15 @@ void setup() {
   // RGB LED
   pixels.begin();
   pixels.clear();
-  pixels.setPixelColor(0, pixels.Color(10,10,10));
+  if (useUSB) {
+    // USBシリアルは白色を点灯
+    pixels.setPixelColor(0, pixels.Color(10,10,10));
+  } else {
+    if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); }
+    else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); }
+    else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); }
+    else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10, 0)); }
+  }
   pixels.show();
 }
 

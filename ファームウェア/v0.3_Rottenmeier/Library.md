@@ -44,24 +44,30 @@
 ## 2. インストール / 取り込み
 
 ### CPython 版（Windows）
+- ファイル名：`mmpRottenmeier.py`
+- `共通フォルダ` などに配置してから：
+
 ```python
-from mmp import mmp
-m = mmp()
-m.通信接続("COM5")      # 例：明示接続（既存）
-ver = m.バージョン()       # "xyzz" 形式（実体は "xyzz!" を整形）
+import sys;sys.path.append("../..")
+import 共通.mmpRottenmeier as MMP
+
+接続 = MMP.mmp()
+接続.通信接続()               # 自動接続の場合
+#接続.通信接続_指定("COM5")   # COMポート指定接続の場合
+ver = 接続.バージョン()       # "xyzz" 形式（実体は "xyzz!" を整形）
 ```
 
 ### MicroPython 版（マイコン上）
 - ファイル名：`mmpRottenmeier_micro.py`
-- `/lib/` などに配置してから：
+- `/lib/` や `同一フォルダ` などに配置してから：
 
 ```python
 from mmpRottenmeier_micro import mmp
 
 # UART 設定はユーザーが指定可能（既定：ID=1, TX=0, RX=1, 115200, 8N1, timeout=100ms）
-m = mmp()
-m.通信接続(uart_id=1, tx_pin=0, rx_pin=1, baud=115200)  # 固定接続（自動スキャンなし）
-ver = m.バージョン()  # "x.y.zz" 形式に整形
+接続 = mmp()
+接続.通信接続(uart_id=1, tx_pin=0, rx_pin=1, baud=115200)  # 固定接続（自動スキャンなし）
+ver = 接続.バージョン()  # "x.y.zz" 形式に整形
 ```
 
 ---
@@ -203,7 +209,7 @@ value = m.i2cRead(0x40, 0x00)
 ## 8. 互換性メモ
 
 - **関数名は既存のまま**（アプリ側からの呼び出し互換を維持）  
-  ただし、**接続系**は `通信接続_自動` → `通信接続` に一本化（自動スキャン削除）。
+  ただし、**接続系**は `通信接続` に一本化（自動スキャン削除）。
 - I2C ワード系は**廃止**（サーバー仕様に 1 バイトで整合）
 - PWM：`PWX`（機器接続確認）を**クライアントにも実装**
 - DFPlayer：`DST` の**項目番号 1～5**に対応（サーバーの統合仕様へ合わせ込み）

@@ -1,3 +1,4 @@
+
 #======================================================
 # ＭＭＰライブラリ Rottenmeier (MicroPython版)
 #------------------------------------------------------
@@ -204,16 +205,19 @@ class mmp:
     def PWM_VALUE(self, argPort, argPWM):
         cmd = f"PWM:{int(argPort):02X}:{int(argPWM):04X}!"
         resp = self._txrx5(cmd)
+        if resp is None: return False
         return resp == "!!!!!"
     #------------------------------------------------------
     def PWM_INIT(self, rs, re, ps, pe):
         cmd = f"PWI:{int(rs):03X}:{int(re):03X}:{int(ps):04X}:{int(pe):04X}!"
         resp = self._txrx5(cmd)
+        if resp is None: return False
         return resp == "!!!!!"
     #------------------------------------------------------
     def PWM_ANGLE(self, argPort, argAngle):
         cmd = f"PWA:{int(argPort):02X}:{int(argAngle):03X}!"
         resp = self._txrx5(cmd)
+        if resp is None: return False
         return resp == "!!!!!"
 
     #======================================================

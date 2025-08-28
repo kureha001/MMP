@@ -1,5 +1,5 @@
 #======================================================
-# ＭＭＰライブラリ Rottenmeier (MicroPython版)
+# ＭＭＰライブラリ Rottenmeier (CircuitPython版)
 #------------------------------------------------------
 # Ver 0.03.000　2025/08/28 By Takanari.Kureha
 #   ・初版作成
@@ -12,7 +12,7 @@ import busio
 # 例外
 #--------------------------------
 class ConnectException(Exception):
-    pass
+    print("ConnectException")
 
 
 class mmp:
@@ -22,21 +22,27 @@ class mmp:
     #  - 数値(例:0/1)が来たら GP0/GP1, D0/D1, IO0/IO1 の順で探します
     #--------------------------------
     def __init__(self, uart_id=1, tx_pin=None, rx_pin=None, baud=115200, timeout_ms=100):
-        print("\n<<接続準備>>")
+
         self.uart = None
         self.接続済 = False
         self.version = ""
 
         # UART設定（constructorで確定）
-        self.uart_id = int(uart_id)  # CircuitPythonでは未使用（互換のため保持）
-        self.tx_pin = tx_pin
-        self.rx_pin = rx_pin
-        self.baud = int(baud)
+        self.uart_id    = int(uart_id)  # CircuitPythonでは未使用（互換のため保持）
+        self.tx_pin     = tx_pin
+        self.rx_pin     = rx_pin
+        self.baud       = int(baud)
         self.timeout_ms = int(timeout_ms)
 
-        print("UART既定値を設定しました:")
-        print(f" ・UART ID={self.uart_id}, TX={self.tx_pin}, RX={self.rx_pin}")
-        print(f" ・{self.baud}bps, 8N1, timeout={self.timeout_ms}ms")
+        print("<<Initializing...>>")
+        print(f" - UART ID  = {self.uart_id}")
+        print(f" - TX       = {self.tx_pin}")
+        print(f" - RX       = {self.rx_pin}")
+        print(f" - baudrate = {self.baud}bps")
+        print(f" - Bits     = 8")
+        print(f" - Parity   = None")
+        print(f" - Stop     = 1")
+        print(f" - timeout  = {self.timeout_ms}ms")
 
         # アナログパラメータ
         self.参加総人数 = None
@@ -47,9 +53,9 @@ class mmp:
         # PWM 状態
         self.PWM機器状況 = [False] * 16
 
-    #--------------------------------
+    #------------------------------------------------------
     # 内部：board ピン解決（TX/RX デフォルトあり）
-    #--------------------------------
+    #------------------------------------------------------
     def _resolve_pin(self, pin, is_tx):
         # 1) そのまま board の属性っぽいオブジェクトなら返す
         try:
@@ -91,20 +97,20 @@ class mmp:
         # 最後の手段：そのまま返す（ボード依存型）
         return pin
 
-    #--------------------------------
+    #------------------------------------------------------
     # 内部：現在時刻(秒)と期限(秒)
-    #--------------------------------
+    #------------------------------------------------------
     def _now(self):
         return time.monotonic()
 
     def _deadline(self, ms):
         return self._now() + (ms / 1000.0)
 
-    #--------------------------------
+    #------------------------------------------------------
     # 内部：UART 5文字レスポンス受信
     #  - 先行ゴミは自然に捨て、常に「末尾が '!' の5文字」で返す
     #  - タイムアウト時は None を返す
-    #--------------------------------
+    #------------------------------------------------------
     def _read5(self):
         if not self.uart:
             return None
@@ -126,9 +132,9 @@ class mmp:
                         return "".join(chr(x) for x in buf)
         return None
 
-    #--------------------------------
+    #------------------------------------------------------
     # 内部：送受信（5文字固定）
-    #--------------------------------
+    #------------------------------------------------------
     def _txrx5(self, s):
         if not self.uart:
             return None
@@ -138,14 +144,14 @@ class mmp:
             return None
         return self._read5()
 
-    #--------------------------------
+    #------------------------------------------------------
     # 接続（GPIO UART / 自動スキャンなし）
     #  ※ 通信パラメータは __init__ で設定済み
-    #--------------------------------
+    #------------------------------------------------------
     def 通信接続(self):
+        print("<<Connecting...>>")
         tx = self._resolve_pin(self.tx_pin, True)
         rx = self._resolve_pin(self.rx_pin, False)
-        print("UART設定:", f"TX={tx}, RX={rx}, {self.baud}bps, 8N1, timeout={self.timeout_ms}ms")
         try:
             self.uart = busio.UART(
                 tx=tx,
@@ -161,13 +167,11 @@ class mmp:
             raise ConnectException(f"UART初期化に失敗: {e}")
 
         time.sleep(0.1)
-        print("ファームウェア応答確認: 'VER!' を送信します")
         raw = self._txrx5("VER!")
         if not (raw and len(raw) == 5 and raw.endswith("!")):
             self.uart = None
             self.接続済 = False
-            raise ConnectException("ファームウェア応答なし（VER!）")
-        print(f"受信データ: '{raw}'")
+            raise ConnectException("ファームウェア応答なし[VER!]")
 
         try:
             sdata = raw[:-1]
@@ -175,13 +179,11 @@ class mmp:
         except Exception:
             self.version = "?.?.??"
 
-        print(f"接続済み(Ver.{self.version})")
+        print("<<Connected>>")
         self.接続済 = True
         return True
-
-    #--------------------------------
+    #------------------------------------------------------
     def 通信切断(self):
-        print("\n<<切断>>")
         try:
             if self.uart:
                 self.uart.deinit()
@@ -189,16 +191,11 @@ class mmp:
             pass
         self.uart = None
         self.接続済 = False
-        print("切断完了")
-
-    #--------------------------------
+        print("<<Disconnected>>")
+    #------------------------------------------------------
     def バージョン(self):
-        print("バージョン照会: 'VER!' を送信します")
         resp = self._txrx5("VER!")
-        if not (resp and len(resp) == 5 and resp.endswith("!")):
-            print("バージョン取得失敗")
-            return ""
-        print(f"受信データ: '{resp}'")
+        if not (resp and len(resp) == 5 and resp.endswith("!")): return ""
         s = resp[:-1]
         結果 = f"{s[0]}.{s[1]}.{s[2:4]}"
         self.version = 結果
@@ -208,47 +205,37 @@ class mmp:
     # アナログ入力
     #======================================================
     def アナログ初期化(self):
-        print("アナログ測定バッファ初期化")
         tmpスイッチ = [0 for _ in range(self.スイッチ数)]
         self.mmpAnaVal = [tmpスイッチ.copy() for _ in range(self.参加総人数)]
-
+    #------------------------------------------------------
     def アナログ設定(self, argスイッチ数=4, arg参加人数=1, arg丸め=5):
-        print("<<アナログ入力準備>>")
         self.参加総人数 = int(arg参加人数)
         self.スイッチ数 = int(argスイッチ数)
         self.丸め = int(arg丸め)
-
-        print(" ・スイッチ数(HC4067使用個数): %d" % self.スイッチ数)
-        print(" ・参加総人数(HC4067使用Ch数): %d" % self.参加総人数)
-        print(" ・アナログ値の丸め処理: %d" % self.丸め)
-
+        print("<<Set Analog Input Parameters>>")
+        print("  - Switches     = %d" % self.スイッチ数)
+        print("  - Participants = %d" % self.参加総人数)
+        print("  - Rounding     = %d" % self.丸め)
         self.アナログ初期化()
-
         cmd = f"ANS:{self.参加総人数:02X}:{self.スイッチ数:02X}!"
-        print(cmd)
         _ = self._txrx5(cmd)  # 成否は以降のANU/ANRで検出
-
+    #------------------------------------------------------
     def アナログ読取(self):
-        print("アナログ値更新: 'ANU!' → 'ANR' 一括走査")
         _ = self._txrx5("ANU!")
         for pl in range(self.参加総人数):
             for sw in range(self.スイッチ数):
                 cmd = f"ANR:{pl:02X}:{sw:02X}!"
                 resp = self._txrx5(cmd)
                 if resp and len(resp) == 5 and resp.endswith("!"):
-                    try:
-                        val = int(resp[:-1], 16)
-                        if self.丸め > 0:
-                            val = (val // self.丸め) * self.丸め
-                        self.mmpAnaVal[pl][sw] = val
-                    except Exception:
-                        print(f"[警告] ANR応答の数値化に失敗: {resp}")
+                    val = int(resp[:-1], 16)
+                    if self.丸め > 0:
+                        val = (val // self.丸め) * self.丸め
+                    self.mmpAnaVal[pl][sw] = val
 
     #======================================================
     # PWM（PCA9685）
     #======================================================
     def PWM_機器確認(self):
-        print("PWM_機器確認: PWX を 0..15 へ問い合わせ")
         状況 = [False] * 16
         for i in range(16):
             resp = self._txrx5(f"PWX:{i:02X}!")
@@ -260,95 +247,70 @@ class mmp:
                     ok = False
             状況[i] = ok
         self.PWM機器状況 = 状況
-        print("PWM機器状況:", 状況)
         return 状況
-
+    #------------------------------------------------------
     def PWM_チャンネル使用可否(self, channel):
         if not (0 <= channel <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
         if not self.PWM機器状況 or len(self.PWM機器状況) != 16:
             self.PWM_機器確認()
         pwm_id = channel // 16  # 0..15
-        可 = bool(self.PWM機器状況[pwm_id])
-        print(f"PWM_チャンネル使用可否 ch={channel} → {可}")
-        return 可
-
+        可否 = bool(self.PWM機器状況[pwm_id])
+        return 可否
+    #------------------------------------------------------
     def PWM_VALUE(self, argPort, argPWM):
         cmd = f"PWM:{int(argPort):02X}:{int(argPWM):04X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_VALUE 応答なし")
-        return resp
-
+        if resp is None: return False
+        return resp == "!!!!!"
+    #------------------------------------------------------
     def PWM_INIT(self, rs, re, ps, pe):
         cmd = f"PWI:{int(rs):03X}:{int(re):03X}:{int(ps):04X}:{int(pe):04X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_INIT 応答なし")
-        return resp
-
+        if resp is None: return False
+        return resp == "!!!!!"
+    #------------------------------------------------------
     def PWM_ANGLE(self, argPort, argAngle):
         cmd = f"PWA:{int(argPort):02X}:{int(argAngle):03X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp is None:
-            print("[警告] PWM_ANGLE 応答なし")
-        return resp
+        if resp is None: return False
+        return resp == "!!!!!"
 
     #======================================================
     # デジタル I/O
     #======================================================
     def digital_IO(self, argPort, argValue):
         cmd = f"IO:{int(argPort):02X}:{int(argValue):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
         if resp and len(resp) == 5 and resp.endswith("!"):
             try:
                 val = int(resp[:-1], 16)
-                print("受信:", resp, "→", val)
                 return val
-            except Exception:
-                print("[警告] digital_IO 応答の数値化に失敗:", resp)
-                return 0
-        print("[警告] digital_IO 応答異常:", resp)
+            except Exception: return 0
         return 0
-
+    #------------------------------------------------------
     def digital_OUT(self, argPort, argValue):
         cmd = f"POW:{int(argPort):02X}:{int(argValue):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        if resp == "!!!!!":
-            print("受信: !!!!! (OK)")
-            return True
-        else:
-            print("[警告] digital_OUT 応答異常:", resp)
-            return False
-
+        if resp == "!!!!!": return True
+        else              : return False
+    #------------------------------------------------------
     def digital_IN(self, argPort):
         cmd = f"POR:{int(argPort):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
         if resp and len(resp) == 5 and resp.endswith("!"):
             try:
                 val = int(resp[:-1], 16)
-                print("受信:", resp, "→", val)
                 return val
-            except Exception:
-                print("[警告] digital_IN 応答の数値化に失敗:", resp)
-                return 0
-        print("[警告] digital_IN 応答異常:", resp)
+            except Exception: return 0
         return 0
-
+    #------------------------------------------------------
     #（互換用・未使用）サーバは '!' 終端なので行単位ではない
     def readline(self):
-        print("readline 呼び出し（互換用）")
         s = ""
         while True:
             resp = self._read5()
-            if resp is None:
-                break
+            if resp is None: break
             if resp.endswith("!"):
                 s = resp[:-1]
                 break
@@ -359,58 +321,42 @@ class mmp:
     #======================================================
     def DFP_Info(self, 引数_devNo):
         cmd = f"DPX:{int(引数_devNo):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_PlayFolderTrack(self, 引数_devNo, folder, track):
         cmd = f"DIR:{int(引数_devNo):01X}:{int(folder):02X}:{int(track):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_get_play_state(self, 引数_devNo, 引数_stNo):
         cmd = f"DST:{int(引数_devNo):01X}:{int(引数_stNo):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_Stop(self, 引数_devNo):
         cmd = f"DSP:{int(引数_devNo):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_Pause(self, 引数_devNo):
         cmd = f"DPA:{int(引数_devNo):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_Resume(self, 引数_devNo):
         cmd = f"DPR:{int(引数_devNo):01X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_Volume(self, 引数_devNo, vol):
         cmd = f"VOL:{int(引数_devNo):01X}:{int(vol):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
-
+    #------------------------------------------------------
     def DFP_set_eq(self, 引数_devNo, eq_mode):
         cmd = f"DEF:{int(引数_devNo):01X}:{int(eq_mode):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd) or ""
-        print("受信:", resp)
         return resp
 
     #======================================================
@@ -418,21 +364,13 @@ class mmp:
     #======================================================
     def i2cWrite(self, slave_addr, addr, val):
         cmd = f"I2W:{int(slave_addr):02X}:{int(addr):02X}:{int(val):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        print("受信:", resp)
         return resp == "!!!!!"
-
+    #------------------------------------------------------
     def i2cRead(self, slave_addr, addr):
         cmd = f"I2R:{int(slave_addr):02X}:{int(addr):02X}!"
-        print("送信:", cmd)
         resp = self._txrx5(cmd)
-        print("受信:", resp)
         if resp and len(resp) == 5 and resp.endswith("!"):
-            try:
-                return int(resp[:-1], 16)
-            except Exception:
-                print("[警告] i2cRead 応答の数値化に失敗:", resp)
-                return 0x00
-        print("[警告] i2cRead 応答異常:", resp)
+            try             : return int(resp[:-1], 16)
+            except Exception: return 0x00
         return 0x00

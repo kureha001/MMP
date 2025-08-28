@@ -1,4 +1,3 @@
-
 #======================================================
 # ＭＭＰライブラリ Rottenmeier (MicroPython版)
 #------------------------------------------------------
@@ -21,7 +20,6 @@ class mmp:
     #------------------------------------------------------
     def __init__(self, uart_id=0, tx_pin=0, rx_pin=1, baud=115200, timeout_ms=100):
 
-        print("<<Initializing...>>")
         self.uart = None
         self.接続済 = False
         self.version = ""
@@ -32,6 +30,8 @@ class mmp:
         self.rx_pin = int(rx_pin)
         self.baud = int(baud)
         self.timeout_ms = int(timeout_ms)
+
+        print("<<Initializing...>>")
         print(f" - UART ID  = {self.uart_id}")
         print(f" - TX       = {self.tx_pin}")
         print(f" - RX       = {self.rx_pin}")
@@ -155,16 +155,15 @@ class mmp:
         self.mmpAnaVal = [[0 for _ in range(self.スイッチ数)] for _ in range(self.参加総人数)]
     #------------------------------------------------------
     def アナログ設定(self, argスイッチ数=4, arg参加人数=1, arg丸め=5):
-        print("<<Set Analog Input Parameters>>")
         self.参加総人数 = int(arg参加人数)
         self.スイッチ数 = int(argスイッチ数)
         self.丸め = int(arg丸め)
+        print("<<Set Analog Input Parameters>>")
         print("  - Switches     = %d" % self.スイッチ数)
         print("  - Participants = %d" % self.参加総人数)
         print("  - Rounding     = %d" % self.丸め)
         self.アナログ初期化()
         cmd = f"ANS:{self.参加総人数:02X}:{self.スイッチ数:02X}!"
-        print(cmd)
         _ = self._txrx5(cmd)  # 成否は以降のANU/ANRで検出
     #------------------------------------------------------
     def アナログ読取(self):
@@ -251,7 +250,6 @@ class mmp:
     #------------------------------------------------------
     #（互換用・未使用）サーバは '!' 終端なので行単位ではない
     def readline(self):
-        print("readline 呼び出し（互換用）")
         s = ""
         while True:
             resp = self._read5()

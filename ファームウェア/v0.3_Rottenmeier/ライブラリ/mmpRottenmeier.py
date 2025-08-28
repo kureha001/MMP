@@ -7,13 +7,12 @@
 #======================================================
 # [システム共通]
 import serial
-import time
 
 #=============
 # 例外クラス
 #=============
 class ConnectException(Exception):
-    pass
+    print("ConnectException")
 
 #=============
 # 本体クラス
@@ -77,7 +76,6 @@ class mmp:
         self.ser.write(b'VER!')
         data = self.ser.read(5)
         sdata = data.decode('ascii')
-        print(f"受信データ: '{sdata}'")
         結果 = f"{sdata[0]}.{sdata[1]}.{sdata[2:4]}"
         return 結果
 
@@ -115,11 +113,11 @@ class mmp:
             ):
         #│
         #○アナログパラメータをセットする
-        print("<<アナログ入力準備>>")
         self.参加総人数  = arg参加人数
         self.スイッチ数  = argスイッチ数 
         self.丸め        = int(arg丸め)
         #│
+        print("<<アナログ入力準備>>")
         print(" ・HC4067 使用個数     : %i"  % self.スイッチ数  )
         print(" ・HC4067 使用ポート数 : %i"  % self.参加総人数  )
         print(" ・アナログ値の丸め処理: "   , self.丸め)
@@ -128,7 +126,6 @@ class mmp:
         self.アナログ初期化()
         #│
         data = f"ANS:{self.参加総人数:02X}:{self.スイッチ数:02X}!"
-        print(data)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         #┴
@@ -148,7 +145,7 @@ class mmp:
             #◎└┐スイッチ分を読み取る。
             for sw in range(self.スイッチ数):
 
-                data = "ANR:%02x:%01x!" % (pl, sw)
+                data = "ANR:%02X:%01X!" % (pl, sw)
                 self.ser.write(str.encode(data))
                 data = self.ser.read(5)
                 data = data.decode('utf-8')
@@ -182,7 +179,6 @@ class mmp:
             self.PWM機器状況 = [(各機状況 >> i) & 1 == 1 for i in range(16)]
             return self.PWM機器状況
         except ValueError:
-            print(f"PCA9685ステータス取得失敗:{res}")
             self.PWM機器状況 = [False] * 16
             return self.PWM機器状況
     #---------------------------------------------------------------------
@@ -202,40 +198,41 @@ class mmp:
     #---------------------------------------------------------------------
     # 指定したPWMチャンネル（0〜255）が使用可能かを確認
     #---------------------------------------------------------------------
-    def PWM_チャンネル確認(self, argCh通番):
+    def PWM_チャンネル使用可否(self, argCh通番):
         if not (0 <= argCh通番 <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
-
         pwm_id = argCh通番 // 16  # 0〜15 の PCA9685番号
-        if len(self.PWM機器状況) != 16:
-            print("[警告] PWMステータスが未取得")
-            return False
-        
+        if len(self.PWM機器状況) != 16: return False
         return self.PWM機器状況[pwm_id]
     #---------------------------------------------------------------------
     # PWM出力値指定
-    #  コマンド書式：PWM！<Ch通番>:<PWM出力値>!
+    # コマンド書式：PWM:<Ch通番>:<PWM出力値>!
     #---------------------------------------------------------------------
-    def PWM_VALUE(self, argCh通番, argPWM):
-        data = "PWM:%02x:%04x!" % (argCh通番, argPWM)
-        self.ser.write(str.encode(data))
-        data = self.ser.read(5)
+    def PWM_VALUE(self, ch, pwm):
+        cmd = f"PWM:{int(ch):02X}:{int(pwm):04X}!"
+        self.ser.write(cmd.encode("ascii"))
+        resp = self.ser.read(5)              # bytes
+        return resp == b"!!!!!"              # 5バイトOK応答
     #---------------------------------------------------------------------
-    # サーボ定格設定
-    #  コマンド書式：PWI!<0度のPWM出力値>:<180度のPWM出力値>!
+    # サーボ特性設定（角度↔PWM）
+    # コマンド書式：PWI:<RS>:<RE>:<PS>:<PE>!
+    #   RS/RE: 角度 0–360 (%03X)、PS/PE: PWM 0–4095 (%04X)
     #---------------------------------------------------------------------
-    def PWM_INIT(self, arg開始角度, arg終了角度, arg開始PWM, arg終了PWM):
-        data = "PWI:%02x:%03x:%02x!" % (arg開始角度, arg終了角度, arg開始PWM, arg終了PWM)
-        self.ser.write(str.encode(data))
-        data = self.ser.read(5)
+    def PWM_INIT(self, rs, re, ps, pe):
+        cmd = f"PWI:{int(rs):03X}:{int(re):03X}:{int(ps):04X}:{int(pe):04X}!"
+        self.ser.write(cmd.encode("ascii"))
+        resp = self.ser.read(5)
+        return resp == b"!!!!!"
     #---------------------------------------------------------------------
     # 角度指定
-    #  コマンド書式：PWA!<Ch通番>:<角度>!
+    # コマンド書式：PWA:<Ch通番>:<角度>!
+    #   角度は 0–180 を %03X
     #---------------------------------------------------------------------
-    def PWM_ANGLE(self, argCh通番, arg角度):
-        data = "PWA:%02x:%02x!" % (argCh通番, arg角度)
-        self.ser.write(str.encode(data))
-        data = self.ser.read(5)
+    def PWM_ANGLE(self, ch, ang):
+        cmd = f"PWA:{int(ch):02X}:{int(ang):03X}!"
+        self.ser.write(cmd.encode("ascii"))
+        resp = self.ser.read(5)
+        return resp == b"!!!!!"
 
     #=====================================================================
     # デジタル入出力
@@ -244,7 +241,7 @@ class mmp:
     # 入出力(デジタル) ※出力後に入力する
     #---------------------------------------------------------------------
     def digital_IO(self, argPort, argValue):
-        data = "IO:%02x:%01x!" % (argPort, argValue)
+        data = "IO:%02X:%01X!" % (argPort, argValue)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         data2 = data.decode('utf-8')
@@ -254,28 +251,20 @@ class mmp:
     # 出力
     #---------------------------------------------------------------------
     def digital_OUT(self, argPort, argValue):
-        cmd = "POW:%02x:%01x!" % (argPort, argValue)
+        cmd = "POW:%02X:%01X!" % (argPort, argValue)
         self.ser.write(cmd.encode("ascii"))       
         data = self.ser.read(5)
-        try:
-            response = data.decode("ascii")
-        except UnicodeDecodeError:
-            print(f"受信データが不正: {data}")
-            return False
 
-        if response == "!!!!!":
-            return True
-        elif response == "----!":
-            print(f"[エラー] 無効なポートまたは設定: {cmd}")
-            return False
-        else:
-            print(f"[警告] 予期しない応答: {response}")
-            return False
+        try: response = data.decode("ascii")
+        except UnicodeDecodeError: return False
+
+        if   response == b"!!!!!": return True
+        else                     : return False
     #---------------------------------------------------------------------
     # 入力
     #---------------------------------------------------------------------
     def digital_IN(self, argPort):
-        data = "POR:%02x!" % (argPort)
+        data = "POR:%02X!" % (argPort)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         data2 = data.decode('utf-8')
@@ -345,7 +334,7 @@ class mmp:
     # i2c
     #=====================================================================
     def i2cWrite(self, slave_addr, addr, val):
-        data = "I2W:%02x:%02x:%02x:1!" % (slave_addr, addr, val)
+        data = "I2W:%02X:%02X:%02X:1!" % (slave_addr, addr, val)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         if( data.decode('utf-8') != '----!'):
@@ -354,7 +343,7 @@ class mmp:
             return False
     #---------------------------------------------------------------------
     def i2cRead(self, slave_addr, addr):
-        data = "I2R:%02x:%02x:1!" % (slave_addr, addr)
+        data = "I2R:%02X:%02X:1!" % (slave_addr, addr)
         self.ser.write(str.encode(data))
         data = self.ser.read(5)
         data2 = data.decode('utf-8')

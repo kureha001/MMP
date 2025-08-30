@@ -31,9 +31,9 @@ class mmp:
     PWM機器状況 = [False] * 16
     #│
     #○接続関連
-    uart       = None
     接続済     = False
-    version    = ""
+    uart       = None
+    version    = None
     #┴
 
     #=====================================================================
@@ -51,50 +51,102 @@ class mmp:
         #┬
         #○UART設定（constructorで確定）
         self.baud       = int(arg通信速度)
-        self.timeout    = int(arg時間切れ)
+        self.timeout_ms = int(arg時間切れ)
         self.tx_pin     = int(arg割当ピンTX)
         self.rx_pin     = int(arg割当ピンRX)
         self.uart_id    = int(argシリアル番号)
         #|
         #○UATRT設定をログに出力する
         print("<<Initializing...>>")
-        print(f" - UART     = USB-Serial[{self.uart_id}]")
-        print(f" - TX       = {self.tx_pin}")
-        print(f" - RX       = {self.rx_pin}")
         print(f" - Baudrate = {self.baud}bps")
+        print(f" - timeout  = {self.timeout_ms}ms")
         print(f" - Bits     = 8")
         print(f" - Parity   = None")
         print(f" - Stop     = 1")
-        print(f" - timeout  = {self.timeout}ms")
+        print(f" - UART     = GPIO-Serial[{self.uart_id}]")
+        print(f"   - TX     = {self.tx_pin}")
+        print(f"   - RX     = {self.rx_pin}")
         #┴
+
+    #=====================================================================
+    # 内部：共通化のためのヘルパー
+    #=====================================================================
+    def _now_ms(self):
+        # MicroPython 優先（wrap 対応）
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_ms"): return _t.ticks_ms()
+        except Exception:
+            pass
+        # CPython / CircuitPython
+        try:
+            import time as _t
+            return int(_t.monotonic() * 1000)
+        except Exception:
+            import time as _t
+            return int(_t.time() * 1000)
+    #---------------------------------------------------------------------
+    def _time_left_ms(self, deadline_ms):
+        # MicroPython の wrap-aware 差分
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_diff"):
+                return _t.ticks_diff(deadline_ms, _t.ticks_ms())
+        except Exception: pass
+        return deadline_ms - self._now_ms()
+    #---------------------------------------------------------------------
+    def _sleep_ms(self, ms):
+        try:
+            import time as _t
+            if hasattr(_t, "sleep_ms"):  # MicroPython
+                return _t.sleep_ms(int(ms))
+        except Exception: pass
+        import time as _t
+        _t.sleep(ms / 1000.0)
+    #---------------------------------------------------------------------
+    def _rx_ready(self):
+        try:
+            # pyserial / CircuitPython busio.UART
+            if hasattr(self.uart, "in_waiting"):
+                return int(self.uart.in_waiting) or 0
+            # MicroPython machine.UART
+            if hasattr(self.uart, "any"): return int(self.uart.any()) or 0
+        except Exception: return 0
+        return 0
+    #---------------------------------------------------------------------
+    def _read1(self):
+        try: return self.uart.read(1)
+        except Exception: return None
 
     #---------------------------------------------------------------------
     # 内部：ＭＭＰから返信を受信
     #---------------------------------------------------------------------
-    # ★固有の処理あり
     def _コマンド受信(self):
-
-        deadline = time.ticks_add(time.ticks_ms(), self.timeout)
+        deadline = self._now_ms() + int(self.timeout_ms)
         buf = bytearray()
 
-        while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+        while self._time_left_ms(deadline) > 0:
 
-            # UARTが初期化されていない場合は終了
-            if self.uart is None: break
+            n = self._rx_ready()
+            if n <= 0:
+                self._sleep_ms(1)
+                continue
 
-            # 受信データがない場合は待つ
-            n = self.uart.any()
-            if not n: continue
+            chunk = self.uart.read(n) or b""
+            if not chunk: continue
 
-            # 1バイト受信
-            b = self.uart.read(1)
-            if not b: continue
+            # 受信済みを追記し、常に末尾5バイトだけ保持（境界またぎも安全）
+            buf.extend(chunk)
+            if len(buf) > 5: del buf[0:len(buf) - 5]
 
-            # 常に末尾5バイトだけ保持
-            buf += b
-            if len(buf) > 5: buf = buf[-5:]
-            if len(buf) != 5 or buf[-1] != 0x21: continue # 0x21='!'
-            return buf.decode("ascii")
+            # 5バイト揃って末尾'!'なら応答確定
+            if len(buf) == 5 and buf[-1] == 0x21:  # '!'
+                try:
+                    return buf.decode("ascii")
+                except Exception:
+                    # 非ASCII混入時のフォールバック
+                    return "".join(chr(x) for x in buf)
+
         return None
 
     #---------------------------------------------------------------------
@@ -115,12 +167,12 @@ class mmp:
 
         # UARTを接続する
         print(f"<<Connecting(GPIO UART{self.uart_id})...>>")
-        時間制限_文字= max(1, self.timeout // 10)
+        時間制限_文字= max(1, self.timeout_ms // 10)
         try:
             self.uart = UART(
                 self.uart_id                   , # UART ID
                 baudrate     = self.baud       , # ボーレート
-                timeout      = self.timeout    , # タイムアウト
+                timeout      = self.timeout_ms , # タイムアウト（ms）
                 timeout_char = 時間制限_文字   , # タイムアウト(文字)
                 bits         = 8               , # データビット
                 parity       = None            , # パリティ
@@ -137,7 +189,7 @@ class mmp:
 
         # バージョンを取得
         if self.バージョン確認():
-            print(f"  -> Connected(Ver.{self.バージョン})")
+            print(f"  -> Connected(Ver.{self.version})")
             self.接続済 = True
             return True
         else:
@@ -160,7 +212,7 @@ class mmp:
     #---------------------------------------------------------------------
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
-        if resp and len(resp) == 5 and resp.endswith("!"):
+        if resp and len(resp) == 5 and resp[-1] == "!":
             s = resp[:-1]
             self.version = f"{s[0]}.{s[1]}.{s[2:4]}"
             return True

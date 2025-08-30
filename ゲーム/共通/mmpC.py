@@ -30,9 +30,9 @@ class mmp:
     PWM機器状況 = [False] * 16
     #│
     #○接続関連
-    uart       = None
     接続済     = False
-    version    = ""
+    uart       = None
+    version    = None
     #┴
 
     #=====================================================================
@@ -47,49 +47,106 @@ class mmp:
         #┬
         #○UART設定（constructorで確定）
         self.baud       = int(arg通信速度)
-        self.timeout    = int(arg時間切れ)
+        self.timeout_s  = float(arg時間切れ)
+        self.timeout_ms = int(round(arg時間切れ * 1000))
         #|
         #○UATRT設定をログに出力する
         print("<<Initializing...>>")
-        print( " - UART     = USB-Serial")
         print(f" - Baudrate = {self.baud}bps")
+        print(f" - timeout  = {self.timeout_ms}ms")
         print(f" - Bits     = 8")
         print(f" - Parity   = None")
         print(f" - Stop     = 1")
-        print(f" - timeout  = {self.timeout}sec")
+        print( " - UART     = USB-Serial")
         #┴
+
+    #=====================================================================
+    # 内部：共通化のためのヘルパー
+    #=====================================================================
+    def _now_ms(self):
+        # MicroPython 優先（wrap 対応）
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_ms"): return _t.ticks_ms()
+        except Exception:
+            pass
+        # CPython / CircuitPython
+        try:
+            import time as _t
+            return int(_t.monotonic() * 1000)
+        except Exception:
+            import time as _t
+            return int(_t.time() * 1000)
+    #---------------------------------------------------------------------
+    def _time_left_ms(self, deadline_ms):
+        # MicroPython の wrap-aware 差分
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_diff"):
+                return _t.ticks_diff(deadline_ms, _t.ticks_ms())
+        except Exception: pass
+        return deadline_ms - self._now_ms()
+    #---------------------------------------------------------------------
+    def _sleep_ms(self, ms):
+        try:
+            import time as _t
+            if hasattr(_t, "sleep_ms"):  # MicroPython
+                return _t.sleep_ms(int(ms))
+        except Exception: pass
+        import time as _t
+        _t.sleep(ms / 1000.0)
+    #---------------------------------------------------------------------
+    def _rx_ready(self):
+        try:
+            # pyserial / CircuitPython busio.UART
+            if hasattr(self.uart, "in_waiting"):
+                return int(self.uart.in_waiting) or 0
+            # MicroPython machine.UART
+            if hasattr(self.uart, "any"): return int(self.uart.any()) or 0
+        except Exception: return 0
+        return 0
+    #---------------------------------------------------------------------
+    def _read1(self):
+        try: return self.uart.read(1)
+        except Exception: return None
 
     #---------------------------------------------------------------------
     # 内部：ＭＭＰから返信を受信
     #---------------------------------------------------------------------
-    # ★固有の処理あり
     def _コマンド受信(self):
+        deadline = self._now_ms() + int(self.timeout_ms)
+        buf = bytearray()
 
-        t0 = time.time()
-        to = self.uart.timeout or 0
-        buf = b""
+        while self._time_left_ms(deadline) > 0:
 
-        while True:
-
-            b = self.uart.read(1)
-            if not b:
-                if to and (time.time() - t0) >= to: return None
-                time.sleep(0.001)
+            n = self._rx_ready()
+            if n <= 0:
+                self._sleep_ms(1)
                 continue
 
-            # 常に末尾5バイトだけ保持
-            buf += b
-            if len(buf) > 5:  buf = buf[-5:]
-            if len(buf) == 5 and buf.endswith(b"!"):
-                try                      : return buf.decode("ascii")
-                except UnicodeDecodeError: return "".join(chr(x) for x in buf)
+            chunk = self.uart.read(n) or b""
+            if not chunk: continue
+
+            # 受信済みを追記し、常に末尾5バイトだけ保持（境界またぎも安全）
+            buf.extend(chunk)
+            if len(buf) > 5: del buf[0:len(buf) - 5]
+
+            # 5バイト揃って末尾'!'なら応答確定
+            if len(buf) == 5 and buf[-1] == 0x21:  # '!'
+                try:
+                    return buf.decode("ascii")
+                except Exception:
+                    # 非ASCII混入時のフォールバック
+                    return "".join(chr(x) for x in buf)
+
+        return None
 
     #---------------------------------------------------------------------
     # 内部：ＭＭＰへコマンドを送信
     #---------------------------------------------------------------------
     def _コマンド送信(self, arg文字列):
-        try               : self.uart.write(arg文字列.encode("ascii"))
-        except Exception  : return None
+        try             : self.uart.write(arg文字列.encode("ascii"))
+        except Exception: return None
         return self._コマンド受信()
 
     #=====================================================================
@@ -104,28 +161,23 @@ class mmp:
         print("<<Scanning...>>")
         self.uart               = serial.Serial()
         self.uart.baudrate      = self.baud
-        self.uart.timeout       = self.timeout
-        self.uart.write_timeout = self.timeout
-
+        self.uart.timeout       = self.timeout_s
+        self.uart.write_timeout = self.timeout_s
         for COM番号 in range(0, 100):
             try:
                 # ポートでUARTを接続
                 self.uart.port = f"COM{COM番号}"
                 self.uart.open()
-
-                time.sleep(0.2)
                 print(f"  - COM{COM番号}")
 
                 # バッファをクリア
-                try:
-                    self.uart.reset_input_buffer()
-                    self.uart.reset_output_buffer()
-                except Exception: pass
+                time.sleep(0.005) # 単位：秒
+                self.バッファ消去()
 
                 # バージョンを取得
                 time.sleep(0.2)
                 if self.バージョン確認():
-                    print(f"  -> Connected(COM{self.uart.port})")
+                    print(f"  -> Connected({self.uart.port})")
                     print(f"  -> Connected(Ver.{self.version})")
                     self.接続済 = True
                     break
@@ -144,11 +196,11 @@ class mmp:
         self.接続済 = False # 未接続に仮設定
 
         # UARTを接続
-        print(f"<<Connecting(USB UART COM{comm_num})...>>")
+        print(f"<<Connecting(USB UART {comm_num})...>>")
         self.uart               = serial.Serial()
         self.uart.baudrate      = self.baud
-        self.uart.timeout       = self.timeout
-        self.uart.write_timeout = self.timeout
+        self.uart.timeout       = self.timeout_s
+        self.uart.write_timeout = self.timeout_s
         self.uart.port          = comm_num
         try: self.uart.open()
         except Exception as e:
@@ -160,7 +212,7 @@ class mmp:
 
         # バージョンを取得
         if self.バージョン確認():
-            print(f"  -> Connected(Ver.{self.バージョン})")
+            print(f"  -> Connected(Ver.{self.version})")
             self.接続済 = True
             return True
         else:
@@ -176,7 +228,6 @@ class mmp:
     #---------------------------------------------------------------------
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
-        print(resp)
         if resp and len(resp) == 5 and resp[-1] == "!":
             s = resp[:-1]
             self.version = f"{s[0]}.{s[1]}.{s[2:4]}"

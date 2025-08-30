@@ -31,9 +31,9 @@ class mmp:
     PWM機器状況 = [False] * 16
     #│
     #○接続関連
-    uart       = None
     接続済     = False
-    version    = ""
+    uart       = None
+    version    = None
     #┴
 
     #=====================================================================
@@ -50,20 +50,21 @@ class mmp:
         #┬
         #○UART設定（constructorで確定）
         self.baud       = int(arg通信速度)
-        self.timeout    = int(arg時間切れ)
-        self.tx_pin     = int(arg割当ピンTX)
-        self.rx_pin     = int(arg割当ピンRX)
+        self.timeout_ms = int(arg時間切れ)
+        self.timeout_s  = float(arg時間切れ / 1000.0)
+        self.tx_pin     = arg割当ピンTX
+        self.rx_pin     = arg割当ピンRX
         #|
         #○UATRT設定をログに出力する
         print("<<Initializing...>>")
-        print(f" - UART     = GPIO-Serial")
-        print(f" - TX       = {self.tx_pin}")
-        print(f" - RX       = {self.rx_pin}")
         print(f" - Baudrate = {self.baud}bps")
+        print(f" - timeout  = {self.timeout_ms}ms")
         print(f" - Bits     = 8")
         print(f" - Parity   = None")
         print(f" - Stop     = 1")
-        print(f" - timeout  = {self.timeout}ms")
+        print(f" - UART     = GPIO-Serial")
+        print(f"   - TX     = {self.tx_pin}")
+        print(f"   - RX     = {self.rx_pin}")
         #┴
 
     #---------------------------------------------------------------------
@@ -109,42 +110,100 @@ class mmp:
         # 最後の手段：そのまま返す（ボード依存型）
         return pin
 
-    #---------------------------------------------------------------------
-    # 内部：現在時刻(秒)と期限(秒)
-    #---------------------------------------------------------------------
+    #=====================================================================
+    # 内部：共通化のためのヘルパー
+    #=====================================================================
     # ★固有の関数
-    def _now(self): # 固有の関数
-        return time.monotonic()
-
     def _deadline(self, ms):
         return self._now() + (ms / 1000.0)
+    #---------------------------------------------------------------------
+    def _now(self): # 固有の関数
+        return time.monotonic()
+    #---------------------------------------------------------------------
+    def _now_ms(self):
+        # MicroPython 優先（wrap 対応）
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_ms"): return _t.ticks_ms()
+        except Exception:
+            pass
+        # CPython / CircuitPython
+        try:
+            import time as _t
+            return int(_t.monotonic() * 1000)
+        except Exception:
+            import time as _t
+            return int(_t.time() * 1000)
+    #---------------------------------------------------------------------
+    def _time_left_ms(self, deadline_ms):
+        # MicroPython の wrap-aware 差分
+        try:
+            import time as _t
+            if hasattr(_t, "ticks_diff"):
+                return _t.ticks_diff(deadline_ms, _t.ticks_ms())
+        except Exception: pass
+        return deadline_ms - self._now_ms()
+    #---------------------------------------------------------------------
+    def _sleep_ms(self, ms):
+        try:
+            import time as _t
+            if hasattr(_t, "sleep_ms"):  # MicroPython
+                return _t.sleep_ms(int(ms))
+        except Exception: pass
+        import time as _t
+        _t.sleep(ms / 1000.0)
+    #---------------------------------------------------------------------
+    def _rx_ready(self):
+        try:
+            # pyserial / CircuitPython busio.UART
+            if hasattr(self.uart, "in_waiting"):
+                return int(self.uart.in_waiting) or 0
+            # MicroPython machine.UART
+            if hasattr(self.uart, "any"): return int(self.uart.any()) or 0
+        except Exception: return 0
+        return 0
+    #---------------------------------------------------------------------
+    def _read1(self):
+        try: return self.uart.read(1)
+        except Exception: return None
 
     #---------------------------------------------------------------------
     # 内部：ＭＭＰから返信を受信
     #---------------------------------------------------------------------
-    # ★固有の処理あり
     def _コマンド受信(self):
-        end_t = self._deadline(self.timeout)
+        deadline = self._now_ms() + int(self.timeout_ms)
         buf = bytearray()
 
-        while self._now() < end_t:
-            n = self.uart.in_waiting
-            if n and n > 0:
-                b = self.uart.read(1)
-                if not b: continue
-                buf += b
-                if len(buf) > 5: buf = buf[-5:]
-                if len(buf) == 5 and buf[-1] == 0x21:  # '!'
-                    try             : return buf.decode("ascii")
-                    except Exception: return "".join(chr(x) for x in buf)
+        while self._time_left_ms(deadline) > 0:
+
+            n = self._rx_ready()
+            if n <= 0:
+                self._sleep_ms(1)
+                continue
+
+            chunk = self.uart.read(n) or b""
+            if not chunk: continue
+
+            # 受信済みを追記し、常に末尾5バイトだけ保持（境界またぎも安全）
+            buf.extend(chunk)
+            if len(buf) > 5: del buf[0:len(buf) - 5]
+
+            # 5バイト揃って末尾'!'なら応答確定
+            if len(buf) == 5 and buf[-1] == 0x21:  # '!'
+                try:
+                    return buf.decode("ascii")
+                except Exception:
+                    # 非ASCII混入時のフォールバック
+                    return "".join(chr(x) for x in buf)
+
         return None
 
     #---------------------------------------------------------------------
     # 内部：ＭＭＰへコマンドを送信
     #---------------------------------------------------------------------
     def _コマンド送信(self, arg文字列):
-        try               : self.uart.write(arg文字列.encode("ascii"))
-        except Exception  : return None
+        try             : self.uart.write(arg文字列.encode("ascii"))
+        except Exception: return None
         return self._コマンド受信()
 
     #=====================================================================
@@ -157,19 +216,18 @@ class mmp:
 
         # UARTを接続する
         print(f"<<Connecting(GPIO UART)...>>")
-        tx      = self.UARTピン取得(self.tx_pin, True)
-        rx      = self.UARTピン取得(self.rx_pin, False)
-        timeout = self.timeout / 1000.0
+        tx = self.UARTピン取得(self.tx_pin, True)
+        rx = self.UARTピン取得(self.rx_pin, False)
         try:
             self.uart = busio.UART(
-                baudrate             = self.baud, # ボーレート
-                timeout              = timeout  , # タイムアウト
-                bits                 = 8        , # データビット
-                parity               = None     , # パリティ
-                stop                 = 1        , # ストップビット
-                tx                   = tx       , # TXピン
-                rx                   = rx       , # RXピン
-                receiver_buffer_size = 64       , # 必要に応じて調整
+                baudrate             = self.baud     , # ボーレート
+                timeout              = self.timeout_s, # タイムアウト
+                bits                 = 8             , # データビット
+                parity               = None          , # パリティ
+                stop                 = 1             , # ストップビット
+                tx                   = tx            , # TXピン
+                rx                   = rx            , # RXピン
+                receiver_buffer_size = 64            , # 必要に応じて調整
             )
         except Exception as e:
             raise ConnectException(f"UARTに接続失敗: {e}")
@@ -180,7 +238,7 @@ class mmp:
 
         # バージョンを取得
         if self.バージョン確認():
-            print(f"  -> Connected(Ver.{self.バージョン})")
+            print(f"  -> Connected(Ver.{self.version})")
             self.接続済 = True
             return True
         else:
@@ -226,7 +284,7 @@ class mmp:
     #---------------------------------------------------------------------
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
-        if resp and len(resp) == 5 and resp.endswith("!"):
+        if resp and len(resp) == 5 and resp[-1] == "!":
             s = resp[:-1]
             self.version = f"{s[0]}.{s[1]}.{s[2:4]}"
             return True

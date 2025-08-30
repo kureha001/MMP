@@ -58,7 +58,7 @@ class mmp:
         #|
         #○UATRT設定をログに出力する
         print("<<Initializing...>>")
-        print(f" - UART     = USB-Serial[{self.uart_id}]")
+        print(f" - UART     = GPIO-Serial[{self.uart_id}]")
         print(f" - TX       = {self.tx_pin}")
         print(f" - RX       = {self.rx_pin}")
         print(f" - Baudrate = {self.baud}bps")
@@ -137,7 +137,7 @@ class mmp:
 
         # バージョンを取得
         if self.バージョン確認():
-            print(f"  -> Connected(Ver.{self.バージョン})")
+            print(f"  -> Connected(Ver.{self.version})")
             self.接続済 = True
             return True
         else:
@@ -160,7 +160,7 @@ class mmp:
     #---------------------------------------------------------------------
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
-        if resp and len(resp) == 5 and resp.endswith("!"):
+        if resp and len(resp) == 5 and resp[-1] == "!":
             s = resp[:-1]
             self.version = f"{s[0]}.{s[1]}.{s[2:4]}"
             return True

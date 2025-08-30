@@ -51,8 +51,8 @@ class mmp:
         #○UART設定（constructorで確定）
         self.baud       = int(arg通信速度)
         self.timeout    = int(arg時間切れ)
-        self.tx_pin     = int(arg割当ピンTX)
-        self.rx_pin     = int(arg割当ピンRX)
+        self.tx_pin     = arg割当ピンTX
+        self.rx_pin     = arg割当ピンRX
         #|
         #○UATRT設定をログに出力する
         print("<<Initializing...>>")
@@ -143,8 +143,8 @@ class mmp:
     # 内部：ＭＭＰへコマンドを送信
     #---------------------------------------------------------------------
     def _コマンド送信(self, arg文字列):
-        try               : self.uart.write(arg文字列.encode("ascii"))
-        except Exception  : return None
+        try             : self.uart.write(arg文字列.encode("ascii"))
+        except Exception: return None
         return self._コマンド受信()
 
     #=====================================================================
@@ -180,7 +180,7 @@ class mmp:
 
         # バージョンを取得
         if self.バージョン確認():
-            print(f"  -> Connected(Ver.{self.バージョン})")
+            print(f"  -> Connected(Ver.{self.version})")
             self.接続済 = True
             return True
         else:
@@ -226,7 +226,7 @@ class mmp:
     #---------------------------------------------------------------------
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
-        if resp and len(resp) == 5 and resp.endswith("!"):
+        if resp and len(resp) == 5 and resp[-1] == "!":
             s = resp[:-1]
             self.version = f"{s[0]}.{s[1]}.{s[2:4]}"
             return True

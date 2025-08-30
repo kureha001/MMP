@@ -1,8 +1,8 @@
 #=====================================================================
-# ＭＭＰライブラリ Rottenmeier (CircuitPython版)
+# ＭＭＰライブラリ Rottenmeier用 CircuitPython版
 #---------------------------------------------------------------------
-# Ver 0.03.001　2025/08/30 By Takanari.Kureha
-# ・ソースコード統一化
+# Ver 0.03.002　2025/08/31 By Takanari.Kureha
+# ・ＰＷＭコマンドを高速化
 #=====================================================================
 # ★固有のimportあり
 import time
@@ -42,12 +42,16 @@ class mmp:
     # ★固有の処理あり
     def __init__(
         self,
+        arg読込調整     = 128   , # 読込みバッファ(64～128)
         arg通信速度     = 115200, # 通信速度(単位：bps)
         arg時間切れ     = 100   , # タイムアウト(単位：ミリ秒)
         arg割当ピンTX   = None  , # TXピン; None=自動取得
         arg割当ピンRX   = None  , # RXピン; None=自動取得
         ):
         #┬
+        #○1回でまとめて読む最大バイト数
+        self.読込調整   = int(arg読込調整)
+        #|
         #○UART設定（constructorで確定）
         self.baud       = int(arg通信速度)
         self.timeout_ms = int(arg時間切れ)
@@ -171,33 +175,48 @@ class mmp:
     # 内部：ＭＭＰから返信を受信
     #---------------------------------------------------------------------
     def _コマンド受信(self):
+        # 受信期限（ms）とワークバッファ
         deadline = self._now_ms() + int(self.timeout_ms)
         buf = bytearray()
+        limit = getattr(self, "読込調整", 64)  # 1回でまとめて読む上限
 
         while self._time_left_ms(deadline) > 0:
 
+            # 受信バイト数（プラットフォーム差異は _rx_ready() が吸収）
             n = self._rx_ready()
             if n <= 0:
                 self._sleep_ms(1)
                 continue
 
-            chunk = self.uart.read(n) or b""
-            if not chunk: continue
+            # 一度に読みすぎない
+            if n > limit: n = limit
 
-            # 受信済みを追記し、常に末尾5バイトだけ保持（境界またぎも安全）
+            # まとめて読めるだけ読む（read(n)が無ければ1バイトフォールバック）
+            try:
+                chunk = self.uart.read(n)
+                # 一部実装は read(n) が None を返すことがある
+                if not chunk: chunk = self.uart.read(1) or b""
+            except Exception:
+                try: chunk = self.uart.read(1) or b""
+                except Exception: chunk = b""
+
+            if not chunk:
+                # 受信が無ければ少しだけ待つ
+                self._sleep_ms(1)
+                continue
+
+            # 常に末尾5バイトだけ保持
             buf.extend(chunk)
-            if len(buf) > 5: del buf[0:len(buf) - 5]
+            if len(buf) > 5: buf = buf[-5:]
 
-            # 5バイト揃って末尾'!'なら応答確定
+            # 5バイト＆末尾'!'で確定
             if len(buf) == 5 and buf[-1] == 0x21:  # '!'
-                try:
-                    return buf.decode("ascii")
-                except Exception:
-                    # 非ASCII混入時のフォールバック
-                    return "".join(chr(x) for x in buf)
+                try: return buf.decode("ascii")
+                # 非ASCII混入時も一応返す
+                except Exception: return "".join(chr(b) for b in buf)
 
+        # タイムアウト
         return None
-
     #---------------------------------------------------------------------
     # 内部：ＭＭＰへコマンドを送信
     #---------------------------------------------------------------------
@@ -419,20 +438,29 @@ class mmp:
     # PWM出力
     #---------------------------------------------------------------------
     def PWM_VALUE(self, argCh通番, argPWM値):
-        resp = self._コマンド送信(f"PWM:{int(argCh通番):02X}:{int(argPWM値):04X}!")
-        return resp == "!!!!!"
+        try:
+            self.uart.write(b"PWM:%02X:%04X!" % (argCh通番 & 0xFF, argPWM値 & 0xFFFF))
+        except Exception:
+            return False
+        return self._コマンド受信() == "!!!!!"
     #---------------------------------------------------------------------
     # サーボ特性設定（角度↔PWM）
     #---------------------------------------------------------------------
     def PWM_INIT(self, arg角度下限, arg角度上限, argPWM最小, argPWM最大):
-        resp = self._コマンド送信(f"PWI:{int(arg角度下限):03X}:{int(arg角度上限):03X}:{int(argPWM最小):04X}:{int(argPWM最大):04X}!")
-        return resp == "!!!!!"
+        try:
+            self.uart.write(b"PWI:%03X:%03X:%04X:%04X!" % (arg角度下限, arg角度上限, argPWM最小, argPWM最大))
+        except Exception:
+            return False
+        return self._コマンド受信() == "!!!!!"
     #---------------------------------------------------------------------
     # PWM出力(角度)
     #---------------------------------------------------------------------
     def PWM_ANGLE(self, argCh通番, arg角度):
-        resp = self._コマンド送信(f"PWA:{int(argCh通番):02X}:{int(arg角度):03X}!")
-        return resp == "!!!!!"
+        try:
+            self.uart.write(b"PWA:%02X:%03X!" % (argCh通番 & 0xFF, arg角度 & 0x3FF))
+        except Exception:
+            return False
+        return self._コマンド受信() == "!!!!!"
 
     #=====================================================================
     # デジタル入出力

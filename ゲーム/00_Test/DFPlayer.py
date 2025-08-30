@@ -2,9 +2,9 @@
 # DFPlayer用 テストプログラム
 #====================================================== 
 import time
-import mmpRottenmeier
+import mmpC
 
-MMP = mmpRottenmeier.mmp()
+MMP = mmpC.mmp()
 
 #───────────────────────────    
 def MP3_00():

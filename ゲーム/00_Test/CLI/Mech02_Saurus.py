@@ -7,34 +7,24 @@ from 共通ユーティリティ import (
     MP3_再生        ,
     PWM_電源_ON     ,
     PWM_電源_OFF    ,
-    PWM_出力
+    PWM_出力        ,
+    PWM_スイープ    ,
 )
 
 #======================================================
 def テスト実行(new_mmp):
 
+    print("####################")
+    print("#                  #")
+    print("#  02:MECH SAURUS  #")
+    print("#                  #")
+    print("####################")
     MMP = new_mmp()
-    MMP.通信接続()
+    if not MMP.通信接続():
+        print(f"Failed to connect !!")
+        return
 
-    def サーボスイープ(chs, vmin, vmax, center_offset=0, step=2, wait=0.02, hold=1.0):
-        center = int((vmin + vmax) / 2) + center_offset
-        print("  1/4.PWM: Cnter")
-        PWM_出力(MMP, chs, center); time.sleep(hold)
-
-        print("  2/4.PWM: Cnter to Max")
-        for v in range(center, vmax, step):
-            PWM_出力(MMP, chs, v); time.sleep(wait)
-        time.sleep(hold)
-
-        print("  3/4.PWM: Max   to Min")
-        for v in range(vmax, vmin, -step):
-            PWM_出力(MMP, chs, v); time.sleep(wait)
-        time.sleep(hold)
-
-        print("  4/4.PWM: Min   to Center")
-        for v in range(vmin, center, step):
-            PWM_出力(MMP, chs, v); time.sleep(wait)
-
+    #======================================================
     try:
         print("-------------------")
         print("Foot pedals(ANA-IN)")
@@ -45,7 +35,7 @@ def テスト実行(new_mmp):
             参加人数     = 2,      # 2 プレイヤー
             丸め         = 200,
             繰返回数     = 50,
-            待時間       = 0.2,
+            待時間       = 0.1,
             全件表示     = True    # そのまま全件表示
         )
 
@@ -58,7 +48,7 @@ def テスト実行(new_mmp):
             参加人数        = 10,         # PL=0..7 は予約、PL=8,9 を使うため 10 まで確保
             丸め            = 100,
             繰返回数        = 50,
-            待時間          = 0.2,
+            待時間          = 0.1,
             全件表示        = False,      # フィルタ表示に切替えるので無視される
             表示プレイヤー  = (8, 9),     # ← ここで最後の 2 プレイヤーだけ表示
             表示スイッチ    = (0, 1)      # ← スイッチ 0 と 1 を表示
@@ -77,12 +67,12 @@ def テスト実行(new_mmp):
 
         print("  1/4.Power ON")
         PWM_電源_ON(MMP, 基盤CH)
+        time.sleep(3)
 
         print("  2/4.DC Motor: PWM min to max")
         for val in range(最小, 最大, 間隔S):
             PWM_出力(MMP, モータCH, val)
             time.sleep(停止s)
-
         time.sleep(1)
 
         print("  3/4.DC Motor: PWM max to min")
@@ -101,13 +91,13 @@ def テスト実行(new_mmp):
         最小v, 最大v = 120, 380
         中央補正     = -18
         増分, 間隔s, 待ちs = 2, 0.02, 1.0
-        サーボスイープ(恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        PWM_スイープ(MMP, 恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("---------")
         print("Hut:Meter")
         print("---------")
         メータCH = (0, 12)
-        サーボスイープ(メータCH, 120, 370, 0, 2, 0.02, 1.0)
+        PWM_スイープ(MMP, メータCH, 120, 370, 0, 2, 0.02, 1.0)
 
         print("-------")
         print("Diorama")
@@ -123,7 +113,7 @@ def テスト実行(new_mmp):
 
         print(">Dinosaur")
         ジオラマ恐竜CH = (7, 6)
-        サーボスイープ(ジオラマ恐竜CH, 230, 370, 0, 2, 0.005, 1.0)
+        PWM_スイープ(MMP, ジオラマ恐竜CH, 230, 370, 0, 2, 0.005, 1.0)
         time.sleep(1)
 
         print(">Hourglass: PWM max to min")
@@ -141,7 +131,6 @@ def テスト実行(new_mmp):
                 (2,3)   # メインBGM：終了画面
                 ]
             )
-
 
     finally:
         try:

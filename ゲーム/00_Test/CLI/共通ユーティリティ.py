@@ -172,3 +172,35 @@ def PWM_出力(MMP, ch_or_list, pwm値):
         except Exception: print("NG: CH={} PWM={}".format(ch, pwm値))
         ok_all = False
     return ok_all
+
+#------------------------------------------------------
+# 指定値をそのまま出力
+#------------------------------------------------------
+def PWM_スイープ(
+    MMP,
+    chs,
+    vmin,
+    vmax,
+    center_offset=0,
+    step=2,
+    wait=0.02,
+    hold=1.0
+    ):
+
+    print("  1/4.PWM: Cnter")
+    center = int((vmin + vmax) / 2) + center_offset
+    PWM_出力(MMP, chs, center); time.sleep(hold)
+
+    print("  2/4.PWM: Cnter to Max")
+    for v in range(center, vmax, step):
+        PWM_出力(MMP, chs, v); time.sleep(wait)
+    time.sleep(hold)
+
+    print("  3/4.PWM: Max   to Min")
+    for v in range(vmax, vmin, -step):
+        PWM_出力(MMP, chs, v); time.sleep(wait)
+    time.sleep(hold)
+
+    print("  4/4.PWM: Min   to Center")
+    for v in range(vmin, center, step):
+        PWM_出力(MMP, chs, v); time.sleep(wait)

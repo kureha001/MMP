@@ -26,7 +26,6 @@ def テスト実行(new_mmp):
 
     #======================================================
     try:
-        """
         print("-------------------")
         print("Foot pedals(ANA-IN)")
         print("-------------------")
@@ -78,7 +77,6 @@ def テスト実行(new_mmp):
         print("  4/4.Power OFF")
         PWM_出力(MMP, モータCH, 0)
         PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤
-        """
 
         print("------------")
         print("Hut:Dinosaur")
@@ -121,7 +119,6 @@ def テスト実行(new_mmp):
         print(">Hourglass: PWM max to min")
         PWM_移動(MMP, 砂時計CH ,砂_最大v, 砂_最小v, 砂_増分, 砂_待ちs)
 
-        """
         print("--------")
         print("BGM(MP3)")
         print("--------")
@@ -133,7 +130,7 @@ def テスト実行(new_mmp):
                 (2,3)   # メインBGM：終了画面
                 ]
             )
-        """
+
     finally:
         try:
             PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤

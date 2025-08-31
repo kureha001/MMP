@@ -63,8 +63,11 @@
 ゲーム/00_Tools/__pycache__/
 
 ゲーム/00_Test/__pycache__/
-ゲーム/00_Test/CLI/__pycache__/
 ゲーム/00_Test/plugins/__pycache__/
+
+ゲーム/00_Test/CLI/CLI_CPython/__pycache__/
+ゲーム/00_Test/CLI/__pycache__/
+ゲーム/00_Test/CLI/__pycache__/
 
 ゲーム/共通/__pycache__/
 

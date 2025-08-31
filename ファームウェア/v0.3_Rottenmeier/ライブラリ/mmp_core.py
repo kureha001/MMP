@@ -1,8 +1,22 @@
+#============================================================
 # 共有コア（環境非依存）
+#------------------------------------------------------------
+#【ファイル配置方法】
+# ・CPython版：
+# 　同一 または 共通フォルダー(推奨)
+# ・microPython版／circuitPython版：
+# 　同一 または libフォルダー(推奨)
+#============================================================
+import time
+
+class ConnectException(Exception): pass
+
+__all__ = ("Core", "ConnectException")
 
 class Core:
-
+    #------------------------------------------------------------
     # 共有フィールド
+    #------------------------------------------------------------
     参加総人数 = None
     スイッチ数 = None
     丸め       = None
@@ -11,6 +25,9 @@ class Core:
     接続済     = False
     version    = None
 
+    #------------------------------------------------------------
+    # 初期化
+    #------------------------------------------------------------
     def __init__(self, adapter, 読込調整=64, baud=115200, timeout_ms=100):
         self.adapter     = adapter
         self.読込調整     = int(読込調整)
@@ -25,97 +42,99 @@ class Core:
         print(f" - Parity   = None")
         print(f" - Stop     = 1")
 
-    # ===== 時間ヘルパ =====
+    #============================================================
+    # 時間ヘルパ
+    #============================================================
     def _now_ms(self):
+
         try:
             import time as _t
-            if hasattr(_t, "ticks_ms"):
-                return _t.ticks_ms()
-        except Exception:
-            pass
+            if hasattr(_t, "ticks_ms"): return _t.ticks_ms()
+        except Exception: pass
+
         try:
             import time as _t
             return int(_t.monotonic() * 1000)
         except Exception:
             import time as _t
             return int(_t.time() * 1000)
-
+    #------------------------------------------------------------
     def _time_left_ms(self, deadline_ms):
         try:
             import time as _t
-            if hasattr(_t, "ticks_diff"):
-                return _t.ticks_diff(deadline_ms, _t.ticks_ms())
-        except Exception:
-            pass
+            if hasattr(_t, "ticks_diff"): return _t.ticks_diff(deadline_ms, _t.ticks_ms())
+        except Exception: pass
         return deadline_ms - self._now_ms()
-
+    #------------------------------------------------------------
     def _sleep_ms(self, ms):
         try:
             import time as _t
-            if hasattr(_t, "sleep_ms"):
-                return _t.sleep_ms(int(ms))
-        except Exception:
-            pass
+            if hasattr(_t, "sleep_ms"): return _t.sleep_ms(int(ms))
+        except Exception: pass
         import time as _t
         _t.sleep(ms / 1000.0)
 
-    # ===== 受信ユーティリティ =====
+    #============================================================
+    # 受信ユーティリティ
+    #============================================================
     def _rx_ready(self):
-        try:
-            return int(self.adapter.rx_ready()) or 0
-        except Exception:
-            return 0
-
+        try             : return int(self.adapter.rx_ready()) or 0
+        except Exception: return 0
+    #------------------------------------------------------------
     def _read_n(self, n):
-        try:
-            return self.adapter.read(n)
-        except Exception:
-            return b""
+        try             : return self.adapter.read(n)
+        except Exception: return b""
 
-    # ===== MMP 受信/送信 =====
+    #============================================================
+    # MMP 受信/送信
+    #============================================================
+    #---------------------------------------------------------------------
+    # ＭＭＰから返信を受信
+    #---------------------------------------------------------------------
     def _コマンド受信(self):
+
         deadline = self._now_ms() + int(self.timeout_ms)
         buf = bytearray()
         limit = int(self.読込調整) if self.読込調整 > 0 else 64
 
         while self._time_left_ms(deadline) > 0:
+
             n = self._rx_ready()
+
             if n <= 0:
                 self._sleep_ms(1)
                 continue
-            if n > limit:
-                n = limit
+
+            if n > limit: n = limit
+
             try:
                 chunk = self._read_n(n)
-                if not chunk:
-                    chunk = self._read_n(1) or b""
-            except Exception:
-                chunk = self._read_n(1) or b""
+                if not chunk: chunk = self._read_n(1) or b""
+            except Exception: chunk = self._read_n(1) or b""
 
             if not chunk:
                 self._sleep_ms(1)
                 continue
 
             buf.extend(chunk)
-            if len(buf) > 5:
-                buf = buf[-5:]
+            if len(buf) > 5: buf = buf[-5:]
 
             if len(buf) == 5 and buf[-1] == 0x21:  # '!'
-                try:
-                    return buf.decode("ascii")
-                except Exception:
-                    return "".join(chr(b) for b in buf)
+                try             : return buf.decode("ascii")
+                except Exception: return "".join(chr(b) for b in buf)
 
         return None
-
+    #---------------------------------------------------------------------
+    # ＭＭＰへコマンドを送信
+    #---------------------------------------------------------------------
     def _コマンド送信(self, s):
-        try:
-            self.adapter.write(s.encode("ascii"))
-        except Exception:
-            return None
+        try             : self.adapter.write(s.encode("ascii"))
+        except Exception: return None
         return self._コマンド受信()
 
-    # ===== バージョン =====
+    #============================================================
+    # バージョン
+    #============================================================
     def バージョン確認(self):
         resp = self._コマンド送信("VER!")
         if resp and len(resp) == 5 and resp[-1] == "!":
@@ -127,15 +146,29 @@ class Core:
             self.version = "?.?.??"
             return False
 
-    # ===== アナログ入力 =====
+    #============================================================
+    # アナログ入力
+    #============================================================
     def アナログ初期化(self):
+        #┬
+        #○未初期化はエラー
         if self.スイッチ数 is None or self.参加総人数 is None:
             raise ValueError("アナログ設定が未完了です。")
         if self.スイッチ数 <= 0 or self.参加総人数 <= 0:
             raise ValueError("アナログ設定が未完了です。")
+        #│
+        #○参加総人数 × スイッチ数 の 2次元配列を 0 で確保
         self.mmpAnaVal = [[0 for _ in range(self.スイッチ数)] for _ in range(self.参加総人数)]
-
-    def アナログ設定(self, argスイッチ数=4, arg参加人数=1, arg丸め=5):
+        #┴
+    #------------------------------------------------------------
+    def アナログ設定(
+        self                ,
+        argスイッチ数   = 4 , # 使用するHC4067の個数(1～4)
+        arg参加人数     = 1 , # 使用するHC4067のPin数(1～16)
+        arg丸め         = 5 , # アナログ値の丸め
+        ):
+        #┬
+        #○アナログパラメータをセットする
         self.参加総人数 = int(arg参加人数)
         self.スイッチ数 = int(argスイッチ数)
         self.丸め = int(arg丸め)
@@ -143,33 +176,79 @@ class Core:
         print(f"  - Switches     = {self.スイッチ数}")
         print(f"  - Participants = {self.参加総人数}")
         print(f"  - Rounding     = {self.丸め}")
+        #│
+        #●測定データをゼロ初期する
         self.アナログ初期化()
+        #│
+        #●アナログ入力ピンのアクセス範囲を設定する
         _ = self._コマンド送信(f"ANS:{self.参加総人数:02X}:{self.スイッチ数:02X}!")
-
+        #┴
+    #------------------------------------------------------------
     def アナログ読取(self):
+        #┬
+        #●ＭＭＰにコマンドを発行する
         _ = self._コマンド送信("ANU!")
+        #│
+        #◎└┐参加者(HC4067のチャンネル)を走査する
         for ch in range(self.参加総人数):
+            #│
+            #◎└┐スイッチ(HC4067の機器)を走査する
             for bd in range(self.スイッチ数):
+                #│
+                #●ＭＭＰから走査中のチャンネルNo・ボードNoのアナログ値を取得する
                 r = self._コマンド送信(f"ANR:{ch:02X}:{bd:02X}!")
+                #│
+                #◇┐応答結果を値に変換してバッファに格納する
                 結果 = None
                 if r and len(r) == 5 and r[-1] == "!":
+                #　├┐
+                    #↓(応答が正常な場合)
+                    #○数値化・丸め補正し、バッファに格納する
                     結果 = int(r[:-1], 16)
                     if self.丸め and self.丸め > 0:
                         結果 = (結果 // self.丸め) * self.丸め
+                    #┴
+                #　└┐
+                    #┴
+                #│
+                #○結果を公開バッファに上書きする
                 self.mmpAnaVal[ch][bd] = 結果
+        #┴　┴　┴
 
-    # ===== PWM =====
+    #=====================================================================
+    # ＰＷＭ出力
+    #=====================================================================
+    #---------------------------------------------------------------------
+    # 機器の接続状況を返す
+    #  - 返り値: list[bool]（True=接続あり/False=接続なし）
+    #---------------------------------------------------------------------
     def PWM_機器確認(self):
+        #┬
+        #◎└┐機器(PCA9685)を走査する
         状況 = [False] * 16
         for 機器No in range(16):
+            #│
+            #●機器を指定して接続状況を取得する
             r = self._コマンド送信(f"PWX:{機器No:02X}!")
+            #│
+            #○下位bit=1なら接続ありにする
             結果 = None
             if r and len(r) == 5 and r[-1] == "!":
                 結果 = (int(r[:-1], 16) & 0x1) == 1
+            #│
+            #○結果を内部バッファに格納する
             状況[機器No] = 結果
+            #┴
+        #│
+        #○内部バッファを公開バッファに上書きする
         self.PWM機器状況 = 状況
+        #│
+        #▼公開バッファを返す
         return 状況
-
+    #---------------------------------------------------------------------
+    # 指定したPWMチャンネルの使用可否を返す
+    #  - 返り値: True=使用可能/False=使用不可
+    #---------------------------------------------------------------------
     def PWM_チャンネル使用可否(self, argCh通番):
         if not (0 <= argCh通番 <= 255):
             raise ValueError("[エラー] PWMチャンネルは 0〜255 の範囲で指定")
@@ -177,72 +256,130 @@ class Core:
             self.PWM_機器確認()
         pwm_id = argCh通番 // 16
         return bool(self.PWM機器状況[pwm_id])
-
+    #---------------------------------------------------------------------
+    # PWM出力
+    #---------------------------------------------------------------------
     def PWM_VALUE(self, argCh通番, argPWM値):
-        try:
-            self.adapter.write(b"PWM:%02X:%04X!" % (argCh通番 & 0xFF, argPWM値 & 0xFFFF))
-        except Exception:
-            return False
+        try: self.adapter.write(b"PWM:%02X:%04X!" % (argCh通番 & 0xFF, argPWM値 & 0xFFFF))
+        except Exception: return False
         return self._コマンド受信() == "!!!!!"
-
+    #---------------------------------------------------------------------
+    # サーボ特性設定（角度↔PWM）
+    #---------------------------------------------------------------------
     def PWM_INIT(self, arg角度下限, arg角度上限, argPWM最小, argPWM最大):
-        try:
-            self.adapter.write(b"PWI:%03X:%03X:%04X:%04X!" % (arg角度下限, arg角度上限, argPWM最小, argPWM最大))
-        except Exception:
-            return False
+        try: self.adapter.write(b"PWI:%03X:%03X:%04X:%04X!" % (arg角度下限, arg角度上限, argPWM最小, argPWM最大))
+        except Exception: return False
         return self._コマンド受信() == "!!!!!"
-
+    #---------------------------------------------------------------------
+    # PWM出力(角度)
+    #---------------------------------------------------------------------
     def PWM_ANGLE(self, argCh通番, arg角度):
-        try:
-            self.adapter.write(b"PWA:%02X:%03X!" % (argCh通番 & 0xFF, arg角度 & 0x3FF))
-        except Exception:
-            return False
+        try: self.adapter.write(b"PWA:%02X:%03X!" % (argCh通番 & 0xFF, arg角度 & 0x3FF))
+        except Exception: return False
         return self._コマンド受信() == "!!!!!"
+    #---------------------------------------------------------------------
+    # PWM電源スイッチ
+    #---------------------------------------------------------------------
+    def PWM_POWER(self, argCh通番, argスイッチ):
+        return self.PWM_VALUE(argCh通番, 4095 if bool(argスイッチ) else 0)
+    #------------------------------------------------------
+    # PWM値に転換を徐々に移動
+    #------------------------------------------------------
+    def PWM_MOVE(
+        self                ,
+        argCh一覧           , # 複数チャンネル指定が可能
+        arg開始値           , # 開始値＞終了値も可能
+        arg終了値           ,
+        arg増減     = 2     ,
+        arg待ちsec  = 0.02  ,
+        ):
+        # 増減の矛盾を補正
+        増減 = abs(arg増減)
+        if arg開始値 > arg終了値: 増減 = -増減
 
-    # ===== デジタル I/O =====
+        # 増減する
+        for PWM値 in range(arg開始値, arg終了値, 増減):
+            # チャンネルごとに増減する
+            for ch in argCh一覧:
+                self.PWM_VALUE(ch, PWM値)
+                time.sleep(arg待ちsec)
+
+    #=====================================================================
+    # デジタル入出力
+    #=====================================================================
+    #---------------------------------------------------------------------
+    # 入力
+    #---------------------------------------------------------------------
     def digital_IN(self, argポートNo):
         r = self._コマンド送信(f"POR:{int(argポートNo):02X}!")
         return int(r[:-1], 16) if r and len(r) == 5 and r[-1] == "!" else 0
-
+    #---------------------------------------------------------------------
+    # 出力
+    #---------------------------------------------------------------------
     def digital_OUT(self, argポートNo, arg値):
         r = self._コマンド送信(f"POW:{int(argポートNo):02X}:{int(arg値):01X}!")
         return r == "!!!!!"
 
-    # ===== MP3(DFPlayer) =====
+    #=====================================================================
+    # ＭＰ３プレイヤー
+    #=====================================================================
+    #---------------------------------------------------------------------
+    # 機器情報
+    #---------------------------------------------------------------------
     def DFP_Info(self, arg機器No):
         return self._コマンド送信(f"DPX:{int(arg機器No):01X}!") or ""
-
+    #---------------------------------------------------------------------
+    # 指定フォルダ内トラック再生
+    #---------------------------------------------------------------------
     def DFP_PlayFolderTrack(self, arg機器No, argフォルダ, argトラック):
         return self._コマンド送信(f"DIR:{int(arg機器No):01X}:{int(argフォルダ):02X}:{int(argトラック):02X}!") or ""
-
+    #---------------------------------------------------------------------
+    # ステータス
+    #  1:MP3
+    #  2:音量
+    #  3:イコライザ
+    #  4:ファイル番号(総合計)
+    #  5:ファイル番号(フォルダ内)
+    #---------------------------------------------------------------------
     def DFP_get_play_state(self, arg機器No, st種別No):
         return self._コマンド送信(f"DST:{int(arg機器No):01X}:{int(st種別No):01X}!") or ""
-
+    #---------------------------------------------------------------------
+    # 停止
+    #---------------------------------------------------------------------
     def DFP_Stop(self, arg機器No):
         return self._コマンド送信(f"DSP:{int(arg機器No):01X}!") or ""
-
+    #---------------------------------------------------------------------
+    # 一時停止
+    #---------------------------------------------------------------------
     def DFP_Pause(self, arg機器No):
         return self._コマンド送信(f"DPA:{int(arg機器No):01X}!") or ""
-
+    #---------------------------------------------------------------------
+    # 再生再開
+    #---------------------------------------------------------------------
     def DFP_Resume(self, arg機器No):
         return self._コマンド送信(f"DPR:{int(arg機器No):01X}!") or ""
-
+    #---------------------------------------------------------------------
+    # 音量設定（0〜30）
+    #---------------------------------------------------------------------
     def DFP_Volume(self, arg機器No, arg音量):
         return self._コマンド送信(f"VOL:{int(arg機器No):01X}:{int(arg音量):02X}!") or ""
-
+    #---------------------------------------------------------------------
+    # イコライザー設定：0〜5
+    #  0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
+    #---------------------------------------------------------------------
     def DFP_set_eq(self, arg機器No, argモード):
         return self._コマンド送信(f"DEF:{int(arg機器No):01X}:{int(argモード):02X}!") or ""
 
-    # ===== I2C Proxy =====
+    #=====================================================================
+    # I2C（プロキシ）
+    #=====================================================================
     def i2cWrite(self, slave_addr, addr, val):
         r = self._コマンド送信(f"I2W:{int(slave_addr):02X}:{int(addr):02X}:{int(val):02X}!")
         return r == "!!!!!"
-
+    #------------------------------------------------------------
     def i2cRead(self, slave_addr, addr):
         r = self._コマンド送信(f"I2R:{int(slave_addr):02X}:{int(addr):02X}!")
         if r and len(r) == 5 and r[-1] == "!":
-            try:
-                return int(r[:-1], 16)
-            except Exception:
-                return 0x00
+            try             : return int(r[:-1], 16)
+            except Exception: return 0x00
         return 0x00

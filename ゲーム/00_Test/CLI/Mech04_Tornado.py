@@ -38,11 +38,12 @@ def テスト実行(new_mmp):
         print("\n---------")
         print("Doll Legs")
         print("---------")
+        基盤CH = (0)
         print("  1.Lift (DC Motor:ON)")
-        PWM_電源_ON(MMP, 0)
+        PWM_電源(MMP, 基盤CH, True)
         time.sleep(2)
         print("  2.Down (DC Motor:OFF)")
-        PWM_電源_OFF(MMP, 0)
+        PWM_電源(MMP, 基盤CH, False)
 
         print("\n--------")
         print("Bar Lock")
@@ -61,7 +62,7 @@ def テスト実行(new_mmp):
         print("--------")
         MP3_再生(
             MMP,
-            再生リスト=[
+            arg再生一覧 = [
                 (4,1),  # メインBGM：タイトル画面
                 (4,2),  # メインBGM：プレイ画面
                 (4,3)   # メインBGM：終了画面
@@ -69,4 +70,6 @@ def テスト実行(new_mmp):
             )
 
     finally:
+        try: PWM_電源(MMP, 基盤CH, False)
+        except Exception: pass
         MMP.通信切断()

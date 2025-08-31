@@ -5,10 +5,10 @@ import time
 from 共通ユーティリティ import (
     アナログ入力測定,
     MP3_再生        ,
-    PWM_電源_ON     ,
-    PWM_電源_OFF    ,
+    PWM_電源        ,
     PWM_出力        ,
-    PWM_スイープ    ,
+    PWM_移動        ,
+    PWM_移動_上中下 ,
 )
 
 #======================================================
@@ -58,42 +58,36 @@ def テスト実行(new_mmp):
         print("---------------")
         print("Dinosaur Island")
         print("---------------")
-        モータCH = (3, 15)   # DCモータ
-        基盤CH   = (2, 14)   # 基盤電源
-        最小   = 1300
-        最大   = 3500
-        間隔S  = 50
-        間隔E  = -100
-        停止s  = 0.2
+        モータCH     = (3, 15)   # DCモータ
+        基盤CH       = (2, 14)   # 基盤電源
+        最小v, 最大v = 1300, 3500
+        間隔S, 間隔E = 80, 120
+        待ちs        = 0.2
 
         print("  1/4.Power ON")
-        PWM_電源_ON(MMP, 基盤CH)
-        time.sleep(3)
+        PWM_電源(MMP, 基盤CH, True)   # 恐竜アイランド基盤
+        time.sleep(1)
 
         print("  2/4.DC Motor: PWM min to max")
-        for val in range(最小, 最大, 間隔S):
-            PWM_出力(MMP, モータCH, val)
-            time.sleep(停止s)
+        PWM_移動(MMP, モータCH ,最小v, 最大v, 間隔S, 待ちs)
         time.sleep(1)
 
         print("  3/4.DC Motor: PWM max to min")
-        for val in range(最大, 最小, 間隔E):
-            PWM_出力(MMP, モータCH, val)
-            time.sleep(停止s)
+        PWM_移動(MMP, モータCH ,最大v, 最小v, 間隔E, 待ちs)
 
         print("  4/4.Power OFF")
         PWM_出力(MMP, モータCH, 0)
-        PWM_電源_OFF(MMP, 基盤CH)
-
+        PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤
         """
+
         print("------------")
         print("Hut:Dinosaur")
         print("------------")
         恐竜CH       = (1, 13)
         最小v, 最大v = 120, 380
         中央補正     = -18
-        増分, 間隔s, 待ちs = 5, 0.02, 0.5
-        PWM_スイープ(MMP, 恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        増分, 間隔s, 待ちs = 5, 0.01, 0.5
+        PWM_移動_上中下(MMP, 恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("---------")
         print("Hut:Meter")
@@ -101,34 +95,31 @@ def テスト実行(new_mmp):
         メータCH = (0, 12)
         最小v, 最大v = 120, 370
         中央補正     = 0
-        増分, 間隔s, 待ちs = 5, 0.02, 0.5
-        PWM_スイープ(MMP, メータCH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
-#        PWM_スイープ(MMP, メータCH, 120, 370, 0, 2, 0.02, 1.0)
+        増分, 間隔s, 待ちs = 5, 0.01, 0.5
+        PWM_移動_上中下(MMP, メータCH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("-------")
         print("Diorama")
         print("-------")
-        砂時計CH            = 5
-        砂_最小, 砂_最大    = 136, 616
+        砂時計CH            = (5)
+        砂_最小v, 砂_最大v  = 136, 616
         中央補正            = -18
         砂_増分, 砂_待ちs   = 5, 0.002
 
         print(">Hourglass: PWM min to max")
-        for v in range(砂_最小, 砂_最大, 砂_増分):
-            PWM_出力(MMP, 砂時計CH, v); time.sleep(砂_待ちs)
+        PWM_移動(MMP, 砂時計CH ,砂_最小v, 砂_最大v, 砂_増分, 砂_待ちs)
         time.sleep(1)
 
         print(">Dinosaur")
         最小v, 最大v        = 230, 370
         中央補正            = 0
-        増分, 間隔s, 待ちs  = 3, 0.005, 0.5
+        増分, 間隔s, 待ちs  = 3, 0.005, 0.2
         ジオラマ恐竜CH = (7, 6)
-        PWM_スイープ(MMP, ジオラマ恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        PWM_移動_上中下(MMP, ジオラマ恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
         time.sleep(1)
 
         print(">Hourglass: PWM max to min")
-        for v in range(砂_最大, 砂_最小, -砂_増分):
-            PWM_出力(MMP, 砂時計CH, v); time.sleep(砂_待ちs)
+        PWM_移動(MMP, 砂時計CH ,砂_最大v, 砂_最小v, 砂_増分, 砂_待ちs)
 
         """
         print("--------")
@@ -136,17 +127,18 @@ def テスト実行(new_mmp):
         print("--------")
         MP3_再生(
             MMP,
-            再生リスト=[
+            arg再生一覧 = [
                 (2,1),  # メインBGM：タイトル画面
                 (2,2),  # メインBGM：プレイ画面
                 (2,3)   # メインBGM：終了画面
                 ]
             )
         """
-
     finally:
         try:
-            PWM_電源_OFF(MMP, (2, 14))   # 恐竜アイランド基盤
-            PWM_出力(MMP, (3, 15), 0)    # DCモータ
+            PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤
+        except Exception: pass
+        try:
+            PWM_出力(MMP, モータCH, 0)     # DCモータ
         except Exception: pass
         MMP.通信切断()

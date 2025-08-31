@@ -5,8 +5,7 @@ import time
 from 共通ユーティリティ import (
     アナログ入力測定,
     MP3_再生        ,
-    PWM_電源_ON     ,
-    PWM_電源_OFF
+    PWM_電源        ,
     )
 
 #======================================================
@@ -25,8 +24,9 @@ def テスト実行(new_mmp):
         print("--------")
         print("Power ON")
         print("--------")
-        PWM_電源_ON(MMP, (0, 1)) # カモロボ2体
-        time.sleep(3)            # カモロボの安定待ち
+        基盤CH = (0, 1)             # カモロボ2体の基盤
+        PWM_電源(MMP, 基盤CH, True) # カモロボ2体
+        time.sleep(3)               # カモロボの安定待ち
 
         print("-----------")
         print("Hit(ANA-IN)")
@@ -43,14 +43,14 @@ def テスト実行(new_mmp):
         print("----------")
         print("Power OFF")
         print("----------")
-        PWM_電源_OFF(MMP, (0, 1)) # カモロボ2体
+        PWM_電源(MMP, 基盤CH, False) # カモロボ2体
 
         print("--------")
         print("BGM(MP3)")
         print("--------")
         MP3_再生(
             MMP,
-            再生リスト= [
+            arg再生一覧 = [
                 (3,1),  # メインBGM：タイトル画面
                 (3,2),  # メインBGM：プレイ画面
                 (3,3)   # メインBGM：終了画面
@@ -58,6 +58,6 @@ def テスト実行(new_mmp):
             )
 
     finally:
-        try: PWM_電源_OFF(MMP, (0, 1)) # カモロボ2体
+        try: PWM_電源(MMP, 基盤CH, False) # カモロボ2体
         except Exception: pass
         MMP.通信切断()

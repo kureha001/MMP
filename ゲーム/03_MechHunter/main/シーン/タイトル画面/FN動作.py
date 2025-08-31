@@ -5,7 +5,7 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.音声
+import 音声
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -65,7 +65,7 @@ class 本体:
         DS.情報.遷移要否 = True
         #│
         #○クリック音を鳴らす
-        共通.音声.クリック音()
+        音声.クリック音()
         #┴
 	#────────────────────────────────────
     def Fn選択_標的数(self):

@@ -9,7 +9,7 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 import main.共通部品 as 共通部品
@@ -76,14 +76,14 @@ class 本体:
         #　├┐（左脚の場合）
             #↓
             #●左脚を指示する
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.小屋.首[チーム]   ,
                 DS.仕様.小屋.最大         )
         else       :
         #　└┐（その他）
             #↓
             #●右脚を指示する
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.小屋.首[チーム]   ,
                 DS.仕様.小屋.最小         )
         #┴ ┴

@@ -2,7 +2,7 @@
 #┃ゲーム共通部品
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -41,13 +41,13 @@ class 運搬機():
         PWM値 = (4095) if 引数_活性可否 else (-1)
         #│
         #≫運搬機の電飾を活性制御する
-        共通.MMP.接続.PWM_VALUE(DS.obj.運搬機[0].仕様.電飾No, PWM値)
-        共通.MMP.接続.PWM_VALUE(DS.obj.運搬機[1].仕様.電飾No, PWM値)
+        MMP.接続.PWM_VALUE(DS.obj.運搬機[0].仕様.電飾No, PWM値)
+        MMP.接続.PWM_VALUE(DS.obj.運搬機[1].仕様.電飾No, PWM値)
         #┴
 	#────────────────────────────────────
     def モータ停止():
 		#┬
         #≫運搬機の動力(モータ)を停止する
-        共通.MMP.接続.PWM_VALUE(DS.obj.運搬機[0].仕様.動力No, -1)
-        共通.MMP.接続.PWM_VALUE(DS.obj.運搬機[1].仕様.動力No, -1)
+        MMP.接続.PWM_VALUE(DS.obj.運搬機[0].仕様.動力No, -1)
+        MMP.接続.PWM_VALUE(DS.obj.運搬機[1].仕様.動力No, -1)
         #┴

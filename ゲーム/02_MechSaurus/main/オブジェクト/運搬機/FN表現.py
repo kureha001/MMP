@@ -9,7 +9,7 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -77,7 +77,7 @@ class 本体:
         #┬
         #●出力メータを『小屋の骨メータ(サーボモータ)』表現する
         目盛 = DS.仕様.小屋.最大 - int(DS.仕様.小屋.範囲 * 引数_比率)
-        共通.MMP.接続.PWM_VALUE(DS.仕様.小屋.骨[引数_チーム],目盛)
+        MMP.接続.PWM_VALUE(DS.仕様.小屋.骨[引数_チーム],目盛)
         #┴
 	#────────────────────────────────────
     def Fn出力メータ_画面(self, 引数_チーム, 引数_比率, 引数_出力):

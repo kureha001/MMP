@@ -5,8 +5,8 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 from   main.データセット import DS
@@ -58,10 +58,10 @@ class 本体:
         #●アナログ値を読み取る
         判定1 = (DS.情報.シーン == DS.仕様.シーンID.プレイ画面)
         判定2 = (DS.情報.操作手段 == 2)
-        if 判定1 and 判定2: 共通.MMP.接続.アナログ読取()
+        if 判定1 and 判定2: MMP.接続.アナログ読取()
         #│
         #●ＢＧＭをリピート再生する                
-        共通.音声.リピート再生()
+        音声.リピート再生()
         #│
         #●プロセス一覧を実行する
         for プロセス in self.プロセス一覧:プロセス.実行()

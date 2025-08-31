@@ -2,8 +2,8 @@
 #┃コントローラ：変更
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 from   main.データセット import DS
@@ -45,10 +45,10 @@ class 本体:
     def 実行(self):
         #┬
         #●アナログ値を読み取る
-        if DS.情報.シーン != DS.仕様.シーンID.終了画面: 共通.MMP.接続.アナログ読取()
+        if DS.情報.シーン != DS.仕様.シーンID.終了画面: MMP.接続.アナログ読取()
         #│
         #●ＢＧＭをリピート再生する                
-        共通.音声.リピート再生()
+        音声.リピート再生()
         #│
         #●プロセスを実行する
         self.P動作.実行()

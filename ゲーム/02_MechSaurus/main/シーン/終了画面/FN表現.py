@@ -5,7 +5,7 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -107,7 +107,7 @@ class 本体:
         #　├┐（チーム１が勝利の場合）
             #↓
             #●恐竜の首を震わす
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.ジオラマ.恐竜[0]      ,
                 DS.仕様.ジオラマ.中央[0] - 10 )
             #┴
@@ -116,7 +116,7 @@ class 本体:
         #　└┐（その他）
             #↓
             #●恐竜の首を震わす
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.ジオラマ.恐竜[1]      ,
                 DS.仕様.ジオラマ.中央[1] + 10 )
             #┴
@@ -151,7 +151,7 @@ class 本体:
             #│ ▼繰り返し処理を抜ける
             #│
             #●勝利チームの恐竜は頭を上げ、敗北チームは下げる。
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.ジオラマ.恐竜[サーボ]          ,
                 DS.仕様.ジオラマ.中央[サーボ] + 移動量 )
         #┴　┴

@@ -5,7 +5,7 @@
 import time
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.音声
+import 音声
 
 # [ゲーム共通]
 import main.共通部品 as 共通部品
@@ -70,9 +70,9 @@ class 本体:
         #┬ 
         #○恐竜の鳴き声を鳴らす
         for i in range(2):
-            共通.音声.個別指定(102, 引数_一時停止 = True)
+            音声.個別指定(102, 引数_一時停止 = True)
             time.sleep(2)
         #│
         #●BGMを切り替える
-        共通.音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
+        音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
         #┴

@@ -7,8 +7,8 @@
 #┃・チャタリングを防止するため、スキャンのインターバルを設ける
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -76,7 +76,7 @@ class 本体:
             #│
             #○センサ値を取得する
             チャンネルNo = self.仕様.チャンネル一覧[装置No]            
-            センサ値     = 共通.MMP.接続.mmpAnaVal[self._仕様.ポートNo][チャンネルNo]
+            センサ値     = MMP.接続.mmpAnaVal[self._仕様.ポートNo][チャンネルNo]
             通過判定     = センサ値 > self.仕様.センサ閾値
             if 通過判定: continue
             #│＼（『通過なし』の場合）
@@ -84,7 +84,7 @@ class 本体:
             #│ ▼次のChを走査する
             #│
             #●クリック音を鳴らす
-            共通.音声.ゲット音()
+            音声.ゲット音()
             #│
             #○救出数を加算する
             self._情報.救出数 += 1

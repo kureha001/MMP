@@ -54,7 +54,7 @@
 ```
 【実行環境：CPython版】
 [/]
-├[共通/]
+├[共通/] ★ここをPYTHONPATHで指定すれば楽にimportできる
 │　mmp_core.py
 │  mmp_adapter_micropython.py
 │  mmpMicro.py
@@ -71,7 +71,7 @@
 ```
 【実行環境：microPython版】
 [/]
-├[lib/]
+├[lib/] ★ここに格納すれば楽にimportできる
 │　mmp_core.py
 │  mmp_adapter_micropython.py
 │  mmpMicro.py
@@ -85,7 +85,7 @@
 ```
 【実行環境：circuitPython版】
 [/]
-├[lib/]
+├[lib/] ★ここに格納すれば楽にimportできる
 │　mmp_core.py
 │  mmp_adapter_circuitpython.py
 │  mmpCircuit.py

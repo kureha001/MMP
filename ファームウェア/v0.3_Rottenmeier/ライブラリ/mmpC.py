@@ -3,6 +3,8 @@
 #------------------------------------------------------------
 #【ファイル配置方法】
 # 同一 または 共通フォルダー(推奨)
+# 　共通フォルダには、以下の要領でパスを通します
+# 　PYTHONPATH=D:\WS\MMP\ゲーム\共通\
 #============================================================
 from mmp_core import Core, ConnectException
 from mmp_adapter_cpython import CpythonAdapter

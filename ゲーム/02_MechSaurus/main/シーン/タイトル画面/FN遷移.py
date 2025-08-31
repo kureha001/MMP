@@ -5,8 +5,8 @@
 import time
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 import main.共通部品 as 共通部品
@@ -100,11 +100,11 @@ class 本体:
     def Fn音声を再生(self):
         #┬ 
         #●恐竜の鳴き声を鳴らす
-        共通.音声.個別指定(101, 引数_一時停止 = True)
+        音声.個別指定(101, 引数_一時停止 = True)
         time.sleep(2)
         #│
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
+        音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
         共通部品.運搬機.電飾制御(True) # 内臓モジュール
         time.sleep(3)
         #┴
@@ -131,6 +131,6 @@ class 本体:
         #│
         #◎└┐準備した情報に従い、砂時計を動かす
         for val in range(開始, 終了, 増分):
-            共通.MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
+            MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
             time.sleep(0.002)
         #┴

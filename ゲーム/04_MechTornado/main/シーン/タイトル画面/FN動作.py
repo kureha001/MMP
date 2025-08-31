@@ -2,8 +2,8 @@
 #┃変更機能(動作プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -44,7 +44,7 @@ class 本体:
     def 実行(self):
         #┬ 
         #●スタートボタンを調べる
-        入力値 = 共通.MMP.接続.mmpAnaVal[0][3]
+        入力値 = MMP.接続.mmpAnaVal[0][3]
         判定   = (入力値 < DS.仕様.ハード.スイッチ閾値)
         if 判定: return
         #│＼（未選択の場合）
@@ -55,5 +55,5 @@ class 本体:
         DS.情報.遷移要否 = True
         #│
         #○クリック音を鳴らす
-        共通.音声.クリック音()
+        音声.クリック音()
         #┴

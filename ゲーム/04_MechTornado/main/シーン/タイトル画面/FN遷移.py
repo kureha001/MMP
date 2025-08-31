@@ -6,7 +6,7 @@ import time
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.音声
+import 音声
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -84,6 +84,6 @@ class 本体:
     def Fn音声を再生(self):
         #┬
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
+        音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
         time.sleep(2)
         #┴

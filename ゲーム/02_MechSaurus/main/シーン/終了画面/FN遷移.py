@@ -2,8 +2,8 @@
 #┃結果機能(遷移プロセス)のアクションメソッド
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 import main.共通部品 as 共通部品
@@ -82,18 +82,18 @@ class 本体:
             #│ ▼繰り返し処理を抜ける
             #│
             #○サーボ(恐竜)を初期化する
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.小屋.首[チーム]   ,
                 DS.仕様.小屋.中央         )
             #│
             #○サーボ(骨メータ)を初期化する
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.小屋.骨[チーム]   ,
                 DS.仕様.小屋.最大         )
         #│
         #○サーボ(ジオラマ)を初期化する
         for 番号 in range(2):
-            共通.MMP.接続.PWM_VALUE(
+            MMP.接続.PWM_VALUE(
                 DS.仕様.ジオラマ.恐竜[番号]   ,
                 DS.仕様.ジオラマ.中央[番号]   )
         #┴　┴
@@ -101,5 +101,5 @@ class 本体:
     def Fn音声を再生(self):
         #┬ 
         #●BGMを切替える
-        共通.音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
+        音声.自動再生(DS.情報.シーン, DS.情報.シーン, 引数_停止 = True)
         #┴

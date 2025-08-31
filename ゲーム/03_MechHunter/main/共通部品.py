@@ -2,7 +2,7 @@
 #┃ゲーム共通部品
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -24,6 +24,6 @@ def 電飾制御(引数_活性可否): #① True:活性化／False:非活性化
     #≫カモロボの電飾を活性制御する
     for i in range(2):
         for 各ポート in DS.obj.カモロボ[i].仕様.ポート一覧:
-            共通.MMP.接続.PWM_VALUE(各ポート, PWM値)
+            MMP.接続.PWM_VALUE(各ポート, PWM値)
             print("カモロボ(",i,")：",引数_活性可否)
     #┴

@@ -9,7 +9,7 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
+import MMP
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -73,7 +73,7 @@ class 本体:
         最大値 = DS.仕様.ハード.モータ最大
         最小値 = DS.仕様.ハード.モータ最小
         出力値 = (最大値) if self._情報.姿勢 == 姿勢ID else (最小値)
-        共通.MMP.接続.PWM_VALUE(装置No, 出力値)
+        MMP.接続.PWM_VALUE(装置No, 出力値)
         #│
         #●着地姿勢を表現する ※サーボで鉄棒をロックする
         姿勢ID = self._仕様.着地
@@ -81,7 +81,7 @@ class 本体:
         最大値 = DS.仕様.ハード.サーボ最大
         最小値 = DS.仕様.ハード.サーボ最小
         出力値 = (最小値) if self._情報.姿勢 == 姿勢ID else (最大値)
-        共通.MMP.接続.PWM_VALUE(装置No, 出力値)
+        MMP.接続.PWM_VALUE(装置No, 出力値)
         #┴
 	#────────────────────────────────────
     def Fn姿勢_画面(self):

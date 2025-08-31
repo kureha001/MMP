@@ -5,8 +5,8 @@
 import pyxel
 
 # [アプリ共通]
-import sys; sys.path.append('..'); import 共通.MMP
-import sys; sys.path.append('..'); import 共通.音声
+import MMP
+import 音声
 
 # [ゲーム共通]
 from main.データセット import DS
@@ -55,16 +55,16 @@ class 開始:
         pyxel.load("./resource.pyxres")
         #│
         #●MMPを初期化する
-        共通.MMP.初期化(
+        MMP.初期化(
             DS.仕様.ハード.HC4067の個数,
             DS.仕様.ハード.HC4067のCh数,
             DS.仕様.ハード.HC4067の丸め)
         #│
         #○MMPの音声モジュールを初期化する
-        共通.音声.情報.システムNo     = DS.仕様.システム.番号
-        共通.音声.情報.規定音量       = DS.仕様.BGM.規定音量
-        共通.音声.情報.レベル一覧     = DS.仕様.BGM.レベル一覧
-        共通.音声.情報.ファイルNo一覧 = DS.仕様.BGM.ファイルNo一覧
+        音声.情報.システムNo     = DS.仕様.システム.番号
+        音声.情報.規定音量       = DS.仕様.BGM.規定音量
+        音声.情報.レベル一覧     = DS.仕様.BGM.レベル一覧
+        音声.情報.ファイルNo一覧 = DS.仕様.BGM.ファイルNo一覧
         #┴
 
     #┌───────────────────────────────────

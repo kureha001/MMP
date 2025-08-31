@@ -1,0 +1,29 @@
+いいですね！Excel VBA 版は “現場で即使える計測・可視化フロント” になります。
+ここから一気に作れるように、設計指針＋最小実装スケルトンをまとめました。VISA は **Keysight IO Libraries（VISA-COM）**を第一候補、必要なら **visa32.dll（VISA-C）**を代替にします。
+
+アーキテクチャ（Python と同じ発想）
+
+Core（環境非依存）：プロトコル/コマンド実装（5バイト応答、「!」終端、ゼロ埋めHEX整形、受信ループなど）
+
+Adapter（環境依存）：I/O 抽象化（open/close/read/write/flush/timeout）
+
+Wrapper（利便）：Excel から簡単に使える薄いクラス（接続オート/指定、ユーティリティ）
+
+Excel 構成（推奨）
+
+cMmpCore.cls …… コア（Python Core 相当）
+
+cVisaComAdapter.cls …… VISA-COM アダプタ
+
+mGlobals.bas …… 共通宣言（Sleep/タイマ、HEX整形、エラー処理）
+
+（拡張）cVisaCAdapter.bas …… visa32.dll 直叩き版（後日最適化用）
+
+ModuleSamples.bas …… サンプル（ボタン用マクロ、シート記録）
+
+
+事前準備（Excel）
+1.Keysight IO Libraries Suite をインストール
+2.VBA で参照設定：“VISA COM x.x Type Library（VisaComLib / Ivi.Visa.Interop）”
+  早期バインディング（推奨）／後述の遅延バインディングでも可
+3.64bit Office でも動くよう API 宣言は PtrSafe

@@ -10,7 +10,7 @@ import sys
 import subprocess
 import tkinter as tk
 import webbrowser
-from .動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
+from 動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
 
 
 def _run_player_here(title: str, path: str, **opts):

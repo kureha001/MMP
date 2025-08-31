@@ -9,7 +9,7 @@ if __package__ is None or __package__ == "":
         sys.path.insert(0, script_dir)
     from 動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
 else:
-    from .動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
+    from 動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
 
 import argparse, tkinter as tk, webbrowser
 

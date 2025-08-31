@@ -6,7 +6,7 @@
 from pathlib import Path  #☆絶対パス化に使用
 
 # [アプリ共通]
-import動画 as VLC
+import 動画 as VLC
 
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #┃再生するタイトルとパス（相対パスOK／URLもOK）

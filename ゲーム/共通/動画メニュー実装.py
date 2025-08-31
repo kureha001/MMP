@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import webbrowser
 
-from .動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
+from 動画コア import VlcTkPlayer, URL_RE, is_direct_video_url
 
 
 def open_video_menu(

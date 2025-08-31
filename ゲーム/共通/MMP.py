@@ -3,7 +3,6 @@
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [アプリ共通]
 import mmpC as ライブラリ
-#from .mmpC import mmp as mmp # MMPセッションを確立するミドルウェア
 import MMP # アプリとのコネクション(このモジュール)
 
 接続 = None  # MMPオブジェクト

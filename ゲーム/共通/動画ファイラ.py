@@ -3,7 +3,7 @@
 """
 GUI版エントリー。メニューUIを呼び出すだけの薄いラッパー。
 """
-from .動画メニュー実装 import open_video_menu
+from 動画メニュー実装 import open_video_menu
 
 if __name__ == "__main__":
     # サンプル

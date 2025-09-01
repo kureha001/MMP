@@ -1,125 +1,773 @@
-'==================================================================
-' 2) Core（プロトコル共通）
-'==================================================================
+'#============================================================
+'# Core（プロトコル共通）
+'#------------------------------------------------------------
+'# ファイル種別 ： クラス モジュール
+'# ファイル名称 ： cMmpCore.cls
+'#============================================================
 Option Explicit
 
-Private mAdp As Object ' cVisaComAdapter 等（I/O 抽象）
-Private mReadChunk As Long
-Private mTimeoutMs As Long
+'#============================================================
+'# モジュール・レベル
+'#============================================================
+Private mアダプタ           As Object ' cVisaComAdapter 等（I/O 抽象）
+Private m読取チャンク       As Long
+Private m時間切れ_ミリ秒    As Long
 
-' 公開状態
-Public 参加総人数 As Long
-Public スイッチ数 As Long
-Public 丸め As Long
-Public mmpAnaVal() As Variant
+
+'#============================================================
+'# パブリック・レベル
+'#============================================================
+Public 参加総人数           As Long
+Public スイッチ数           As Long
+Public 丸め                 As Long
+Public アナログ値()         As Variant
 Public PWM機器状況(0 To 15) As Variant
-Public version As String
-Public 接続済 As Boolean
+Public バージョン           As String
+Public 接続済               As Boolean
 
-Public Sub InitCore(ByVal adapter As Object, _
-                    Optional ByVal 読込調整 As Long = 64, _
-                    Optional ByVal timeoutMs As Long = 100)
-    Set mAdp = adapter
-    mReadChunk = IIf(読込調整 > 0, 読込調整, 64)
-    mTimeoutMs = timeoutMs
+
+'#============================================================
+'# 初期化処理
+'#============================================================
+Public Sub InitCore( _
+    ByVal argアダプタ As Object, _
+    Optional ByVal arg読込調整 As Long = 64, _
+    Optional ByVal arg時間切れ_ミリ秒 As Long = 100 _
+    )
+    '┬
+    '○引数を反映する
+    Set mアダプタ = argアダプタ
+    m読取チャンク = IIf(arg読込調整 > 0, arg読込調整, 64)
+    m時間切れ_ミリ秒 = arg時間切れ_ミリ秒
+    '│
+    '○プロパティを初期化する
     接続済 = False
+    '┴
 End Sub
 
-' === 時間系 ===
-Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Private Function NowMs() As Double
-    NowMs = Timer * 1000#
-End Function
-Private Function TimeLeftMs(ByVal deadline As Double) As Double
-    TimeLeftMs = deadline - NowMs()
-End Function
 
-' === 受信 ===
-Private Function _受信() As String
-    Dim deadline As Double: deadline = NowMs() + mTimeoutMs
-    Dim buf As String: buf = ""
-
-    Do While TimeLeftMs(deadline) > 0
-        Dim chunk As String
-        chunk = mAdp.ReadUpTo(mReadChunk)   ' まとめ読み
-        If LenB(chunk) = 0 Then
-            Sleep 1&
-        Else
-            buf = Right$(buf & chunk, 5)    ' 末尾5バイトだけ保持
-            If Len(buf) = 5 And Right$(buf, 1) = "!" Then
-                _受信 = buf
-                Exit Function
-            End If
-        End If
-        DoEvents
-    Loop
-    _受信 = vbNullString
-End Function
-
-Private Function _送信(ByVal s As String) As String
-    If Not mAdp.WriteText(s) Then Exit Function
-    _送信 = _受信()
-End Function
-
-' === バージョン ===
-Public Function バージョン確認() As Boolean
-    Dim r$: r = _送信("VER!")
-    If Len(r) = 5 And Right$(r, 1) = "!" Then
-        version = Mid$(r, 1, 1) & "." & Mid$(r, 2, 1) & "." & Mid$(r, 3, 2)
-        バージョン確認 = True
-    Else
-        version = "?.?.??"
-        バージョン確認 = False
-    End If
-End Function
-
-' === アナログ ===
-Public Sub アナログ設定(ByVal ス As Long, ByVal 参 As Long, ByVal 丸 As Long)
-    スイッチ数 = ス: 参加総人数 = 参: 丸め = 丸
-    ReDim mmpAnaVal(0 To 参 - 1, 0 To ス - 1)
-    Call _送信("ANS:" & Hex2(参) & ":" & Hex2(ス) & "!")
-End Sub
-
-Public Sub アナログ読取()
-    Dim _ As String: _ = _送信("ANU!")
-    Dim ch As Long, bd As Long, r$, v&
-    For ch = 0 To 参加総人数 - 1
-        For bd = 0 To スイッチ数 - 1
-            r = _送信("ANR:" & Hex2(ch) & ":" & Hex2(bd) & "!")
-            If Len(r) = 5 And Right$(r, 1) = "!" Then
-                v = Val("&H" & Left$(r, 4))
-                If 丸め > 0 Then v = (v \ 丸め) * 丸め
-                mmpAnaVal(ch, bd) = v
+'#============================================================
+'# 時間ヘルパ
+'#============================================================
+    '#---------------------------------------------------------
+    Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+    '#---------------------------------------------------------
+    Private Function NowMs() As Double
+        NowMs = Timer * 1000#
+    End Function
+    '#---------------------------------------------------------
+    Private Function TimeLeftMs(ByVal deadline As Double) As Double
+        TimeLeftMs = deadline - NowMs()
+    End Function
+        
+    
+'#============================================================
+'# MMP 受信/送信
+'#============================================================
+    '#---------------------------------------------------------
+    '# ＭＭＰからの返信を受信
+    '#---------------------------------------------------------
+    Private Function MMP_受信() As String
+        '┬
+        '□変数定義
+        Dim deadline As Double
+        Dim バッファ As String
+        Dim 読取データ As String
+        '┴
+        '┬
+        '○変数初期化
+        deadline = NowMs() + m時間切れ_ミリ秒
+        バッファ = ""
+        '│
+        '◎└┐残り時間ある限り処理する
+        Do While TimeLeftMs(deadline) > 0
+            '│
+            '○受信データをまとめ読みする
+            読取データ = mアダプタ.ReadUpTo(m読取チャンク)
+            '│
+            '◇┐結果判定
+            If LenB(読取データ) = 0 Then
+            '　├┐
+                '↓（読取できていない場合）
+                '○少し待つ
+                Sleep 1&
+                '┴
             Else
-                mmpAnaVal(ch, bd) = Empty
+            '　└┐（その他）
+                '○末尾５文字を取得する
+                バッファ = Right$(バッファ & 読取データ, 5)
+                '│
+                '◆┐結果判定
+                If 戻り値_5文字(バッファ) Then
+                '　├┐
+                    '↓（読取できていない場合）
+                    '○結果をセットする
+                    MMP_受信 = バッファ
+                    '│
+                    '▼処理を中断する
+                    Exit Function
+                '　└┐（その他）
+                    '┴
+                End If
+                '┴
             End If
+            '│
+            '○イベントを発生する
+            DoEvents
+            '┴
+        Loop
+        '│
+        '○結果をセットする
+        MMP_受信 = vbNullString
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# ＭＭＰへコマンドを送信
+    '#---------------------------------------------------------
+    Private Function MMP_送信(ByVal argコマンド As String) As String
+        
+        If Not mアダプタ.WriteText(argコマンド) Then Exit Function
+        MMP_送信 = MMP_受信()
+    
+    End Function
+
+
+'#============================================================
+'# バージョン
+'#============================================================
+    Public Function バージョン確認() As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("VER!")
+        '│
+        '◆┐結果をセットする
+        If 戻り値_5文字(戻り値) Then
+        '　├┐
+            '↓（正常の場合）
+            '○バージョンを反映し、戻り値をセットする（正常）
+            バージョン = Mid$(戻り値, 1, 1) & "." & Mid$(戻り値, 2, 1) & "." & Mid$(戻り値, 3, 2)
+            バージョン確認 = True
+            '┴
+        Else
+        '　└┐（その他）
+            '○バージョンを反映し、戻り値をセットする（異常）
+            バージョン = "?.?.??"
+            バージョン確認 = False
+            '┴
+        End If
+        '┴
+    End Function
+
+
+'#============================================================
+'# アナログ入力（HC4067）
+'#============================================================
+    '#---------------------------------------------------------
+    '# 機器の設定
+    '#---------------------------------------------------------
+    Public Sub アナログ設定( _
+        ByVal argスイッチ数 As Long, _
+        ByVal arg参加者総数 As Long, _
+        ByVal arg丸め As Long _
+        )
+        '┬
+        '○引数値をプロパティに反映する
+        スイッチ数 = argスイッチ数
+        参加総人数 = arg参加者総数
+        丸め = arg丸め
+        '│
+        '○アナログバッファの大きさを再構築する
+        ReDim アナログ値(0 To 参加総人数 - 1, 0 To スイッチ数 - 1)
+        '│
+        '●コマンド発行
+        Call MMP_送信("ANS:" _
+            & Hex2(参加総人数) & ":" _
+            & Hex2(スイッチ数) & "!" _
+            )
+        '┴
+    End Sub
+    
+    '#---------------------------------------------------------
+    '# アナログ信号の読取
+    '#---------------------------------------------------------
+    Public Sub アナログ読取()
+        '┬
+        '□変数定義
+        Dim チャンネルID    As Long ' HC4067のチャンネル番号
+        Dim スイッチID      As Long ' HC4067の機器番号
+        Dim 戻り値$                 ' MMPコマンドの戻り値
+        Dim 取得値$                 ' MMPコマンドの戻り値
+        Dim 測定値&                 ' 戻り値から取り出す測定値
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("ANU!")
+        '│
+        '◎└┐HC4067のチャンネルを走査する
+        For チャンネルID = 0 To 参加総人数 - 1
+            '│
+            '◎└┐HC4067の機器を走査する
+            For スイッチID = 0 To スイッチ数 - 1
+                '│
+                '●コマンド発行
+                取得値 = MMP_送信("ANR:" _
+                    & Hex2(チャンネルID) & ":" _
+                    & Hex2(スイッチID) & "!" _
+                    )
+                '│
+                '◆┐結果反映
+                If 戻り値_5文字(取得値) Then
+                '　├┐
+                    '↓（正常の場合）
+                    '●値を取り出す
+                    測定値 = 戻り値_値取得(取得値)
+                    '│
+                    '○値を丸める
+                    If 丸め > 0 Then 測定値 = (測定値 \ 丸め) * 丸め
+                    '│
+                    '○計測バッファに反映する（正常）
+                    アナログ値(チャンネルID, スイッチID) = 測定値
+                    '┴
+                Else
+                '　└┐（その他）
+                    '○計測バッファに反映する（異常）
+                    アナログ値(チャンネルID, スイッチID) = Empty
+                    '┴
+                End If
+                '┴
+            Next
+            '┴
         Next
-    Next
-End Sub
+        '┴
+    End Sub
 
-' === PWM ===
-Public Function PWM_VALUE(ByVal ch As Long, ByVal val As Long) As Boolean
-    Dim r$: r = _送信("PWM:" & Hex2(ch) & ":" & Hex4(val) & "!")
-    PWM_VALUE = (r = "!!!!!")
-End Function
 
-Public Function PWM_INIT(ByVal aMin As Long, ByVal aMax As Long, ByVal pMin As Long, ByVal pMax As Long) As Boolean
-    Dim r$: r = _送信("PWI:" & Hex3(aMin) & ":" & Hex3(aMax) & ":" & Hex4(pMin) & ":" & Hex4(pMax) & "!")
-    PWM_INIT = (r = "!!!!!")
-End Function
+'#=====================================================================
+'# ＰＷＭ出力（PCA9685）
+'#=====================================================================
+    '#---------------------------------------------------------
+    '# 機器の接続状況を返す
+    '#  - 返り値: list[bool]（True=接続あり/False=接続なし）
+    '#---------------------------------------------------------
+    Public Function PWM_機器確認() As Variant
+        '┬
+        '□変数定義
+        Dim 状況(0 To 15)   As Boolean  ' 機器別のバッファ
+        Dim 機器ID          As Long     ' PCA9685の機器番号
+        Dim 戻り値$                     ' MMPコマンドの戻り値
+        Dim 判定値&                     ' 戻り値から取り出す測定値
+        '┴
+        '┬
+        '◎└┐PCA9685の機器を走査する
+        For 機器ID = 0 To 15
+            '│
+            '●コマンド発行
+            戻り値$ = MMP_送信("PWX:" _
+                & Hex2(機器ID) & "!" _
+                )
+            '│
+            '◆┐結果を判定
+            If 戻り値_5文字(戻り値) Then
+            '　├┐
+                '↓（正常の場合）
+                '○
+                判定値 = 戻り値_値取得(戻り値)
+                状況(機器ID) = ((判定値 And &H1) = &H1)
+                '┴
+            Else
+            '　└┐（その他）
+                '○
+                状況(機器ID) = False
+                '┴
+            End If
+            '│
+            '○結果を反映
+            PWM機器状況(機器ID) = 状況(機器ID)
+            '┴
+        Next
+        '│
+        '○結果をセットする
+        PWM_機器確認 = 状況
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 指定したPWMチャンネルの使用可否を返す
+    '#  - 返り値: True=使用可能/False=使用不可
+    '#---------------------------------------------------------
+    Public Function PWM_チャンネル使用可否( _
+        ByVal argチャンネルID As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 機器ID As Long
+        '┴
+        '┬
+        '○前処理
+        If argチャンネルID < 0 Or argチャンネルID > 255 Then
+        '　 ＼
+            '↓（正常の場合）
+            '▼エラー発生
+            Err.Raise 5, , "[エラー] PWMチャンネルは 0～255 の範囲で指定"
+        End If
+        '│
+        '○機器IDを算出
+        機器ID = argチャンネルID \ 16
+        '│
+        '◇┐必要に応じて機器確認する
+        If VarType(PWM機器状況(0)) = vbEmpty Then Call PWM_機器確認
+        '　├┐
+            '↓（正常の場合）
+            '●機器確認する
+            '┴
+        '　└┐（その他）
+            '┴
+        '│
+        '○結果をセットする
+        If VarType(PWM機器状況(機器ID)) = vbEmpty Then
+            PWM_チャンネル使用可否 = False
+        Else
+            PWM_チャンネル使用可否 = CBool(PWM機器状況(機器ID))
+        End If        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# PWM出力
+    '#---------------------------------------------------------
+    Public Function PWM_VALUE( _
+        ByVal argチャンネルID As Long, _
+        ByVal arg出力値 As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("PWM:" _
+            & Hex2(argチャンネルID) & ":" _
+            & Hex4(arg出力値) & "!" _
+            )
+        '│
+        '○結果をセットする（正常）
+        PWM_VALUE = (戻り値 = "!!!!!")
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# サーボ特性設定（角度?PWM）
+    '#---------------------------------------------------------
+    Public Function PWM_INIT( _
+        ByVal arg角度_下限 As Long, _
+        ByVal arg角度_上限 As Long, _
+        ByVal argPWM_下限 As Long, _
+        ByVal argPWM_上限 As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("PWI:" _
+            & Hex3(arg角度_下限) & ":" _
+            & Hex3(arg角度_上限) & ":" _
+            & Hex4(argPWM_下限) & ":" _
+            & Hex4(argPWM_上限) & "!" _
+            )
+        '│
+        '○結果をセットする（正常）
+        PWM_INIT = (戻り値 = "!!!!!")
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# PWM出力(角度)
+    '#---------------------------------------------------------
+    Public Function PWM_ANGLE( _
+        ByVal argチャンネルID As Long, _
+        ByVal arg角度 As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("PWA:" _
+            & Hex2(argチャンネルID) & ":" _
+            & Hex3(arg角度) & "!" _
+            )
+        '│
+        '○結果をセットする（正常）
+        PWM_ANGLE = (戻り値 = "!!!!!")
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# PWM電源スイッチ
+    '#---------------------------------------------------------
+    Public Sub PWM_POWER( _
+        ByVal argチャンネルID As Long, _
+        ByVal argオンオフ As Boolean _
+        )
+        Call PWM_VALUE(argチャンネルID, IIf(argオンオフ, &HFFF, 0))
+    End Sub
 
-Public Function PWM_ANGLE(ByVal ch As Long, ByVal deg As Long) As Boolean
-    Dim r$: r = _送信("PWA:" & Hex2(ch) & ":" & Hex3(deg) & "!")
-    PWM_ANGLE = (r = "!!!!!")
-End Function
 
-Public Sub PWM_POWER(ByVal ch As Long, ByVal sw As Boolean)
-    Call PWM_VALUE(ch, IIf(sw, &HFFF, 0))
-End Sub
+'#=====================================================================
+'# デジタル入出力
+'#=====================================================================
+    '#---------------------------------------------------------
+    '# 入力
+    '#---------------------------------------------------------
+    Public Function digital_IN( _
+        ByVal argMMPポートID As Long _
+        ) As Long
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("POR:" _
+            & Hex2(argMMPポートID) & "!" _
+            )
+        '│
+        '◆┐結果判定
+        If 戻り値_5文字(戻り値) Then
+        '　├┐
+            '↓（正常の場合）
+            '●戻り値をセットする（正常）
+            digital_IN = 戻り値_値取得(戻り値)
+            '┴
+        Else
+        '　└┐（その他）
+            '●戻り値をセットする（異常）
+            digital_IN = 0
+            '┴
+        End If
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 出力
+    '#---------------------------------------------------------
+    Public Function digital_OUT( _
+        ByVal argMMPポートID As Long, _
+        ByVal arg出力値 As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("POW:" _
+            & Hex2(argMMPポートID) & ":" _
+            & Right$("0" & Hex$(arg出力値 And &H1), 1) & "!" _
+            )
+        '│
+        '○結果をセットする（正常）
+        digital_OUT = (戻り値 = "!!!!!")
+        '┴
+    End Function
 
-' === デジタル / MP3 / I2C も同様に実装（省略） ===
 
-' === HEX 整形 ===
+'#=====================================================================
+'# ＭＰ３プレイヤー
+'#=====================================================================
+    '#---------------------------------------------------------
+    '# 機器情報
+    '#---------------------------------------------------------
+    Public Function DFP_Info( _
+        ByVal arg機器ID As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DPX:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_Info = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 指定フォルダ内トラック再生
+    '#---------------------------------------------------------
+    Public Function DFP_PlayFolderTrack( _
+        ByVal arg機器ID As Long, _
+        ByVal argフォルダ As Long, _
+        ByVal argトラック As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DIR:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & ":" _
+            & Hex2(argフォルダ) & ":" & Hex2(argトラック) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_PlayFolderTrack = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# ステータス
+    '#  1:MP3
+    '#  2:音量
+    '#  3:イコライザ
+    '#  4:ファイル番号(総合計)
+    '#  5:ファイル番号(フォルダ内)
+    '#---------------------------------------------------------
+    Public Function DFP_get_play_state( _
+        ByVal arg機器ID As Long, _
+        ByVal arg種別No As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DST:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & ":" _
+            & Right$("0" & Hex$(arg種別No And &HF), 1) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_get_play_state = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 停止
+    '#---------------------------------------------------------
+    Public Function DFP_Stop( _
+        ByVal arg機器ID As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DSP:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_Stop = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 一時停止
+    '#---------------------------------------------------------
+    Public Function DFP_Pause( _
+        ByVal arg機器ID As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DPA:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_Pause = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 再生再開
+    '#---------------------------------------------------------
+    Public Function DFP_Resume( _
+        ByVal arg機器ID As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DPR:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_Resume = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 音量設定（0?30）
+    '#---------------------------------------------------------
+    Public Function DFP_Volume( _
+        ByVal arg機器ID As Long, _
+        ByVal arg音量 As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("VOL:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & ":" _
+            & Hex2(arg音量) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_Volume = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# イコライザー設定：0?5
+    '#  0: Normal, 1: Pop, 2: Rock, 3: Jazz, 4: Classic, 5: Bass
+    '#---------------------------------------------------------
+    Public Function DFP_set_eq( _
+        ByVal arg機器ID As Long, _
+        ByVal argモードNo As Long _
+        ) As String
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("DEF:" _
+            & Right$("0" & Hex$(arg機器ID And &HF), 1) & ":" _
+            & Hex2(argモードNo) & "!" _
+            )
+        '│
+        '●結果をセットする
+        DFP_set_eq = 戻り値_LenB(戻り値)
+        '┴
+    End Function
+
+
+'#=====================================================================
+'# I2C（プロキシ）
+'#=====================================================================
+    '#---------------------------------------------------------
+    '# 送信
+    '#---------------------------------------------------------
+    Public Function i2cWrite( _
+        ByVal argアドレス As Long, _
+        ByVal argレジスタ As Long, _
+        ByVal argレジスタ値 As Long _
+        ) As Boolean
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("I2W:" _
+            & Hex2(argアドレス) & ":" _
+            & Hex2(argレジスタ) & ":" _
+            & Hex2(argレジスタ値) & "!" _
+            )
+        '│
+        '○結果をセットする（正常）
+        i2cWrite = (戻り値 = "!!!!!")
+        '┴
+    End Function
+    
+    '#---------------------------------------------------------
+    '# 受信
+    '#---------------------------------------------------------
+    Public Function i2cRead( _
+        ByVal argアドレス As Long, _
+        ByVal argレジスタ As Long _
+        ) As Long
+        '┬
+        '□変数定義
+        Dim 戻り値$
+        '┴
+        '┬
+        '●コマンド発行
+        戻り値 = MMP_送信("I2R:" _
+            & Hex2(argアドレス) & ":" _
+            & Hex2(argレジスタ) & "!" _
+            )
+        '│
+        '◆┐結果判定
+        If 戻り値_5文字(戻り値) Then
+        '　├┐
+            '↓（正常の場合）
+            '●結果をセットする（正常）
+            On Error Resume Next
+            i2cRead = 戻り値_値取得(戻り値)
+            If Err.Number <> 0 Then i2cRead = 0
+            '　 ＼
+                '↓（型変換エラーの場合）
+                '●結果をセットする（異常）
+            On Error GoTo 0
+            '┴
+        Else
+        '　└┐（その他）
+            '●結果をセットする（異常）
+            i2cRead = 0
+            '┴
+        End If
+        '┴
+    End Function
+
+
+'==================================================================
+'# 戻り値ヘルパー
+'==================================================================
+    '#-------------------------------------------------------------
+    '# 文字列長で合否判定
+    '#-------------------------------------------------------------
+    Public Function 戻り値_LenB(arg判定値) As Variant
+        If LenB(arg判定値) = 0 Then
+            戻り値_LenB = vbNullString
+        Else
+            戻り値_LenB = arg判定値
+        End If
+    End Function
+    
+    '#-------------------------------------------------------------
+    '# 文字列書式で合否判定
+    '#-------------------------------------------------------------
+    Public Function 戻り値_5文字(arg判定値) As Boolean
+        戻り値_5文字 = (Len(arg判定値) = 5 And Right$(arg判定値, 1) = "!")
+    End Function
+    
+    '#-------------------------------------------------------------
+    '# 文字列書式から値を取り出す
+    '#-------------------------------------------------------------
+    Public Function 戻り値_値取得(arg判定値) As Variant
+        戻り値_値取得 = val("&H" & Left$(arg判定値, 4))
+    End Function
+
+
+'==================================================================
+' HEX整形
+'==================================================================
 Private Function Hex2(ByVal v As Long) As String: Hex2 = Right$("00" & Hex$(v And &HFF), 2): End Function
 Private Function Hex3(ByVal v As Long) As String: Hex3 = Right$("000" & Hex$(v And &H3FF), 3): End Function
 Private Function Hex4(ByVal v As Long) As String: Hex4 = Right$("0000" & Hex$(v And &HFFFF), 4): End Function
+

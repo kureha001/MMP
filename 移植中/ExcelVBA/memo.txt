@@ -1,3 +1,8 @@
+自動計測プログラム作成 Excel/VBA で VISA COM を使用
+https://docs.keysight.com/kkbopen/excel-vba-visa-com-749640205.html
+---------------------
+
+
 いいですね！Excel VBA 版は “現場で即使える計測・可視化フロント” になります。
 ここから一気に作れるように、設計指針＋最小実装スケルトンをまとめました。
 VISA は **Keysight IO Libraries（VISA-COM）**を第一候補、必要なら **visa32.dll（VISA-C）**を代替にします。

@@ -1,0 +1,3 @@
+:: 64bit OS での手動登録（テスト用）
+"%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe" "C:\Program Files\MMP\DotNet\Mmp.Com.dll" /codebase /tlb
+"%WINDIR%\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"  "C:\Program Files\MMP\DotNet\Mmp.Com.dll" /codebase /tlb

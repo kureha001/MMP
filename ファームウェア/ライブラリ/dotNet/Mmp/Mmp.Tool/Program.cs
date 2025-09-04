@@ -31,16 +31,16 @@ namespace Mmp.Tool
                     RunInfo(mmp);
 
                     // 1) アナログ入力
-                    //RunAnalog(mmp);
+                    RunAnalog(mmp);
 
                     // 2) MP3 再生（フォルダ=1、トラック=1..3を3秒おき）
                     RunMp3Playlist(mmp);
 
                     // 3) MP3 制御（状態取得/一時停止/再開/停止/EQ/音量）
-                    //RunMp3Control(mmp);
+                    RunMp3Control(mmp);
 
                     // 4) PWM 生値テスト（ch0=180度型、ch15=連続回転）
-                    //RunPwmByValue(mmp);
+                    RunPwmByValue(mmp);
                 }
                 return 0;
             }

@@ -3,19 +3,20 @@
   "WorkspaceRootPath": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B2D24E65-E87E-4074-9B74-790179289363}|Mmp.Core\\Mmp.Core.csproj|d:\\ws\\mmp\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotnet\\mmp\\mmp.core\\mmpclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B2D24E65-E87E-4074-9B74-790179289363}|Mmp.Core\\Mmp.Core.csproj|solutionrelative:mmp.core\\mmpclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{880D135A-8CF4-48A0-95E9-86D252DFC2ED}|Mmp.Com\\Mmp.Com.csproj|D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\mmp.com\\mmpcom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{880D135A-8CF4-48A0-95E9-86D252DFC2ED}|Mmp.Com\\Mmp.Com.csproj|solutionrelative:mmp.com\\mmpcom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F47878EF-784F-49D8-9DC1-385961E507CA}|Mmp.Tool\\Mmp.Tool.csproj|D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\mmp.tool\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{F47878EF-784F-49D8-9DC1-385961E507CA}|Mmp.Tool\\Mmp.Tool.csproj|d:\\ws\\mmp\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotnet\\mmp\\mmp.tool\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F47878EF-784F-49D8-9DC1-385961E507CA}|Mmp.Tool\\Mmp.Tool.csproj|solutionrelative:mmp.tool\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|Mmp.Tool||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+      "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|Mmp.Core||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|Mmp.Com||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{880D135A-8CF4-48A0-95E9-86D252DFC2ED}|Mmp.Com\\Mmp.Com.csproj|d:\\ws\\mmp\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotnet\\mmp\\mmp.com\\||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|a54ad834-9219-4aa6-b589-607af21c3e26"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2D24E65-E87E-4074-9B74-790179289363}|Mmp.Core\\Mmp.Core.csproj|d:\\ws\\mmp\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotnet\\mmp\\mmp.core\\||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|a54ad834-9219-4aa6-b589-607af21c3e26"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,54 +31,39 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "MmpClient.cs",
-              "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Core\\MmpClient.cs",
-              "RelativeDocumentMoniker": "Mmp.Core\\MmpClient.cs",
-              "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Core\\MmpClient.cs",
-              "RelativeToolTip": "Mmp.Core\\MmpClient.cs",
-              "ViewState": "AgIAAIYCAAAAAAAAAAAAAJoCAAA/AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-02T03:33:38.138Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Mmp.Tool",
-              "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Tool\\Mmp.Tool.csproj",
-              "RelativeDocumentMoniker": "Mmp.Tool\\Mmp.Tool.csproj",
-              "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Tool\\Mmp.Tool.csproj",
-              "RelativeToolTip": "Mmp.Tool\\Mmp.Tool.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-09-03T14:45:03.977Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MmpCom.cs",
-              "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Com\\MmpCom.cs",
-              "RelativeDocumentMoniker": "Mmp.Com\\MmpCom.cs",
-              "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Com\\MmpCom.cs",
-              "RelativeToolTip": "Mmp.Com\\MmpCom.cs",
-              "ViewState": "AgIAAKUBAAAAAAAAAAA3wLcBAAArAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-02T03:33:47.114Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Tool\\Program.cs",
               "RelativeDocumentMoniker": "Mmp.Tool\\Program.cs",
               "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Tool\\Program.cs",
               "RelativeToolTip": "Mmp.Tool\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAzAAAAAAAAAA==",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAAwCAAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-02T03:18:55.281Z"
+              "WhenOpened": "2025-09-04T05:40:14.343Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Mmp.Core",
+              "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Core\\Mmp.Core.csproj",
+              "RelativeDocumentMoniker": "Mmp.Core\\Mmp.Core.csproj",
+              "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Core\\Mmp.Core.csproj",
+              "RelativeToolTip": "Mmp.Core\\Mmp.Core.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-04T04:38:51.211Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Mmp.Com",
+              "DocumentMoniker": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Com\\Mmp.Com.csproj",
+              "RelativeDocumentMoniker": "Mmp.Com\\Mmp.Com.csproj",
+              "ToolTip": "D:\\WS\\MMP\\\u30D5\u30A1\u30FC\u30E0\u30A6\u30A7\u30A2\\\u30E9\u30A4\u30D6\u30E9\u30EA\\dotNet\\Mmp\\Mmp.Com\\Mmp.Com.csproj",
+              "RelativeToolTip": "Mmp.Com\\Mmp.Com.csproj",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADZSURBVDhPxZLBDcIwDEVdxBLckBinQmKILoAAVZ2ES3ejBy6MQNLEfDtp1IocaHvgSdF3WvvHiUyrYOYYLado6tsDVvu4n0nRbeYUl8fTRLW2qa9sjFm0pHYbrahtW9Wqqmh3fxJ5L49E7LEYMfR1PkzyhGQwfBC8sVocDKKRg4JxnoA3CIjz4M7WqokzJugbe9vrv3GekO9AkqX1eLoXxV74qYN0OowcYjY9YlwrQzIQ58FdDBjFSeOVcuQ70KJgoAsxO6f/vlg7BxjlC0a5WDjK3MXgbxB9AI4tFnoBd8kSAAAAAElFTkSuQmCC",
+              "WhenOpened": "2025-09-04T04:38:41.057Z",
+              "EditorCaption": ""
             }
           ]
         }

@@ -154,47 +154,54 @@ namespace Mmp.Core
         //============================================================
 
         /// <summary>
-        /// コマンド送受信（末尾 '!' を付けて送信し、'!' が返るまで収集）
+        /// 固定5文字フレーム（"hhhh!" or "!!!!!"）を厳密に待つ
         /// </summary>
-        public string SendCommand(string command, int timeoutMs) // 既定は呼び出し側で
+        public string SendCommand(string command, int timeoutMs)
         {
             if (!IsOpen) throw new InvalidOperationException("Port is not open.");
-            if (string.IsNullOrEmpty(command)) throw new ArgumentException("command is empty.", "command");
+            if (string.IsNullOrEmpty(command)) throw new ArgumentException("command is empty.", nameof(command));
             if (!command.EndsWith("!")) command += "!";
 
-            try { _port.DiscardInBuffer(); } catch { }
-
+            try { _port.DiscardInBuffer(); } catch { } // ★ 念のため前ゴミ除去
             _port.Write(command);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            StringBuilder sb = new StringBuilder(32);
+            var sw = Stopwatch.StartNew();
+            var sb = new StringBuilder(8);
 
-            // 非ブロッキング収集：'!' が来たら即 return
             while (sw.ElapsedMilliseconds < timeoutMs)
             {
                 try
                 {
                     if (_port.BytesToRead > 0)
                     {
-                        string chunk = _port.ReadExisting();
+                        var chunk = _port.ReadExisting();
                         if (!string.IsNullOrEmpty(chunk))
                         {
                             sb.Append(chunk);
-                            if (sb.Length > 0 && sb[sb.Length - 1] == '!')
-                                return sb.ToString();
+
+                            // ★ 末尾5文字だけ残す（複数フレーム結合/前ゴミ対策）
+                            if (sb.Length > 5) sb.Remove(0, sb.Length - 5);
+
+                            // ★ 5文字そろい、末尾が '!' になったら確定
+                            if (sb.Length == 5 && sb[4] == '!')
+                            {
+                                // （必要なら IsFiveBang(sb.ToString()) で形式再確認も可）
+                                return sb.ToString(); // ★ 固定5文字を返す
+                            }
                         }
                     }
                 }
                 catch (TimeoutException)
                 {
-                    // ReadTimeout は1回の読み待ち。全体は timeoutMs で管理
+                    // ★ 1回のReadタイムアウトは無視。全体はtimeoutMsで管理
                 }
 
-                Thread.Sleep(5);
+                Thread.Sleep(2); // ★ 応答待ちの細かいポーリング
             }
 
-            throw new TimeoutException("No response terminator '!'.");
+            throw new TimeoutException("No 5-char response ending with '!'."); // ★ 明確なメッセージ
         }
+
 
         //============================================================
         // ヘルパー

@@ -82,10 +82,10 @@ void setup() {
   int br1 = digitalRead(BAUD_SELECT_PIN1);
   int br2 = digitalRead(BAUD_SELECT_PIN2);
   int selectedBaud = BAUD_00;
-  if      (!br1 && !br2) selectedBaud = BAUD_00; // OFF,OFF
-  else if ( br1 && !br2) selectedBaud = BAUD_10; // ON,OFF
-  else if (!br1 &&  br2) selectedBaud = BAUD_01; // OFF,ON
-  else if ( br1 &&  br2) selectedBaud = BAUD_11; // ON,ON
+  if      (!br1 && !br2) selectedBaud = BAUD_00; // 赤：OFF｜OFF
+  else if ( br1 && !br2) selectedBaud = BAUD_10; // 緑：ON ｜OFF
+  else if (!br1 &&  br2) selectedBaud = BAUD_01; // 青：OFF｜ON
+  else if ( br1 &&  br2) selectedBaud = BAUD_11; // 紫：ON ｜ON
 
   // スイッチ１によるシリアル通信方式の選択
   pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);

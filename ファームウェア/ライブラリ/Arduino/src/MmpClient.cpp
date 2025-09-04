@@ -3,20 +3,24 @@ using namespace Mmp::Core;
 
 // ===== 低レベル =====
 bool MmpClient::Open(uint32_t baud, int32_t /*timeoutIo*/) {
+
   // ★ ピン設定：コアにより方法が異なるため条件分岐
   #if defined(MMP_UART_USE_SETRXTX)
     // コアが setTX/setRX をサポートする場合のみ有効化
     _uart->setTX(MMP_UART_TX_PIN);   // ★
     _uart->setRX(MMP_UART_RX_PIN);   // ★
+
   #elif defined(MMP_UART_USE_PICO_GPIOFUNC)
     // pico-sdk のピン多重化で UART 機能を割り当て（非 Mbed コア前提）
     gpio_set_function(MMP_UART_TX_PIN, GPIO_FUNC_UART); // ★
     gpio_set_function(MMP_UART_RX_PIN, GPIO_FUNC_UART); // ★
     // ※ UART0/1 の紐付けはピン番号に依存。GPIO0/1 は UART0 に割付け。
     //   このボードの Serial1 が UART0 である前提（多くの RP2040/2350 非Mbedコアが該当）
+
   #else
     // ★ 何もしない：ボード定義のデフォルト UART ピンを使用
     //   （WaveShare RP2350 Zero では Serial1 が GPIO0/1 に割当済みのケースが多い）
+
   #endif
 
   _uart->begin(baud);   // ★ setRX/setTX を使わず初期化
@@ -25,7 +29,6 @@ bool MmpClient::Open(uint32_t baud, int32_t /*timeoutIo*/) {
   _isOpen = true;
   return true;
 }
-
 
 bool MmpClient::Verify(int32_t timeoutVerify) {
   const int32_t t = Resolve(timeoutVerify, Settings.TimeoutVerify);
@@ -66,19 +69,28 @@ String MmpClient::SendCommand(const String& command, int32_t timeoutMs) {
   ClearInput();
   _uart->print(cmd);
   _uart->flush();
+  delayMicroseconds(300);                  // ★ 小ギャップで分割読みに強くする
 
   String resp;
+  resp.reserve(5);                         // ★ 5文字固定のため事前確保
   const uint32_t t = (uint32_t)timeoutMs;
   const uint32_t start = millis();
-  while ((uint32_t)(millis() - start) < t) {
-    while (_uart->available() > 0) {
-      char c = (char)_uart->read();
-      resp += c;
-      if (c == '!') return resp;
-    }
-    yield();
-  }
-  _lastError = F("Timeout waiting '!'");
+
+  // ★ 修正：末尾 '!' を見たら即 return せず、「5文字そろうまで」読む
+  while (resp.length() < 5 && (uint32_t)(millis() - start) < t) {   // ★
+    if (_uart->available() > 0) {                                    // ★
+      resp += (char)_uart->read();                                   // ★
+    } else {                                                         // ★
+      yield();                                                       // ★
+    }                                                                // ★
+  }                                                                  // ★
+
+  // ★ 5文字かつ末尾 '!' を厳密チェック
+  if (resp.length() == 5 && resp[4] == '!') {                        // ★
+    return resp;                                                     // ★
+  }                                                                  // ★
+
+  _lastError = F("Timeout or invalid 5-char reply");                 // ★
   return String();
 }
 
@@ -102,8 +114,8 @@ uint16_t MmpClient::GetDpx(int32_t id1to4, int32_t timeoutMs) {
 // ---- アナログ ----
 bool MmpClient::AnalogConfigure(int32_t players, int32_t switches, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-  if (players < 1 || players > 16) { _lastError = F("players out of range"); return false; }
-  if (switches < 1 || switches > 4) { _lastError = F("switches out of range"); return false; }
+  if (players  < 1 || players  > 16) { _lastError = F("players out of range"); return false; }
+  if (switches < 1 || switches >  4) { _lastError = F("switches out of range"); return false; }
   String resp = SendCommand(String("ANS:") + Hex2(players) + ":" + Hex2(switches) + "!", t);
   return (resp == "!!!!!");
 }
@@ -115,7 +127,7 @@ bool MmpClient::AnalogUpdate(int32_t timeoutMs) {
 int32_t MmpClient::AnalogRead(int32_t playerIndex0to15, int32_t switchIndex0to3, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
   if (playerIndex0to15 < 0 || playerIndex0to15 > 15) { _lastError = F("playerIndex out of range"); return -1; }
-  if (switchIndex0to3   < 0 || switchIndex0to3   > 3 ) { _lastError = F("switchIndex out of range"); return -1; }
+  if (switchIndex0to3  < 0 || switchIndex0to3  >  3) { _lastError = F("switchIndex out of range"); return -1; }
   String resp = SendCommand(String("ANR:") + Hex2(playerIndex0to15) + ":" + Hex2(switchIndex0to3) + "!", t);
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }

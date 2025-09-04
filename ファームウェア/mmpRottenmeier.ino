@@ -31,10 +31,10 @@ Stream* serialPort;         // インスタンス
 #define BAUD_SELECT_PIN2 15 // スイッチ３：ボーレート選択
 
 // ボーレートのプリセット
-#define BAUD_00 115200      //OFF｜OFF
-#define BAUD_10 9600        //ON ｜OFF
-#define BAUD_01 230400      //OFF｜ON
-#define BAUD_11 921600      //ON ｜ON
+#define BAUD_00 115200      // 赤：OFF｜OFF
+#define BAUD_10 9600        // 緑：ON ｜OFF
+#define BAUD_01 230400      // 青：OFF｜ON
+#define BAUD_11 921600      // 紫：ON ｜ON
 
 //----------------------------------------------------------
 // ＰＷＭ機器(PCA9685)
@@ -147,10 +147,10 @@ void setup() {
     // USBシリアルは白色を点灯
     pixels.setPixelColor(0, pixels.Color(10,10,10));
   } else {
-    if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); }
-    else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); }
-    else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); }
-    else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10, 0)); }
+    if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); } // 赤
+    else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); } // 緑
+    else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); } // 青
+    else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10, 0)); } // 紫
   }
   pixels.show();
 }

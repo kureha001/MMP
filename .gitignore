@@ -21,6 +21,7 @@
 ゲーム/01_MechBullets/main/汎用部品/__pycache__/
 
 
+ゲーム/02_MechSaurus/その他/
 ゲーム/02_MechSaurus/main/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/発電機/__pycache__/
 ゲーム/02_MechSaurus/main/オブジェクト/運搬機/__pycache__/
@@ -71,12 +72,12 @@
 
 ゲーム/共通/__pycache__/
 
-_work/
+
 .vscode/
-ゲーム/02_MechSaurus/その他/
+_work/
 .vscode/settings.json
 
-ファームウェア/ライブラリ/dotNet/Mmp/.vs
+ファームウェア/ライブラリ/dotNet/Mmp/.vs/
 
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Com/.vs/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Com/bin/
@@ -87,13 +88,14 @@ _work/
 
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/.vs/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/bin/
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/bin/x64/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/Connected Services/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/obj/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/Properties/
 ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Core/Mmp.Core.csproj
 
-ファームウェア/ライブラリ/dotNet/Mmp/Tool.Core/bin/
-ファームウェア/ライブラリ/dotNet/Mmp/Tool.Core/obj/
-ファームウェア/ライブラリ/dotNet/Mmp/Tool.Core/Properties/
-ファームウェア/ライブラリ/dotNet/Mmp/Tool.Core/App.config
-ファームウェア/ライブラリ/dotNet/Mmp/Tool.Core/Mmp.Tool.csproj
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Tool/bin/
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Tool/obj/
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Tool/Properties/
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Tool/App.config
+ファームウェア/ライブラリ/dotNet/Mmp/Mmp.Tool/Mmp.Tool.csproj

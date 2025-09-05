@@ -4,9 +4,10 @@
 // ボード情報：Waveshae RP2040 Zero
 // ボード情報：Waveshae RP2350 Zero
 //----------------------------------------------------------------------------- 
-// Ver 0.3.06 - 2025/08/27 By Takanari.Kureha
-//   ・コメント誤りの修正
-//   ・戻り値の一部(異常時)にある誤りを修正
+// Ver 0.3.07 - 2025/09/05 By Takanari.Kureha
+//   ・DFPlayerのリピート設定コマンドを追加
+//   ・デジタルの入出力コマンドを廃止
+//   ・デジタル入力ピンをすべてPULLUPに変更(速度変更WS,デジタル入力)
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
@@ -27,14 +28,14 @@ Stream* serialPort;         // インスタンス
 
 // 切り替えスイッチのGPIO
 #define SERIAL_SELECT_PIN 2 // スイッチ１：通信方式切替
-#define BAUD_SELECT_PIN1 14 // スイッチ２：ボーレート選択
-#define BAUD_SELECT_PIN2 15 // スイッチ３：ボーレート選択
+#define BAUD_SELECT_PIN1  6 // スイッチ２：ボーレート選択
+#define BAUD_SELECT_PIN2  7 // スイッチ３：ボーレート選択
 
 // ボーレートのプリセット
-#define BAUD_00 115200      // 赤：OFF｜OFF
-#define BAUD_10 9600        // 緑：ON ｜OFF
+#define BAUD_00 115200      // 緑：OFF｜OFF
+#define BAUD_10 9600        // 赤：ON ｜OFF
 #define BAUD_01 230400      // 青：OFF｜ON
-#define BAUD_11 921600      // 紫：ON ｜ON
+#define BAUD_11 921600      // 白：ON ｜ON
 
 //----------------------------------------------------------
 // ＰＷＭ機器(PCA9685)
@@ -76,20 +77,21 @@ int anaValues[16][4]; // 取得値バッファ
 //===========================================================
 void setup() {
 
+  // スイッチを設定選択
+  pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);
+  pinMode(BAUD_SELECT_PIN1 , INPUT_PULLUP);
+  pinMode(BAUD_SELECT_PIN2 , INPUT_PULLUP);
+  delay(100);
+
   // スイッチ２・３によるボーレート選択
-  pinMode(BAUD_SELECT_PIN1, INPUT_PULLUP);
-  pinMode(BAUD_SELECT_PIN2, INPUT_PULLUP);
   int br1 = digitalRead(BAUD_SELECT_PIN1);
   int br2 = digitalRead(BAUD_SELECT_PIN2);
-  int selectedBaud = BAUD_00;
-  if      (!br1 && !br2) selectedBaud = BAUD_00; // 赤：OFF｜OFF
-  else if ( br1 && !br2) selectedBaud = BAUD_10; // 緑：ON ｜OFF
-  else if (!br1 &&  br2) selectedBaud = BAUD_01; // 青：OFF｜ON
-  else if ( br1 &&  br2) selectedBaud = BAUD_11; // 紫：ON ｜ON
+  int selectedBaud = BAUD_00                    ; // 緑：OFF｜OFF
+  if      (!br1 &&  br2) selectedBaud = BAUD_10 ; // 赤：ON ｜OFF
+  else if ( br1 && !br2) selectedBaud = BAUD_01 ; // 青：OFF｜ON
+  else if (!br1 && !br2) selectedBaud = BAUD_11 ; // 白：ON ｜ON
 
   // スイッチ１によるシリアル通信方式の選択
-  pinMode(SERIAL_SELECT_PIN, INPUT_PULLUP);
-  delay(100);
   bool useUSB = digitalRead(SERIAL_SELECT_PIN);
   if (useUSB) {
     Serial.begin(selectedBaud);
@@ -102,6 +104,15 @@ void setup() {
     Serial1.begin(selectedBaud);
     serialPort = &Serial1;
   }
+
+  // 通信速度をRGB LEDで表現
+  pixels.begin();
+  pixels.clear();
+  if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); } // 緑
+  else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); } // 赤
+  else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); } // 青
+  else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10,10)); } // 白
+  pixels.show();
 
   // PCA9685 16台を初期化、接続済フラグをONにする
   Wire.begin();
@@ -139,20 +150,6 @@ void setup() {
   for (int i = 0; i < 4; i++) {
     pinMode(addressBusGPIOs[i], OUTPUT);
   }
-
-  // RGB LED
-  pixels.begin();
-  pixels.clear();
-  if (useUSB) {
-    // USBシリアルは白色を点灯
-    pixels.setPixelColor(0, pixels.Color(10,10,10));
-  } else {
-    if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); } // 赤
-    else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); } // 緑
-    else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); } // 青
-    else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10, 0)); } // 紫
-  }
-  pixels.show();
 }
 
 //----------------------------------------------------------
@@ -411,6 +408,15 @@ void loop() {
       // デジタル関連
       //============================================================
       //----------------------------------------------------------
+      // 入力コマンド：ポート番号
+      //----------------------------------------------------------
+      } else if (strcmp(dat[0], "POR") == 0 && dat_cnt >= 2) {
+        int port = atoi16(dat[1]);
+        pinMode(port, INPUT_PULLUP);
+        int val = digitalRead(port);
+        sprintf(rets, "%04X!", val);
+        serialPort->print(rets);
+      //----------------------------------------------------------
       // 出力コマンド：ポート番号：出力値
       //----------------------------------------------------------
       } else if (strcmp(dat[0], "POW") == 0 && dat_cnt >= 3) {
@@ -419,28 +425,6 @@ void loop() {
         pinMode(port, OUTPUT);
         digitalWrite(port, val);
         serialPort->print("!!!!!");
-      //----------------------------------------------------------
-      // 入力コマンド：ポート番号
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "POR") == 0 && dat_cnt >= 2) {
-        int port = atoi16(dat[1]);
-        pinMode(port, INPUT);
-        int val = digitalRead(port);
-        sprintf(rets, "%04X!", val);
-        serialPort->print(rets);
-      //----------------------------------------------------------
-      // 入出力コマンド：ポート番号：出力値　※出力後に入力する
-      //----------------------------------------------------------
-      } else if (strcmp(dat[0], "IO") == 0 && dat_cnt >= 3) {
-        int port = atoi16(dat[1]);
-        int val = atoi16(dat[2]);
-        pinMode(port, OUTPUT);
-        digitalWrite(port, val);
-        delayMicroseconds(10);
-        pinMode(port, INPUT);
-        int result = digitalRead(port);
-        sprintf(rets, "%04X!", result);
-        serialPort->print(rets);
 
       //===========================================================
       // ｍｐ３関連(DFPlayer)
@@ -462,48 +446,22 @@ void loop() {
         pixels.show();
 
       //----------------------------------------------------------
-      // 機能　　　　：状態取得
-      // コマンド形式：DST:<機器番号0～1>!
-      // 返却値　　　："<状態番号>!" 正常 ／ "DST!!" エラー
-      //              状態番号(0停止, 1再生, 2一時停止)
+      // 機能　　　　：リピート設定
+      // コマンド形式：DLP:<機器番号0～1>:<設定 1(ON),0(OFF)>!
+      // 返却値　　　："!!!!!" 正常 ／ "DLP!!" エラー
       //----------------------------------------------------------
-      } else if (strcmp(dat[0], "DST") == 0 && dat_cnt >= 3) {
+      } else if (strcmp(dat[0], "DLP") == 0 && dat_cnt >= 3) {
 
-        pixels.setPixelColor(0, pixels.Color(0,10,0));
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
         pixels.show();
 
         int n = atoi16(dat[1]) - 1;
-        int s = atoi16(dat[2]);
-        int state = 0;
-
         if (validateDFPlayer(n, dat[0])) {
-          switch (s) {
-            case 1:
-              state = dfPlayer[n].readState();
-              if (state<=0) {state=0;}
-              break;
-            case 2:
-              state = dfPlayer[n].readVolume();
-              break;
-            case 3:
-              state = dfPlayer[n].readEQ();
-              break;
-            case 4:
-              state = dfPlayer[n].readFileCounts();
-              break;
-            case 5:
-              state = dfPlayer[n].readCurrentFileNumber();
-              break;
-            default:
-              break;
-          }
-          if (state<0) {
-            serialPort->print("!!!!!");
+          if (atoi16(dat[2]) == 1) {
+            dfPlayer[n].enableLoop();
           } else {
-            sprintf(rets, "%04X!", state);
-            serialPort->print(rets);
+            dfPlayer[n].disableLoop();
           }
-        } else {
           serialPort->print("!!!!!");
         }
 
@@ -568,6 +526,25 @@ void loop() {
         pixels.show();
 
       //----------------------------------------------------------
+      // 機能　　　　：音量設定（VOL）
+      // コマンド形式：VOL:<機器番号0～1>:<音量0～30>!
+      // 返却値　　　："!!!!!" 正常 ／ "VOL!!" エラー
+      //----------------------------------------------------------
+      } else if (strcmp(dat[0], "VOL") == 0 && dat_cnt >= 3) {
+
+        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.show();
+
+        int n = atoi16(dat[1]) - 1;
+        if (validateDFPlayer(n, dat[0])) {
+          dfPlayer[n].volume(atoi16(dat[2]));
+          serialPort->print("!!!!!");
+        }
+
+        pixels.clear();
+        pixels.show();
+
+      //----------------------------------------------------------
       // 機能　　　　：イコライザー設定（DEF）
       // コマンド形式：DEF:<機器番号0～1>:<タイプ0～5>!
       //              0: Normal, 1: Pop, 2: Rock,
@@ -589,23 +566,54 @@ void loop() {
         pixels.show();
 
       //----------------------------------------------------------
-      // 機能　　　　：音量設定（VOL）
-      // コマンド形式：VOL:<機器番号0～1>:<音量0～30>!
-      // 返却値　　　："!!!!!" 正常 ／ "VOL!!" エラー
+      // 機能　　　　：状態取得
+      // コマンド形式：DST:<機器番号0～1>!
+      // 返却値　　　："<状態番号>!" 正常 ／ "DST!!" エラー
+      //              状態番号(0停止, 1再生, 2一時停止)
       //----------------------------------------------------------
-      } else if (strcmp(dat[0], "VOL") == 0 && dat_cnt >= 3) {
+      } else if (strcmp(dat[0], "DST") == 0 && dat_cnt >= 3) {
 
-        pixels.setPixelColor(0, pixels.Color(0,250,0));
+        pixels.setPixelColor(0, pixels.Color(0,10,0));
         pixels.show();
 
         int n = atoi16(dat[1]) - 1;
+        int s = atoi16(dat[2]);
+        int state = 0;
+
         if (validateDFPlayer(n, dat[0])) {
-          dfPlayer[n].volume(atoi16(dat[2]));
+          switch (s) {
+            case 1:
+              state = dfPlayer[n].readState();
+              if (state<=0) {state=0;}
+              break;
+            case 2:
+              state = dfPlayer[n].readVolume();
+              break;
+            case 3:
+              state = dfPlayer[n].readEQ();
+              break;
+            case 4:
+              state = dfPlayer[n].readFileCounts();
+              break;
+            case 5:
+              state = dfPlayer[n].readCurrentFileNumber();
+              break;
+            default:
+              break;
+          }
+          if (state<0) {
+            serialPort->print("!!!!!");
+          } else {
+            sprintf(rets, "%04X!", state);
+            serialPort->print(rets);
+          }
+        } else {
           serialPort->print("!!!!!");
         }
 
         pixels.clear();
         pixels.show();
+
 
       //===========================================================
       // 情報

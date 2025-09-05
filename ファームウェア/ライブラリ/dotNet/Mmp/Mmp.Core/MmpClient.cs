@@ -341,15 +341,6 @@ namespace Mmp.Core
             return resp == "!!!!!";
         }
 
-        private int DigitalIo(int portId, int value0or1, int timeoutMs)
-        {
-            int t = Resolve(timeoutMs, Settings.TimeoutDigital);
-            string resp = SendCommand("IO:" + Hex2(portId) + ":" + (((value0or1 & 0x1) != 0) ? "1" : "0") + "!", t);
-            ushort v;
-            if (TryParseHex4Bang(resp, out v)) return v;
-            return 0;
-        }
-
         // ---- I2C ----
         private bool I2cWrite(int addr, int reg, int value, int timeoutMs)
         {
@@ -368,10 +359,17 @@ namespace Mmp.Core
         }
 
         // ---- MP3（DFPlayer） ----
-        private string DfPlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs)
+        private bool DfPlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            return SendCommand("DIR:" + Hex2(deviceId1to4) + ":" + Hex2(folder1to255) + ":" + Hex2(track1to255) + "!", t);
+            string resp = SendCommand("DIR:" + Hex2(deviceId1to4) + ":" + Hex2(folder1to255) + ":" + Hex2(track1to255) + "!", t);
+            return resp == "!!!!!";
+        }
+        private bool DfSetLoop(int deviceId1to4, int on0or1, int timeoutMs)
+        {
+            int t = Resolve(timeoutMs, Settings.TimeoutAudio);
+            string resp = SendCommand("DLP:" + Hex2(deviceId1to4) + ":" + Hex2(on0or1) + "!", t);
+            return resp == "!!!!!";
         }
 
         private bool DfStop(int deviceId1to4, int timeoutMs)
@@ -595,11 +593,13 @@ namespace Mmp.Core
         {
             private readonly MmpClient _p;
             public PlayModule Play { get; private set; }
+            public ReadModule Read { get; private set; }
 
             public AudioModule(MmpClient parent)
             {
                 _p = parent;
                 Play = new PlayModule(parent);
+                Read = new ReadModule(parent);
             }
 
             public ushort Info(int id1to4) { return _p.GetDpx(id1to4, 0); }
@@ -611,20 +611,9 @@ namespace Mmp.Core
             public bool SetEq(int deviceId1to4, int eq0to5) { return _p.DfSetEq(deviceId1to4, eq0to5, 0); }
             public bool SetEq(int deviceId1to4, int eq0to5, int timeoutMs) { return _p.DfSetEq(deviceId1to4, eq0to5, timeoutMs); }
 
-            public int ReadPlayState(int deviceId1to4) { return _p.DfReadPlayState(deviceId1to4, 0); }
-            public int ReadPlayState(int deviceId1to4, int timeoutMs) { return _p.DfReadPlayState(deviceId1to4, timeoutMs); }
-            public int ReadVolume(int deviceId1to4) { return _p.DfReadVolume(deviceId1to4, 0); }
-            public int ReadVolume(int deviceId1to4, int timeoutMs) { return _p.DfReadVolume(deviceId1to4, timeoutMs); }
-            public int ReadEq(int deviceId1to4) { return _p.DfReadEq(deviceId1to4, 0); }
-            public int ReadEq(int deviceId1to4, int timeoutMs) { return _p.DfReadEq(deviceId1to4, timeoutMs); }
-            public int ReadFileCounts(int deviceId1to4) { return _p.DfReadFileCounts(deviceId1to4, 0); }
-            public int ReadFileCounts(int deviceId1to4, int timeoutMs) { return _p.DfReadFileCounts(deviceId1to4, timeoutMs); }
-            public int ReadCurrentFileNumber(int deviceId1to4) { return _p.DfReadCurrentFileNumber(deviceId1to4, 0); }
-            public int ReadCurrentFileNumber(int deviceId1to4, int timeoutMs) { return _p.DfReadCurrentFileNumber(deviceId1to4, timeoutMs); }
-
             // 便宜上、Play.* を直下にも露出
-            public string PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
-            public string PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
+            public bool PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
+            public bool PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
             public bool Stop(int deviceId1to4) { return _p.DfStop(deviceId1to4, 0); }
             public bool Stop(int deviceId1to4, int timeoutMs) { return _p.DfStop(deviceId1to4, timeoutMs); }
             public bool Pause(int deviceId1to4) { return _p.DfPause(deviceId1to4, 0); }
@@ -635,15 +624,33 @@ namespace Mmp.Core
             public sealed class PlayModule
             {
                 private readonly MmpClient _p;
+
                 public PlayModule(MmpClient parent) { _p = parent; }
-                public string FolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
-                public string FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
-                public bool Stop(int deviceId1to4) { return _p.DfStop(deviceId1to4, 0); }
+                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255               ) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
+                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
+
+                public bool SetLoop(int deviceId1to4, bool enable               ) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, 0); }
+                public bool SetLoop(int deviceId1to4, bool enable, int timeoutMs) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, timeoutMs); }
+
+                public bool Stop(int deviceId1to4               ) { return _p.DfStop(deviceId1to4, 0); }
                 public bool Stop(int deviceId1to4, int timeoutMs) { return _p.DfStop(deviceId1to4, timeoutMs); }
-                public bool Pause(int deviceId1to4) { return _p.DfPause(deviceId1to4, 0); }
+
+                public bool Pause(int deviceId1to4　　　　　　   ) { return _p.DfPause(deviceId1to4, 0); }
                 public bool Pause(int deviceId1to4, int timeoutMs) { return _p.DfPause(deviceId1to4, timeoutMs); }
-                public bool Resume(int deviceId1to4) { return _p.DfResume(deviceId1to4, 0); }
+
+                public bool Resume(int deviceId1to4               ) { return _p.DfResume(deviceId1to4, 0); }
                 public bool Resume(int deviceId1to4, int timeoutMs) { return _p.DfResume(deviceId1to4, timeoutMs); }
+            }
+
+            public sealed class ReadModule
+            {
+                private readonly MmpClient _p;
+                public ReadModule(MmpClient parent) { _p = parent; }
+                public int PlayState(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadPlayState(deviceId1to4, timeoutMs); }
+                public int Volume(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadVolume(deviceId1to4, timeoutMs); }
+                public int Eq(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadEq(deviceId1to4, timeoutMs); }
+                public int FileCounts(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadFileCounts(deviceId1to4, timeoutMs); }
+                public int CurrentFileNumber(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadCurrentFileNumber(deviceId1to4, timeoutMs); }
             }
         }
 
@@ -660,9 +667,6 @@ namespace Mmp.Core
 
             public bool Out(int portId, int value0or1) { return _p.DigitalOut(portId, value0or1, 0); }
             public bool Out(int portId, int value0or1, int timeoutMs) { return _p.DigitalOut(portId, value0or1, timeoutMs); }
-
-            public int Io(int portId, int value0or1) { return _p.DigitalIo(portId, value0or1, 0); }
-            public int Io(int portId, int value0or1, int timeoutMs) { return _p.DigitalIo(portId, value0or1, timeoutMs); }
         }
 
         //============================================================

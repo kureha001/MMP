@@ -1,7 +1,9 @@
 #include "MmpClient.h"
 using namespace Mmp::Core;
 
+// ====================
 // ===== 低レベル =====
+// ====================
 bool MmpClient::Open(uint32_t baud, int32_t /*timeoutIo*/) {
 
   // ★ ピン設定：コアにより方法が異なるため条件分岐
@@ -42,7 +44,9 @@ void MmpClient::Close() {
   _isOpen = false;
 }
 
+// ================
 // ===== 接続 =====
+// ================
 bool MmpClient::ConnectWithBaud(uint32_t baud, int32_t timeoutIo, int32_t verifyTimeoutMs) {
   (void)Resolve(timeoutIo, Settings.TimeoutIo);
   if (!Open(baud, timeoutIo)) { _lastError = F("Open failed"); return false; }
@@ -58,7 +62,9 @@ bool MmpClient::ConnectAutoBaud(const uint32_t* cand, size_t n) {
   return false;
 }
 
+// ==================
 // ===== 送受信 =====
+// ==================
 String MmpClient::SendCommand(const String& command, int32_t timeoutMs) {
   if (!_isOpen) { _lastError = F("Port is not open"); return String(); }
   if (command.length() == 0) { _lastError = F("Empty command"); return String(); }
@@ -94,8 +100,12 @@ String MmpClient::SendCommand(const String& command, int32_t timeoutMs) {
   return String();
 }
 
+// ===================================
 // ===== フラットAPI（内部専用） =====
+// ===================================
+// --------------
 // ---- 情報 ----
+// --------------
 String MmpClient::GetVersion(int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutGeneral);
   return SendCommand("VER!", t);
@@ -111,7 +121,9 @@ uint16_t MmpClient::GetDpx(int32_t id1to4, int32_t timeoutMs) {
   uint16_t v = 0; if (!TryParseHex4Bang(resp, v)) { _lastError = F("DPX bad response"); } return v;
 }
 
+// ------------------
 // ---- アナログ ----
+// ------------------
 bool MmpClient::AnalogConfigure(int32_t players, int32_t switches, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
   if (players  < 1 || players  > 16) { _lastError = F("players out of range"); return false; }
@@ -132,7 +144,9 @@ int32_t MmpClient::AnalogRead(int32_t playerIndex0to15, int32_t switchIndex0to3,
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }
 
+// -------------
 // ---- PWM ----
+// -------------
 String MmpClient::PwmValue(int32_t channel, int32_t value0to4095, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutPwm);
   return SendCommand(String("PWM:") + Hex2(channel) + ":" + Hex4(value0to4095) + "!", t);
@@ -147,7 +161,9 @@ String MmpClient::PwmAngle(int32_t channel, int32_t angle0to180, int32_t timeout
   return SendCommand(String("PWA:") + Hex2(channel) + ":" + Hex3(angle0to180) + "!", t);
 }
 
-// ---- デジタル I/O ----
+// ------------------
+// ---- デジタル ----
+// ------------------
 int32_t MmpClient::DigitalIn(int32_t portId, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutDigital);
   String resp = SendCommand(String("POR:") + Hex2(portId) + "!", t);
@@ -158,13 +174,10 @@ bool MmpClient::DigitalOut(int32_t portId, int32_t value0or1, int32_t timeoutMs)
   String resp = SendCommand(String("POW:") + Hex2(portId) + ":" + ((value0or1 & 1) ? "1" : "0") + "!", t);
   return (resp == "!!!!!");
 }
-int32_t MmpClient::DigitalIo(int32_t portId, int32_t value0or1, int32_t timeoutMs) {
-  const int32_t t = Resolve(timeoutMs, Settings.TimeoutDigital);
-  String resp = SendCommand(String("IO:") + Hex2(portId) + ":" + ((value0or1 & 1) ? "1" : "0") + "!", t);
-  uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return 0;
-}
 
+// -------------
 // ---- I2C ----
+// -------------
 bool MmpClient::I2cWrite(int32_t addr, int32_t reg, int32_t value, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutI2c);
   String resp = SendCommand(String("I2W:") + Hex2(addr) + ":" + Hex2(reg) + ":" + Hex2(value) + "!", t);
@@ -176,56 +189,75 @@ int32_t MmpClient::I2cRead(int32_t addr, int32_t reg, int32_t timeoutMs) {
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return 0;
 }
 
+// ------------------------
 // ---- MP3（DFPlayer）----
-String MmpClient::DfPlayFolderTrack(int32_t deviceId1to4, int32_t folder1to255, int32_t track1to255, int32_t timeoutMs) {
+// ------------------------
+bool MmpClient::DfPlayFolderTrack(int32_t deviceId1to4, int32_t folder1to255, int32_t track1to255, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-  return SendCommand(String("DIR:") + Hex2(deviceId1to4) + ":" + Hex2(folder1to255) + ":" + Hex2(track1to255) + "!", t);
+  String resp = SendCommand(String("DIR:") + Hex2(deviceId1to4) + ":" + Hex2(folder1to255) + ":" + Hex2(track1to255) + "!", t);
+  return (resp == "!!!!!");
 }
+
+bool MmpClient::DfSetLoop(int32_t deviceId1to4, int32_t on0or1, int32_t timeoutMs) {
+  const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
+  String resp = SendCommand(String("DLP:") + Hex2(deviceId1to4) + ":" + Hex2(on0or1) + "!", t);
+  return (resp == "!!!!!");
+}
+
 bool MmpClient::DfStop(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DSP:") + Hex2(deviceId1to4) + "!", t);
   return (resp == "!!!!!");
 }
+
 bool MmpClient::DfPause(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DPA:") + Hex2(deviceId1to4) + "!", t);
   return (resp == "!!!!!");
 }
+
 bool MmpClient::DfResume(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DPR:") + Hex2(deviceId1to4) + "!", t);
   return (resp == "!!!!!");
 }
+
 bool MmpClient::DfVolume(int32_t deviceId1to4, int32_t vol0to30, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("VOL:") + Hex2(deviceId1to4) + ":" + Hex2(vol0to30) + "!", t);
   return (resp == "!!!!!");
 }
+
 bool MmpClient::DfSetEq(int32_t deviceId1to4, int32_t eqMode0to5, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DEF:") + Hex2(deviceId1to4) + ":" + Hex2(eqMode0to5) + "!", t);
   return (resp == "!!!!!");
 }
+
 int32_t MmpClient::DfReadPlayState(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DST:") + Hex2(deviceId1to4) + ":01!", t);
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }
+
 int32_t MmpClient::DfReadVolume(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DST:") + Hex2(deviceId1to4) + ":02!", t);
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }
+
 int32_t MmpClient::DfReadEq(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DST:") + Hex2(deviceId1to4) + ":03!", t);
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }
+
 int32_t MmpClient::DfReadFileCounts(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DST:") + Hex2(deviceId1to4) + ":04!", t);
   uint16_t v = 0; if (TryParseHex4Bang(resp, v)) return (int32_t)v; return -1;
 }
+
 int32_t MmpClient::DfReadCurrentFileNumber(int32_t deviceId1to4, int32_t timeoutMs) {
   const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
   String resp = SendCommand(String("DST:") + Hex2(deviceId1to4) + ":05!", t);

@@ -1,7 +1,11 @@
 #pragma once
 #include <Arduino.h>
 
-// ===== UARTの選択（RP2040/2350：GPIO 0=TX, 1=RX を想定）=====
+// 稼働実績
+// Arduino UnoR4　：　標準設定ＯＫ
+// RP2040/2350    ：　標準設定ＯＫ
+
+// ===== UARTの選択 =====
 #ifndef MMP_UART
   #define MMP_UART Serial1
 #endif

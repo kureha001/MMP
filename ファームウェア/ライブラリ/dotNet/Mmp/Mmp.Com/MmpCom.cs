@@ -20,13 +20,13 @@ namespace Mmp.Com
         string LastError { get; }
 
         // 階層APIエントリ
-        object Info     { get; }
+        object Info { get; }
         object Settings { get; }
-        object Analog   { get; }
-        object Digital  { get; }
-        object Pwm      { get; }
-        object Audio    { get; }
-        object I2c      { get; }
+        object Analog { get; }
+        object Digital { get; }
+        object Pwm { get; }
+        object Audio { get; }
+        object I2c { get; }
     }
 
     //============================================================
@@ -76,21 +76,21 @@ namespace Mmp.Com
         }
 
         //================ 階層 API プロキシの提供 ======================
-        private InfoCom     _info;
+        private InfoCom _info;
         private SettingsCom _settings;
-        private AnalogCom   _analog;
-        private DigitalCom  _digital;
-        private PwmCom      _pwm;
-        private AudioCom    _audio;
-        private I2cCom      _i2c;
+        private AnalogCom _analog;
+        private DigitalCom _digital;
+        private PwmCom _pwm;
+        private AudioCom _audio;
+        private I2cCom _i2c;
 
-        public object Info     { get { if (_info     == null) _info     = new InfoCom    (this); return _info;      } }
-        public object Settings { get { if (_settings == null) _settings = new SettingsCom(this); return _settings;  } }
-        public object Analog   { get { if (_analog   == null) _analog   = new AnalogCom  (this); return _analog;    } }
-        public object Digital  { get { if (_digital  == null) _digital  = new DigitalCom (this); return _digital;   } }
-        public object Pwm      { get { if (_pwm      == null) _pwm      = new PwmCom     (this); return _pwm;       } }
-        public object Audio    { get { if (_audio    == null) _audio    = new AudioCom   (this); return _audio;     } }
-        public object I2c      { get { if (_i2c      == null) _i2c      = new I2cCom     (this); return _i2c;       } }
+        public object Info { get { if (_info == null) _info = new InfoCom(this); return _info; } }
+        public object Settings { get { if (_settings == null) _settings = new SettingsCom(this); return _settings; } }
+        public object Analog { get { if (_analog == null) _analog = new AnalogCom(this); return _analog; } }
+        public object Digital { get { if (_digital == null) _digital = new DigitalCom(this); return _digital; } }
+        public object Pwm { get { if (_pwm == null) _pwm = new PwmCom(this); return _pwm; } }
+        public object Audio { get { if (_audio == null) _audio = new AudioCom(this); return _audio; } }
+        public object I2c { get { if (_i2c == null) _i2c = new I2cCom(this); return _i2c; } }
 
         //============================================================
         // 階層 API: Info
@@ -228,14 +228,6 @@ namespace Mmp.Com
                     return _owner._cli.Digital.Out(portId, value0or1, timeoutMs);
                 }, false);
             }
-
-            public int Io(int portId, int value0or1, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Digital.Io(portId, value0or1, timeoutMs);
-                }, 0);
-            }
         }
 
         //============================================================
@@ -292,7 +284,8 @@ namespace Mmp.Com
         {
             private readonly MmpCom _owner;
             private readonly PlayCom _play;
-            public AudioCom(MmpCom owner) { _owner = owner; _play = new PlayCom(owner); }
+            private readonly ReadCom _read;
+            public AudioCom(MmpCom owner) { _owner = owner; _play = new PlayCom(owner); _read = new ReadCom(owner); }
 
             public int Info(int id1to4, int timeoutMs = 0)
             {
@@ -316,46 +309,6 @@ namespace Mmp.Com
                 {
                     return _owner._cli.Audio.SetEq(deviceId1to4, eq0to5, timeoutMs);
                 }, false);
-            }
-
-            public int ReadPlayState(int deviceId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Audio.ReadPlayState(deviceId1to4, timeoutMs);
-                }, -1);
-            }
-
-            public int ReadVolume(int deviceId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Audio.ReadVolume(deviceId1to4, timeoutMs);
-                }, -1);
-            }
-
-            public int ReadEq(int deviceId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Audio.ReadEq(deviceId1to4, timeoutMs);
-                }, -1);
-            }
-
-            public int ReadFileCounts(int deviceId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Audio.ReadFileCounts(deviceId1to4, timeoutMs);
-                }, -1);
-            }
-
-            public int ReadCurrentFileNumber(int deviceId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<int>(delegate ()
-                {
-                    return _owner._cli.Audio.ReadCurrentFileNumber(deviceId1to4, timeoutMs);
-                }, -1);
             }
 
             public bool Stop(int deviceId1to4, int timeoutMs = 0)
@@ -383,6 +336,7 @@ namespace Mmp.Com
             }
 
             public object Play { get { return _play; } }
+            public object Read { get { return _read; } }
 
             //============================================================
             // 階層 API: Audio.Play
@@ -395,12 +349,19 @@ namespace Mmp.Com
                 private readonly MmpCom _owner;
                 public PlayCom(MmpCom owner) { _owner = owner; }
 
-                public string FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs = 0)
+                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs = 0)
                 {
-                    return _owner.Guard<string>(delegate ()
+                    return _owner.Guard<bool>(delegate ()
                     {
                         return _owner._cli.Audio.Play.FolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs);
-                    }, "");
+                    }, false);
+                }
+                public bool SetLoop(int deviceId1to4, int on0or1, int timeoutMs = 0)
+                {
+                    return _owner.Guard<bool>(delegate ()
+                    {
+                        return _owner._cli.Audio.Play.SetLoop(deviceId1to4, on0or1 != 0, timeoutMs);
+                    }, false);
                 }
 
                 public bool Stop(int deviceId1to4, int timeoutMs = 0)
@@ -425,6 +386,58 @@ namespace Mmp.Com
                     {
                         return _owner._cli.Audio.Play.Resume(deviceId1to4, timeoutMs);
                     }, false);
+                }
+            }
+
+            //============================================================
+            // 階層 API: Audio.Read
+            //============================================================
+            [ComVisible(true)]
+            [Guid("A1B5C6D7-89E0-4F12-A345-6789ABCDEF12")]
+            [ClassInterface(ClassInterfaceType.AutoDual)]
+            public class ReadCom
+            {
+                private readonly MmpCom _owner;
+                public ReadCom(MmpCom owner) { _owner = owner; }
+
+                public int PlayState(int deviceId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<int>(delegate ()
+                    {
+                        return _owner._cli.Audio.Read.PlayState(deviceId1to4, timeoutMs);
+                    }, -1);
+                }
+
+                public int Volume(int deviceId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<int>(delegate ()
+                    {
+                        return _owner._cli.Audio.Read.Volume(deviceId1to4, timeoutMs);
+                    }, -1);
+                }
+
+                public int Eq(int deviceId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<int>(delegate ()
+                    {
+                        return _owner._cli.Audio.Read.Eq(deviceId1to4, timeoutMs);
+                    }, -1);
+                }
+
+                public int FileCounts(int deviceId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<int>(delegate ()
+                    {
+                        return _owner._cli.Audio.Read.FileCounts(deviceId1to4, timeoutMs);
+                    }, -1);
+                }
+
+                public int CurrentFileNumber(int deviceId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<int>(delegate ()
+                    {
+                        return _owner._cli.Audio.Read.CurrentFileNumber(deviceId1to4, timeoutMs);
+                    }, -1);
                 }
             }
         }

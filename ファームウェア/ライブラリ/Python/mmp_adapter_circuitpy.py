@@ -1,154 +1,101 @@
-#============================================================
-# CircuitPython用アダプタ（busio.UART）
-#------------------------------------------------------------
-#【ファイル配置方法】
-# 同一 または libフォルダー(推奨)
-#============================================================
-from mmp_adapter_base import UartAdapterBase
-import time
-import board
-import busio
 
-#============================================================
-#  プラットフォーム別アダプタ
-#============================================================
-class CircuitPyAdapter(UartAdapterBase):
-    #--------------------------------------------------------
-    # 初期化
-    #--------------------------------------------------------
-    def __init__(
-        self                ,
-        tx_pin      = None  ,
-        rx_pin      = None  ,
-        baud        = 115200,
-        timeout_ms  = 100   ,
-        rxbuf       = 64    ,
-        ):
+# mmp_adapter_circuitpy.py
+# CircuitPython adapter using busio.UART (or board.USB_CDC for CDC)
 
-        # 
-        self._tx_pin    = tx_pin
-        self._rx_pin    = rx_pin
-        self.baud       = int(baud)
-        self.timeout_ms = int(timeout_ms)
-        self.timeout_s  = float(timeout_ms / 1000.0)
-        self.rxbuf      = int(rxbuf)
-        self.uart       = None
+from .mmp_adapter_base import MmpAdapterBase
 
-    #--------------------------------------------------------
-    # ピン解決
-    #--------------------------------------------------------
-    def _resolve_pin(self, pin, is_tx):
+class CircuitPyAdapter(MmpAdapterBase):
+    def __init__(self, tx_pin=None, rx_pin=None, use_usb_cdc=False):
+        super().__init__()
+        self._tx = tx_pin
+        self._rx = rx_pin
+        self._use_usb = use_usb_cdc
+        self._uart = None
+        self._serial = None
 
-        # 指定のピンがボード情報に存在すれば確定する。
+    def open_baud(self, baud: int) -> bool:
         try:
-            if hasattr(pin, "name") or "board." in repr(pin): return pin
-        except Exception: pass
-
-        # ピン未指定であればボード情報の標準で確定する。
-        if pin is None: return getattr(board, "TX" if is_tx else "RX")
-
-        # 指定ピンを文字型で解決する
-        if isinstance(pin, str):
-
-            # 指定のピンがボード情報に存在すれば確定する。
-            name = pin
-            if hasattr(board, name)         : return getattr(board, name)
-            if hasattr(board, name.upper()) : return getattr(board, name.upper())
-            if name.isdigit():
-                for prefix in ("GP", "D", "IO"):
-                    cand = f"{prefix}{name}"
-                    if hasattr(board, cand) : return getattr(board, cand)
-            raise ValueError("指定ピン(文字型)の解決に失敗: '%s'" % pin)
-
-        # 指定ピンを数値型で解決する
-        if isinstance(pin, int):
-            for prefix in ("GP", "D", "IO"):
-                cand = f"{prefix}{pin}"
-                if hasattr(board, cand)     : return getattr(board, cand)
-            raise ValueError("指定ピン(数値型)の解決に失敗: %s" % pin)
-
-        return pin
-
-    #--------------------------------------------------------
-    # UARTオープン
-    #--------------------------------------------------------
-    def open(self):
-        tx = self._resolve_pin(self._tx_pin, True)
-        rx = self._resolve_pin(self._rx_pin, False)
-        self.uart = busio.UART(
-            baudrate=self.baud,
-            timeout=self.timeout_s,
-            bits=8, parity=None, stop=1,
-            tx=tx, rx=rx,
-            receiver_buffer_size=self.rxbuf,
-        )
-        return True
-
-    #--------------------------------------------------------
-    # 受信データの有無確認
-    #--------------------------------------------------------
-    def rx_ready(self):
-        try:
-            return int(self.uart.in_waiting) or 0
-        except Exception:
-            return 0
-
-    #--------------------------------------------------------
-    # データ読み込み
-    #--------------------------------------------------------
-    def read(self, n):
-        try                 : return self.uart.read(n)
-        except Exception:
-            try             : return self.uart.read(1)
-            except Exception: return b""
-
-    #--------------------------------------------------------
-    # データ書き込み
-    #--------------------------------------------------------
-    def write(self, b):
-        try             : return self.uart.write(b)
-        except Exception: return 0
-
-    #--------------------------------------------------------
-    # 通信バッファを消去
-    #--------------------------------------------------------
-    def flush(self):
-        try:
-            if hasattr(self.uart, "reset_input_buffer"):
-                try:
-                    self.uart.reset_input_buffer()
-                    return
-                except Exception: pass
-
-            deadline = time.monotonic() + (30 / 1000.0)
-
-            while time.monotonic() < deadline:
-                n = 0
-
-                if hasattr(self.uart, "in_waiting"):
-                    try             : n = int(self.uart.in_waiting) or 0
-                    except Exception: n = 0
-
-                if n > 0:
-                    try: self.uart.read(n)
-                    except Exception:
-                        try             : self.uart.read()
-                        except Exception: break
+            if self._use_usb:
+                import usb_cdc
+                self._serial = usb_cdc.data   # use secondary CDC channel if enabled
+                if not self._serial:
+                    return False
+                # CircuitPython CDC baud is symbolic; store for reference only
+                self.connected_baud = baud
+                self.clear_input()
+                return True
+            else:
+                import busio, board
+                if self._tx is None or self._rx is None:
+                    # Try common pins if user didn't specify (best-effort)
+                    tx = getattr(board, "TX", None)
+                    rx = getattr(board, "RX", None)
                 else:
+                    tx = self._tx
+                    rx = self._rx
+                if tx is None or rx is None:
+                    return False
+                self._uart = busio.UART(tx, rx, baudrate=baud, timeout=0)
+                self.connected_baud = baud
+                self.clear_input()
+                return True
+        except Exception:
+            return False
 
-                    try             : b = self.uart.read(1)
-                    except Exception: b = None
-                    if not b: break
-
-                time.sleep(0.001)
-
-        except Exception: pass
-
-    #--------------------------------------------------------
-    # UARTクローズ
-    #--------------------------------------------------------
-    def close(self):
+    def close(self) -> None:
         try:
-            if self.uart: self.uart.deinit()
-        except Exception: pass
-        self.uart = None
+            if self._uart:
+                self._uart.deinit()
+        except Exception:
+            pass
+        self._uart = None
+        self._serial = None
+
+    def clear_input(self) -> None:
+        if self._uart:
+            try:
+                while True:
+                    b = self._uart.read(1)
+                    if not b:
+                        break
+            except Exception:
+                pass
+        elif self._serial:
+            try:
+                while self._serial.in_waiting:
+                    self._serial.read(1)
+            except Exception:
+                pass
+
+    def write_ascii(self, s: str) -> None:
+        try:
+            data = s.encode("ascii")
+            if self._uart:
+                self._uart.write(data)
+            elif self._serial:
+                self._serial.write(data)
+        except Exception:
+            pass
+
+    def read_one_char(self):
+        try:
+            if self._uart:
+                b = self._uart.read(1)
+                if b:
+                    return b.decode("ascii", "ignore")
+            elif self._serial and self._serial.in_waiting:
+                b = self._serial.read(1)
+                if b:
+                    return b.decode("ascii", "ignore")
+        except Exception:
+            return None
+        return None
+
+    def sleep_ms(self, ms: int) -> None:
+        import time
+        time.sleep(ms / 1000.0)
+
+    def now_ms(self) -> int:
+        import time
+        # monotonic_ns available on CircuitPython
+        return int(time.monotonic_ns() // 1_000_000)

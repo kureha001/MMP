@@ -9,7 +9,7 @@ namespace Mmp.Tool
         static int Main(string[] args)
         {
             string port = args.Length > 0 ? args[0] : null;
-            Console.WriteLine("<< ＭＭＰライブラリ for .Net >>\n");
+            Console.WriteLine("<< ＭＭＰライブラリ for .Net with C#>>\n");
             Console.Write("接続中...");
 
             try
@@ -35,7 +35,7 @@ namespace Mmp.Tool
                     RunDigital(mmp)     ; // デジタル入出力
                     RunMp3Playlist(mmp) ; // MP3プレイヤー(トラック再生,リピート再生)
                     RunMp3Control(mmp)  ; // MP3プレイヤー(制御)
-                    RunPwmByValue(mmp); // PWM出力
+                    RunPwmByValue(mmp)  ; // PWM出力
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
                 }
                 return 0;

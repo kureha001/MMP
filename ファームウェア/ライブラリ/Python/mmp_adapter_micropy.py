@@ -1,98 +1,80 @@
-#============================================================
-# MicroPython用アダプタ（machine.UART）
-#------------------------------------------------------------
-#【ファイル配置方法】
-# 同一 または libフォルダー(推奨)
-#============================================================
-from mmp_adapter_base import UartAdapterBase
-from machine import UART, Pin
-import time
 
-#============================================================
-#  プラットフォーム別アダプタ
-#============================================================
-class MicroPyAdapter(UartAdapterBase):
-    #--------------------------------------------------------
-    # 初期化
-    #--------------------------------------------------------
-    def __init__(
-        self                ,
-        uart_id     = 0     ,
-        tx_pin      = 0     ,
-        rx_pin      = 1     ,
-        baud        = 115200,
-        timeout_ms  = 100   ,
-        ):
+# mmp_adapter_micropy.py
+# MicroPython adapter using machine.UART
 
-        self.uart_id    = int(uart_id)
-        self.tx_pin     = int(tx_pin)
-        self.rx_pin     = int(rx_pin)
-        self.baud       = int(baud)
-        self.timeout_ms = int(timeout_ms)
-        self.uart       = None
+from .mmp_adapter_base import MmpAdapterBase
 
-    #--------------------------------------------------------
-    # UARTオープン
-    #--------------------------------------------------------
-    def open(self):
-        t_char = max(1, self.timeout_ms // 10)
-        self.uart = UART(
-            self.uart_id                        ,
-            baudrate        = self.baud         ,
-            timeout         = self.timeout_ms   ,
-            timeout_char    = t_char            ,
-            bits            = 8                 ,
-            parity          = None              ,
-            stop            = 1                 ,
-            tx              = Pin(self.tx_pin)  ,
-            rx              = Pin(self.rx_pin)  ,
-            )
-        return True
+class MicroPyAdapter(MmpAdapterBase):
+    def __init__(self, uart_id=0, tx=None, rx=None):
+        super().__init__()
+        self._uart_id = uart_id
+        self._tx = tx
+        self._rx = rx
+        self._uart = None
 
-    #--------------------------------------------------------
-    # 受信データの有無確認
-    #--------------------------------------------------------
-    def rx_ready(self):
-        try             : return int(self.uart.any()) or 0
-        except Exception: return 0
-
-    #--------------------------------------------------------
-    # データ読み込み
-    #--------------------------------------------------------
-    def read(self, n):
-        try                 : return self.uart.read(n)
+    def open_baud(self, baud: int) -> bool:
+        try:
+            from machine import UART, Pin
+            kwargs = {"baudrate": baud}
+            if self._tx is not None:
+                kwargs["tx"] = self._tx
+            if self._rx is not None:
+                kwargs["rx"] = self._rx
+            self._uart = UART(self._uart_id, **kwargs)
+            self.connected_baud = baud
+            self.clear_input()
+            return True
         except Exception:
-            try             : return self.uart.read(1)
-            except Exception: return b""
+            return False
 
-    #--------------------------------------------------------
-    # データ書き込み
-    #--------------------------------------------------------
-    def write(self, b):
-        try             : return self.uart.write(b)
-        except Exception: return 0
-
-    #--------------------------------------------------------
-    # 通信バッファを消去
-    #--------------------------------------------------------
-    def flush(self):
+    def close(self) -> None:
         try:
-            t0 = time.ticks_ms()
-            while time.ticks_diff(time.ticks_ms(), t0) < 30:
-                n = self.uart.any()
-                if not n: break
-                try: self.uart.read(n)
-                except Exception:
-                    try             : self.uart.read()
-                    except Exception: break
-                time.sleep_ms(1)
-        except Exception: pass
+            if self._uart:
+                self._uart.deinit()
+        except Exception:
+            pass
+        self._uart = None
 
-    #--------------------------------------------------------
-    # UARTクローズ
-    #--------------------------------------------------------
-    def close(self):
+    def clear_input(self) -> None:
+        if not self._uart:
+            return
         try:
-            if self.uart: self.uart.deinit()
-        except Exception: pass
-        self.uart = None
+            while self._uart.any():
+                self._uart.read(1)
+        except Exception:
+            pass
+
+    def write_ascii(self, s: str) -> None:
+        if not self._uart:
+            return
+        try:
+            self._uart.write(s.encode("ascii"))
+        except Exception:
+            pass
+
+    def read_one_char(self):
+        if not self._uart:
+            return None
+        try:
+            if self._uart.any():
+                b = self._uart.read(1)
+                if b:
+                    try:
+                        return b.decode("ascii")
+                    except Exception:
+                        return None
+        except Exception:
+            return None
+        return None
+
+    def sleep_ms(self, ms: int) -> None:
+        import time
+        time.sleep_ms(ms)
+
+    def now_ms(self) -> int:
+        import time
+        return time.ticks_ms()
+
+    def ticks_diff(self, now_ms: int, start_ms: int) -> int:
+        import time
+        return time.ticks_diff(now_ms, start_ms)

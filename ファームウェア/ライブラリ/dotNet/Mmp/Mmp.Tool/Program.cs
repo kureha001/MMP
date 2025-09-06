@@ -30,12 +30,13 @@ namespace Mmp.Tool
 
                     // === 必要なテストだけコメントを外して実行してください ===
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
-                    RunInfo(mmp)        ; // 情報系
-                    RunAnalog(mmp)      ; // アナログ入力
-                    RunDigital(mmp)     ; // デジタル入出力
-                    RunMp3Playlist(mmp) ; // MP3プレイヤー(トラック再生,リピート再生)
-                    RunMp3Control(mmp)  ; // MP3プレイヤー(制御)
-                    RunPwmByValue(mmp)  ; // PWM出力
+                    RunInfo(mmp)         ; // 情報系
+                    RunAnalog(mmp)       ; // アナログ入力
+                    RunDigital(mmp)      ; // デジタル入出力
+                    RunMp3Playlist(mmp); // MP3プレイヤー(基本)
+                    RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
+                    RunPwmByValue(mmp)   ; // PWM出力
+                    RunI2cServoSweep(mmp); // I2C→PCA9685 直接制御
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
                 }
                 return 0;
@@ -242,6 +243,62 @@ namespace Mmp.Tool
             Console.WriteLine("　・初期位置");
             mmp.Pwm.Out(chRot, SERVO_MID);
             mmp.Pwm.Out(chAngle, SERVO_MID);
+
+            Console.WriteLine("　[終了]\n");
+        }
+
+        //============================================================
+        // 6) I2C：PCA9685 を直接叩いてサーボスイープ（追加）
+        //============================================================
+        private static void RunI2cServoSweep(Mmp.Core.MmpClient mmp)
+        {
+            Console.WriteLine("６.I2C（ PCA9685：サーボスイープ ）");
+
+            const int PCA_ADDR = 0x40;   // 一般的な PCA9685 の I2C アドレス
+            const int CH = 0;      // CH0 を使用
+            int baseReg = 0x06 + 4 * CH;   // LEDn_ON_L（0x06）以降 4byte/CH
+
+            // ON を 0 に固定
+            mmp.I2c.Write(PCA_ADDR, baseReg + 0, 0x00); // ON_L
+            mmp.I2c.Write(PCA_ADDR, baseReg + 1, 0x00); // ON_H
+
+            const int SERVO_MIN = 150;
+            const int SERVO_MAX = 600;
+            const int SERVO_MID = (SERVO_MIN + SERVO_MAX) / 2;
+
+            void SetPulse(int ticks)
+            {
+                if (ticks < 0) ticks = 0;
+                if (ticks > 4095) ticks = 4095;
+                mmp.I2c.Write(PCA_ADDR, baseReg + 2, (ticks) & 0xFF); // OFF_L
+                mmp.I2c.Write(PCA_ADDR, baseReg + 3, (ticks >> 8) & 0x0F); // OFF_H (12bit)
+            }
+
+            Console.WriteLine("　・初期位置");
+            SetPulse(SERVO_MID);
+            Thread.Sleep(300);
+
+            int steps = 80;
+            int delayMs = 20;
+
+            Console.WriteLine("　・スイープ(往路)");
+            for (int i = 0; i <= steps; i++)
+            {
+                int v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
+                SetPulse(v);
+                Thread.Sleep(delayMs);
+            }
+
+            Console.WriteLine("　・スイープ(復路)");
+            for (int i = steps; i >= 0; i--)
+            {
+                int v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
+                SetPulse(v);
+                Thread.Sleep(delayMs);
+            }
+
+            Console.WriteLine("　・初期位置");
+            SetPulse(SERVO_MID);
 
             Console.WriteLine("　[終了]\n");
         }

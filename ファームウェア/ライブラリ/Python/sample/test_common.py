@@ -226,43 +226,42 @@ def _pca9685_get_pwm(mmp, ch: int) -> int:
         return -1
     return (off_h << 8) | off_l
 #------------------------------------------------------------
-def RunI2cWithServo(mmp):
+def RunI2cServoSweep(mmp):
 
-    print("６.I2C（PCA9685 レジスタ直書き）でサーボスイープ")
+    print("６.I2C（ PCA9685：サーボスイープ ）")
 
-    # 初期位置
-    print("　・初期位置 → MID")
+    print("　・初期位置")
     if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, SERVO_MID):
-        print("　　★I2C書き込み失敗（初期位置）")
-        print("　[中断]\n")
+        print("　[Err:中断]\n")
         return
     time.sleep(0.3)
 
-    # 正転・加速
-    print("　・正転,加速")
+    print("　・スイープ(往路)")
     for i in range(STEPS + 1):
         v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
         if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, v):
-            print("　　★I2C書き込み失敗（正転）")
-            break
+            print("　[Err:中断]\n")
+            return
         time.sleep(STEP_DELAY_S)
 
-    # 逆転・減速
-    print("　・逆転,減速")
+    print("　・スイープ(復路)")
     for i in range(STEPS, -1, -1):
         v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
         if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, v):
-            print("　　★I2C書き込み失敗（逆転）")
-            break
+            print("　[Err:中断]\n")
+            return
         time.sleep(STEP_DELAY_S)
 
     # 読み出し確認（最後に設定した値）
     last = _pca9685_get_pwm(mmp, CHANNEL_SERVO)
     print(f"　・現在の OFF 値 = {last}")
 
-    # 初期位置へ
-    print("　・初期位置 → MID")
+    print("　・初期位置")
     _pca9685_set_pwm(mmp, CHANNEL_SERVO, SERVO_MID)
+    if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, SERVO_MID):
+        print("　[Err:中断]\n")
+        return
+
     print("　[終了]\n")
 
 
@@ -287,11 +286,11 @@ def run_all(mmp, TARGET):
         pass
 
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunInfo(mmp)
-    #RunAnalog(mmp)
-    #RunDigital(mmp)
-    #RunMp3Playlist(mmp)
-    #RunMp3Control(mmp)
-    #RunPwmByValue(mmp)
-    RunI2cWithServo(mmp)
+    RunInfo(mmp)            # 情報系
+    #RunAnalog(mmp)          # アナログ入力
+    #RunDigital(mmp)         # デジタル入出力
+    #RunMp3Playlist(mmp)     # MP3プレイヤー(基本)
+    #RunMp3Control(mmp)      # MP3プレイヤー(制御)
+    RunPwmByValue(mmp)      # PWM出力
+    RunI2cServoSweep(mmp)   # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")

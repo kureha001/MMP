@@ -160,29 +160,109 @@ def RunPwmByValue(mmp):
     mmp.Pwm.Out(chRot,   SERVO_MID)
     time.sleep(0.3)
 
-    steps        = 80
-    delayMs      = 0.02
     rotOffsetMax = 60
 
     print("　・正転,加速")
-    for i in range(0, steps + 1):
-        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // steps
-        pwmRot   = SERVO_MID + (rotOffsetMax * i) // steps
+    for i in range(0, STEPS + 1):
+        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        pwmRot   = SERVO_MID + (rotOffsetMax * i) // STEPS
         mmp.Pwm.Out(chAngle, pwmAngle)
         mmp.Pwm.Out(chRot,   pwmRot)
-        time.sleep(delayMs)
+        time.sleep(STEP_DELAY_S)
 
     print("　・逆転,減速")
-    for i in range(steps, -1, -1):
-        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // steps
-        pwmRot   = SERVO_MID + (rotOffsetMax * i) // steps
+    for i in range(STEPS, -1, -1):
+        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        pwmRot   = SERVO_MID + (rotOffsetMax * i) // STEPS
         mmp.Pwm.Out(chAngle, pwmAngle)
         mmp.Pwm.Out(chRot,   pwmRot)
-        time.sleep(delayMs)
+        time.sleep(STEP_DELAY_S)
 
     print("　・初期位置")
     mmp.Pwm.Out(chRot,   SERVO_MID)
     mmp.Pwm.Out(chAngle, SERVO_MID)
+    print("　[終了]\n")
+
+
+#============================================================
+# 6) I2C：サーボスイープ（PCA9685 レジスタ直書き）
+#------------------------------------------------------------
+#  LEDn の ON=0 / OFF=val でデューティ設定
+#  LED0_ON_L=0x06 からチャネル毎に 4 レジスタ
+#------------------------------------------------------------
+#  base = 0x06 + 4*ch
+#   [base+0]=ON_L,
+#   [base+1]=ON_H,
+#   [base+2]=OFF_L,
+#   [base+3]=OFF_H
+#============================================================
+PCA9685_ADDR  = 0x40
+CHANNEL_SERVO = 0       # テストする PCA9685 のチャネル
+SERVO_MIN     = 150     # PCA9685 12bitの生値（例: 150）
+SERVO_MAX     = 600     # 同上（例: 600）
+SERVO_MID     = (SERVO_MIN + SERVO_MAX) // 2
+STEPS         = 80
+STEP_DELAY_S  = 0.02
+#------------------------------------------------------------
+def _pca9685_set_pwm(mmp, ch: int, value_0_4095: int) -> bool:
+
+    base = 0x06 + 4 * ch
+    on_l, on_h = 0x00, 0x00
+    off = max(0, min(4095, int(value_0_4095)))
+    off_l = (off & 0xFF)
+    off_h = ((off >> 8) & 0x0F)  # 上位4bitのみ
+
+    ok  = mmp.I2c.Write(PCA9685_ADDR, base + 0, on_l)   # ON_L
+    ok &= mmp.I2c.Write(PCA9685_ADDR, base + 1, on_h)   # ON_H
+    ok &= mmp.I2c.Write(PCA9685_ADDR, base + 2, off_l)  # OFF_L
+    ok &= mmp.I2c.Write(PCA9685_ADDR, base + 3, off_h)  # OFF_H
+    return ok
+#------------------------------------------------------------
+def _pca9685_get_pwm(mmp, ch: int) -> int:
+    base = 0x06 + 4 * ch
+    off_l = mmp.I2c.Read(PCA9685_ADDR, base + 2)
+    off_h = mmp.I2c.Read(PCA9685_ADDR, base + 3) & 0x0F
+    if off_l < 0 or off_h < 0:
+        return -1
+    return (off_h << 8) | off_l
+#------------------------------------------------------------
+def RunI2cWithServo(mmp):
+
+    print("６.I2C（PCA9685 レジスタ直書き）でサーボスイープ")
+
+    # 初期位置
+    print("　・初期位置 → MID")
+    if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, SERVO_MID):
+        print("　　★I2C書き込み失敗（初期位置）")
+        print("　[中断]\n")
+        return
+    time.sleep(0.3)
+
+    # 正転・加速
+    print("　・正転,加速")
+    for i in range(STEPS + 1):
+        v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, v):
+            print("　　★I2C書き込み失敗（正転）")
+            break
+        time.sleep(STEP_DELAY_S)
+
+    # 逆転・減速
+    print("　・逆転,減速")
+    for i in range(STEPS, -1, -1):
+        v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        if not _pca9685_set_pwm(mmp, CHANNEL_SERVO, v):
+            print("　　★I2C書き込み失敗（逆転）")
+            break
+        time.sleep(STEP_DELAY_S)
+
+    # 読み出し確認（最後に設定した値）
+    last = _pca9685_get_pwm(mmp, CHANNEL_SERVO)
+    print(f"　・現在の OFF 値 = {last}")
+
+    # 初期位置へ
+    print("　・初期位置 → MID")
+    _pca9685_set_pwm(mmp, CHANNEL_SERVO, SERVO_MID)
     print("　[終了]\n")
 
 
@@ -199,17 +279,19 @@ def run_all(mmp, TARGET):
         print("ＭＭＰとの接続に失敗しました...")
         return
 
-    print("成功")
+    print("成功です")
     try:
-        print("自動検出 {} bps\n".format(mmp.Settings.BaudRate))
+        print("自動検出１ {} bps\n".format(mmp.Settings.BaudRate))
+        print("自動検出２ {} bps\n".format(mmp.ConnectedBaud))
     except:
         pass
 
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
     RunInfo(mmp)
-    RunAnalog(mmp)
-    RunDigital(mmp)
-    RunMp3Playlist(mmp)
-    RunMp3Control(mmp)
-    RunPwmByValue(mmp)
+    #RunAnalog(mmp)
+    #RunDigital(mmp)
+    #RunMp3Playlist(mmp)
+    #RunMp3Control(mmp)
+    #RunPwmByValue(mmp)
+    RunI2cWithServo(mmp)
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")

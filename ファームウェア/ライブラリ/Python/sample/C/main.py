@@ -8,6 +8,7 @@ TARGET = "CPython"
 from mmpC import MmpClient
 from mmpC import CpyAdapter
 
+# 引数：por=None, preferred_ports=None
 mmp = MmpClient(CpyAdapter())
 
 from test_common import run_all

@@ -1,101 +1,132 @@
-
 # mmp_adapter_circuitpy.py
-# CircuitPython adapter using busio.UART (or board.USB_CDC for CDC)
+# Adapter for CircuitPython to be used by mmp_core.MmpClient
+# Provides a minimal UART transport with the methods expected by the core:
+#   - open_baud(baud) -> bool
+#   - clear_input(), write_ascii(s), read_one_char(), flush()
+#   - now_ms(), ticks_diff(a, b), sleep_ms(ms)
+#   - close()
+#   - connected_baud (property)
+#
+# Notes:
+# - No 'uart_id' parameter (CircuitPython busio.UART doesn't support it).
+# - Default pins assume RP2040/2350 family with TX=GP0, RX=GP1.
+# - Keep implementation compact and deterministic; avoid platform heuristics.
 
 from mmp_adapter_base import MmpAdapterBase
 
+import time
+import board
+import busio
+
+
 class CircuitPyAdapter(MmpAdapterBase):
-    def __init__(self, tx_pin=None, rx_pin=None, use_usb_cdc=False):
-        super().__init__()
-        self._tx = tx_pin
-        self._rx = rx_pin
-        self._use_usb = use_usb_cdc
-        self._uart = None
-        self._serial = None
+    def __init__(self, tx_pin=None, rx_pin=None, timeout_s=0.05, buffer_size=128):
+        # Default pins (RP2040/2350 typical wiring: TX=GP0, RX=GP1)
+        self.tx_pin = tx_pin if tx_pin is not None else getattr(board, "GP0")
+        self.rx_pin = rx_pin if rx_pin is not None else getattr(board, "GP1")
+
+        self.timeout_s = float(timeout_s)
+        self.buffer_size = int(buffer_size)
+
+        self.uart = None
+        self._connected_baud = None
+
+    # ---------- time helpers ----------
+    def now_ms(self) -> int:
+        return int(time.monotonic() * 1000)
+
+    def ticks_diff(self, a: int, b: int) -> int:
+        # monotonic-based difference (ms)
+        return a - b
+
+    def sleep_ms(self, ms: int) -> None:
+        time.sleep(ms / 1000.0)
+
+    # ---------- transport ----------
+    @property
+    def connected_baud(self):
+        return self._connected_baud
 
     def open_baud(self, baud: int) -> bool:
+        # Re-open UART cleanly for each baud attempt
         try:
-            if self._use_usb:
-                import usb_cdc
-                self._serial = usb_cdc.data   # use secondary CDC channel if enabled
-                if not self._serial:
-                    return False
-                # CircuitPython CDC baud is symbolic; store for reference only
-                self.connected_baud = baud
-                self.clear_input()
-                return True
-            else:
-                import busio, board
-                if self._tx is None or self._rx is None:
-                    # Try common pins if user didn't specify (best-effort)
-                    tx = getattr(board, "TX", None)
-                    rx = getattr(board, "RX", None)
-                else:
-                    tx = self._tx
-                    rx = self._rx
-                if tx is None or rx is None:
-                    return False
-                self._uart = busio.UART(tx, rx, baudrate=baud, timeout=0)
-                self.connected_baud = baud
-                self.clear_input()
-                return True
+            if self.uart is not None:
+                try:
+                    self.uart.deinit()
+                except Exception:
+                    pass
+                self.uart = None
+                self._connected_baud = None
+                self.sleep_ms(2)  # small settle
+
+            # CircuitPython UART: busio.UART(tx, rx, baudrate=..., timeout=..., receiver_buffer_size=...)
+            self.uart = busio.UART(
+                self.tx_pin,
+                self.rx_pin,
+                baudrate=int(baud),
+                timeout=self.timeout_s,
+                receiver_buffer_size=self.buffer_size,
+            )
+            # small settle + drain any line noise
+            self.sleep_ms(2)
+            self.clear_input()
+
+            self._connected_baud = int(baud)
+            return True
         except Exception:
+            # Ensure closed state on failure
+            try:
+                if self.uart is not None:
+                    self.uart.deinit()
+            except Exception:
+                pass
+            self.uart = None
+            self._connected_baud = None
             return False
+
+    def clear_input(self) -> None:
+        if self.uart is None:
+            return
+        # Drain until empty (non-blocking reads)
+        while True:
+            data = self.uart.read(64)  # type: ignore[arg-type]
+            if not data:
+                break
+
+    def write_ascii(self, s: str) -> None:
+        if self.uart is None:
+            return
+        data = s.encode("ascii", "ignore")
+        self.uart.write(data)
+
+    def read_one_char(self):
+        if self.uart is None:
+            return None
+        data = self.uart.read(1)
+        if data and len(data) > 0:
+            # Return single-character string (core expects str, not bytes)
+            try:
+                return chr(data[0])
+            except Exception:
+                # Fallback safe path
+                try:
+                    return data.decode("ascii", "ignore")[:1] or None
+                except Exception:
+                    return None
+        return None
+
+    def flush(self) -> None:
+        # busio.UART has no flush; writes are immediate. Keep as no-op.
+        return
 
     def close(self) -> None:
         try:
-            if self._uart:
-                self._uart.deinit()
-        except Exception:
-            pass
-        self._uart = None
-        self._serial = None
-
-    def clear_input(self) -> None:
-        if self._uart:
-            try:
-                while True:
-                    b = self._uart.read(1)
-                    if not b:
-                        break
-            except Exception:
-                pass
-        elif self._serial:
-            try:
-                while self._serial.in_waiting:
-                    self._serial.read(1)
-            except Exception:
-                pass
-
-    def write_ascii(self, s: str) -> None:
-        try:
-            data = s.encode("ascii")
-            if self._uart:
-                self._uart.write(data)
-            elif self._serial:
-                self._serial.write(data)
-        except Exception:
-            pass
-
-    def read_one_char(self):
-        try:
-            if self._uart:
-                b = self._uart.read(1)
-                if b:
-                    return b.decode("ascii", "ignore")
-            elif self._serial and self._serial.in_waiting:
-                b = self._serial.read(1)
-                if b:
-                    return b.decode("ascii", "ignore")
-        except Exception:
-            return None
-        return None
-
-    def sleep_ms(self, ms: int) -> None:
-        import time
-        time.sleep(ms / 1000.0)
-
-    def now_ms(self) -> int:
-        import time
-        # monotonic_ns available on CircuitPython
-        return int(time.monotonic_ns() // 1_000_000)
+            if self.uart is not None:
+                try:
+                    self.uart.deinit()
+                except Exception:
+                    pass
+        finally:
+            self.uart = None
+            self._connected_baud = None
+            self.sleep_ms(2)

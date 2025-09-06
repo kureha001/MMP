@@ -87,7 +87,8 @@ class MmpClient:
                 self._is_open = False
                 return False
             self._is_open = True
-            self._connected_baud = self.adapter.connected_baud
+            self._connected_baud = self.adapter.connected_baud or int(baud)
+            self.Settings.BaudRate = int(self._connected_baud)
             return True
         except Exception as ex:
             self._last_error = str(ex)
@@ -99,6 +100,7 @@ class MmpClient:
     def ConnectAutoBaud(self, candidates = BAUD_CANDIDATES) -> bool:
         for b in candidates:
             if self.ConnectWithBaud(b, 0, 0):
+                self.Settings.BaudRate = b   
                 return True
         self._last_error = "No baud matched"
         return False

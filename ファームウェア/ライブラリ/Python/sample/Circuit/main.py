@@ -7,7 +7,9 @@
 #============================================================
 TARGET = "CircuitPython"
 from mmpCircuit import MmpClient, CircuitPyAdapter
-#mmp = MmpClient(CircuitPyAdapter(tx_pin=0, rx_pin=1))
+
+
+# 引数：tx_pin=None, rx_pin=None, timeout_s=0.05, buffer_size=128
 mmp = MmpClient(CircuitPyAdapter())
 
 from test_common import run_all

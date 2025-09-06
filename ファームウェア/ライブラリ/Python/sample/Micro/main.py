@@ -5,7 +5,9 @@
 #============================================================
 TARGET = "MicroPython"
 from mmpMicro import MmpClient, MicroPyAdapter
-mmp = MmpClient(MicroPyAdapter(uart_id=0, tx=0, rx=1))
+
+# 引数：uart_id=0, tx_pin=None, rx_pin=None
+mmp = MmpClient(MicroPyAdapter(uart_id=0, tx_pin=0, rx_pin=1))
 
 from test_common import run_all
 

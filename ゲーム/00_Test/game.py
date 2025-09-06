@@ -4,7 +4,7 @@
 import tkinter as tk
 from   tkinter import ttk, messagebox, scrolledtext
 import importlib, pkgutil, threading
-import mmpC
+import bak_mmpC
 
 #───────────────────────────    
 # ＭＭＰ接続
@@ -13,7 +13,7 @@ class 通信コネクション:
 
     # ----------------- 初期化 -----------------
     def __init__(self):
-        self.mmp = mmpC.mmp()
+        self.mmp = bak_mmpC.mmp()
 
     # ----------------- MMP接続 -----------------
     def 通信接続(self):

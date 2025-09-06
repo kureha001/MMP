@@ -2,7 +2,7 @@
 # mmp_adapter_cpython.py
 # CPython adapter using pyserial
 
-from .mmp_adapter_base import MmpAdapterBase
+from mmp_adapter_base import MmpAdapterBase
 
 class CpyAdapter(MmpAdapterBase):
     def __init__(self, port: str = None, preferred_ports=None):

@@ -6,7 +6,7 @@
 #
 # Transport is provided by an Adapter (see mmp_adapter_*.py)
 
-from .mmp_adapter_base import MmpAdapterBase
+from mmp_adapter_base import MmpAdapterBase
 
 # Default baud candidates (match firmware presets)
 BAUD_CANDIDATES = (115200, 9600, 230400, 921600)

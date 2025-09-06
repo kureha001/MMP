@@ -2,7 +2,7 @@
 # mmp_adapter_micropy.py
 # MicroPython adapter using machine.UART
 
-from .mmp_adapter_base import MmpAdapterBase
+from mmp_adapter_base import MmpAdapterBase
 
 class MicroPyAdapter(MmpAdapterBase):
     def __init__(self, uart_id=0, tx=None, rx=None):

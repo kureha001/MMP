@@ -2,7 +2,7 @@
 # mmp_adapter_circuitpy.py
 # CircuitPython adapter using busio.UART (or board.USB_CDC for CDC)
 
-from .mmp_adapter_base import MmpAdapterBase
+from mmp_adapter_base import MmpAdapterBase
 
 class CircuitPyAdapter(MmpAdapterBase):
     def __init__(self, tx_pin=None, rx_pin=None, use_usb_cdc=False):

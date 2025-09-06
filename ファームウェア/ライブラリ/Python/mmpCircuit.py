@@ -12,7 +12,7 @@
 #   cli = MmpClient(CircuitPyAdapter(use_usb_cdc=True))
 #   cli.ConnectAutoBaud()
 
-from .mmp_core import MmpClient
-from .mmp_adapter_circuitpy import CircuitPyAdapter
+from mmp_core import MmpClient
+from mmp_adapter_circuitpy import CircuitPyAdapter
 
 __all__ = ["MmpClient", "CircuitPyAdapter"]

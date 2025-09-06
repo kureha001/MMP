@@ -7,7 +7,7 @@
 #   cli.ConnectAutoBaud()
 #   print(cli.Info.Version())
 
-from .mmp_core import MmpClient
-from .mmp_adapter_cpython import CpyAdapter
+from mmp_core import MmpClient
+from mmp_adapter_cpython import CpyAdapter
 
 __all__ = ["MmpClient", "CpyAdapter"]

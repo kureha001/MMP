@@ -109,14 +109,26 @@ MMPとの接続は、プラットフォームごとに異なります。
 OSの機能により、ボーレートを自動に合わせてくれるので、比較的容易に接続ができます。
 
 ### 2-1-1. 直接DLL利用
-～執筆中～
+セットアッププログラム`MMP_dotNet_COM_Library_Setup_0.3.xx.exe`で、`Mmp.Com`をインストールしておく。VisualStudioのプロジェクトより`Mpp.Com`を参照させておく。
+```cs
+mmp.Connect(port)
+```
 
 ### 2-1-2. COM経由
-～執筆中～
-
+VBAのIDEメニューバーから[**ツール>参照設定>参照可能なライブラリ ファイル**]から、`Mmp_Com`を参照させておく。
+ボーレートの自動検出でMMPと接続する際、明示的に引数をすべて指定します。
+```vb
+Set mmp = CreateObject("Mmp.Com")
+mmp.Connect(vbNullString, 115200, 200, 400)
+```
 ### 2-2. Arduino版
-プログラム制御で厳密なボーレートの一致が必要なため、MMPが用意するボーレートで順次接続を試みます。
-～執筆中～
+Arduino版のAPIライブラリを取り込み、ボーレートの自動検出でMMPと接続します。
+```cpp
+#include "MmpClient.h"
+using Mmp::Core::MmpClient;
+MmpClient mmp;
+mmp.ConnectAutoBaud()
+```
 
 ### 2-3. Python版
 Pythonの種類により、接続の手順が異なります。
@@ -127,13 +139,31 @@ Pythonの種類により、接続の手順が異なります。
 |**マイコン版**|プログラム制御で厳密なボーレートの一致が必要なため、MMPが用意するボーレートで順次接続を試みます。|
 
 #### 2-3-1. CPython
-～執筆中～
+`CPython版`のAPIライブラリ(ラッパー)を取り込み、ボーレートの自動検出でMMPと接続します。
+```py
+from mmpC import MmpClient
+from mmpC import CpyAdapter
+mmp = MmpClient(CpyAdapter())
+mmp.ConnectAutoBaud()
+```
 
 #### 2-3-2. MicroPython
-～執筆中～
+`MicroPython版`のAPIライブラリ(ラッパー)を取り込み、ボーレートの自動検出でMMPと接続します。
+```py
+from mmpMicro import MmpClient
+from mmpMicro import MicroPyAdapter
+mmp = MmpClient(MicroPyAdapter(uart_id=0, tx_pin=0, rx_pin=1))
+mmp.ConnectAutoBaud()
+```
 
 #### 2-3-3. CircuitPython版
-～執筆中～
+`CircuitPython版`のAPIライブラリ(ラッパー)を取り込み、ボーレートの自動検出でMMPと接続します。
+```py
+from mmpCircuit import MmpClient
+from mmpCircuit import CircuitPyAdapter
+mmp = MmpClient(CircuitPyAdapter())
+mmp.ConnectAutoBaud()
+```
 
 ---
 ### これ以降は、共通のAPIコマンドになります。

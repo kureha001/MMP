@@ -1,241 +1,586 @@
-# 第2世代：MMP  Library
+# MMP API リファレンス
 
-第一世代のフラットなAPIを一新し、階層APIに生まれ変わりました。
-よりもモダンなプログラミングが可能で、可読性・保守性に優れたソースコードを作り出せます。
+> 対応プラットフォーム：**.NET(C# / COM / Excel VBA) / Arduino / CPython / MicroPython / CircuitPython**  
 
-**Platforms:**
-- マイコン用(GPIO‑UART接続)
-  - Arduino：RP2040 / RP2350 / UnoR4
-- PC用(USB‑UART接続)
-  - .NET：C# Class Library
-  - COM for VBA 
+本書はMMP APIについて、網羅的にリファレンス形式で解説します。
 
-**Protocol:** Simple 5‑byte frames (HEX4 + `!` or `!!!!!`)
+---
+## 0. あいさつ
+本ライブラリは多くのプラットフォームに対応しつつ、(MMPとの接続を除き)**同一のAPI体系**を維持しています。これにより、**どのプラットフォームでも、同じ要領でMMPを制御**できます。
 
-> ひとつの *統一 API* で、Arduino・C#・VBA を横断。  
-> 高速921,600bpsでも安定して MMP デバイスを制御できます。
+### 0-1. APIの構成
+APIはモジュールごとに階層化され、末端にメソッドを配置した構成になります。アプリ開発者は、**素早く目的の機能に到達**できます。
+
+|モジュール|説明|
+|----------|----|
+| **Info**    | バージョン取得、周辺デバイス情報     |  
+| **Analog**  | アナログスイッチの構成・更新・読取り |  
+| **Digital** | 汎用デジタル I/O(ポート読み / 出力)|
+| **Pwm**     | PWM出力、サーボ角度出力の初期化/出力 |
+| **Audio**   | 音声制御             | 
+| ├ **Play** | 音声制御(再生系)     |
+| └ **Read** | 音声制御(状態参照系) | 
+| **I2c**     | 任意 I2C レジスタ読み書き(アドレス/レジスタ単位)|  
+
+### 0-2. プラットフォームごとの特徴
+対応プラットフォームは3つに大別されます。
+主要なOSやマシンに対応しており、**あらゆる要求を満たす**ことができます。
+
+### ① .NET版
+PCの絶大なパワーや高度なツール系の機能を利用できるので、**高性能・高機能なアプリ開発**に向きます。同じライブラリでありながらも、2通りのアクセス方法があります。
+
+|アクセス種別|解説|
+|------------|----|
+|**DLLから直接**|本格的な開発言語(`C#`/`VB`/`PowerShell`等)で利用できます。<br>マーシャリング(通訳)のコストが無い、**高速な手段**です。|
+|**COM経由**|ExcelやAccessのVBAといったツール系の手段です。<br>マーシャリングのコストが発生するため、**速度で劣り**ます。|
+
+### ② Arduino版
+マイコンで**高速性を要求**される用途に向きます。
+PCのようなリッチな画面を持ちませんが、MMPに周辺機器を設けることで、表現力を補うことができます。
+
+### ③ Python版
+インタープリタ型言語であるため、**手軽・手早くアプリ開発**する用途に向きます。Python版には、次の3つのエディションあがります。
+
+|エディション|解説|
+|------------|----|
+|`CPython`      | PCパワーが十分であれば、GUIで派手なゲームが作れるほど**高速**です。|
+|`MicoroPython` | `CPython`ほどではありませんが、**まぁまぁ高速**です。|
+|`CircuitPython`|MMPコマンドを**頻度の高い繰り返しの場合、低速**になるので、うまく使い分けてください。。
+
 
 ---
 
-## 特徴（Why MMP Client?）
-- **プラットフォーム横断の同一API**：クラス名・メソッド階層・戻り値を共通化。移植が容易。
-- **堅牢な固定長プロトコル**：応答は必ず「5文字」。分割受信・前ゴミ混入に強い受信ロジック。
-- **超高速でも安定**：`9,600 / 115,200 / 230,400 / 921,600 bps` で全API確認済み。
-- **フル装備の階層API**：`Info / Analog / Pwm / Digital / I2c / Audio(Play, Read)` を網羅。
-- **オーディオ拡張**：`Audio.Play.SetLoop()`、`Audio.Read.*` を実装。  
-- **明確なエラーハンドリング**：OK＝`"!!!!!"`、値＝`"hhhh!"`、形式外は即エラー扱い。
+## 1. 接続と切断（概要）
+MMPとの接続は、プラットフォームごとに異なります。
+相違点に注意してください。
+
+### .NET版(直接DLL利用) ※C#/VB/PowerShell 等
+**型**：`Mmp.Core.MmpClient`
+
+| **主要メソッド** | 用途           |
+|-------------------|----------------|
+| `bool Connect`    | 通信を接続する |
+| `void Close`      | 通信を切断する |
+
+**備考**：既定値は `Settings` にて上書き可能(§2 参照)。
+
+### .NET版(COM経由) ※ExcelVBA,AccessVBA 等
+**ProgId**：`Mmp.Com`
+
+| **主要メソッド** | 用途           |
+|-------------------|----------------|
+| `string Connect`  | 通信を接続する |
+| `void Close`      | 通信を切断する |
+
+### Arduino版
+**型**：`Mmp::Core::MmpClient`
+
+| **主要メソッド** | 用途     |
+|-------------------|----------|
+| `bool ConnectAutoBaud` | 通信を接続する(ボーレート自動検出)|
+| `bool ConnectWithBaud` | 通信を接続する(ボーレート指定)    |
+| `void Close`           | 通信を切断する |
+
+- **備考**：接続済みボーレートは `ConnectedBaud()` で参照可能。
+
+### Python版
+**型**：`MmpClient(adapter)` ※アダプタは環境ごとに異なります
+
+| **環境**           | アダプター         |
+|---------------------|--------------------|
+| **CPython**        | `CpyAdapter`       |
+| **MicroPython**   | `MicroPyAdapter`   |
+| **CircuitPython** | `CircuitPyAdapter` |
+
+| **主要メソッド** | 用途     |
+|-------------------|----------|
+| `bool ConnectAutoBaud` | 通信を接続する(ボーレート自動検出)|
+| `bool ConnectWithBaud` | 通信を接続する(ボーレート指定)    |
+| `void Close`           | 通信を切断する |
+
+- **備考(重要)**：CircuitPython は **ボード定義の UART** を使用します。`tx_pin`/`rx_pin` は **ボードやビルドにより無視**される場合があります。詳細は付録 A を参照。
+
+---
+## 2. 接続と切断(詳細)
+
+接続の段階は、**内部処理が大きく異なる**ため、**引数や実行できるメソッドの種類が異なり**ます。ただし、接続以降のAPIメソッドの扱いは、どのライブラリでも同じに扱いなります。
+
+### 2-1. .NET版
+OSの機能により、ボーレートを自動に合わせてくれるので、比較的容易に接続ができます。
+### 2-1-1. 直接DLL利用
+### 2-1-2. COM経由
+
+### 2-2. Arduino版
+プログラム制御で厳密なボーレートの一致が必要なため、MMPが用意するボーレートで順次接続を試みます。
+
+### 2-3. Python版
+Pythonの種類により、接続の手順が異なります。
+また、PC版とマイコン版では、次の理由で扱いが大きく異なります。
+- **ＰＣ版：**
+OSの機能により、ボーレートを自動に合わせてくれるので、比較的容易に接続ができます。
+- **マイコン版：**
+プログラム制御で厳密なボーレートの一致が必要なため、MMPが用意するボーレートで順次接続を試みます。
+
+#### 2-3-1. CPython
+#### 2-3-2. MicroPython
+#### 2-3-3. CircuitPython版
 
 ---
 
-## 対応環境
-- **Arduino**：RP2040 / RP2350 系（WaveShare RP2350 Zero 等）  
-  - GPIO‑UART（`Serial1`、TX=GPIO0 / RX=GPIO1 を想定）
-  - 自動ボーレート検出：`9,600 / 115,200 / 230,400 / 921,600`
-- **C# (.NET)**：クラスライブラリ `Mmp.Core.MmpClient`  
-  - COMブリッジ `Mmp.Com`（VBA から `CreateObject("Mmp.Com")` で利用）
+## 3. 設定(Settings)
+
+### 共通プロパティ
+| プロパティ名   | 解説                       | 初期値 |
+|----------------|----------------------------|--------|
+|`BaudRate`      |接続ボーレート              |**115200bps**|
+|`TimeoutIo`     |Open時のRead/Write 応答待ち |**200ms**|
+|`TimeoutVerify` |接続検証 `VER!` 応答待ち    |**400ms**|
+|`TimeoutGeneral`|一般情報系 応答待ち         |**400ms**|
+|`TimeoutAnalog` |アナログ系 応答待ち         |**400ms**|
+|`TimeoutPwm`    |PWM系 応答待ち              |**400ms**|
+|`TimeoutAudio`  |オーディオ系 応答待ち       |**400ms**|
+|`TimeoutDigital`|デジタルI/O系 応答待ち      |**400ms**|
+|`TimeoutI2c`    |I2C系 応答待ち              |**400ms**|
+|`AnalogBits`    |アナログ入力の分解能力      |**10bit**|
+|`AnalogRound`   |アナログ入力値の丸め<br>**0：丸めなし**<br>**＋値：切り上げ**<br>**－値：切り下げ**|**0**|
+
+
+> **注意**：CircuitPython ではアダプタ初期化時に UART の内部タイムアウトを設定する都合上、**コンストラクタ引数 `timeout_s`** を併用します(付録 A 参照)。
 
 ---
 
-## クイックスタート
+## 4. Info モジュール
+MMPの機器情報を提供する
 
-### Arduino
-```cpp
-#include "MmpClient.h"
-using Mmp::Core::MmpClient;
+### 4.1 バージョン取得
+**用途**：ファームウェア・バージョン取得  
+**書式**：`string Version(int timeoutMs = 0)`  
 
-MmpClient mmp;
+| 引数名      | 値  | 解説 |
+|-------------|-----|------|
+| `timeoutMs` | 0～<br>(0で`Settings.TimeoutGeneral`) |応答待ちの時間(単位：ミリ秒)|
 
-void setup() {
-  Serial.begin(115200);
-  while(!Serial) {}
-  if (!mmp.ConnectAutoBaud()) {
-    Serial.println("Connect failed: " + mmp.LastError());
-    return;
-  }
-  Serial.print("Connected @ "); Serial.println(mmp.ConnectedBaud()); // 実際のボーレート参照
+| 戻り値  | 解説 |
+|---------|------|
+| `"XYZZ!"` | 成功(X:メジャー番号、Y:マイナー番号、ZZ:リビジョン番号) |
+| `"!!!!!"` | 失敗 |
 
-  Serial.println(mmp.Info.Version());               // "xyzz!"
-  mmp.Analog.Configure(1, 1);                       // true
-  mmp.Analog.Update();                              // true
-  int v = mmp.Analog.Read(0, 0);                    // 0..4095
-  mmp.Audio.Play.FolderTrack(1, 1, 1);              // true
-  mmp.Audio.Play.SetLoop(1, true);                  // true（新）
-  int st = mmp.Audio.Read.PlayState(1);             // 0/1/2（新）
-}
-void loop(){}
-```
+**解説**
+～作成中～
 
-### C#
-```csharp
-using var m = new Mmp.Core.MmpClient();
-m.Settings.BaudRate = 115200;
-if (!m.Connect()) throw new Exception("connect failed");
+### 4.2 デバイス情報(PCA9685)
+**用途**：PCA9685 接続情報を取得  
+**書式**：`ushort Dev.Pwm(int deviceId, int timeoutMs = 0)`  
 
-Console.WriteLine("VER: " + m.Info.Version());
-m.Analog.Configure(1,1);
-m.Analog.Update();
-int val = m.Analog.Read(0,0);
+| 引数名      | 値    | 解説 |
+|-------------|-------|------|
+| `deviceId`  | 0～15 | MMPに搭載したPCA9685のデバイスID|
+| `timeoutMs` | 0～   | 応答待ちの時間(単位：ミリ秒)|
 
-m.Audio.PlayFolderTrack(1,1,1);
-m.Audio.Play.SetLoop(1, true);               // 新規API
-Console.WriteLine("State: " + m.Audio.Read.PlayState(1));  // 新規API
-```
+| 戻り値  | 解説 |
+|---------|------|
+| `0x0000–0xFFFF`  | 成功 |
+| <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-### VBA（COM）
-```vb
-Dim mmp As Object: Set mmp = CreateObject("Mmp.Com")
-Dim actual As String
-actual = mmp.Connect("", 115200, 200, 400)
-If LenB(actual) = 0 Then Debug.Print "Connect failed: "; mmp.LastError: End
+**解説**
+～作成中～
 
-Debug.Print mmp.Info.Version(0)
-Call mmp.Analog.Configure(1,1,0)
-Call mmp.Analog.Update(0)
-Debug.Print mmp.Analog.Read(0,0,0)
+### 4.3 デバイス情報(DFPlayer)
+**用途**：DFPlayer 接続情報を取得  
+**書式**：`ushort Dev.Audio(int id1to4, int timeoutMs = 0)`  
+| 引数名      | 値    | 解説 |
+|-------------|-------|------|
+| `id1to4`    | 1〜2  | MMPに搭載したDFPlayerのデバイスID|
+| `timeoutMs` | 0～   | 応答待ちの時間(単位：ミリ秒)|
 
-Call mmp.Audio.Play.FolderTrack(1,1,1,0)
-Call mmp.Audio.Play.SetLoop(1,1,0) '1=ON,0=OFF（新）
-Debug.Print mmp.Audio.Read.PlayState(1,0)   '新
-```
+| 戻り値  | 解説 |
+|---------|------|
+| `0x0000–0xFFFF`  | 成功 |
+| <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
+
+**解説**
+～作成中～
 
 ---
 
-## アーキテクチャ／API 概要（共通）
+## 5. Analog モジュール
+MMPに搭載した2個のマルチプレクサ(HC4067)を制御します。
+構成をセットしたら、更新することでアナログ信号をバッファに取り込みます。取り込んだバッファを読取り、アプリケーションの処理に利用します。
 
-```
-MmpClient
- ├── Info
- │    ├── Version()
- │    └── Dev.Pwm(deviceId), Dev.Audio(id1to4)
- ├── Analog
- │    ├── Configure(players 1..16, switches 1..4) : bool
- │    ├── Update() : bool
- │    └── Read(player 0..15, switch 0..3) : int (0..4095)
- ├── Pwm
- │    ├── Out(ch, value 0..4095) : "!!!!!" or "hhhh!"
- │    ├── AngleInit(aMin,aMax,pwmMin,pwmMax) : bool
- │    └── AngleOut(ch, angle 0..180) : "!!!!!" or "hhhh!"
- ├── Digital
- │    ├── In(port)  : int (0/1)
- │    └── Out(port, value0or1) : bool
- ├── I2c
- │    ├── Write(addr, reg, value) : bool
- │    └── Read(addr, reg) : int (0..255)
- └── Audio
-      ├── Info(id1to4) : ushort
-      ├── Volume(dev, 0..30) : bool
-      ├── SetEq(dev, 0..5) : bool
-      ├── Read
-      │     ├── PlayState(dev) : int (0停止/1再生/2一時停止)
-      │     ├── Volume(dev) : int
-      │     ├── Eq(dev) : int
-      │     ├── FileCounts(dev) : int
-      │     └── CurrentFileNumber(dev) : int
-      └── Play
-            ├── FolderTrack(dev, folder, track) : bool   ← 文字列から bool に変更
-            ├── Stop(dev)   : bool
-            ├── Pause(dev)  : bool
-            ├── Resume(dev) : bool
-            └── SetLoop(dev, onOff) : bool               ← 新規追加
-```
+### 5.1 構成
+**用途**：プレイヤー数・スイッチ数を設定  
+**書式**：`bool Configure(int players, int switches, int timeoutMs = 0)`  
 
-> **Arduinoのみ**  
-> `ConnectedBaud()`（`uint32_t`）で *実際に接続できた* ボーレートを参照可能。  
-> `Settings.BaudRate` は「意図する値」、`ConnectedBaud()` は「接続結果」。
+| 引数名    | 値    | 解説 |
+|-----------|-------|------|
+| `players`   | 1〜16 | RJ45のポート番号(`HC4067`のチャンネル番号) |
+| `switches`  | 1〜4  | `HC4067`のデバイスID |
+| `timeoutMs` | 0～   | 応答待ちの時間(単位：ミリ秒)|
 
----
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
 
-## ワイヤプロトコル（MMP ⇄ クライアント）
-- **リクエスト**：ASCII、末尾 `!`。例 `ANR:00:00!`  
-- **応答**：**固定5文字**  
-  - 成功・非数値：`"!!!!!"`  
-  - 数値：`"hhhh!"`（h=HEX桁）
-- 代表コマンド
-  - `VER!` → `"xyzz!"`
-  - `ANS:<players>:<switches>!` → `"!!!!!"`
-  - `ANU!` → `"!!!!!"` / `ANR:<pl>:<sw>!` → `"hhhh!"`
-  - `PWM:<ch>:<value>!` / `PWA:<ch>:<angle>!` / `PWI:<...>!`
-  - `POR:<port>!` → `"hhhh!"` / `POW:<port>:<0|1>!` → `"!!!!!"`
-  - `I2W:<addr>:<reg>:<val>!` → `"!!!!!"` / `I2R:<addr>:<reg>!` → `"hhhh!"`
-  - `DIR:<dev>:<folder>:<track>!` → `"!!!!!"`
-  - `DSP/DPA/DPR/VOL/DEF/DST:<dev>:<kind>!` → `"!!!!!"` or `"hhhh!"`
-  - **新** `DLP:<dev>:<1|0>!` → `"!!!!!"`（ループON/OFF）
+**解説**
+アプリケーションにおける、アナログ入力の範囲を事前に設定します。
+最大16x4=64chのアナログ信号を処理できますが、これより少ない利用の場合、処理速度を向上させるために、最低限のチャンネル数を定義します。
+
+### 5.2 更新
+**用途**：アナログ値を内部バッファに更新  
+**書式**：`bool Update(int timeoutMs = 0)`  
+
+| 引数名      | 値  | 解説 |
+|-------------|-----|------|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+構成で設定した範囲でアナログ信号をバッファに取り込みます。
+
+### 5.3 読取り
+**用途**：指定インデックスのアナログ値を取得  
+**書式**：`int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `playerIndex0to15` | 0〜15 | MMPに装備したRJ45のポート番号(`HC4067`のチャンネル番号) |
+| `switchIndex0to3`  | 0〜3  | MMPに装備した`HC4067`のデバイスID |
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値   | 解説 |
+|----------|------|
+| `0–4095` | 成功：アナログ信号の値 |
+| `-1`     | 失敗 |
+
+**解説**
+更新で取り込んだバッファの値を参照します。
 
 ---
 
-## インストール
+## 6. Digital モジュール
+MMPに搭載したマイコンのGPIOを用い、デジタル信号を入出力します。
+使用できるGPIOは搭載したマイコンに依存します。
 
-### Arduino ライブラリ配置
-```
-<sketch>/
-  ├─ MmpClient.h / MmpClient.cpp
-  ├─ MmpHardware.h         // ピン/シリアル定義（TX=GPIO0, RX=GPIO1 等）
-  └─ examples/MmpApiConsoleTest/MmpApiConsoleTest.ino
-```
-- RP2040/2350（非Mbedコア想定）。`Serial1` が GPIO0/1 に割当の環境。  
-- 自動ボーレート：`ConnectAutoBaud()` が `115200/9600/230400/921600` を順次試行。
+### 6.1 入力
+**用途**：ポート入力値を取得  
+**書式**：`int In(int portId, int timeoutMs = 0)`  
 
-### .NET（C#）
-- プロジェクト参照：`Mmp.Core` をアプリから参照。
-- COM for VBA：`Mmp.Com.dll` を `RegAsm` で登録、または Inno Setup で `/codebase /tlb` 付与で登録。  
-  VBA からは `CreateObject("Mmp.Com")`。
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `portId` |0～| MMPに搭載したマイコンのGPIOのポート番号|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
 
----
+| 戻り値  | 解説 |
+|---------|------|
+| `0x0000–0xFFFF`  | 成功 |
+| <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-## サンプル（抜粋）
+**解説**
+GPIOより、デジタル信号を読取ります。
 
-### アナログ
-```csharp
-m.Analog.Configure(1,1);
-m.Analog.Update();
-int v = m.Analog.Read(0,0);
-```
+### 6.2 出力
+**用途**：ポート出力値を設定  
+**書式**：`bool Out(int portId, int value0or1, int timeoutMs = 0)`  
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `portId`    | 0～ |MMPに搭載したマイコンのGPIOのポート番号|  
+| `value0or1` | `0`＝LOW <br> `1`＝HIGH | 出力信号レベル|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
 
-### PWM
-```csharp
-m.Pwm.AngleInit(0,180,150,600);
-m.Pwm.AngleOut(0, 90);
-m.Pwm.Out(15, 375);
-```
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
 
-### I2C
-```csharp
-m.I2c.Write(0x40, 0x00, 0x01);
-int val = m.I2c.Read(0x40, 0x00);
-```
-
-### オーディオ（**Read.* 階層化／FolderTrack→bool／SetLoop追加**）
-```csharp
-m.Audio.Volume(1, 20);
-m.Audio.Play.FolderTrack(1,1,1);
-m.Audio.Play.SetLoop(1, true);
-int st = m.Audio.Read.PlayState(1);
-m.Audio.Play.Stop(1);
-```
+**解説**
+GPIOより、デジタル信号を出力します。
 
 ---
 
-## トラブルシュート
-- **接続できない**：Arduino 版は `SERIAL1` のピン多重化・配線を確認（TX=GPIO0、RX=GPIO1）。  
-- **ANU/ANS が失敗**：ファームの HC4067 配線と `players/switches` の上限（1..16 / 1..4）を確認。  
-- **応答が空**：プロトコルは 5文字固定、前ゴミがあると捨てられます。ファームからの応答形式を再確認。  
-- **高速時の不安定**：ケーブル長・GND・電源品質、DFPlayer 併用時の電源を確認。
+## 7. PWM モジュール(PCA9685)
+MMPの搭載したPWM出力デバイス(PCA9685)を制御します。
+デバイスは最大で１６個まで増設できます。
+それぞれのチャンネル番号を0から連番で扱います。
+
+### 7.1 生値出力
+**用途**：PWM値(0–4095)を出力  
+**書式**：`string Out(int channel, int value0to4095, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `channel`      | 0〜15    | チャンネル番号(デバイスID横断の通し番号)|  
+| `value0to4095` | 0〜4095  | 出力値<br>0：GNDレベル<br>4095：最大電圧で常時出力)
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `"!!!!!"` | 成功(常に成功を返す) |
+
+**解説**
+チャンネル番号からPWM値を出力させます。
+
+### 7.2 角度初期化
+**用途**：サーボ角度→PWM 変換の範囲を設定  
+**書式**：`bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `angleMin` | `0`〜`180`   | 角度範囲の下限 |
+| `angleMax` | <<同上>>     | 角度範囲の上限 |
+| `pwmMin`   | `150`〜`600` | PWM 範囲の下限 |
+| `pwmMax`   | <<同上>>     | PWM 範囲の上限 |  
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+サーボモータの角度指定制御に備え、諸条件をセットします。
+
+### 7.3 角度出力
+**用途**：サーボ角度(0–180)を出力  
+**書式**：`string AngleOut(int channel, int angle0to180, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `channel`     | 0〜15  | チャンネル番号(機器ID横断の通し番号)|  
+| `angle0to180` | 0〜180 | 角度 |  
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `"!!!!!"` | 成功(常に成功を返す) |
+
+**解説**
+サーボモータを角度指定でPWM出力します。
 
 ---
 
-## 変更履歴（重要な互換性ポイント）
-- **DigitalIo を削除**（`In/Out` を利用）。
-- **Audio.Read.* を導入**（`ReadPlayState/ReadVolume/...` は `Audio.Read.*` に移行）。
-- **Audio.Play.FolderTrack** の戻り値を **`string` → `bool`** に変更（`"!!!!!"`→`true`）。
-- **Audio.Play.SetLoop(dev, onOff)** を追加（新コマンド `DLP`）。
-- **Arduino**：応答受信を「5文字揃うまで待つ」方式に修正（安定化）。`ConnectedBaud()` を追加。
+## 8. Audio モジュール(DFPlayer)
+MMPに搭載した音声デバイス(DFPlayer)を制御します。
+デバイスは最大で４個まで増設できます。
+
+### 8.1 情報
+**用途**：DFPlayer 情報を取得  
+**書式**：`ushort Info(int id1to4, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `id1to4`    | 1〜4  | DFPlayerのデバイスID|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `0x0000–0xFFFF`  | 成功 |
+| <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
+
+**解説**
+デバイス単位で、接続されているかを調べます。
+
+### 8.2 音量設定
+**用途**：音量(0–30)を設定  
+**書式**：`bool Volume(int dev, int vol0to30, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `id1to4`    | 1〜4  | DFPlayerのデバイスID|
+| `vol0to30`  | 0〜30 | 音量                             | 
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+デバイスごとに音量を設定します。
+
+### 8.3 EQ 設定
+**用途**：イコライザモード(0–5)を設定  
+**書式**：`bool SetEq(int dev, int eq0to5, int timeoutMs = 0)`  
+**引数**
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `dev`       | 1〜4  | DFPlayerのデバイスID|
+| `eq0to5`    | 0〜5 | イコライザーのモード|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+デバイスごとにイコライザーの音質を設定します。
+
+
+### 8.4 再生(フォルダ/トラック)
+**用途**：フォルダ・トラックを指定して再生  
+**書式**：`bool Play.FolderTrack(int dev, int folder1to255, int track1to255, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `dev`       | 1〜4  | DFPlayerのデバイスID|
+| `folder1to255` | 1〜255 | microSDカード内のフォルダー番号   |
+| `track1to255`  | 1〜255 | フォルダー内のファイル番号        |
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+デバイスごとに曲を再生します。
+曲はmicroSDカード内のフォルダとファイル位置で指定します。
+
+### 8.5 停止 / 一時停止 / 再開
+**用途**：再生の停止・一時停止・再開  
+**書式**
+- `bool Play.Stop(int dev, int timeoutMs = 0)`  
+- `bool Play.Pause(int dev, int timeoutMs = 0)`  
+- `bool Play.Resume(int dev, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `dev`       | 1〜4  | DFPlayerのデバイスID|
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+デバイスごとに再生中の曲を制御します。
+
+### 8.6 ループ再生設定
+**用途**：現在再生中トラックのループ再生 ON/OFF  
+**書式**：`bool Play.SetLoop(int dev, bool onOff, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `dev`       | 1〜4  | DFPlayerのデバイスID|
+| `onOff` | `true`＝ループ<br>`false`＝ループなし| 現在の再生トラックに設定する |  
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+デバイスごとに再生中の曲に対して、リーピート再生の有無を指定します。
+
+### 8.7 状態参照(Read サブモジュール)
+**用途**：再生状態や音量等を参照  
+**書式**
+- `int Read.PlayState(int dev, int timeoutMs = 0)`  
+- `int Read.Volume(int dev, int timeoutMs = 0)`  
+- `int Read.Eq(int dev, int timeoutMs = 0)`  
+- `int Read.FileCounts(int dev, int timeoutMs = 0)`  
+- `int Read.CurrentFileNumber(int dev, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `dev`       | 1〜2   | MMPに搭載したDFPlayerのデバイスID |
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| 0 以上の値 | 成功 |
+| `-1`       | 失敗(実装依存は**付録 A**参照) |
+
+**解説**
+デバイスごとの各種状態を参照します。
+
+---
+## 9. I2c モジュール
+MMPに接続したi2cデバイスを制御します。
+接続したデバイスの仕様に従います。
+
+### 9.1 書込み
+**用途**：I2C レジスタへ 1 バイト書込み  
+**書式**：`bool Write(int addr, int reg, int value, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `addr`  | 0x00–0x7F | 7bit アドレス|  
+| `reg`   | 0x00–0xFF | レジスタ番地 |
+| `value` | 0x00–0xFF | 書き込む値   |
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+**解説**
+I2Cデバイスと書込み通信します。
+
+### 9.2 読取り
+**用途**：I2C レジスタから 1 バイト読取り  
+**書式**：`int Read(int addr, int reg, int timeoutMs = 0)`  
+
+| 引数名 | 値  | 解説 |
+|--------|-----|------|
+| `addr`  | 0x00–0x7F | 7bit アドレス|  
+| `reg`   | 0x00–0xFF | レジスタ番地 |
+| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `0x00–0xFF`  | 成功                          |
+| <<右記参照>> | 失敗時の扱いは**付録 A**参照 |
+
+**解説**
+I2Cデバイスと読取り通信し、値を得ます。
 
 ---
 
-## ライセンス／表記
-- Copyright © MMP
-- 本ドキュメントの内容は将来変更される場合があります。
+## 付録 A：プラットフォーム差分(要点)
+
+| 項目 | .NET | Arduino | CPython | MicroPython | CircuitPython |
+|---|---|---|---|---|---|
+| 接続 API | `Connect(...)` | `ConnectAutoBaud / ConnectWithBaud` | 同左(Core 構成) | 同左 | 同左 |
+| アダプタ初期化 | なし | なし | `CpyAdapter(port, preferred_ports)` | `MicroPyAdapter(uart_id, tx, rx)` | `CircuitPyAdapter(tx, rx, timeout_s, buffer_size)` |
+| UART 指定 | OS 仮想 COM | ボード定義 | PC の物理/仮想 COM | `uart_id` 明示 | **ボード定義に依存**(`tx/rx`は無視される場合あり) |
+| タイムアウト指定 | `Settings.*` | `Settings.*` | `Settings.*` | `Settings.*` | `Settings.*` + `timeout_s`(アダプタ) |
+| 5 文字応答 | 全て共通(末尾 `!`) | 同左 | 同左 | 同左 | 同左 |
+| エラー時戻り値(例) | 例外(C# Core)/ COM では既定値 | 0 or -1 | -1 or 0 | -1 or 0 | -1 or 0 |
+| 表示ボーレート | 実測値 | 実測値(`ConnectedBaud()`) | **OS/ドライバ表示と一致しない場合あり(CDC 由来)** | 実測値 | 実測値 |
+
+> **注**：CPython 環境では USB-CDC ドライバ/OS の都合で「表示上のボーレート」と「実際に接続したボーレート」が一致しない場合があります。通信そのものは `VER!` 応答で検証しています(付録 B 参照)。
 
 ---
 
-**Enjoy the unified MMP API 🚀** – プラットフォームを気にせず、同じ発想・同じコードで。
+## 付録 B：USB-CDC について(簡易解説)
+
+USB-CDC は、USB 上にシリアルポートを**擬似的に**提供する仕組みです。OS/ドライバや USB–UART ブリッジの実装により、**設定されたボーレート表示**と**実際のリンク条件**が一致しない／更新タイミングがずれることがあります。本ライブラリは**5 文字固定応答**(`VER!` 等)で**実通信の成立**を検証するため、表示の差異があっても動作が担保されます。
+
+---
+
+## 付録 C：.NET の COM API と DLL 直接参照の違い
+
+- **DLL 直接参照(推奨)**：`Mmp.Core.MmpClient` をそのまま利用。C# / WPF / サービス等に最適。例外で失敗を通知。  
+- **COM API(VBA 等)**：`Mmp.Com` を `CreateObject("Mmp.Com")` で生成。例外は `LastError` と戻り値に集約。Excel VBA / Access などレガシー環境に最適。  
+- **コマンド仕様**や API 名は**同一**(呼び出し層のエラーハンドリングが異なる)。
+
+---
+
+## 変更履歴(抜粋)
+- **Audio.Play.SetLoop(dev, onOff)** を追加(`DLP` コマンド対応)。
+- **DigitalIo** を廃止(`Digital.In / Out` に一本化)。
+- **Audio.Read.\*** を導入(旧 `Audio.Read*` を階層化)。
+
+---
+
+以上。

@@ -194,8 +194,12 @@ mmp.ConnectAutoBaud()
 MMPの機器情報を提供する
 
 ### 4.1 バージョン取得
-**用途**：ファームウェア・バージョン取得  
-**書式**：`string Version(int timeoutMs = 0)`  
+**解説**：
+ファームウェア・バージョン取得  
+
+**書式**：  
+- `string Version()`
+- `string Version(int timeoutMs)`
 
 | 引数名      | 値  | 解説 |
 |-------------|-----|------|
@@ -206,12 +210,13 @@ MMPの機器情報を提供する
 | `"XYZZ!"` | 成功(X:メジャー番号、Y:マイナー番号、ZZ:リビジョン番号) |
 | `"!!!!!"` | 失敗 |
 
-**解説**
-～作成中～
-
 ### 4.2 デバイス情報(PCA9685)
-**用途**：PCA9685 接続情報を取得  
-**書式**：`ushort Dev.Pwm(int deviceId, int timeoutMs = 0)`  
+**解説**：
+PCA9685 接続情報を取得  
+
+**書式**：
+- `ushort Pwm(int deviceId)`
+- `ushort Pwm(int deviceId, int timeoutMs)`
 
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|
@@ -223,12 +228,14 @@ MMPの機器情報を提供する
 | `0x0000–0xFFFF`  | 成功 |
 | <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-**解説**
-～作成中～
-
 ### 4.3 デバイス情報(DFPlayer)
-**用途**：DFPlayer 接続情報を取得  
-**書式**：`ushort Dev.Audio(int id1to4, int timeoutMs = 0)`  
+**解説**：
+DFPlayer 接続情報を取得  
+
+**書式**：
+- `ushort Audio(int id1to4)`
+- `ushort Audio(int id1to4, int timeoutMs)`
+
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|
 | `id1to4`    | 1〜4  | MMPに搭載したDFPlayerのデバイスID|
@@ -239,37 +246,39 @@ MMPの機器情報を提供する
 | `0x0000–0xFFFF` | 成功 |
 | <<右記参照>>    | 失敗時の扱いは**付録 A**参照 |
 
-**解説**
-～作成中～
-
 ---
-
 ## 5. Analog モジュール
 MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 構成をセットしたら、更新することでアナログ信号をバッファに取り込みます。取り込んだバッファを読取り、アプリケーションの処理に利用します。
 
 ### 5.1 構成
-**用途**：プレイヤー数・スイッチ数を設定  
-**書式**：`bool Configure(int players, int switches, int timeoutMs = 0)`  
+**解説**：
+アナログ入力の範囲を事前に設定します。
+最大16x4=64chのアナログ信号を処理できますが、これより少ない利用の場合、処理速度を向上させるために、最低限のチャンネル数を定義します。
+
+**書式**：
+- `bool Configure(int players, int switches)`
+- `bool Configure(int players, int switches, int timeoutMs)`
 
 | 引数名    | 値    | 解説 |
 |-----------|-------|------|
 | `players`   | 1〜16 | RJ45のポートID - 1 および<br>`HC4067`のチャンネルID:0～15)に相当|
-| `switches`  | 1〜4  | `HC4067`のデバイス(n個目)に相当 |
-| `timeoutMs` | 0～   | 応答待ちの時間(単位：ミリ秒)|
+| `switches`   | 1〜4  | `HC4067`のデバイス(n個目)に相当 |
+| `timeoutMs`  | 0～   | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
-**解説**
-アプリケーションにおける、アナログ入力の範囲を事前に設定します。
-最大16x4=64chのアナログ信号を処理できますが、これより少ない利用の場合、処理速度を向上させるために、最低限のチャンネル数を定義します。
 
 ### 5.2 更新
-**用途**：アナログ値を内部バッファに更新  
-**書式**：`bool Update(int timeoutMs = 0)`  
+**解説**：
+構成で設定した範囲でアナログ信号をバッファに取り込みます。
+
+**書式**：
+- `bool Update()`
+- `bool Update(int timeoutMs)`
 
 | 引数名      | 値  | 解説 |
 |-------------|-----|------|
@@ -280,26 +289,28 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 | `true`  | 成功 |
 | `false` | 失敗 |
 
-**解説**
-構成で設定した範囲でアナログ信号をバッファに取り込みます。
-
 ### 5.3 読取り
-**用途**：指定インデックスのアナログ値を取得  
-**書式**：`int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)`  
+**解説**：
+更新で取り込んだバッファの値を参照します。
+
+**書式**：
+- `int Read(int playerIndex0to15, int switchIndex0to3)`  
+- `int Read(int playerIndex0to15, int switchIndex0to3, int roundStep)`  
+- `int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits)`  
+- `int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits, int timeoutMs)`  
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|
 | `playerIndex0to15` | 0〜15 | MMPに装備したRJ45のポート番号(`HC4067`のチャンネル番号) |
 | `switchIndex0to3`  | 0〜3  | MMPに装備した`HC4067`のデバイスID |
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+| `roundStep`        | 0<br>正の整数<br>負の整数| 指定の値でアナログ値を丸める。切り上げは整数、切り捨ては負数、丸めなしは０を指定する。 |
+| `bits`             | 1〜4  | `HC4067`のデバイス(n個目)に相当 |
+| `timeoutMs`        | 0～   | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値   | 解説 |
 |----------|------|
 | `0–4095` | 成功：アナログ信号の値 |
 | `-1`     | 失敗 |
-
-**解説**
-更新で取り込んだバッファの値を参照します。
 
 ---
 
@@ -308,232 +319,281 @@ MMPに搭載したマイコンのGPIOを用い、デジタル信号を入出力�
 使用できるGPIOは搭載したマイコンに依存します。
 
 ### 6.1 入力
-**用途**：ポート入力値を取得  
-**書式**：`int In(int portId, int timeoutMs = 0)`  
+**解説**：
+GPIOより、デジタル信号を読取ります。
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `portId` |0～| MMPに搭載したマイコンのGPIOのポート番号|
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+**書式**：
+- `int In(int portId)`
+- `int In(int portId, int timeoutMs)`
+
+| 引数名    | 値  | 解説 |
+|-----------|-----|------|
+|`portId`   |0～  | MMPに搭載したマイコンのGPIOのポート番号|
+|`timeoutMs`|0～  | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `0x0000–0xFFFF`  | 成功 |
 | <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-**解説**
-GPIOより、デジタル信号を読取ります。
-
 ### 6.2 出力
-**用途**：ポート出力値を設定  
-**書式**：`bool Out(int portId, int value0or1, int timeoutMs = 0)`  
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `portId`    | 0～ |MMPに搭載したマイコンのGPIOのポート番号|  
-| `value0or1` | `0`＝LOW <br> `1`＝HIGH | 出力信号レベル|
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+**解説**：
+GPIOより、デジタル信号を出力します。
+
+**書式**
+- `bool Out(int portId, int value0or1)`
+- `bool Out(int portId, int value0or1, int timeoutMs)`
+
+| 引数名    | 値  | 解説 |
+|-----------|-----|------|
+|`portId`   |0～  |MMPに搭載したマイコンのGPIOのポート番号|  
+|`value0or1`|`0`＝LOW <br> `1`＝HIGH | 出力信号レベル|
+|`timeoutMs`|0～  | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
-**解説**
-GPIOより、デジタル信号を出力します。
-
 ---
-
 ## 7. PWM モジュール(PCA9685)
 MMPの搭載したPWM出力デバイス(PCA9685)を制御します。
 デバイスは最大で１６個まで増設できます。
 それぞれのチャンネル番号を0から連番で扱います。
 
 ### 7.1 生値出力
-**用途**：PWM値(0–4095)を出力  
-**書式**：`string Out(int channel, int value0to4095, int timeoutMs = 0)`  
+**解説**
+チャンネル番号からPWM値を出力させます。
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `channel`      | 0〜255   | チャンネル番号(デバイスID横断の通し番号)|  
-| `value0to4095` | 0〜4095  | 出力値<br>0：GNDレベル<br>4095：最大電圧で常時出力)
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+**書式**：
+- `string Out(int channel, int value0to4095)`
+- `string Out(int channel, int value0to4095, int timeoutMs)`
+
+| 引数名       | 値    | 解説 |
+|--------------|-------|------|
+|`channel`     |0〜255 | チャンネル番号(機器ID横断の通し番号)|  
+|`value0to4095`|0〜4095| 出力値<br>0：GNDレベル<br>4095：最大電圧で常時出力)
+|`timeoutMs`   |0～    | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `"!!!!!"` | 成功(常に成功を返す) |
 
-**解説**
-チャンネル番号からPWM値を出力させます。
-
 ### 7.2 角度初期化
-**用途**：サーボ角度→PWM 変換の範囲を設定  
-**書式**：`bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0)`  
+**解説**
+サーボモータの角度指定制御に備え、諸条件をセットします。
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `angleMin` | `0`〜`180`   | 角度範囲の下限 |
-| `angleMax` | <<同上>>     | 角度範囲の上限 |
-| `pwmMin`   | `150`〜`600` | PWM 範囲の下限 |
-| `pwmMax`   | <<同上>>     | PWM 範囲の上限 |  
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+**書式**：
+- `bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax)`
+- `bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs)`
+
+| 引数名    | 値         | 解説 |
+|-----------|------------|------|
+|`angleMin` |`0`〜`180`  | 角度範囲の下限 |
+|`angleMax` |<<同上>>    | 角度範囲の上限 |
+|`pwmMin`   |`150`〜`600`| PWM 範囲の下限 |
+|`pwmMax`   |<<同上>>    | PWM 範囲の上限 |  
+|`timeoutMs`|0～         | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
-**解説**
-サーボモータの角度指定制御に備え、諸条件をセットします。
 
 ### 7.3 角度出力
-**用途**：サーボ角度(0–180)を出力  
-**書式**：`string AngleOut(int channel, int angle0to180, int timeoutMs = 0)`  
+**解説**
+サーボモータを角度指定でPWM出力します。
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `channel`     | 0〜15  | チャンネル番号(機器ID横断の通し番号)|  
-| `angle0to180` | 0〜180 | 角度 |  
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+**書式**：
+- `string AngleOut(int channel, int angle0to180)`
+- `string AngleOut(int channel, int angle0to180, int timeoutMs)`
+
+| 引数名      | 値   | 解説 |
+|-------------|------|------|
+|`channel`    |0〜255| チャンネル番号(機器ID横断の通し番号)|  
+|`angle0to180`|0〜180| 角度 |  
+|`timeoutMs`  |0～   | 応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `"!!!!!"` | 成功(常に成功を返す) |
 
-**解説**
-サーボモータを角度指定でPWM出力します。
 
 ---
-
 ## 8. Audio モジュール(DFPlayer)
 MMPに搭載した音声デバイス(DFPlayer)を制御します。
 デバイスは最大で４個まで増設できます。
 
 ### 8.1 情報
-**用途**：DFPlayer 情報を取得  
+**解説**
+デバイス単位で、接続されているかを調べます。
+
 **書式**：`ushort Info(int id1to4, int timeoutMs = 0)`  
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|
 | `id1to4`    | 1〜4  | DFPlayerのデバイスID|
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+|`timeoutMs`   |0～   |応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `0x0000–0xFFFF`  | 成功 |
 | <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-**解説**
-デバイス単位で、接続されているかを調べます。
 
 ### 8.2 音量設定
-**用途**：音量(0–30)を設定  
-**書式**：`bool Volume(int dev, int vol0to30, int timeoutMs = 0)`  
-
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `id1to4`    | 1〜4  | DFPlayerのデバイスID|
-| `vol0to30`  | 0〜30 | 音量                             | 
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
-
-| 戻り値  | 解説 |
-|---------|------|
-| `true`  | 成功 |
-| `false` | 失敗 |
-
 **解説**
 デバイスごとに音量を設定します。
 
-### 8.3 EQ 設定
-**用途**：イコライザモード(0–5)を設定  
-**書式**：`bool SetEq(int dev, int eq0to5, int timeoutMs = 0)`  
-**引数**
+**書式**
+- `bool Volume(int deviceId1to4, int vol0to30)`
+- `bool Volume(int deviceId1to4, int vol0to30, int timeoutMs)`
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `dev`       | 1〜4  | DFPlayerのデバイスID|
-| `eq0to5`    | 0〜5 | イコライザーのモード|
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+| 引数名       | 値   | 解説 |
+|--------------|------|------|
+|`deviceId1to4`|1〜4  |MMPに搭載したDFPlayerのデバイスID |
+|`vol0to30`    |0〜30 | 音量                             | 
+|`timeoutMs`   |0～   |応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
+
+### 8.3 EQ 設定
 **解説**
 デバイスごとにイコライザーの音質を設定します。
 
+**書式**：
+- `bool SetEq(int deviceId1to4, int eq0to5)`
+- `bool SetEq(int deviceId1to4, int eq0to5, int timeoutMs)`
 
-### 8.4 再生(フォルダ/トラック)
-**用途**：フォルダ・トラックを指定して再生  
-**書式**：`bool Play.FolderTrack(int dev, int folder1to255, int track1to255, int timeoutMs = 0)`  
-
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `dev`       | 1〜4  | DFPlayerのデバイスID|
-| `folder1to255` | 1〜255 | microSDカード内のフォルダー番号   |
-| `track1to255`  | 1〜255 | フォルダー内のファイル番号        |
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+| 引数名       | 値   | 解説 |
+|--------------|------|------|
+|`deviceId1to4`|1〜4  |MMPに搭載したDFPlayerのデバイスID |
+| `eq0to5`     |0〜5  | イコライザーのモード|
+|`timeoutMs`   |0～   |応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
+
+### 8.4 再生(フォルダ/トラック)
 **解説**
 デバイスごとに曲を再生します。
 曲はmicroSDカード内のフォルダとファイル位置で指定します。
 
-### 8.5 停止 / 一時停止 / 再開
-**用途**：再生の停止・一時停止・再開  
-**書式**
-- `bool Play.Stop(int dev, int timeoutMs = 0)`  
-- `bool Play.Pause(int dev, int timeoutMs = 0)`  
-- `bool Play.Resume(int dev, int timeoutMs = 0)`  
+**書式**：
+int timeoutMs = 0)`  
+- `PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255)`
+- `bool PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs)`
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `dev`       | 1〜4  | DFPlayerのデバイスID|
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+| 引数名       | 値   | 解説 |
+|--------------|------|------|
+|`deviceId1to4`|1〜4  |MMPに搭載したDFPlayerのデバイスID |
+|`folder1to255`|1〜255| microSDカード内のフォルダー番号   |
+|`track1to255` |1〜255| フォルダー内のファイル番号        |
+|`timeoutMs`   |0～   |応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
 | `true`  | 成功 |
 | `false` | 失敗 |
 
+
+### 8.5.1 停止
 **解説**
-デバイスごとに再生中の曲を制御します。
+デバイスごとに再生中の曲を停止します。
+
+**書式**
+- `bool Stop(int deviceId1to4)`
+- `bool Stop(int deviceId1to4, int timeoutMs)`
+
+| 引数名       | 値 | 解説 |
+|--------------|----|------|
+|`deviceId1to4`|1〜4|MMPに搭載したDFPlayerのデバイスID |
+|`timeoutMs`   |0～ |応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+
+### 8.5.2 一時停止
+**解説**
+デバイスごとに再生中の曲を一時停止します。
+
+**書式**
+- `bool Pause(int deviceId1to4)`
+- `bool Pause(int deviceId1to4, int timeoutMs)`
+
+| 引数名       | 値 | 解説 |
+|--------------|----|------|
+|`deviceId1to4`|1〜4|MMPに搭載したDFPlayerのデバイスID |
+|`timeoutMs`   |0～ |応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+
+### 8.5.3 再開
+**解説**
+デバイスごとに一時停止している曲を再生します。
+
+**書式**
+- `bool Resume(int deviceId1to4)`
+- `bool Resume(int deviceId1to4, int timeoutMs)`
+
+| 引数名       | 値 | 解説 |
+|--------------|----|------|
+|`deviceId1to4`|1〜4|MMPに搭載したDFPlayerのデバイスID |
+|`timeoutMs`   |0～ |応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
 
 ### 8.6 ループ再生設定
-**用途**：現在再生中トラックのループ再生 ON/OFF  
-**書式**：`bool Play.SetLoop(int dev, bool onOff, int timeoutMs = 0)`  
-
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `dev`       | 1〜4  | DFPlayerのデバイスID|
-| `onOff` | `true`＝ループ<br>`false`＝ループなし| 現在の再生トラックに設定する |  
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
-
-| 戻り値  | 解説 |
-|---------|------|
-| `true`  | 成功 |
-| `false` | 失敗 |
-
 **解説**
 デバイスごとに再生中の曲に対して、リーピート再生の有無を指定します。
 
-### 8.7 状態参照(Read サブモジュール)
+**書式**：
+`bool SetLoop(int deviceId1to4, bool enable)`
+`bool SetLoop(int deviceId1to4, bool enable, int timeoutMs)`
+
+| 引数名       | 値 | 解説 |
+|--------------|----|------|
+|`deviceId1to4`|1〜4|MMPに搭載したDFPlayerのデバイスID |
+| `enable`     | `true`＝ループ<br>`false`＝ループなし| 現在の再生トラックに設定する |  
+|`timeoutMs`   |0～ |応答待ちの時間(単位：ミリ秒)|
+
+| 戻り値  | 解説 |
+|---------|------|
+| `true`  | 成功 |
+| `false` | 失敗 |
+
+
+### 8.7.1 状態参照(Read サブモジュール)
 **用途**：再生状態や音量等を参照  
 **書式**
-- `int Read.PlayState(int dev, int timeoutMs = 0)`  
-- `int Read.Volume(int dev, int timeoutMs = 0)`  
-- `int Read.Eq(int dev, int timeoutMs = 0)`  
-- `int Read.FileCounts(int dev, int timeoutMs = 0)`  
-- `int Read.CurrentFileNumber(int dev, int timeoutMs = 0)`  
+- `int PlayState(int deviceId1to4, int timeoutMs = 0)`
+- `int Volume(int deviceId1to4, int timeoutMs = 0)`
+- `int Eq(int deviceId1to4, int timeoutMs = 0)`
+- `int FileCounts(int deviceId1to4, int timeoutMs = 0)`
+- `int CurrentFileNumber(int deviceId1to4, int timeoutMs = 0)`
 
-| 引数名 | 値  | 解説 |
-|--------|-----|------|
-| `dev`       | 1〜2   | MMPに搭載したDFPlayerのデバイスID |
-| `timeoutMs` | 0～ | 応答待ちの時間(単位：ミリ秒)|
+| 引数名       | 値 | 解説 |
+|--------------|----|------|
+|`deviceId1to4`|1〜4|MMPに搭載したDFPlayerのデバイスID |
+|`timeoutMs`   |0～ |応答待ちの時間(単位：ミリ秒)|
 
 | 戻り値  | 解説 |
 |---------|------|
@@ -549,8 +609,12 @@ MMPに接続したi2cデバイスを制御します。
 接続したデバイスの仕様に従います。
 
 ### 9.1 書込み
-**用途**：I2C レジスタへ 1 バイト書込み  
-**書式**：`bool Write(int addr, int reg, int value, int timeoutMs = 0)`  
+**解説**
+I2Cデバイスへデータを書き込みます。
+
+**書式**：
+- `bool Write(int addr, int reg, int value)`
+- `bool Write(int addr, int reg, int value, int timeoutMs)`
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|
@@ -564,12 +628,14 @@ MMPに接続したi2cデバイスを制御します。
 | `true`  | 成功 |
 | `false` | 失敗 |
 
-**解説**
-I2Cデバイスと書込み通信します。
 
 ### 9.2 読取り
-**用途**：I2C レジスタから 1 バイト読取り  
-**書式**：`int Read(int addr, int reg, int timeoutMs = 0)`  
+**解説**
+I2Cデバイスからデータを読み取ります。
+
+**書式**
+- `int Read(int addr, int reg)`
+- `int Read(int addr, int reg, int timeoutMs)`
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|
@@ -582,11 +648,7 @@ I2Cデバイスと書込み通信します。
 | `0x00–0xFF`  | 成功                          |
 | <<右記参照>> | 失敗時の扱いは**付録 A**参照 |
 
-**解説**
-I2Cデバイスと読取り通信し、値を得ます。
-
 ---
-
 ## 付録 A：プラットフォーム差分(要点)
 
 | 項目 | .NET | Arduino | CPython | MicroPython | CircuitPython |
@@ -601,14 +663,13 @@ I2Cデバイスと読取り通信し、値を得ます。
 
 > **注**：CPython 環境では USB-CDC ドライバ/OS の都合で「表示上のボーレート」と「実際に接続したボーレート」が一致しない場合があります。通信そのものは `VER!` 応答で検証しています(付録 B 参照)。
 
----
 
+---
 ## 付録 B：USB-CDC について
 
 USB-CDC は、USB 上にシリアルポートを**擬似的に**提供する仕組みです。OS/ドライバや USB–UART ブリッジの実装により、**設定されたボーレート表示**と**実際のリンク条件**が一致しない／更新タイミングがずれることがあります。本ライブラリは**5 文字固定応答**(`VER!` 等)で**実通信の成立**を検証するため、表示の差異があっても動作が担保されます。
 
 ---
-
 ## 付録 C：.NET の COM API と DLL 直接参照の違い
 
 - **DLL 直接参照(推奨)**：`Mmp.Core.MmpClient` をそのまま利用。C# / WPF / サービス等に最適。例外で失敗を通知。  
@@ -616,7 +677,6 @@ USB-CDC は、USB 上にシリアルポートを**擬似的に**提供する仕�
 - **コマンド仕様**や API 名は**同一**(呼び出し層のエラーハンドリングが異なる)。
 
 ---
-
 ## 変更履歴(抜粋)
 - **Audio.Play.SetLoop(dev, onOff)** を追加(`DLP` コマンド対応)。
 - **DigitalIo** を廃止(`Digital.In / Out` に一本化)。

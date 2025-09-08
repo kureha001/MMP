@@ -289,32 +289,32 @@ namespace Mmp.Core
             return SendCommand("VER!", t);
         }
 
-        private ushort GetPwx(int deviceId, int timeoutMs)
+        private ushort GetPwx(int devId0to15, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            string resp = SendCommand("PWX:" + Hex2(deviceId) + "!", t);
+            string resp = SendCommand("PWX:" + Hex2(devId0to15) + "!", t);
             ushort v;
             if (!TryParseHex4Bang(resp, out v)) throw new FormatException("PWX bad response.");
             return v;
         }
 
-        private ushort GetDpx(int id1to4, int timeoutMs)
+        private ushort GetDpx(int devId1to4, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DPX:" + Hex2(id1to4) + "!", t);
+            string resp = SendCommand("DPX:" + Hex2(devId1to4) + "!", t);
             ushort v;
             if (!TryParseHex4Bang(resp, out v)) throw new FormatException("DPX bad response.");
             return v;
         }
 
         // ---- アナログ ----
-        private bool AnalogConfigure(int players, int switches, int timeoutMs)
+        private bool AnalogConfigure(int hc4067chTtl, int hc4067devTtl, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            if (players < 1 || players > 16) throw new ArgumentOutOfRangeException("players");
-            if (switches < 1 || switches > 4) throw new ArgumentOutOfRangeException("switches");
+            if (hc4067chTtl < 1 || hc4067chTtl > 16) throw new ArgumentOutOfRangeException(nameof(hc4067chTtl));
+            if (hc4067devTtl < 1 || hc4067devTtl > 4) throw new ArgumentOutOfRangeException(nameof(hc4067devTtl));
 
-            string resp = SendCommand("ANS:" + Hex2(players) + ":" + Hex2(switches) + "!", t);
+            string resp = SendCommand("ANS:" + Hex2(hc4067chTtl) + ":" + Hex2(hc4067devTtl) + "!", t);
             return resp == "!!!!!";
         }
 
@@ -325,29 +325,31 @@ namespace Mmp.Core
             return resp == "!!!!!";
         }
 
-        private int AnalogRead(int playerIndex0to15, int switchIndex0to3, int timeoutMs)
+        private int AnalogRead(int hc4067ch0to15, int hc4067dev0to3, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            if (playerIndex0to15 < 0 || playerIndex0to15 > 15) throw new ArgumentOutOfRangeException("playerIndex0to15");
-            if (switchIndex0to3 < 0 || switchIndex0to3 > 3) throw new ArgumentOutOfRangeException("switchIndex0to3");
+            if (hc4067ch0to15 < 0 || hc4067ch0to15 > 15) throw new ArgumentOutOfRangeException(nameof(hc4067ch0to15));
+            if (hc4067dev0to3 < 0 || hc4067dev0to3 > 3) throw new ArgumentOutOfRangeException(nameof(hc4067dev0to3));
 
-            string resp = SendCommand("ANR:" + Hex2(playerIndex0to15) + ":" + Hex2(switchIndex0to3) + "!", t);
+            string resp = SendCommand("ANR:" + Hex2(hc4067ch0to15) + ":" + Hex2(hc4067dev0to3) + "!", t);
             ushort v;
             if (TryParseHex4Bang(resp, out v)) return v;
             return -1;
         }
 
         // ---- PWM ----
-        private string PwmValue(int channel, int value0to4095, int timeoutMs)
+        private bool PwmValue(int chId0to255, int val0to4095, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            return SendCommand("PWM:" + Hex2(channel) + ":" + Hex4(value0to4095) + "!", t);
+            string resp = SendCommand("PWM:" + Hex2(chId0to255) + ":" + Hex4(val0to4095) + "!", t);
+            return resp == "!!!!!";
         }
 
-        private string PwmAngle(int channel, int angle0to180, int timeoutMs)
+        private bool PwmAngle(int chId0to255, int angle0to180, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            return SendCommand("PWA:" + Hex2(channel) + ":" + Hex3(angle0to180) + "!", t);
+            string resp = SendCommand("PWA:" + Hex2(chId0to255) + ":" + Hex3(angle0to180) + "!", t);
+            return resp == "!!!!!";
         }
 
         private bool PwmInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs)
@@ -358,27 +360,27 @@ namespace Mmp.Core
         }
 
         // ---- デジタル I/O ----
-        private int DigitalIn(int portId, int timeoutMs)
+        private int DigitalIn(int gpioId, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutDigital);
-            string resp = SendCommand("POR:" + Hex2(portId) + "!", t);
+            string resp = SendCommand("POR:" + Hex2(gpioId) + "!", t);
             ushort v;
             if (TryParseHex4Bang(resp, out v)) return v;
             return 0;
         }
 
-        private bool DigitalOut(int portId, int value0or1, int timeoutMs)
+        private bool DigitalOut(int gpioId, int val0or1, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutDigital);
-            string resp = SendCommand("POW:" + Hex2(portId) + ":" + (((value0or1 & 0x1) != 0) ? "1" : "0") + "!", t);
+            string resp = SendCommand("POW:" + Hex2(gpioId) + ":" + (((val0or1 & 0x1) != 0) ? "1" : "0") + "!", t);
             return resp == "!!!!!";
         }
 
         // ---- I2C ----
-        private bool I2cWrite(int addr, int reg, int value, int timeoutMs)
+        private bool I2cWrite(int addr, int reg, int val, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutI2c);
-            string resp = SendCommand("I2W:" + Hex2(addr) + ":" + Hex2(reg) + ":" + Hex2(value) + "!", t);
+            string resp = SendCommand("I2W:" + Hex2(addr) + ":" + Hex2(reg) + ":" + Hex2(val) + "!", t);
             return resp == "!!!!!";
         }
 
@@ -392,68 +394,68 @@ namespace Mmp.Core
         }
 
         // ---- MP3（DFPlayer） ----
-        private bool DfPlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs)
+        private bool DfPlayFolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DIR:" + Hex2(deviceId1to4) + ":" + Hex2(folder1to255) + ":" + Hex2(track1to255) + "!", t);
+            string resp = SendCommand("DIR:" + Hex2(devId1to4) + ":" + Hex2(dir1to255) + ":" + Hex2(file1to255) + "!", t);
             return resp == "!!!!!";
         }
-        private bool DfSetLoop(int deviceId1to4, int on0or1, int timeoutMs)
+        private bool DfSetLoop(int devId1to4, int on0or1, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DLP:" + Hex2(deviceId1to4) + ":" + Hex2(on0or1) + "!", t);
-            return resp == "!!!!!";
-        }
-
-        private bool DfStop(int deviceId1to4, int timeoutMs)
-        {
-            int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DSP:" + Hex2(deviceId1to4) + "!", t);
+            string resp = SendCommand("DLP:" + Hex2(devId1to4) + ":" + Hex2(on0or1) + "!", t);
             return resp == "!!!!!";
         }
 
-        private bool DfPause(int deviceId1to4, int timeoutMs)
+        private bool DfStop(int devId1to4, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DPA:" + Hex2(deviceId1to4) + "!", t);
+            string resp = SendCommand("DSP:" + Hex2(devId1to4) + "!", t);
             return resp == "!!!!!";
         }
 
-        private bool DfResume(int deviceId1to4, int timeoutMs)
+        private bool DfPause(int devId1to4, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DPR:" + Hex2(deviceId1to4) + "!", t);
+            string resp = SendCommand("DPA:" + Hex2(devId1to4) + "!", t);
             return resp == "!!!!!";
         }
 
-        private bool DfVolume(int deviceId1to4, int vol0to30, int timeoutMs)
+        private bool DfResume(int devId1to4, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("VOL:" + Hex2(deviceId1to4) + ":" + Hex2(vol0to30) + "!", t);
+            string resp = SendCommand("DPR:" + Hex2(devId1to4) + "!", t);
             return resp == "!!!!!";
         }
 
-        private bool DfSetEq(int deviceId1to4, int eqMode0to5, int timeoutMs)
+        private bool DfVolume(int devId1to4, int vol0to30, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DEF:" + Hex2(deviceId1to4) + ":" + Hex2(eqMode0to5) + "!", t);
+            string resp = SendCommand("VOL:" + Hex2(devId1to4) + ":" + Hex2(vol0to30) + "!", t);
             return resp == "!!!!!";
         }
 
-        private int DfQuery(int deviceId1to4, int kind1to5, int timeoutMs)
+        private bool DfSetEq(int devId1to4, int mode0to5, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            string resp = SendCommand("DST:" + Hex2(deviceId1to4) + ":" + Hex2(kind1to5) + "!", t);
+            string resp = SendCommand("DEF:" + Hex2(devId1to4) + ":" + Hex2(mode0to5) + "!", t);
+            return resp == "!!!!!";
+        }
+
+        private int DfQuery(int devId1to4, int kind1to5, int timeoutMs)
+        {
+            int t = Resolve(timeoutMs, Settings.TimeoutAudio);
+            string resp = SendCommand("DST:" + Hex2(devId1to4) + ":" + Hex2(kind1to5) + "!", t);
             ushort v;
             if (TryParseHex4Bang(resp, out v)) return v;
             return -1;
         }
 
-        private int DfReadPlayState(int deviceId1to4, int timeoutMs) { return DfQuery(deviceId1to4, 1, timeoutMs); }
-        private int DfReadVolume(int deviceId1to4, int timeoutMs) { return DfQuery(deviceId1to4, 2, timeoutMs); }
-        private int DfReadEq(int deviceId1to4, int timeoutMs) { return DfQuery(deviceId1to4, 3, timeoutMs); }
-        private int DfReadFileCounts(int deviceId1to4, int timeoutMs) { return DfQuery(deviceId1to4, 4, timeoutMs); }
-        private int DfReadCurrentFileNumber(int deviceId1to4, int timeoutMs) { return DfQuery(deviceId1to4, 5, timeoutMs); }
+        private int DfReadPlayState(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 1, timeoutMs); }
+        private int DfReadVolume(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 2, timeoutMs); }
+        private int DfReadEq(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 3, timeoutMs); }
+        private int DfReadFileCounts(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 4, timeoutMs); }
+        private int DfReadCurrentFileNumber(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 5, timeoutMs); }
 
         //============================================================
         // 指定接続：指定COMに開いて VER 応答を確認
@@ -572,18 +574,13 @@ namespace Mmp.Core
                 _p = parent;
                 Dev = new DevModule(parent);
             }
-
-            public string Version() { return _p.GetVersion(0); }
-            public string Version(int timeoutMs) { return _p.GetVersion(timeoutMs); }
-
+            public string Version(int timeoutMs = 0) { return _p.GetVersion(timeoutMs); }
             public sealed class DevModule
             {
                 private readonly MmpClient _p;
                 public DevModule(MmpClient parent) { _p = parent; }
-                public ushort Pwm(int deviceId) { return _p.GetPwx(deviceId, 0); }
-                public ushort Pwm(int deviceId, int timeoutMs) { return _p.GetPwx(deviceId, timeoutMs); }
-                public ushort Audio(int id1to4) { return _p.GetDpx(id1to4, 0); }
-                public ushort Audio(int id1to4, int timeoutMs) { return _p.GetDpx(id1to4, timeoutMs); }
+                public ushort Pwm(int devId0to15, int timeoutMs = 0) { return _p.GetPwx(devId0to15, timeoutMs); }
+                public ushort Audio(int devId1to4, int timeoutMs = 0) { return _p.GetDpx(devId1to4, timeoutMs); }
             }
         }
 
@@ -595,37 +592,109 @@ namespace Mmp.Core
             private readonly MmpClient _p;
             public AnalogModule(MmpClient parent) { _p = parent; }
 
-            public bool Configure(int players, int switches) { return _p.AnalogConfigure(players, switches, 0); }
-            public bool Configure(int players, int switches, int timeoutMs) { return _p.AnalogConfigure(players, switches, timeoutMs); }
-            public bool Update() { return _p.AnalogUpdate(0); }
-            public bool Update(int timeoutMs) { return _p.AnalogUpdate(timeoutMs); }
-
-            // --- Read オーバーロード（Arduino と統一） ---
-            public int Read(int playerIndex0to15, int switchIndex0to3) // ★ Settings の丸め・ビット適用
+            // ---- 共通ヘルパ（AnalogModule内専用）----
+            private int ResolveBits(int bits)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
-                return RoundAnalog(v, _p.Settings.AnalogRound, _p.Settings.AnalogBits);
+                int b = (bits >= 1 && bits <= 16) ? bits : _p.Settings.AnalogBits;
+                if (b < 1 || b > 16) b = 10;
+                return b;
             }
 
-            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep) // ★ bits は Settings
+            private int ClampMaxForBits(int v, int bits)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
-                return RoundAnalog(v, roundStep, _p.Settings.AnalogBits);
+                int max = (1 << bits) - 1;
+                if (v < 0) return v;         // 生値がエラー(-1等)のときはそのまま伝播
+                if (v > max) return max;
+                return v;
             }
 
-            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits) // ★ 明示指定
+            private int RoundNearest(int raw, int step, int bits)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
-                return RoundAnalog(v, roundStep, bits);
+                if (raw < 0) return raw;     // エラーはそのまま返す
+                int b = ResolveBits(bits);
+                raw = ClampMaxForBits(raw, b);
+                if (step <= 0) return raw;
+
+                int down = (raw / step) * step;
+                int rem = raw - down;
+                // half-up（偶数stepでは rem>=step/2 を切り上げ）
+                if (rem * 2 >= step)
+                {
+                    long up = (long)down + step;
+                    int max = (1 << b) - 1;
+                    if (up > max) up = max;
+                    return (int)up;
+                }
+                return down;
             }
 
-            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits, int timeoutMs) // ★ 明示指定+timeout
+            private int RoundUp(int raw, int step, int bits)
+            {
+                if (raw < 0) return raw;
+                int b = ResolveBits(bits);
+                raw = ClampMaxForBits(raw, b);
+                if (step <= 0) return raw;
+
+                long q = ((long)raw + step - 1) / step;
+                long up = q * step;
+                int max = (1 << b) - 1;
+                if (up > max) up = max;
+                return (int)up;
+            }
+
+            private int RoundDown(int raw, int step, int bits)
+            {
+                if (raw < 0) return raw;
+                int b = ResolveBits(bits);
+                raw = ClampMaxForBits(raw, b);
+                if (step <= 0) return raw;
+
+                int down = (raw / step) * step;
+                if (down < 0) down = 0;
+                return down;
+            }
+
+            // ---- 設定系（既存そのまま）----
+            public bool Configure(int players, int switches, int timeoutMs = 0)
+            {
+                return _p.AnalogConfigure(players, switches, timeoutMs);
+            }
+
+            public bool Update(int timeoutMs = 0)
+            {
+                return _p.AnalogUpdate(timeoutMs);
+            }
+
+            // ---- 取得系（新API）----
+
+            // 1) 丸めなし（生値を返す）
+            public int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)
+            {
+                return _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+            }
+
+            // 2) 丸めあり：中央値基準の最近傍（偶数stepは half-up）
+            public int ReadRound(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
             {
                 int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
-                return RoundAnalog(v, roundStep, bits);
+                return RoundNearest(v, step, bits);
             }
-            // （旧）Read(player, sw, timeoutMs) は廃止
+
+            // 3) 丸めあり：切り上げ
+            public int ReadRoundUp(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                return RoundUp(v, step, bits);
+            }
+
+            // 4) 丸めあり：切り下げ
+            public int ReadRoundDown(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                return RoundDown(v, step, bits);
+            }
         }
+
 
         //============================================================
         // 階層API：Pwm
@@ -634,14 +703,10 @@ namespace Mmp.Core
         {
             private readonly MmpClient _p;
             public PwmModule(MmpClient parent) { _p = parent; }
-            public ushort Info(int deviceId) { return _p.GetPwx(deviceId, 0); }
-            public ushort Info(int deviceId, int timeoutMs) { return _p.GetPwx(deviceId, timeoutMs); }
-            public string Out(int channel, int value0to4095) { return _p.PwmValue(channel, value0to4095, 0); }
-            public string Out(int channel, int value0to4095, int timeoutMs) { return _p.PwmValue(channel, value0to4095, timeoutMs); }
-            public bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax) { return _p.PwmInit(angleMin, angleMax, pwmMin, pwmMax, 0); }
-            public bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs) { return _p.PwmInit(angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
-            public string AngleOut(int channel, int angle0to180) { return _p.PwmAngle(channel, angle0to180, 0); }
-            public string AngleOut(int channel, int angle0to180, int timeoutMs) { return _p.PwmAngle(channel, angle0to180, timeoutMs); }
+            public ushort Info(int devId0to15, int timeoutMs = 0) { return _p.GetPwx(devId0to15, timeoutMs); }
+            public bool Out(int chId0to255, int val0to4095, int timeoutMs = 0) { return _p.PwmValue(chId0to255, val0to4095, timeoutMs); }
+            public bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0) { return _p.PwmInit(angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
+            public bool AngleOut(int chId0to255, int angle0to180, int timeoutMs = 0) { return _p.PwmAngle(chId0to255, angle0to180, timeoutMs); }
         }
 
         //============================================================
@@ -660,55 +725,48 @@ namespace Mmp.Core
                 Read = new ReadModule(parent);
             }
 
-            public ushort Info(int id1to4) { return _p.GetDpx(id1to4, 0); }
-            public ushort Info(int id1to4, int timeoutMs) { return _p.GetDpx(id1to4, timeoutMs); }
-
-            public bool Volume(int deviceId1to4, int vol0to30) { return _p.DfVolume(deviceId1to4, vol0to30, 0); }
-            public bool Volume(int deviceId1to4, int vol0to30, int timeoutMs) { return _p.DfVolume(deviceId1to4, vol0to30, timeoutMs); }
-
-            public bool SetEq(int deviceId1to4, int eq0to5) { return _p.DfSetEq(deviceId1to4, eq0to5, 0); }
-            public bool SetEq(int deviceId1to4, int eq0to5, int timeoutMs) { return _p.DfSetEq(deviceId1to4, eq0to5, timeoutMs); }
+            public ushort Info(int devId1to4, int timeoutMs = 0) { return _p.GetDpx(devId1to4, timeoutMs); }
+            public bool Volume(int devId1to4, int vol0to30, int timeoutMs = 0) { return _p.DfVolume(devId1to4, vol0to30, timeoutMs); }
+            public bool SetEq(int devId1to4, int mode0to5, int timeoutMs = 0) { return _p.DfSetEq(devId1to4, mode0to5, timeoutMs); }
 
             // 便宜上、Play.* を直下にも露出
-            public bool PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
-            public bool PlayFolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
-            public bool Stop(int deviceId1to4) { return _p.DfStop(deviceId1to4, 0); }
-            public bool Stop(int deviceId1to4, int timeoutMs) { return _p.DfStop(deviceId1to4, timeoutMs); }
-            public bool Pause(int deviceId1to4) { return _p.DfPause(deviceId1to4, 0); }
-            public bool Pause(int deviceId1to4, int timeoutMs) { return _p.DfPause(deviceId1to4, timeoutMs); }
-            public bool Resume(int deviceId1to4) { return _p.DfResume(deviceId1to4, 0); }
-            public bool Resume(int deviceId1to4, int timeoutMs) { return _p.DfResume(deviceId1to4, timeoutMs); }
+            public bool PlayFolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
+            { return _p.DfPlayFolderTrack(devId1to4, dir1to255, file1to255, timeoutMs); }
+
+            public bool Stop(int devId1to4, int timeoutMs = 0) { return _p.DfStop(devId1to4, timeoutMs); }
+            public bool Pause(int devId1to4, int timeoutMs = 0) { return _p.DfPause(devId1to4, timeoutMs); }
+            public bool Resume(int devId1to4, int timeoutMs = 0) { return _p.DfResume(devId1to4, timeoutMs); }
 
             public sealed class PlayModule
             {
                 private readonly MmpClient _p;
 
                 public PlayModule(MmpClient parent) { _p = parent; }
-                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
-                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
+                public bool FolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
+                { return _p.DfPlayFolderTrack(devId1to4, dir1to255, file1to255, timeoutMs); }
 
-                public bool SetLoop(int deviceId1to4, bool enable) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, 0); }
-                public bool SetLoop(int deviceId1to4, bool enable, int timeoutMs) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, timeoutMs); }
+                public bool SetLoop(int devId1to4, bool enable, int timeoutMs = 0)
+                { return _p.DfSetLoop(devId1to4, enable ? 1 : 0, timeoutMs); }
 
-                public bool Stop(int deviceId1to4) { return _p.DfStop(deviceId1to4, 0); }
-                public bool Stop(int deviceId1to4, int timeoutMs) { return _p.DfStop(deviceId1to4, timeoutMs); }
+                public bool Stop(int devId1to4, int timeoutMs = 0)
+                { return _p.DfStop(devId1to4, timeoutMs); }
 
-                public bool Pause(int deviceId1to4) { return _p.DfPause(deviceId1to4, 0); }
-                public bool Pause(int deviceId1to4, int timeoutMs) { return _p.DfPause(deviceId1to4, timeoutMs); }
+                public bool Pause(int devId1to4, int timeoutMs = 0)
+                { return _p.DfPause(devId1to4, timeoutMs); }
 
-                public bool Resume(int deviceId1to4) { return _p.DfResume(deviceId1to4, 0); }
-                public bool Resume(int deviceId1to4, int timeoutMs) { return _p.DfResume(deviceId1to4, timeoutMs); }
+                public bool Resume(int devId1to4, int timeoutMs = 0)
+                { return _p.DfResume(devId1to4, timeoutMs); }
             }
 
             public sealed class ReadModule
             {
                 private readonly MmpClient _p;
                 public ReadModule(MmpClient parent) { _p = parent; }
-                public int PlayState(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadPlayState(deviceId1to4, timeoutMs); }
-                public int Volume(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadVolume(deviceId1to4, timeoutMs); }
-                public int Eq(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadEq(deviceId1to4, timeoutMs); }
-                public int FileCounts(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadFileCounts(deviceId1to4, timeoutMs); }
-                public int CurrentFileNumber(int deviceId1to4, int timeoutMs = 0) { return _p.DfReadCurrentFileNumber(deviceId1to4, timeoutMs); }
+                public int PlayState(int devId1to4, int timeoutMs = 0) { return _p.DfReadPlayState(devId1to4, timeoutMs); }
+                public int Volume(int devId1to4, int timeoutMs = 0) { return _p.DfReadVolume(devId1to4, timeoutMs); }
+                public int Eq(int devId1to4, int timeoutMs = 0) { return _p.DfReadEq(devId1to4, timeoutMs); }
+                public int FileCounts(int devId1to4, int timeoutMs = 0) { return _p.DfReadFileCounts(devId1to4, timeoutMs); }
+                public int CurrentFileNumber(int devId1to4, int timeoutMs = 0) { return _p.DfReadCurrentFileNumber(devId1to4, timeoutMs); }
             }
         }
 
@@ -720,11 +778,8 @@ namespace Mmp.Core
             private readonly MmpClient _p;
             public DigitalModule(MmpClient parent) { _p = parent; }
 
-            public int In(int portId) { return _p.DigitalIn(portId, 0); }
-            public int In(int portId, int timeoutMs) { return _p.DigitalIn(portId, timeoutMs); }
-
-            public bool Out(int portId, int value0or1) { return _p.DigitalOut(portId, value0or1, 0); }
-            public bool Out(int portId, int value0or1, int timeoutMs) { return _p.DigitalOut(portId, value0or1, timeoutMs); }
+            public int In(int gpioId, int timeoutMs = 0) { return _p.DigitalIn(gpioId, timeoutMs); }
+            public bool Out(int gpioId, int val0or1, int timeoutMs = 0) { return _p.DigitalOut(gpioId, val0or1, timeoutMs); }
         }
 
         //============================================================
@@ -734,12 +789,8 @@ namespace Mmp.Core
         {
             private readonly MmpClient _p;
             public I2cModule(MmpClient parent) { _p = parent; }
-
-            public bool Write(int addr, int reg, int value) { return _p.I2cWrite(addr, reg, value, 0); }
-            public bool Write(int addr, int reg, int value, int timeoutMs) { return _p.I2cWrite(addr, reg, value, timeoutMs); }
-
-            public int Read(int addr, int reg) { return _p.I2cRead(addr, reg, 0); }
-            public int Read(int addr, int reg, int timeoutMs) { return _p.I2cRead(addr, reg, timeoutMs); }
+            public bool Write(int addr, int reg, int val, int timeoutMs = 0) { return _p.I2cWrite(addr, reg, val, timeoutMs); }
+            public int Read(int addr, int reg, int timeoutMs = 0) { return _p.I2cRead(addr, reg, timeoutMs); }
         }
     }
 }

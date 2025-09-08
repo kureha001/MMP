@@ -123,19 +123,19 @@ namespace Mmp.Com
                 private readonly MmpCom _owner;
                 public DevCom(MmpCom owner) { _owner = owner; }
 
-                public int Pwm(int deviceId, int timeoutMs = 0)
+                public int Pwm(int devId0to15, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Info.Dev.Pwm(deviceId, timeoutMs);
+                        return _owner._cli.Info.Dev.Pwm(devId0to15, timeoutMs);
                     }, -1);
                 }
 
-                public int Audio(int id1to4, int timeoutMs = 0)
+                public int Audio(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Info.Dev.Audio(id1to4, timeoutMs);
+                        return _owner._cli.Info.Dev.Audio(devId1to4, timeoutMs);
                     }, -1);
                 }
             }
@@ -193,11 +193,39 @@ namespace Mmp.Com
                 }, false);
             }
 
+            // 1) 丸めなし
             public int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
                     return _owner._cli.Analog.Read(playerIndex0to15, switchIndex0to3, timeoutMs);
+                }, -1);
+            }
+
+            // 2) 丸めあり：中央値基準の最近傍（偶数stepは half-up）
+            public int ReadRound(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            {
+                return _owner.Guard<int>(delegate ()
+                {
+                    return _owner._cli.Analog.ReadRound(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
+                }, -1);
+            }
+
+            // 3) 丸めあり：切り上げ
+            public int ReadRoundUp(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            {
+                return _owner.Guard<int>(delegate ()
+                {
+                    return _owner._cli.Analog.ReadRoundUp(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
+                }, -1);
+            }
+
+            // 4) 丸めあり：切り下げ
+            public int ReadRoundDown(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            {
+                return _owner.Guard<int>(delegate ()
+                {
+                    return _owner._cli.Analog.ReadRoundDown(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
                 }, -1);
             }
         }
@@ -213,19 +241,19 @@ namespace Mmp.Com
             private readonly MmpCom _owner;
             public DigitalCom(MmpCom owner) { _owner = owner; }
 
-            public int In(int portId, int timeoutMs = 0)
+            public int In(int gpioId, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Digital.In(portId, timeoutMs);
+                    return _owner._cli.Digital.In(gpioId, timeoutMs);
                 }, 0);
             }
 
-            public bool Out(int portId, int value0or1, int timeoutMs = 0)
+            public bool Out(int gpioId, int val0or1, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Digital.Out(portId, value0or1, timeoutMs);
+                    return _owner._cli.Digital.Out(gpioId, val0or1, timeoutMs);
                 }, false);
             }
         }
@@ -241,20 +269,21 @@ namespace Mmp.Com
             private readonly MmpCom _owner;
             public PwmCom(MmpCom owner) { _owner = owner; }
 
-            public int Info(int deviceId, int timeoutMs = 0)
+            public int Info(int devId0to15, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Pwm.Info(deviceId, timeoutMs);
+                    return _owner._cli.Pwm.Info(devId0to15, timeoutMs);
                 }, -1);
             }
 
-            public string Out(int channel, int value0to4095, int timeoutMs = 0)
+            // ★ string → bool に変更、引数名も正規化
+            public bool Out(int chId0to255, int val0to4095, int timeoutMs = 0)
             {
-                return _owner.Guard<string>(delegate ()
+                return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Pwm.Out(channel, value0to4095, timeoutMs);
-                }, "");
+                    return _owner._cli.Pwm.Out(chId0to255, val0to4095, timeoutMs);
+                }, false);
             }
 
             public bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0)
@@ -265,12 +294,13 @@ namespace Mmp.Com
                 }, false);
             }
 
-            public string AngleOut(int channel, int angle0to180, int timeoutMs = 0)
+            // ★ string → bool に変更、引数名も正規化
+            public bool AngleOut(int chId0to255, int angle0to180, int timeoutMs = 0)
             {
-                return _owner.Guard<string>(delegate ()
+                return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Pwm.AngleOut(channel, angle0to180, timeoutMs);
-                }, "");
+                    return _owner._cli.Pwm.AngleOut(chId0to255, angle0to180, timeoutMs);
+                }, false);
             }
         }
 
@@ -287,51 +317,51 @@ namespace Mmp.Com
             private readonly ReadCom _read;
             public AudioCom(MmpCom owner) { _owner = owner; _play = new PlayCom(owner); _read = new ReadCom(owner); }
 
-            public int Info(int id1to4, int timeoutMs = 0)
+            public int Info(int devId1to4, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Audio.Info(id1to4, timeoutMs);
+                    return _owner._cli.Audio.Info(devId1to4, timeoutMs);
                 }, -1);
             }
 
-            public bool Volume(int deviceId1to4, int vol0to30, int timeoutMs = 0)
+            public bool Volume(int devId1to4, int vol0to30, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Audio.Volume(deviceId1to4, vol0to30, timeoutMs);
+                    return _owner._cli.Audio.Volume(devId1to4, vol0to30, timeoutMs);
                 }, false);
             }
 
-            public bool SetEq(int deviceId1to4, int eq0to5, int timeoutMs = 0)
+            public bool SetEq(int devId1to4, int mode0to5, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Audio.SetEq(deviceId1to4, eq0to5, timeoutMs);
+                    return _owner._cli.Audio.SetEq(devId1to4, mode0to5, timeoutMs);
                 }, false);
             }
 
-            public bool Stop(int deviceId1to4, int timeoutMs = 0)
+            public bool Stop(int devId1to4, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Audio.Stop(deviceId1to4, timeoutMs);
+                    return _owner._cli.Audio.Stop(devId1to4, timeoutMs);
                 }, false);
             }
 
-            public bool Pause(int deviceId1to4, int timeoutMs = 0)
+            public bool Pause(int devId1to4, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Audio.Pause(deviceId1to4, timeoutMs);
+                    return _owner._cli.Audio.Pause(devId1to4, timeoutMs);
                 }, false);
             }
 
-            public bool Resume(int deviceId1to4, int timeoutMs = 0)
+            public bool Resume(int devId1to4, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Audio.Resume(deviceId1to4, timeoutMs);
+                    return _owner._cli.Audio.Resume(devId1to4, timeoutMs);
                 }, false);
             }
 
@@ -349,42 +379,42 @@ namespace Mmp.Com
                 private readonly MmpCom _owner;
                 public PlayCom(MmpCom owner) { _owner = owner; }
 
-                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs = 0)
+                public bool FolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
                 {
                     return _owner.Guard<bool>(delegate ()
                     {
-                        return _owner._cli.Audio.Play.FolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs);
+                        return _owner._cli.Audio.Play.FolderTrack(devId1to4, dir1to255, file1to255, timeoutMs);
                     }, false);
                 }
-                public bool SetLoop(int deviceId1to4, int on0or1, int timeoutMs = 0)
+                public bool SetLoop(int devId1to4, int on0or1, int timeoutMs = 0)
                 {
                     return _owner.Guard<bool>(delegate ()
                     {
-                        return _owner._cli.Audio.Play.SetLoop(deviceId1to4, on0or1 != 0, timeoutMs);
-                    }, false);
-                }
-
-                public bool Stop(int deviceId1to4, int timeoutMs = 0)
-                {
-                    return _owner.Guard<bool>(delegate ()
-                    {
-                        return _owner._cli.Audio.Play.Stop(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Play.SetLoop(devId1to4, on0or1 != 0, timeoutMs);
                     }, false);
                 }
 
-                public bool Pause(int deviceId1to4, int timeoutMs = 0)
+                public bool Stop(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<bool>(delegate ()
                     {
-                        return _owner._cli.Audio.Play.Pause(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Play.Stop(devId1to4, timeoutMs);
                     }, false);
                 }
 
-                public bool Resume(int deviceId1to4, int timeoutMs = 0)
+                public bool Pause(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<bool>(delegate ()
                     {
-                        return _owner._cli.Audio.Play.Resume(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Play.Pause(devId1to4, timeoutMs);
+                    }, false);
+                }
+
+                public bool Resume(int devId1to4, int timeoutMs = 0)
+                {
+                    return _owner.Guard<bool>(delegate ()
+                    {
+                        return _owner._cli.Audio.Play.Resume(devId1to4, timeoutMs);
                     }, false);
                 }
             }
@@ -400,43 +430,43 @@ namespace Mmp.Com
                 private readonly MmpCom _owner;
                 public ReadCom(MmpCom owner) { _owner = owner; }
 
-                public int PlayState(int deviceId1to4, int timeoutMs = 0)
+                public int PlayState(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.PlayState(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.PlayState(devId1to4, timeoutMs);
                     }, -1);
                 }
 
-                public int Volume(int deviceId1to4, int timeoutMs = 0)
+                public int Volume(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.Volume(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.Volume(devId1to4, timeoutMs);
                     }, -1);
                 }
 
-                public int Eq(int deviceId1to4, int timeoutMs = 0)
+                public int Eq(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.Eq(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.Eq(devId1to4, timeoutMs);
                     }, -1);
                 }
 
-                public int FileCounts(int deviceId1to4, int timeoutMs = 0)
+                public int FileCounts(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.FileCounts(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.FileCounts(devId1to4, timeoutMs);
                     }, -1);
                 }
 
-                public int CurrentFileNumber(int deviceId1to4, int timeoutMs = 0)
+                public int CurrentFileNumber(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.CurrentFileNumber(deviceId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.CurrentFileNumber(devId1to4, timeoutMs);
                     }, -1);
                 }
             }
@@ -453,11 +483,11 @@ namespace Mmp.Com
             private readonly MmpCom _owner;
             public I2cCom(MmpCom owner) { _owner = owner; }
 
-            public bool Write(int addr, int reg, int value, int timeoutMs = 0)
+            public bool Write(int addr, int reg, int val, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.I2c.Write(addr, reg, value, timeoutMs);
+                    return _owner._cli.I2c.Write(addr, reg, val, timeoutMs);
                 }, false);
             }
 

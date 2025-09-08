@@ -32,11 +32,11 @@ namespace Mmp.Tool
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
                     RunInfo(mmp)         ; // 情報系
                     RunAnalog(mmp)       ; // アナログ入力
-                    RunDigital(mmp)      ; // デジタル入出力
-                    RunMp3Playlist(mmp); // MP3プレイヤー(基本)
-                    RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
-                    RunPwmByValue(mmp)   ; // PWM出力
-                    RunI2cServoSweep(mmp); // I2C→PCA9685 直接制御
+                    //RunDigital(mmp)      ; // デジタル入出力
+                    //RunMp3Playlist(mmp); // MP3プレイヤー(基本)
+                    //RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
+                    //RunPwmByValue(mmp)   ; // PWM出力
+                    //RunI2cServoSweep(mmp); // I2C→PCA9685 直接制御
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
                 }
                 return 0;
@@ -89,7 +89,7 @@ namespace Mmp.Tool
                 Console.WriteLine("　　JoyPad[" + (x + 1) + "]");
                 for (int y = 0; y <= 3; y += 1)
                 {
-                    Console.WriteLine("　　← [" + y + "] = "+ mmp.Analog.Read(x, y));
+                    Console.WriteLine("　　← [" + y + "] = "+ mmp.Analog.Read(x, y, 100 ));
                 }
             }
 

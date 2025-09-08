@@ -50,6 +50,12 @@ namespace Mmp.Core
 
             /// <summary>自動接続時の優先ポート順（null/空なら OS 取得順）</summary>
             public string[] PreferredPorts = null;
+
+            /// <summary>アナログ丸め設定（0=丸めなし、正=切り上げステップ、負=切り捨てステップ）</summary>
+            public int AnalogRound = 0;
+
+            /// <summary>アナログ分解能ビット数（例:10→0..1023）</summary>
+            public int AnalogBits = 10;
         }
 
         /// <summary>設定オブジェクト。必要に応じてプロパティを書き換えてください。</summary>
@@ -244,6 +250,33 @@ namespace Mmp.Core
         public static string Hex2(int v) { return (v & 0xFF).ToString("X2"); }
         public static string Hex3(int v) { return (v & 0x3FF).ToString("X3"); }
         public static string Hex4(int v) { return (v & 0xFFFF).ToString("X4"); }
+
+        /// <summary>アナログ値の丸め（0=なし、正=切り上げ、負=切り捨て）。bits が 1..16 以外は 10bit とみなす。</summary>
+        private static int RoundAnalog(int value, int roundStep, int bits)
+        {
+            if (value < 0) return value;
+            int useBits = (bits >= 1 && bits <= 16) ? bits : 10;
+            int max = (1 << useBits) - 1;
+
+            if (roundStep == 0) return value;
+
+            if (roundStep > 0)
+            {
+                int step = roundStep;
+                long r = ((long)value + step - 1) / step;
+                r *= step;
+                if (r > max) r = max;
+                return (int)r;
+            }
+            else
+            {
+                int step = -roundStep;
+                if (step <= 0) return value;
+                int r = (value / step) * step;
+                if (r < 0) r = 0;
+                return r;
+            }
+        }
 
         //============================================================
         // （★private化）フラットAPI：実装は温存し、階層APIからのみ使用
@@ -561,12 +594,37 @@ namespace Mmp.Core
         {
             private readonly MmpClient _p;
             public AnalogModule(MmpClient parent) { _p = parent; }
+
             public bool Configure(int players, int switches) { return _p.AnalogConfigure(players, switches, 0); }
             public bool Configure(int players, int switches, int timeoutMs) { return _p.AnalogConfigure(players, switches, timeoutMs); }
             public bool Update() { return _p.AnalogUpdate(0); }
             public bool Update(int timeoutMs) { return _p.AnalogUpdate(timeoutMs); }
-            public int Read(int playerIndex0to15, int switchIndex0to3) { return _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0); }
-            public int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs) { return _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs); }
+
+            // --- Read オーバーロード（Arduino と統一） ---
+            public int Read(int playerIndex0to15, int switchIndex0to3) // ★ Settings の丸め・ビット適用
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
+                return RoundAnalog(v, _p.Settings.AnalogRound, _p.Settings.AnalogBits);
+            }
+
+            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep) // ★ bits は Settings
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
+                return RoundAnalog(v, roundStep, _p.Settings.AnalogBits);
+            }
+
+            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits) // ★ 明示指定
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, 0);
+                return RoundAnalog(v, roundStep, bits);
+            }
+
+            public int Read(int playerIndex0to15, int switchIndex0to3, int roundStep, int bits, int timeoutMs) // ★ 明示指定+timeout
+            {
+                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                return RoundAnalog(v, roundStep, bits);
+            }
+            // （旧）Read(player, sw, timeoutMs) は廃止
         }
 
         //============================================================
@@ -626,19 +684,19 @@ namespace Mmp.Core
                 private readonly MmpClient _p;
 
                 public PlayModule(MmpClient parent) { _p = parent; }
-                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255               ) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
+                public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, 0); }
                 public bool FolderTrack(int deviceId1to4, int folder1to255, int track1to255, int timeoutMs) { return _p.DfPlayFolderTrack(deviceId1to4, folder1to255, track1to255, timeoutMs); }
 
-                public bool SetLoop(int deviceId1to4, bool enable               ) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, 0); }
+                public bool SetLoop(int deviceId1to4, bool enable) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, 0); }
                 public bool SetLoop(int deviceId1to4, bool enable, int timeoutMs) { return _p.DfSetLoop(deviceId1to4, enable ? 1 : 0, timeoutMs); }
 
-                public bool Stop(int deviceId1to4               ) { return _p.DfStop(deviceId1to4, 0); }
+                public bool Stop(int deviceId1to4) { return _p.DfStop(deviceId1to4, 0); }
                 public bool Stop(int deviceId1to4, int timeoutMs) { return _p.DfStop(deviceId1to4, timeoutMs); }
 
-                public bool Pause(int deviceId1to4　　　　　　   ) { return _p.DfPause(deviceId1to4, 0); }
+                public bool Pause(int deviceId1to4) { return _p.DfPause(deviceId1to4, 0); }
                 public bool Pause(int deviceId1to4, int timeoutMs) { return _p.DfPause(deviceId1to4, timeoutMs); }
 
-                public bool Resume(int deviceId1to4               ) { return _p.DfResume(deviceId1to4, 0); }
+                public bool Resume(int deviceId1to4) { return _p.DfResume(deviceId1to4, 0); }
                 public bool Resume(int deviceId1to4, int timeoutMs) { return _p.DfResume(deviceId1to4, timeoutMs); }
             }
 

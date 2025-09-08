@@ -1,8 +1,13 @@
-# MMP API リファレンス
+# MMP ライブラリ API マニュアル
 
 > 対応プラットフォーム：**.NET(C# / COM / Excel VBA) / Arduino / CPython / MicroPython / CircuitPython**  
 
 本書はMMP APIについて、網羅的にリファレンス形式で解説します。
+
+**(注意)**
+シリアル通信で直接MMPコマンドを実行したい場合は、こちらではなく、以下を参照ください。
+[→ MMP シリアル通信 コマンド一覧](../ファームウェア/README.md)
+
 
 ---
 ## 0. あいさつ

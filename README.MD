@@ -32,17 +32,13 @@ MMPは、多数の入出力コマンドを用意しています。
 
 ### 3.開発者情報：マイコン移植編
 初めてMMPアプリ開発する場合に読んでおく情報です。
-- [ファームウェア   ](./ファームウェア/v0.3_Rottenmeier/README.MD)
-- [ミドルウェア：Python用           ](./ファームウェア/v0.3_Rottenmeier/Library.md)
-- [ミドルウェア：MicroPython用      ](./ファームウェア/v0.3_Rottenmeier/Library.md))
-- [ミドルウェア：Machikania Type-P用](./移植中/MK-P/README.MD)
-- [ミドルウェア：IchigoJam  Type-P用](./移植中/IJB-P/README.MD)
-- [ミドルウェア：IchigoJam  Type-R用](./移植中/IJB-R/README.MD)
+- [MMP ライブラリ API マニュアル](./ファームウェア/ライブラリ/README.md)
+- [MMP シリアル通信 コマンド一覧](ファームウェア/ファームウェア/README.md)
 
 ### 4.開発者情報：ハードウェア編
 MMPハード開発に必要な情報です。
-- [本体          ](./ハードウェア/MMP本体/README.MD ) 
-- [アナログ入力(HC4067)](./ハードウェア/MMP本体/HC4067.MD  )
-- [ＰＷＭ制御(PCA9865)](./ハードウェア/MMP本体/PCA9865.MD )
-- [音声プレイヤー(DFPlayer mini)](./ハードウェア/MMP本体/DFPlayer.MD)
+- [本体                    ](./ハードウェア/MMP本体/README.MD  ) 
+- [アナログ入力(HC4067)    ](./ハードウェア/MMP本体/HC4067.MD  )
+- [ＰＷＭ制御(PCA9865)     ](./ハードウェア/MMP本体/PCA9865.MD )
+- [音声プレイヤー(DFPlayer)](./ハードウェア/MMP本体/DFPlayer.MD)
 

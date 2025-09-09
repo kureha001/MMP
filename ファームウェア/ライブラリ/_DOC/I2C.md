@@ -10,6 +10,7 @@ I2Cデバイスへデータを書き込みます。
 **書式**：
 - `bool Write(int     addr, int     reg, int     val, int     timeoutMs = 0)`
 - `bool Write(int32_t addr, int32_t reg, int32_t val, int32_t timeoutMs = 0)`
+- `     Write(        addr,         reg,         val,         timeoutMs = 0)`
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|
@@ -29,8 +30,9 @@ I2Cデバイスへデータを書き込みます。
 I2Cデバイスからデータを読み取ります。
 
 **書式**
-- `int     Read(int     addr, int     reg, int    timeoutMs = 0)`
+- `int     Read(int     addr, int     reg, int     timeoutMs = 0)`
 - `int32_t Read(int32_t addr, int32_t reg, int32_t timeoutMs = 0)`
+- `        Read(        addr,         reg,         timeoutMs = 0)`
 
 | 引数名 | 値  | 解説 |
 |--------|-----|------|

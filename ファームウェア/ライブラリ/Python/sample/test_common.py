@@ -2,10 +2,39 @@
 import time
 
 #============================================================
+# メイン（共通）
+#============================================================
+def run_all(mmp, TARGET):
+
+    print("<< ＭＭＰライブラリ for {} >>\n".format(TARGET))
+
+    print("接続中...", end="")
+
+    if not mmp.ConnectAutoBaud():
+        print("ＭＭＰとの接続に失敗しました...")
+        return
+
+    print("成功です")
+    try:
+        print("自動検出１ {} bps\n".format(mmp.Settings.BaudRate))
+        print("自動検出２ {} bps\n".format(mmp.ConnectedBaud))
+    except:
+        pass
+
+    print("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
+    RunInfo(mmp)            # 情報系
+    #RunAnalog(mmp)          # アナログ入力
+    #RunDigital(mmp)         # デジタル入出力
+    RunMp3Playlist(mmp)     # MP3プレイヤー(基本)
+    #RunMp3Control(mmp)      # MP3プレイヤー(制御)
+    #RunPwmByValue(mmp)      # PWM出力
+    #RunI2cServoSweep(mmp)   # I2C→PCA9685 直接制御
+    print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
+
+#============================================================
 # 出力文字ヘルパ
 #============================================================
 def tf(b): return "True" if b else "False"
-
 
 #============================================================
 # 0) 基本情報(バージョン/PCA9685/DFPlayer)
@@ -77,28 +106,25 @@ def RunMp3Playlist(mmp):
     print("　・再生")
     for track in range(1, 4):
 
-        ok = mmp.Audio.Play.FolderTrack(1, 1, track)
-        print("　　→ F=1,T={} : {}".format(track, tf(ok)))
-        time.sleep(0.1)
-
-        print("　　　: 状況 = {}".format(mmp.Audio.Read.PlayState(1)))
+        ok = mmp.Audio.Play.Start(1, 1, track)
+        print("　　→ F=1,T={} : {}：状況 = {}".format(track, tf(ok), mmp.Audio.Read.State(1)))
         time.sleep(3.0)
 
     ok = mmp.Audio.Play.Stop(1)
     time.sleep(0.1)
-    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
 
-    ok = mmp.Audio.Play.FolderTrack(1, 2, 102)
+    ok = mmp.Audio.Play.Start(1, 2, 102)
     print("　・再生 → F=2,T=102 : {}".format(tf(ok)))
 
     ok = mmp.Audio.Play.SetLoop(1, 1)
     time.sleep(0.1)
-    print("　・ループ → ON : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・ループ → ON : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
     time.sleep(10.0)
 
     ok = mmp.Audio.Play.Stop(1)
     time.sleep(0.1)
-    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
     print("　[終了]\n")
 
 
@@ -110,22 +136,22 @@ def RunMp3Control(mmp):
     print("４.ＭＰ３制御（ DFPlayer ）")
 
     print("　・音量 → 20 : {}".format(tf(mmp.Audio.Volume(1, 20))))
-    print("　・再生 → F=4,T=1 : {}".format(tf(mmp.Audio.Play.FolderTrack(1, 4, 1))))
+    print("　・再生 → F=4,T=1 : {}".format(tf(mmp.Audio.Play.Start(1, 4, 1))))
     print("　・ループ → OFF : {}".format(tf(mmp.Audio.Play.SetLoop(1, 0))))
 
     print("　・参照")
-    print("　　← 状況         = {}".format(mmp.Audio.Read.PlayState(1)))
+    print("　　← 状況         = {}".format(mmp.Audio.Read.State(1)))
     print("　　← 音量         = {}".format(mmp.Audio.Read.Volume(1)))
     print("　　← イコライザ   = {}".format(mmp.Audio.Read.Eq(1)))
     print("　　← 総ファイル数 = {}".format(mmp.Audio.Read.FileCounts(1)))
-    print("　　← 現在ファイル = {}".format(mmp.Audio.Read.CurrentFileNumber(1)))
+    print("　　← 現在ファイル = {}".format(mmp.Audio.Read.FileNumber(1)))
 
     ok = mmp.Audio.Play.Pause(1); time.sleep(0.1)
-    print("　・一時停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・一時停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
     time.sleep(2.0)
 
     ok = mmp.Audio.Play.Resume(1); time.sleep(0.1)
-    print("　・再開 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・再開 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
 
     print("　・イコライザー")
     for mode in range(0, 6):
@@ -138,7 +164,7 @@ def RunMp3Control(mmp):
         time.sleep(1.0)
 
     ok = mmp.Audio.Play.Stop(1); time.sleep(0.1)
-    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.PlayState(1)))
+    print("　・停止 : {} : 状況 = {}".format(tf(ok), mmp.Audio.Read.State(1)))
     print("　[終了]\n")
 
 
@@ -263,34 +289,3 @@ def RunI2cServoSweep(mmp):
         return
 
     print("　[終了]\n")
-
-
-#============================================================
-# メイン（共通）
-#============================================================
-def run_all(mmp, TARGET):
-
-    print("<< ＭＭＰライブラリ for {} >>\n".format(TARGET))
-
-    print("接続中...", end="")
-
-    if not mmp.ConnectAutoBaud():
-        print("ＭＭＰとの接続に失敗しました...")
-        return
-
-    print("成功です")
-    try:
-        print("自動検出１ {} bps\n".format(mmp.Settings.BaudRate))
-        print("自動検出２ {} bps\n".format(mmp.ConnectedBaud))
-    except:
-        pass
-
-    print("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunInfo(mmp)            # 情報系
-    #RunAnalog(mmp)          # アナログ入力
-    #RunDigital(mmp)         # デジタル入出力
-    #RunMp3Playlist(mmp)     # MP3プレイヤー(基本)
-    #RunMp3Control(mmp)      # MP3プレイヤー(制御)
-    RunPwmByValue(mmp)      # PWM出力
-    RunI2cServoSweep(mmp)   # I2C→PCA9685 直接制御
-    print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")

@@ -11,6 +11,7 @@ GPIOより、デジタル信号を読取ります。
 **書式**：
 - `int     In(int     gpioId, int     timeoutMs = 0)`
 - `int32_t In(int32_t gpioId, int32_t timeoutMs = 0)`
+- `        In(        gpioId,         timeoutMs = 0)`
 
 | 引数名    | 値  | 解説 |
 |-----------|-----|------|
@@ -29,6 +30,7 @@ GPIOより、デジタル信号を出力します。
 **書式**
 - `bool Out(int     gpioId, int     val0or1, int     timeoutMs = 0)`
 - `bool Out(int32_t gpioId, int32_t val0or1, int32_t timeoutMs = 0)`
+- `     Out(        gpioId,         val0or1,         timeoutMs = 0)`
 
 | 引数名  | 値  | 解説 |
 |---------|-----|------|

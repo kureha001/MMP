@@ -3,13 +3,14 @@
 MMPの機器情報を提供する
 
 ---
-### 1 バージョン取得
+### １ バージョン取得
 **解説**：
 ファームウェア・バージョン取得  
 
 **書式**：  
 - `string Version(int     timeoutMs = 0)`
 - `String Version(int32_t timeoutMs = 0)`
+- `       Version(        timeoutMs = 0)`
 
 | 引数名      | 値  | 解説 |
 |-------------|-----|------|
@@ -20,13 +21,17 @@ MMPの機器情報を提供する
 | `"XYZZ!"` | 成功(X:メジャー番号、Y:マイナー番号、ZZ:リビジョン番号) |
 | `"!!!!!"` | 失敗 |
 
-### 2 デバイス情報(PCA9685)
+---
+### ２ デバイス モジュール
+
+#### 2-1. PCA9685
 **解説**：
 PCA9685 接続情報を取得  
 
 **書式**：
 - `ushort   Pwm(int     devId0to15, int     timeoutMs = 0)`
 - `uint16_t Pwm(int32_t devId0to15, int32_t timeoutMs = 0)`
+- `         Pwm(        devId0to15,         timeoutMs = 0)`
 
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|
@@ -38,13 +43,14 @@ PCA9685 接続情報を取得
 | `0x0000–0xFFFF`  | 成功 |
 | <<右記参照>>     | 失敗時の扱いは**付録 A**参照 |
 
-### 3 デバイス情報(DFPlayer)
+#### 2-2. DFPlayer
 **解説**：
 DFPlayer 接続情報を取得  
 
 **書式**：
 - `ushort   Audio(int     devId1to4, int     timeoutMs = 0)`
 - `uint16_t Audio(int32_t devId1to4, int32_t timeoutMs = 0)`
+- `         Audio(        devId1to4,         timeoutMs = 0)`
 
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|

@@ -417,7 +417,7 @@ namespace Mmp.Core
             return -1;
         }
 
-        private int DfReadState (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 1, timeoutMs); }
+        private int DfReadState     (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 1, timeoutMs); }
         private int DfReadVolume    (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 2, timeoutMs); }
         private int DfReadEq        (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 3, timeoutMs); }
         private int DfReadFileCounts(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 4, timeoutMs); }
@@ -545,7 +545,9 @@ namespace Mmp.Core
                 _p = parent;
                 Dev = new DevModule(parent);
             }
+
             public string Version(int timeoutMs = 0) { return _p.GetVersion(timeoutMs); }
+
             public sealed class DevModule
             {
                 private readonly MmpClient _p;
@@ -719,7 +721,7 @@ namespace Mmp.Core
             // ----------------------
             // ---- 単独コマンド ----
             // ----------------------
-            public ushort Info(int devId1to4,               int timeoutMs = 0) { return _p.GetDpx  (devId1to4,           timeoutMs); }
+            public ushort Info  (int devId1to4,               int timeoutMs = 0) { return _p.GetDpx  (devId1to4,           timeoutMs); }
             public bool   Volume(int devId1to4, int vol0to30, int timeoutMs = 0) { return _p.DfVolume(devId1to4, vol0to30, timeoutMs); }
             public bool   SetEq (int devId1to4, int mode0to5, int timeoutMs = 0) { return _p.DfSetEq (devId1to4, mode0to5, timeoutMs); }
 
@@ -732,20 +734,12 @@ namespace Mmp.Core
                 private readonly MmpClient _p;
 
                 public PlayModule(MmpClient parent) { _p = parent; }
-                public bool Start(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
-                { return _p.DfStart(devId1to4, dir1to255, file1to255, timeoutMs); }
-
-                public bool SetLoop(int devId1to4, bool enable, int timeoutMs = 0)
-                { return _p.DfSetLoop(devId1to4, enable ? 1 : 0, timeoutMs); }
-
-                public bool Stop(int devId1to4, int timeoutMs = 0)
-                { return _p.DfStop(devId1to4, timeoutMs); }
-
-                public bool Pause(int devId1to4, int timeoutMs = 0)
-                { return _p.DfPause(devId1to4, timeoutMs); }
-
-                public bool Resume(int devId1to4, int timeoutMs = 0)
-                { return _p.DfResume(devId1to4, timeoutMs); }
+                public bool Start  (int devId1to4, int dir1to255, int file1to255,
+                                                                int timeoutMs = 0){ return _p.DfStart  (devId1to4, dir1to255, file1to255, timeoutMs); }
+                public bool SetLoop(int devId1to4, bool enable, int timeoutMs = 0){ return _p.DfSetLoop(devId1to4, enable ? 1 : 0, timeoutMs); }
+                public bool Stop   (int devId1to4,              int timeoutMs = 0){ return _p.DfStop   (devId1to4, timeoutMs); }
+                public bool Pause  (int devId1to4,              int timeoutMs = 0){ return _p.DfPause  (devId1to4, timeoutMs); }
+                public bool Resume (int devId1to4,              int timeoutMs = 0){ return _p.DfResume (devId1to4, timeoutMs); }
             }
 
             // ----------------------
@@ -755,7 +749,7 @@ namespace Mmp.Core
             {
                 private readonly MmpClient _p;
                 public ReadModule(MmpClient parent) { _p = parent; }
-                public int State (int devId1to4, int timeoutMs = 0) { return _p.DfReadState(devId1to4, timeoutMs); }
+                public int State     (int devId1to4, int timeoutMs = 0) { return _p.DfReadState(devId1to4, timeoutMs); }
                 public int Volume    (int devId1to4, int timeoutMs = 0) { return _p.DfReadVolume(devId1to4, timeoutMs); }
                 public int Eq        (int devId1to4, int timeoutMs = 0) { return _p.DfReadEq(devId1to4, timeoutMs); }
                 public int FileCounts(int devId1to4, int timeoutMs = 0) { return _p.DfReadFileCounts(devId1to4, timeoutMs); }

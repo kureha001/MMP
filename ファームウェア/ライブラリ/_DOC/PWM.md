@@ -12,6 +12,7 @@ MMPの搭載したPWM出力デバイス(PCA9685)を制御します。
 **書式**：
 - `bool Out(int     chId0to255, int     val0to4095, int     timeoutMs = 0)`
 - `bool Out(int32_t chId0to255, int32_t val0to4095, int32_t timeoutMs = 0)`
+- `     Out(        chId0to255,         val0to4095,         timeoutMs = 0)`
 
 | 引数名     | 値    | 解説 |
 |------------|-------|------|
@@ -31,6 +32,7 @@ MMPの搭載したPWM出力デバイス(PCA9685)を制御します。
 **書式**：
 - `bool AngleInit(int     angleMin, int     angleMax, int     pwmMin, int     pwmMax, int     timeoutMs = 0)`
 - `bool AngleInit(int32_t angleMin, int32_t angleMax, int32_t pwmMin, int32_t pwmMax, int32_t timeoutMs = 0)`
+- `     AngleInit(        angleMin,         angleMax,         pwmMin,         pwmMax,         timeoutMs = 0)`
 
 | 引数名    | 値         | 解説 |
 |-----------|------------|------|
@@ -53,6 +55,7 @@ MMPの搭載したPWM出力デバイス(PCA9685)を制御します。
 **書式**：
 - `bool AngleOut(int     chId0to255, int     angle0to180, int     timeoutMs = 0)`
 - `bool AngleOut(int32_t chId0to255, int32_t angle0to180, int32_t timeoutMs = 0)`
+- `     AngleOut(        chId0to255,         angle0to180,         timeoutMs = 0)`
 
 | 引数名      | 値   | 解説 |
 |-------------|------|------|

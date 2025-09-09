@@ -16,17 +16,17 @@ namespace Mmp.Com
         string Connect(string portName, int baud, int timeoutMs, int verifyTimeoutMs);
         void Close();
 
-        bool IsOpen { get; }
-        string LastError { get; }
+        bool   IsOpen   { get; }
+        string LastError{ get; }
 
         // 階層APIエントリ
-        object Info { get; }
+        object Info     { get; }
         object Settings { get; }
-        object Analog { get; }
-        object Digital { get; }
-        object Pwm { get; }
-        object Audio { get; }
-        object I2c { get; }
+        object Analog   { get; }
+        object Digital  { get; }
+        object Pwm      { get; }
+        object Audio    { get; }
+        object I2c      { get; }
     }
 
     //============================================================
@@ -42,8 +42,8 @@ namespace Mmp.Com
         internal readonly Mmp.Core.MmpClient _cli = new Mmp.Core.MmpClient();
         private string _lastError = "";
 
-        public bool IsOpen { get { return _cli.IsOpen; } }
-        public string LastError { get { return _lastError; } }
+        public bool IsOpen       { get { return _cli.IsOpen; } }
+        public string LastError  { get { return _lastError;  } }
 
         // 例外を LastError へ吸収するヘルパ
         private T Guard<T>(Func<T> f, T fallback)
@@ -57,7 +57,12 @@ namespace Mmp.Com
             catch (Exception ex) { _lastError = ex.Message; }
         }
 
-        //================ 接続 =====================
+        //=============================
+        //===== 低レイヤ コマンド =====
+        //=============================
+        // -----
+        // 接続
+        // -----
         public string Connect(string portName, int baud, int timeoutMs, int verifyTimeoutMs)
         {
             return Guard<string>(delegate ()
@@ -65,36 +70,95 @@ namespace Mmp.Com
                 // ★ 引数を Settings に書き込まず、そのまま MmpClient.Connect に渡す
                 //    0 指定は MmpClient 側で Settings へフォールバック（既存仕様）
                 bool ok = _cli.Connect(string.IsNullOrEmpty(portName) ? null : portName,
-                                       baud, timeoutMs, verifyTimeoutMs); // ★
+                                       baud, timeoutMs, verifyTimeoutMs);
                 return ok ? (_cli.PortName ?? "") : "";
             }, "");
         }
 
+        // -----
+        // 切断
+        // -----
         public void Close()
         {
             Guard(delegate () { _cli.Close(); });
         }
 
-        //================ 階層 API プロキシの提供 ======================
-        private InfoCom _info;
+        // ========================
+        // ==== モジュール提供 ====
+        // ========================
+        private InfoCom     _info;
         private SettingsCom _settings;
-        private AnalogCom _analog;
-        private DigitalCom _digital;
-        private PwmCom _pwm;
-        private AudioCom _audio;
-        private I2cCom _i2c;
+        private AnalogCom   _analog;
+        private DigitalCom  _digital;
+        private PwmCom      _pwm;
+        private AudioCom    _audio;
+        private I2cCom      _i2c;
 
-        public object Info { get { if (_info == null) _info = new InfoCom(this); return _info; } }
-        public object Settings { get { if (_settings == null) _settings = new SettingsCom(this); return _settings; } }
-        public object Analog { get { if (_analog == null) _analog = new AnalogCom(this); return _analog; } }
-        public object Digital { get { if (_digital == null) _digital = new DigitalCom(this); return _digital; } }
-        public object Pwm { get { if (_pwm == null) _pwm = new PwmCom(this); return _pwm; } }
-        public object Audio { get { if (_audio == null) _audio = new AudioCom(this); return _audio; } }
-        public object I2c { get { if (_i2c == null) _i2c = new I2cCom(this); return _i2c; } }
+        public object Info    { get{ if (_info     == null) _info     = new InfoCom(this)    ; return _info;     } }
+        public object Settings{ get{ if (_settings == null) _settings = new SettingsCom(this); return _settings; } }
+        public object Analog  { get{ if (_analog   == null) _analog   = new AnalogCom(this)  ; return _analog;   } }
+        public object Digital { get{ if (_digital  == null) _digital  = new DigitalCom(this) ; return _digital;  } }
+        public object Pwm     { get{ if (_pwm      == null) _pwm      = new PwmCom(this)     ; return _pwm;      } }
+        public object Audio   { get{ if (_audio    == null) _audio    = new AudioCom(this)   ; return _audio;    } }
+        public object I2c     { get{ if (_i2c      == null) _i2c      = new I2cCom(this)     ; return _i2c;      } }
 
-        //============================================================
-        // 階層 API: Info
-        //============================================================
+        //===================
+        //=====階層化API=====
+        //===================
+        // --------------------------
+        // ---- 規定値モジュール ----
+        // --------------------------
+        [ComVisible(true)]
+        [Guid("0B5A6DFF-7F21-49E2-9C2B-8A7C9E1D2B33")]
+        [ClassInterface(ClassInterfaceType.AutoDual)]
+        public class SettingsCom
+        {
+            private readonly MmpCom _owner;
+            public SettingsCom(MmpCom owner) { _owner = owner; }
+
+            // 主要設定（VBA から読み書き）
+            public int BaudRate { get { return _owner._cli.Settings.BaudRate; } set { _owner._cli.Settings.BaudRate = value; } }
+            public int TimeoutIo { get { return _owner._cli.Settings.TimeoutIo; } set { _owner._cli.Settings.TimeoutIo = value; } }
+            public int TimeoutVerify { get { return _owner._cli.Settings.TimeoutVerify; } set { _owner._cli.Settings.TimeoutVerify = value; } }
+            public int TimeoutGeneral { get { return _owner._cli.Settings.TimeoutGeneral; } set { _owner._cli.Settings.TimeoutGeneral = value; } }
+            public int TimeoutAnalog { get { return _owner._cli.Settings.TimeoutAnalog; } set { _owner._cli.Settings.TimeoutAnalog = value; } }
+            public int TimeoutPwm { get { return _owner._cli.Settings.TimeoutPwm; } set { _owner._cli.Settings.TimeoutPwm = value; } }
+            public int TimeoutAudio { get { return _owner._cli.Settings.TimeoutAudio; } set { _owner._cli.Settings.TimeoutAudio = value; } }
+            public int TimeoutDigital { get { return _owner._cli.Settings.TimeoutDigital; } set { _owner._cli.Settings.TimeoutDigital = value; } }
+            public int TimeoutI2c { get { return _owner._cli.Settings.TimeoutI2c; } set { _owner._cli.Settings.TimeoutI2c = value; } }
+            public int AnalogRound { get { return _owner._cli.Settings.AnalogRound; } set { _owner._cli.Settings.AnalogRound = value; } }
+            public int AnalogBits { get { return _owner._cli.Settings.AnalogBits; } set { _owner._cli.Settings.AnalogBits = value; } }
+
+            // PreferredPortsをSafeArray(BSTR)として公開
+            // ※使用例：m.Settings.PreferredPorts = Array("COM3","COM8")
+            public string[] PreferredPortsArray
+            {
+                get { return _owner._cli.Settings.PreferredPorts; }
+                set { _owner._cli.Settings.PreferredPorts = value; }
+            }
+
+            // VBAで扱いやすいCSV版
+            // ※使用例：m.Settings.PreferredPortsCsv = "COM3,COM8"
+            public string PreferredPortsCsv
+            {
+                get
+                {
+                    var a = _owner._cli.Settings.PreferredPorts;
+                    return (a == null || a.Length == 0) ? "" : string.Join(",", a);
+                }
+                set
+                {
+                    _owner._cli.Settings.PreferredPorts =
+                        string.IsNullOrWhiteSpace(value)
+                        ? null
+                        : Array.ConvertAll(value.Split(','), s => s.Trim());
+                }
+            }
+        }
+
+        // -----------------------
+        // --- 情報モジュール ----
+        // -----------------------
         [ComVisible(true)]
         [Guid("E5F1F8B1-7E10-4D0F-9E8B-2F3E4E0F1D01")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -141,34 +205,9 @@ namespace Mmp.Com
             }
         }
 
-        //============================================================
-        // 階層 API: Settings
-        //============================================================
-        [ComVisible(true)]
-        [Guid("0B5A6DFF-7F21-49E2-9C2B-8A7C9E1D2B33")]
-        [ClassInterface(ClassInterfaceType.AutoDual)]
-        public class SettingsCom
-        {
-            private readonly MmpCom _owner;
-            public SettingsCom(MmpCom owner) { _owner = owner; }
-
-            // 主要設定（VBA から読み書き）
-            public int BaudRate { get { return _owner._cli.Settings.BaudRate; } set { _owner._cli.Settings.BaudRate = value; } }
-
-            public int TimeoutIo { get { return _owner._cli.Settings.TimeoutIo; } set { _owner._cli.Settings.TimeoutIo = value; } }
-            public int TimeoutVerify { get { return _owner._cli.Settings.TimeoutVerify; } set { _owner._cli.Settings.TimeoutVerify = value; } }
-
-            public int TimeoutGeneral { get { return _owner._cli.Settings.TimeoutGeneral; } set { _owner._cli.Settings.TimeoutGeneral = value; } }
-            public int TimeoutAnalog { get { return _owner._cli.Settings.TimeoutAnalog; } set { _owner._cli.Settings.TimeoutAnalog = value; } }
-            public int TimeoutPwm { get { return _owner._cli.Settings.TimeoutPwm; } set { _owner._cli.Settings.TimeoutPwm = value; } }
-            public int TimeoutAudio { get { return _owner._cli.Settings.TimeoutAudio; } set { _owner._cli.Settings.TimeoutAudio = value; } }
-            public int TimeoutDigital { get { return _owner._cli.Settings.TimeoutDigital; } set { _owner._cli.Settings.TimeoutDigital = value; } }
-            public int TimeoutI2c { get { return _owner._cli.Settings.TimeoutI2c; } set { _owner._cli.Settings.TimeoutI2c = value; } }
-        }
-
-        //============================================================
-        // 階層 API: Analog
-        //============================================================
+        // -----------------------------
+        // ---- アナログ モジュール ----
+        // -----------------------------
         [ComVisible(true)]
         [Guid("A6A9B8A1-9ED1-4F6B-90C9-6F5E2BB5E0C1")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -177,11 +216,11 @@ namespace Mmp.Com
             private readonly MmpCom _owner;
             public AnalogCom(MmpCom owner) { _owner = owner; }
 
-            public bool Configure(int players, int switches, int timeoutMs = 0)
+            public bool Configure(int hc4067chTtl, int hc4067devTtl, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
                 {
-                    return _owner._cli.Analog.Configure(players, switches, timeoutMs);
+                    return _owner._cli.Analog.Configure(hc4067chTtl, hc4067devTtl, timeoutMs);
                 }, false);
             }
 
@@ -194,45 +233,45 @@ namespace Mmp.Com
             }
 
             // 1) 丸めなし
-            public int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)
+            public int Read(int hc4067ch0to15, int hc4067dev0to3, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Analog.Read(playerIndex0to15, switchIndex0to3, timeoutMs);
+                    return _owner._cli.Analog.Read(hc4067ch0to15, hc4067dev0to3, timeoutMs);
                 }, -1);
             }
 
             // 2) 丸めあり：中央値基準の最近傍（偶数stepは half-up）
-            public int ReadRound(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRound(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Analog.ReadRound(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
+                    return _owner._cli.Analog.ReadRound(hc4067ch0to15, hc4067dev0to3, step, bits, timeoutMs);
                 }, -1);
             }
 
             // 3) 丸めあり：切り上げ
-            public int ReadRoundUp(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRoundUp(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Analog.ReadRoundUp(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
+                    return _owner._cli.Analog.ReadRoundUp(hc4067ch0to15, hc4067dev0to3, step, bits, timeoutMs);
                 }, -1);
             }
 
             // 4) 丸めあり：切り下げ
-            public int ReadRoundDown(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRoundDown(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
                 {
-                    return _owner._cli.Analog.ReadRoundDown(playerIndex0to15, switchIndex0to3, step, bits, timeoutMs);
+                    return _owner._cli.Analog.ReadRoundDown(hc4067ch0to15, hc4067dev0to3, step, bits, timeoutMs);
                 }, -1);
             }
         }
 
-        //============================================================
-        // 階層 API: Digital
-        //============================================================
+        // -----------------------------
+        // ---- デジタル モジュール ----
+        // -----------------------------
         [ComVisible(true)]
         [Guid("B9C3C0A8-AB21-4E9D-9C3B-0B5D99B5E1D3")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -258,9 +297,9 @@ namespace Mmp.Com
             }
         }
 
-        //============================================================
-        // 階層 API: Pwm
-        //============================================================
+        // --------------------------
+        // ---- ＰＷＭモジュール ----
+        // --------------------------
         [ComVisible(true)]
         [Guid("7C7C6D8E-4B02-4C5D-8C6E-3A1B3FB2A0A2")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -277,7 +316,6 @@ namespace Mmp.Com
                 }, -1);
             }
 
-            // ★ string → bool に変更、引数名も正規化
             public bool Out(int chId0to255, int val0to4095, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
@@ -294,7 +332,6 @@ namespace Mmp.Com
                 }, false);
             }
 
-            // ★ string → bool に変更、引数名も正規化
             public bool AngleOut(int chId0to255, int angle0to180, int timeoutMs = 0)
             {
                 return _owner.Guard<bool>(delegate ()
@@ -304,9 +341,9 @@ namespace Mmp.Com
             }
         }
 
-        //============================================================
-        // 階層 API: Audio
-        //============================================================
+        // ------------------------
+        // ---- 音声モジュール ----
+        // ------------------------
         [ComVisible(true)]
         [Guid("C4A2B8E7-1E43-4E52-9D5B-8A3A5E1C4F77")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -317,6 +354,9 @@ namespace Mmp.Com
             private readonly ReadCom _read;
             public AudioCom(MmpCom owner) { _owner = owner; _play = new PlayCom(owner); _read = new ReadCom(owner); }
 
+            // ----------------------
+            // ---- 単独コマンド ----
+            // ----------------------
             public int Info(int devId1to4, int timeoutMs = 0)
             {
                 return _owner.Guard<int>(delegate ()
@@ -341,36 +381,15 @@ namespace Mmp.Com
                 }, false);
             }
 
-            public bool Stop(int devId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<bool>(delegate ()
-                {
-                    return _owner._cli.Audio.Stop(devId1to4, timeoutMs);
-                }, false);
-            }
-
-            public bool Pause(int devId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<bool>(delegate ()
-                {
-                    return _owner._cli.Audio.Pause(devId1to4, timeoutMs);
-                }, false);
-            }
-
-            public bool Resume(int devId1to4, int timeoutMs = 0)
-            {
-                return _owner.Guard<bool>(delegate ()
-                {
-                    return _owner._cli.Audio.Resume(devId1to4, timeoutMs);
-                }, false);
-            }
-
+            // ------------------------
+            // ---- サブモジュール ----
+            // ------------------------
             public object Play { get { return _play; } }
             public object Read { get { return _read; } }
 
-            //============================================================
-            // 階層 API: Audio.Play
-            //============================================================
+            // ----------------------
+            // ---- サブ：再生系 ----
+            // ----------------------
             [ComVisible(true)]
             [Guid("E9C5D1A3-24B5-4B5E-879C-3B4D5E6F7A88")]
             [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -379,11 +398,11 @@ namespace Mmp.Com
                 private readonly MmpCom _owner;
                 public PlayCom(MmpCom owner) { _owner = owner; }
 
-                public bool FolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
+                public bool Start(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
                 {
                     return _owner.Guard<bool>(delegate ()
                     {
-                        return _owner._cli.Audio.Play.FolderTrack(devId1to4, dir1to255, file1to255, timeoutMs);
+                        return _owner._cli.Audio.Play.Start(devId1to4, dir1to255, file1to255, timeoutMs);
                     }, false);
                 }
                 public bool SetLoop(int devId1to4, int on0or1, int timeoutMs = 0)
@@ -419,9 +438,9 @@ namespace Mmp.Com
                 }
             }
 
-            //============================================================
-            // 階層 API: Audio.Read
-            //============================================================
+            // ----------------------
+            // ---- サブ：参照系 ----
+            // ----------------------
             [ComVisible(true)]
             [Guid("A1B5C6D7-89E0-4F12-A345-6789ABCDEF12")]
             [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -429,12 +448,11 @@ namespace Mmp.Com
             {
                 private readonly MmpCom _owner;
                 public ReadCom(MmpCom owner) { _owner = owner; }
-
-                public int PlayState(int devId1to4, int timeoutMs = 0)
+                public int State(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.PlayState(devId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.State(devId1to4, timeoutMs);
                     }, -1);
                 }
 
@@ -462,19 +480,19 @@ namespace Mmp.Com
                     }, -1);
                 }
 
-                public int CurrentFileNumber(int devId1to4, int timeoutMs = 0)
+                public int FileNumber(int devId1to4, int timeoutMs = 0)
                 {
                     return _owner.Guard<int>(delegate ()
                     {
-                        return _owner._cli.Audio.Read.CurrentFileNumber(devId1to4, timeoutMs);
+                        return _owner._cli.Audio.Read.FileNumber(devId1to4, timeoutMs);
                     }, -1);
                 }
             }
         }
 
-        //============================================================
-        // 階層 API: I2c
-        //============================================================
+        // --------------------------
+        // ---- Ｉ２Ｃモジュール ----
+        // --------------------------
         [ComVisible(true)]
         [Guid("D1E4F3B2-2A1C-4E9B-8F0A-AB2E7D0155B1")]
         [ClassInterface(ClassInterfaceType.AutoDual)]
@@ -499,6 +517,5 @@ namespace Mmp.Com
                 }, 0);
             }
         }
-
     }
 }

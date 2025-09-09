@@ -15,45 +15,34 @@ namespace Mmp.Core
     {
         private SerialPort _port;
 
-        //============================================================
-        // 設定
-        //============================================================
+        //================================
+        //===== 規定値(構造体データ) =====
+        //================================
         /// <summary>設定（既定値の集約）。数値は >0 指定で優先、<=0 は既定にフォールバック。</summary>
         public sealed class MmpSettings
         {
             /// <summary>既定ボーレート</summary>
             public int BaudRate = 115200;
-
             /// <summary>Open() 時の Read/Write タイムアウト（ミリ秒）</summary>
             public int TimeoutIo = 200;
-
             /// <summary>接続確認（VER 応答待ち）のタイムアウト（ミリ秒）</summary>
             public int TimeoutVerify = 400;
-
             /// <summary>一般情報系（VER など）の既定タイムアウト</summary>
             public int TimeoutGeneral = 400;
-
             /// <summary>アナログ系の既定タイムアウト</summary>
             public int TimeoutAnalog = 400;
-
             /// <summary>PWM 系の既定タイムアウト</summary>
             public int TimeoutPwm = 400;
-
             /// <summary>オーディオ（DFPlayer）系の既定タイムアウト</summary>
             public int TimeoutAudio = 400;
-
             /// <summary>デジタル I/O の既定タイムアウト</summary>
             public int TimeoutDigital = 400;
-
             /// <summary>I2C 系の既定タイムアウト</summary>
             public int TimeoutI2c = 400;
-
             /// <summary>自動接続時の優先ポート順（null/空なら OS 取得順）</summary>
             public string[] PreferredPorts = null;
-
-            /// <summary>アナログ丸め設定（0=丸めなし、正=切り上げステップ、負=切り捨てステップ）</summary>
+            /// <summary>アナログ丸め設定（0=丸めなし）</summary>
             public int AnalogRound = 0;
-
             /// <summary>アナログ分解能ビット数（例:10→0..1023）</summary>
             public int AnalogBits = 10;
         }
@@ -61,47 +50,50 @@ namespace Mmp.Core
         /// <summary>設定オブジェクト。必要に応じてプロパティを書き換えてください。</summary>
         public MmpSettings Settings { get; } = new MmpSettings();
 
+        // ----------------
+        // ---- 情報系 ----
+        // ----------------
         /// <summary>ポートが開いているか</summary>
-        public bool IsOpen { get { return _port != null && _port.IsOpen; } }
-
-        /// <summary>接続済みか（IsOpen の別名）</summary>
-        public bool IsConnected { get { return IsOpen; } }
+        public bool   IsOpen     { get { return _port != null && _port.IsOpen; } }
 
         /// <summary>現在接続中のポート名（未接続なら null）</summary>
-        public string PortName { get { return IsOpen ? _port.PortName : null; } }
+        public string PortName   { get { return IsOpen ? _port.PortName : null; } }
 
-        //============================================================
-        // 階層APIモジュール
-        //============================================================
-        public InfoModule Info { get; private set; }
-        public AnalogModule Analog { get; private set; }
-        public PwmModule Pwm { get; private set; }
-        public AudioModule Audio { get; private set; }
-        public DigitalModule Digital { get; private set; }  // ★ 追加
-        public I2cModule I2c { get; private set; }  // ★ 追加
+        // ========================
+        // ==== モジュール実装 ====
+        // ========================
+        public InfoModule    Info    { get; private set; }
+        public AnalogModule  Analog  { get; private set; }
+        public PwmModule     Pwm     { get; private set; }
+        public AudioModule   Audio   { get; private set; }
+        public DigitalModule Digital { get; private set; } 
+        public I2cModule     I2c     { get; private set; }
 
         public MmpClient()
         {
             // C# 7.3 互換で初期化
-            Info = new InfoModule(this);
-            Analog = new AnalogModule(this);
-            Pwm = new PwmModule(this);
-            Audio = new AudioModule(this);
-            Digital = new DigitalModule(this); // ★ 追加
-            I2c = new I2cModule(this);     // ★ 追加
+            Info    = new InfoModule    (this);
+            Analog  = new AnalogModule  (this);
+            Pwm     = new PwmModule     (this);
+            Audio   = new AudioModule   (this);
+            Digital = new DigitalModule (this); 
+            I2c     = new I2cModule     (this); 
         }
 
-        //============================================================
-        // Connect（統一版）: 明示引数(>0)が最優先、0/未指定は Settings を使用
-        //============================================================
-        private int Resolve(int value, int fallback) { return (value > 0) ? value : fallback; }
-
+        //=============================
+        //===== 低レイヤ コマンド =====
+        //=============================
+        //------------------------------------------------------------
+        // 接続（複数タイプ）
+        // Connect: 明示引数(>0)が最優先、0/未指定は Settings を使用
+        //------------------------------------------------------------
         /// <summary>統一エントリ。portName=null/空で自動接続、指定で固定ポート接続。</summary>
         public bool Connect(string portName, int baud, int timeoutMs, int verifyTimeoutMs, string[] preferredOrder)
         {
-            int useBaud = Resolve(baud, Settings.BaudRate);
-            int useIo = Resolve(timeoutMs, Settings.TimeoutIo);
-            int useVer = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
+            int useBaud = Resolve(baud,            Settings.BaudRate        );
+            int useIo   = Resolve(timeoutMs,       Settings.TimeoutIo       );
+            int useVer  = Resolve(verifyTimeoutMs, Settings.TimeoutVerify   );
+
             string[] order = (preferredOrder != null && preferredOrder.Length > 0)
                 ? preferredOrder
                 : Settings.PreferredPorts;
@@ -135,6 +127,9 @@ namespace Mmp.Core
             return Connect(portNameOrNull, baud, timeoutMs, verifyTimeoutMs, null);
         }
 
+        //------------------------------------------------------------
+        // 切断１
+        //------------------------------------------------------------
         /// <summary>ポートを閉じる</summary>
         public void Close()
         {
@@ -153,12 +148,14 @@ namespace Mmp.Core
             }
         }
 
+        //------------------------------------------------------------
+        // 切断２
+        //------------------------------------------------------------
         public void Dispose() { Close(); }
 
-        //============================================================
-        // 送受信（共通）
-        //============================================================
-
+        //------------------------------------------------------------
+        // ＭＭＰシリアル通信
+        //------------------------------------------------------------
         /// <summary>
         /// 固定5文字フレーム（"hhhh!" or "!!!!!"）を厳密に待つ
         /// </summary>
@@ -191,7 +188,6 @@ namespace Mmp.Core
                             // ★ 5文字そろい、末尾が '!' になったら確定
                             if (sb.Length == 5 && sb[4] == '!')
                             {
-                                // （必要なら IsFiveBang(sb.ToString()) で形式再確認も可）
                                 return sb.ToString(); // ★ 固定5文字を返す
                             }
                         }
@@ -208,16 +204,10 @@ namespace Mmp.Core
             throw new TimeoutException("No 5-char response ending with '!'."); // ★ 明確なメッセージ
         }
 
-
         //============================================================
         // ヘルパー
         //============================================================
-
-        /// <summary>「5文字 & 最後が '!'」なら true（"!!!!!" も含む）</summary>
-        public static bool IsFiveBang(string s)
-        {
-            return !string.IsNullOrEmpty(s) && s.Length == 5 && s[4] == '!';
-        }
+        private int Resolve(int value, int fallback) { return (value > 0) ? value : fallback; }
 
         /// <summary>"hhhh!" を 16進数に変換（失敗時は false）。"!!!!!" は false。</summary>
         private static bool TryParseHex4Bang(string s, out ushort value)
@@ -240,49 +230,17 @@ namespace Mmp.Core
         }
 
         /// <summary>応答 "hhhh!" の先頭4桁を 16進数として数値化（前提: 形式妥当）</summary>
-        public static ushort ParseHex4(string s)
-        {
-            // C# 7.3互換：AsSpanは使わない
-            return Convert.ToUInt16(s.Substring(0, 4), 16);
-        }
-
-        public static string Hex1(int v) { return (v & 0xF).ToString("X1"); }
-        public static string Hex2(int v) { return (v & 0xFF).ToString("X2"); }
-        public static string Hex3(int v) { return (v & 0x3FF).ToString("X3"); }
+        public static string Hex1(int v) { return (v & 0xF   ).ToString("X1"); }
+        public static string Hex2(int v) { return (v & 0xFF  ).ToString("X2"); }
+        public static string Hex3(int v) { return (v & 0x3FF ).ToString("X3"); }
         public static string Hex4(int v) { return (v & 0xFFFF).ToString("X4"); }
 
-        /// <summary>アナログ値の丸め（0=なし、正=切り上げ、負=切り捨て）。bits が 1..16 以外は 10bit とみなす。</summary>
-        private static int RoundAnalog(int value, int roundStep, int bits)
-        {
-            if (value < 0) return value;
-            int useBits = (bits >= 1 && bits <= 16) ? bits : 10;
-            int max = (1 << useBits) - 1;
-
-            if (roundStep == 0) return value;
-
-            if (roundStep > 0)
-            {
-                int step = roundStep;
-                long r = ((long)value + step - 1) / step;
-                r *= step;
-                if (r > max) r = max;
-                return (int)r;
-            }
-            else
-            {
-                int step = -roundStep;
-                if (step <= 0) return value;
-                int r = (value / step) * step;
-                if (r < 0) r = 0;
-                return r;
-            }
-        }
-
-        //============================================================
-        // （★private化）フラットAPI：実装は温存し、階層APIからのみ使用
-        //============================================================
-
-        // ---- 情報 ----
+        //===============================
+        //=====（内部用）フラットAPI=====
+        //===============================
+        // -----------------------
+        // --- 情報モジュール用 ----
+        // -----------------------
         private string GetVersion(int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutGeneral);
@@ -307,12 +265,14 @@ namespace Mmp.Core
             return v;
         }
 
-        // ---- アナログ ----
+        // --------------------------------
+        // ---- アナログ モジュール用 -----
+        // --------------------------------
         private bool AnalogConfigure(int hc4067chTtl, int hc4067devTtl, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            if (hc4067chTtl < 1 || hc4067chTtl > 16) throw new ArgumentOutOfRangeException(nameof(hc4067chTtl));
-            if (hc4067devTtl < 1 || hc4067devTtl > 4) throw new ArgumentOutOfRangeException(nameof(hc4067devTtl));
+            if (hc4067chTtl  < 1 || hc4067chTtl  > 16) throw new ArgumentOutOfRangeException(nameof(hc4067chTtl));
+            if (hc4067devTtl < 1 || hc4067devTtl > 4 ) throw new ArgumentOutOfRangeException(nameof(hc4067devTtl));
 
             string resp = SendCommand("ANS:" + Hex2(hc4067chTtl) + ":" + Hex2(hc4067devTtl) + "!", t);
             return resp == "!!!!!";
@@ -329,7 +289,7 @@ namespace Mmp.Core
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAnalog);
             if (hc4067ch0to15 < 0 || hc4067ch0to15 > 15) throw new ArgumentOutOfRangeException(nameof(hc4067ch0to15));
-            if (hc4067dev0to3 < 0 || hc4067dev0to3 > 3) throw new ArgumentOutOfRangeException(nameof(hc4067dev0to3));
+            if (hc4067dev0to3 < 0 || hc4067dev0to3 > 3 ) throw new ArgumentOutOfRangeException(nameof(hc4067dev0to3));
 
             string resp = SendCommand("ANR:" + Hex2(hc4067ch0to15) + ":" + Hex2(hc4067dev0to3) + "!", t);
             ushort v;
@@ -337,7 +297,9 @@ namespace Mmp.Core
             return -1;
         }
 
-        // ---- PWM ----
+        // -----------------------------
+        // ---- ＰＷＭモジュール用 -----
+        // -----------------------------
         private bool PwmValue(int chId0to255, int val0to4095, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutPwm);
@@ -359,7 +321,9 @@ namespace Mmp.Core
             return resp == "!!!!!";
         }
 
-        // ---- デジタル I/O ----
+        // --------------------------------
+        // ---- デジタル モジュール用 -----
+        // --------------------------------
         private int DigitalIn(int gpioId, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutDigital);
@@ -376,7 +340,9 @@ namespace Mmp.Core
             return resp == "!!!!!";
         }
 
-        // ---- I2C ----
+        // -----------------------------
+        // ---- Ｉ２Ｃモジュール用 -----
+        // -----------------------------
         private bool I2cWrite(int addr, int reg, int val, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutI2c);
@@ -393,8 +359,10 @@ namespace Mmp.Core
             return 0;
         }
 
-        // ---- MP3（DFPlayer） ----
-        private bool DfPlayFolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs)
+        // ---------------------------
+        // ---- 音声モジュール用 -----
+        // ---------------------------
+        private bool DfStart(int devId1to4, int dir1to255, int file1to255, int timeoutMs)
         {
             int t = Resolve(timeoutMs, Settings.TimeoutAudio);
             string resp = SendCommand("DIR:" + Hex2(devId1to4) + ":" + Hex2(dir1to255) + ":" + Hex2(file1to255) + "!", t);
@@ -451,15 +419,17 @@ namespace Mmp.Core
             return -1;
         }
 
-        private int DfReadPlayState(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 1, timeoutMs); }
-        private int DfReadVolume(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 2, timeoutMs); }
-        private int DfReadEq(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 3, timeoutMs); }
+        private int DfReadState (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 1, timeoutMs); }
+        private int DfReadVolume    (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 2, timeoutMs); }
+        private int DfReadEq        (int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 3, timeoutMs); }
         private int DfReadFileCounts(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 4, timeoutMs); }
-        private int DfReadCurrentFileNumber(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 5, timeoutMs); }
+        private int DfReadFileNumber(int devId1to4, int timeoutMs) { return DfQuery(devId1to4, 5, timeoutMs); }
 
-        //============================================================
-        // 指定接続：指定COMに開いて VER 応答を確認
-        //============================================================
+
+        //=============================
+        //===== 低レイヤ コマンド =====
+        //=============================
+        // 指定接続：指定COMに開いて、VER が返ったら接続
         public bool ConnectSpecified(string portName, int baud, int timeoutMs, int verifyTimeoutMs)
         {
             int useBaud = Resolve(baud, Settings.BaudRate);
@@ -481,9 +451,7 @@ namespace Mmp.Core
             return false;
         }
 
-        //============================================================
         // 自動接続：利用可能なCOMを順次試し、VER が返った最初のポートへ接続
-        //============================================================
         public bool ConnectAuto(out string connectedPort, int baud, int timeoutMsPerPort, int verifyTimeoutMs, string[] preferredOrder)
         {
             int useBaud = Resolve(baud, Settings.BaudRate);
@@ -528,6 +496,7 @@ namespace Mmp.Core
             return false;
         }
 
+        // シリアル通信を開く
         public void Open(string portName, int baud, int timeoutMs)
         {
             if (IsOpen) Close();
@@ -549,6 +518,7 @@ namespace Mmp.Core
             try { _port.DiscardOutBuffer(); } catch { }
         }
 
+        // COM検出用ヘルパ
         private static int ExtractComNumber(string portName)
         {
             if (string.IsNullOrEmpty(portName)) return int.MaxValue;
@@ -561,9 +531,12 @@ namespace Mmp.Core
             return int.MaxValue;
         }
 
-        //============================================================
-        // 階層API：Info
-        //============================================================
+        //=============================
+        //=====（公開用）階層化API=====
+        //=============================
+        // ------------------------
+        // ---- 情報モジュール ----
+        // ------------------------
         public sealed class InfoModule
         {
             private readonly MmpClient _p;
@@ -584,9 +557,9 @@ namespace Mmp.Core
             }
         }
 
-        //============================================================
-        // 階層API：Analog
-        //============================================================
+        // -----------------------------
+        // ---- アナログ モジュール ----
+        // -----------------------------
         public sealed class AnalogModule
         {
             private readonly MmpClient _p;
@@ -596,7 +569,8 @@ namespace Mmp.Core
             private int ResolveBits(int bits)
             {
                 int b = (bits >= 1 && bits <= 16) ? bits : _p.Settings.AnalogBits;
-                if (b < 1 || b > 16) b = 10;
+                if (b < 1 ) b = 1 ;
+                if (b > 16) b = 16;
                 return b;
             }
 
@@ -655,9 +629,9 @@ namespace Mmp.Core
             }
 
             // ---- 設定系（既存そのまま）----
-            public bool Configure(int players, int switches, int timeoutMs = 0)
+            public bool Configure(int hc4067chTtl, int hc4067devTtl, int timeoutMs = 0)
             {
-                return _p.AnalogConfigure(players, switches, timeoutMs);
+                return _p.AnalogConfigure(hc4067chTtl, hc4067devTtl, timeoutMs);
             }
 
             public bool Update(int timeoutMs = 0)
@@ -668,50 +642,61 @@ namespace Mmp.Core
             // ---- 取得系（新API）----
 
             // 1) 丸めなし（生値を返す）
-            public int Read(int playerIndex0to15, int switchIndex0to3, int timeoutMs = 0)
+            public int Read(int hc4067ch0to15, int hc4067dev0to3, int timeoutMs = 0)
             {
-                return _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                return _p.AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
             }
 
             // 2) 丸めあり：中央値基準の最近傍（偶数stepは half-up）
-            public int ReadRound(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRound(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                int v = _p.AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
                 return RoundNearest(v, step, bits);
             }
 
             // 3) 丸めあり：切り上げ
-            public int ReadRoundUp(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRoundUp(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                int v = _p.AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
                 return RoundUp(v, step, bits);
             }
 
             // 4) 丸めあり：切り下げ
-            public int ReadRoundDown(int playerIndex0to15, int switchIndex0to3, int step, int bits = 0, int timeoutMs = 0)
+            public int ReadRoundDown(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)
             {
-                int v = _p.AnalogRead(playerIndex0to15, switchIndex0to3, timeoutMs);
+                int v = _p.AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
                 return RoundDown(v, step, bits);
             }
         }
 
+        // -----------------------------
+        // ---- デジタル モジュール ----
+        // -----------------------------
+        public sealed class DigitalModule
+        {
+            private readonly MmpClient _p;
+            public DigitalModule(MmpClient parent) { _p = parent; }
 
-        //============================================================
-        // 階層API：Pwm
-        //============================================================
+            public int In(int gpioId, int timeoutMs = 0) { return _p.DigitalIn(gpioId, timeoutMs); }
+            public bool Out(int gpioId, int val0or1, int timeoutMs = 0) { return _p.DigitalOut(gpioId, val0or1, timeoutMs); }
+        }
+
+        // --------------------------
+        // ---- ＰＷＭモジュール ----
+        // --------------------------
         public sealed class PwmModule
         {
             private readonly MmpClient _p;
             public PwmModule(MmpClient parent) { _p = parent; }
             public ushort Info(int devId0to15, int timeoutMs = 0) { return _p.GetPwx(devId0to15, timeoutMs); }
-            public bool Out(int chId0to255, int val0to4095, int timeoutMs = 0) { return _p.PwmValue(chId0to255, val0to4095, timeoutMs); }
-            public bool AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0) { return _p.PwmInit(angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
-            public bool AngleOut(int chId0to255, int angle0to180, int timeoutMs = 0) { return _p.PwmAngle(chId0to255, angle0to180, timeoutMs); }
+            public bool   Out(int chId0to255, int val0to4095, int timeoutMs = 0) { return _p.PwmValue(chId0to255, val0to4095, timeoutMs); }
+            public bool   AngleInit(int angleMin, int angleMax, int pwmMin, int pwmMax, int timeoutMs = 0) { return _p.PwmInit(angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
+            public bool   AngleOut(int chId0to255, int angle0to180, int timeoutMs = 0) { return _p.PwmAngle(chId0to255, angle0to180, timeoutMs); }
         }
 
-        //============================================================
-        // 階層API：Audio
-        //============================================================
+        // ------------------------
+        // ---- 音声モジュール ----
+        // ------------------------
         public sealed class AudioModule
         {
             private readonly MmpClient _p;
@@ -725,25 +710,32 @@ namespace Mmp.Core
                 Read = new ReadModule(parent);
             }
 
-            public ushort Info(int devId1to4, int timeoutMs = 0) { return _p.GetDpx(devId1to4, timeoutMs); }
-            public bool Volume(int devId1to4, int vol0to30, int timeoutMs = 0) { return _p.DfVolume(devId1to4, vol0to30, timeoutMs); }
-            public bool SetEq(int devId1to4, int mode0to5, int timeoutMs = 0) { return _p.DfSetEq(devId1to4, mode0to5, timeoutMs); }
-
             // 便宜上、Play.* を直下にも露出
-            public bool PlayFolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
-            { return _p.DfPlayFolderTrack(devId1to4, dir1to255, file1to255, timeoutMs); }
+            public bool Start  (int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
+            { return _p.DfStart(devId1to4, dir1to255, file1to255, timeoutMs); }
 
-            public bool Stop(int devId1to4, int timeoutMs = 0) { return _p.DfStop(devId1to4, timeoutMs); }
-            public bool Pause(int devId1to4, int timeoutMs = 0) { return _p.DfPause(devId1to4, timeoutMs); }
-            public bool Resume(int devId1to4, int timeoutMs = 0) { return _p.DfResume(devId1to4, timeoutMs); }
+            public bool Stop   (int devId1to4, int timeoutMs = 0) { return _p.DfStop(devId1to4, timeoutMs); }
+            public bool Pause  (int devId1to4, int timeoutMs = 0) { return _p.DfPause(devId1to4, timeoutMs); }
+            public bool Resume (int devId1to4, int timeoutMs = 0) { return _p.DfResume(devId1to4, timeoutMs); }
 
+            // ----------------------
+            // ---- 単独コマンド ----
+            // ----------------------
+            public ushort Info(int devId1to4,               int timeoutMs = 0) { return _p.GetDpx  (devId1to4,           timeoutMs); }
+            public bool   Volume(int devId1to4, int vol0to30, int timeoutMs = 0) { return _p.DfVolume(devId1to4, vol0to30, timeoutMs); }
+            public bool   SetEq (int devId1to4, int mode0to5, int timeoutMs = 0) { return _p.DfSetEq (devId1to4, mode0to5, timeoutMs); }
+
+
+            // ----------------------
+            // ---- サブ：再生系 ----
+            // ----------------------
             public sealed class PlayModule
             {
                 private readonly MmpClient _p;
 
                 public PlayModule(MmpClient parent) { _p = parent; }
-                public bool FolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
-                { return _p.DfPlayFolderTrack(devId1to4, dir1to255, file1to255, timeoutMs); }
+                public bool Start(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)
+                { return _p.DfStart(devId1to4, dir1to255, file1to255, timeoutMs); }
 
                 public bool SetLoop(int devId1to4, bool enable, int timeoutMs = 0)
                 { return _p.DfSetLoop(devId1to4, enable ? 1 : 0, timeoutMs); }
@@ -758,33 +750,24 @@ namespace Mmp.Core
                 { return _p.DfResume(devId1to4, timeoutMs); }
             }
 
+            // ----------------------
+            // ---- サブ：参照系 ----
+            // ----------------------
             public sealed class ReadModule
             {
                 private readonly MmpClient _p;
                 public ReadModule(MmpClient parent) { _p = parent; }
-                public int PlayState(int devId1to4, int timeoutMs = 0) { return _p.DfReadPlayState(devId1to4, timeoutMs); }
-                public int Volume(int devId1to4, int timeoutMs = 0) { return _p.DfReadVolume(devId1to4, timeoutMs); }
-                public int Eq(int devId1to4, int timeoutMs = 0) { return _p.DfReadEq(devId1to4, timeoutMs); }
+                public int State (int devId1to4, int timeoutMs = 0) { return _p.DfReadState(devId1to4, timeoutMs); }
+                public int Volume    (int devId1to4, int timeoutMs = 0) { return _p.DfReadVolume(devId1to4, timeoutMs); }
+                public int Eq        (int devId1to4, int timeoutMs = 0) { return _p.DfReadEq(devId1to4, timeoutMs); }
                 public int FileCounts(int devId1to4, int timeoutMs = 0) { return _p.DfReadFileCounts(devId1to4, timeoutMs); }
-                public int CurrentFileNumber(int devId1to4, int timeoutMs = 0) { return _p.DfReadCurrentFileNumber(devId1to4, timeoutMs); }
+                public int FileNumber(int devId1to4, int timeoutMs = 0) { return _p.DfReadFileNumber(devId1to4, timeoutMs); }
             }
         }
 
-        //============================================================
-        // 階層API：Digital  ★ 追加
-        //============================================================
-        public sealed class DigitalModule
-        {
-            private readonly MmpClient _p;
-            public DigitalModule(MmpClient parent) { _p = parent; }
-
-            public int In(int gpioId, int timeoutMs = 0) { return _p.DigitalIn(gpioId, timeoutMs); }
-            public bool Out(int gpioId, int val0or1, int timeoutMs = 0) { return _p.DigitalOut(gpioId, val0or1, timeoutMs); }
-        }
-
-        //============================================================
-        // 階層API：I2c  ★ 追加
-        //============================================================
+        // --------------------------
+        // ---- Ｉ２Ｃモジュール ----
+        // --------------------------
         public sealed class I2cModule
         {
             private readonly MmpClient _p;

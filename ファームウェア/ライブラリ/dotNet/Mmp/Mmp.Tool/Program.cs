@@ -107,9 +107,9 @@ namespace Mmp.Tool
         {
             Console.WriteLine("２.デジタル入出力（ GPIO ）");
             Console.WriteLine("　・入力");
-            Console.WriteLine("　　←[2] = " + (mmp.Digital.In(2) == 0 ? "ON" : "OFF"));
-            Console.WriteLine("　　←[6] = " + (mmp.Digital.In(6) == 0 ? "ON" : "OFF"));
-            Console.WriteLine("　　←[7] = " + (mmp.Digital.In(7) == 0 ? "ON" : "OFF"));
+            Console.WriteLine("　　←[2] = " + int2strOnOff(mmp.Digital.In(2)) );
+            Console.WriteLine("　　←[6] = " + int2strOnOff(mmp.Digital.In(6)) );
+            Console.WriteLine("　　←[7] = " + int2strOnOff(mmp.Digital.In(7)) );
 
             Console.WriteLine("　・出力[3]" );
             for (int cnt = 0; cnt <= 5; cnt++)
@@ -305,5 +305,10 @@ namespace Mmp.Tool
 
             Console.WriteLine("　[終了]\n");
         }
+
+        //============================================================
+        // ヘルパ
+        //============================================================
+        static string int2strOnOff(int source) { return (source == 0 ? "ON" : "OFF"); }
     }
 }

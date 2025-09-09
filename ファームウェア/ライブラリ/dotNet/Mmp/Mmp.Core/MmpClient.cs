@@ -41,8 +41,6 @@ namespace Mmp.Core
             public int TimeoutI2c = 400;
             /// <summary>自動接続時の優先ポート順（null/空なら OS 取得順）</summary>
             public string[] PreferredPorts = null;
-            /// <summary>アナログ丸め設定（0=丸めなし）</summary>
-            public int AnalogRound = 0;
             /// <summary>アナログ分解能ビット数（例:10→0..1023）</summary>
             public int AnalogBits = 10;
         }

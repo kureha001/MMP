@@ -126,7 +126,6 @@ namespace Mmp.Com
             public int TimeoutAudio { get { return _owner._cli.Settings.TimeoutAudio; } set { _owner._cli.Settings.TimeoutAudio = value; } }
             public int TimeoutDigital { get { return _owner._cli.Settings.TimeoutDigital; } set { _owner._cli.Settings.TimeoutDigital = value; } }
             public int TimeoutI2c { get { return _owner._cli.Settings.TimeoutI2c; } set { _owner._cli.Settings.TimeoutI2c = value; } }
-            public int AnalogRound { get { return _owner._cli.Settings.AnalogRound; } set { _owner._cli.Settings.AnalogRound = value; } }
             public int AnalogBits { get { return _owner._cli.Settings.AnalogBits; } set { _owner._cli.Settings.AnalogBits = value; } }
 
             // PreferredPortsをSafeArray(BSTR)として公開

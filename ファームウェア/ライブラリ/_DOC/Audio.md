@@ -22,14 +22,14 @@ MMPに搭載した音声デバイス(DFPlayer)を制御します。
 |<<右記参照>>   | 失敗時の扱いは**付録 A**参照 |
 
 
-### 2 再生(フォルダ/トラック)
+### 2 開始
 **解説**
 デバイスごとに曲を再生します。
 曲はmicroSDカード内のフォルダとファイル位置で指定します。
 
 **書式**：
 int timeoutMs = 0)`  
-- `bool PlayFolderTrack(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)`
+- `bool Start(int devId1to4, int dir1to255, int file1to255, int timeoutMs = 0)`
 
 | 引数名     | 値   | 解説 |
 |------------|------|------|
@@ -158,11 +158,11 @@ int timeoutMs = 0)`
 ### 9 状態参照(Read サブモジュール)
 **用途**：再生状態や音量等を参照  
 **書式**
-- `int PlayState(int devId1to4, int timeoutMs = 0)`
-- `int Volume(int devId1to4, int timeoutMs = 0)`
-- `int Eq(int devId1to4, int timeoutMs = 0)`
+- `int PlayState (int devId1to4, int timeoutMs = 0)`
+- `int Volume    (int devId1to4, int timeoutMs = 0)`
+- `int Eq        (int devId1to4, int timeoutMs = 0)`
 - `int FileCounts(int devId1to4, int timeoutMs = 0)`
-- `int CurrentFileNumber(int devId1to4, int timeoutMs = 0)`
+- `int FileNumber(int devId1to4, int timeoutMs = 0)`
 
 | 引数名    | 値 | 解説 |
 |-----------|----|------|

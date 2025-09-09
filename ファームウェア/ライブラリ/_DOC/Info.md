@@ -8,7 +8,8 @@ MMPの機器情報を提供する
 ファームウェア・バージョン取得  
 
 **書式**：  
-- `string Version(int timeoutMs = 0)`
+- `string Version(int     timeoutMs = 0)`
+- `String Version(int32_t timeoutMs = 0)`
 
 | 引数名      | 値  | 解説 |
 |-------------|-----|------|
@@ -24,7 +25,8 @@ MMPの機器情報を提供する
 PCA9685 接続情報を取得  
 
 **書式**：
-- `ushort Pwm(int devId0to15, int timeoutMs = 0)`
+- `ushort   Pwm(int     devId0to15, int     timeoutMs = 0)`
+- `uint16_t Pwm(int32_t devId0to15, int32_t timeoutMs = 0)`
 
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|
@@ -41,7 +43,8 @@ PCA9685 接続情報を取得
 DFPlayer 接続情報を取得  
 
 **書式**：
-- `ushort Audio(int id1to4, int timeoutMs = 0)`
+- `ushort   Audio(int     devId1to4, int     timeoutMs = 0)`
+- `uint16_t Audio(int32_t devId1to4, int32_t timeoutMs = 0)`
 
 | 引数名      | 値    | 解説 |
 |-------------|-------|------|

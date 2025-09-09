@@ -12,7 +12,8 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 最大16x4=64chのアナログ信号を処理できますが、これより少ない利用の場合、処理速度を向上させるために、最低限のチャンネル数を定義します。
 
 **書式**：
-- `bool Configure(int hc4067chTtl, int hc4067devTtl, int timeoutMs = 0)`
+- `bool Configure(int     players,      int    switches,     int     timeoutMs = 0)`★
+- `bool Configure(int32_t hc4067chTtl, int32_t hc4067devTtl, int32_t timeoutMs = 0)`
 
 | 引数名    | 値    | 解説 |
 |-----------|-------|------|
@@ -31,7 +32,9 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 構成で設定した範囲でアナログ信号をバッファに取り込みます。
 
 **書式**：
-- `bool Update(int timeoutMs = 0)`
+- `bool Update(int     timeoutMs = 0)`
+- `bool Update(int32_t timeoutMs = 0)`
+
 
 | 引数名      | 値  | 解説 |
 |-------------|-----|------|
@@ -47,7 +50,7 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 更新で取り込んだバッファの値を参照します。
 
 **書式**：
- - `int Read(int hc4067ch0to15, int hc4067dev0to3, int timeoutMs = 0)`
+- `int Read(int hc4067ch0to15, int hc4067dev0to3, int timeoutMs = 0)`★
 
 | 引数名 | 値 | 解説 |
 |--------|-----|------|
@@ -67,7 +70,8 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 中央値基準で切り上げ・切り下げます。
 
 **書式**：
- - `int ReadRound(int hc4067ch0to15, int hc4067dev0to3, int step, int bits, int timeoutMs = 0)`
+- `int ReadRound(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)`★
+- `int32_t ReadRound(int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits, int32_t timeoutMs = 0)`
 
 | 引数名 | 値 | 解説 |
 |--------|-----|------|
@@ -88,7 +92,8 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 丸めた結果、端数は切り上げます。
 
 **書式**：
- - `int ReadRoundUp(int hc4067ch0to15, int hc4067dev0to3, int step, int bits, int timeoutMs = 0)`
+- `int ReadRoundUp(int hc4067ch0to15, int hc4067dev0to3, int step, int bits = 0, int timeoutMs = 0)`★
+- `int32_t ReadRoundUp(int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits, int32_t timeoutMs = 0)`
 
 | 引数名 | 値 | 解説 |
 |--------|-----|------|
@@ -110,7 +115,8 @@ MMPに搭載した４個のマルチプレクサ(HC4067)を制御します。
 丸めた結果、端数は切り下げます。
 
 **書式**：
-  - `int ReadRoundDown(int hc4067ch0to15, int hc4067dev0to3, int step, int bits, int timeoutMs = 0)`
+- `int     ReadRoundDown(int     hc4067ch0to15, int     hc4067dev0to3, int     step, int     bits = 0, int timeoutMs = 0)`
+- `int32_t ReadRoundDown(int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits, int32_t timeoutMs = 0)`
 
 | 引数名 | 値 | 解説 |
 |--------|-----|------|

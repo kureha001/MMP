@@ -88,7 +88,7 @@ class 本体:
             #↓
             #●赤を上にする
             self._情報.砂時計向き = True
-            MMP.接続.PWM_VALUE(self._仕様.砂時計,self._仕様.最小)
+            MMP.接続.Pwm.Out(self._仕様.砂時計,self._仕様.最小)
             #│
             #●クリック音を鳴らす
             音声.クリック音()
@@ -98,7 +98,7 @@ class 本体:
             #↓
             #●赤を下にする
             self._情報.砂時計向き = False
-            MMP.接続.PWM_VALUE(self._仕様.砂時計,self._仕様.最大)
+            MMP.接続.Pwm.Out(self._仕様.砂時計,self._仕様.最大)
             #│
             #●クリック音を鳴らす
             音声.クリック音()

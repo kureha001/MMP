@@ -5,8 +5,6 @@
 import pyxel
 
 # [アプリ共通]
-#import MMP
-#import 音声
 import MMP
 import 音声
 
@@ -60,7 +58,7 @@ class 開始:
         MMP.初期化(
             DS.仕様.ハード.HC4067の個数,
             DS.仕様.ハード.HC4067のCh数,
-            DS.仕様.ハード.HC4067の丸め)
+            )
         #│
         #○MMPの音声モジュールを初期化する
         音声.情報.システムNo     = DS.仕様.システム.番号

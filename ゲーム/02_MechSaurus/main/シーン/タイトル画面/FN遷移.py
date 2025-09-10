@@ -131,6 +131,6 @@ class 本体:
         #│
         #◎└┐準備した情報に従い、砂時計を動かす
         for val in range(開始, 終了, 増分):
-            MMP.接続.PWM_VALUE(self._仕様.砂時計,val)
+            MMP.接続.Pwm.Out(self._仕様.砂時計,val)
             time.sleep(0.002)
         #┴

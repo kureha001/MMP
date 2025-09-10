@@ -153,9 +153,6 @@ class MmpClient:
     #-------------------
     def _send_command(self, cmd: str, timeout_ms: int) -> str:
 
-        if not self._is_open and not cmd.startswith("VER"):
-            pass
-
         if not cmd or not isinstance(cmd, str):
             self._last_error = "Empty command"
             return ""

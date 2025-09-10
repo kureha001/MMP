@@ -44,7 +44,7 @@ class 本体:
     def 実行(self):
         #┬ 
         #●スタートボタンを調べる
-        入力値 = MMP.接続.mmpAnaVal[0][3]
+        入力値 = MMP.接続.Analog.Read(0,3)
         判定   = (入力値 < DS.仕様.ハード.スイッチ閾値)
         if 判定: return
         #│＼（未選択の場合）

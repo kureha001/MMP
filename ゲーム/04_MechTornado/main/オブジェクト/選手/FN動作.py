@@ -60,9 +60,10 @@ class 本体:
         #┬
         #○屈伸するかを調べる
         閾値 = DS.仕様.ハード.スイッチ閾値
-        屈伸 = (MMP.接続.mmpAnaVal[0][0]  < 閾値) # 脚あげ(SW=OFF)
-        左手 = (MMP.接続.mmpAnaVal[0][1]  > 閾値) # 握る(SW=ON)
-        右手 = (MMP.接続.mmpAnaVal[0][2]  > 閾値) # 握る(SW=ON)
+        丸め = DS.仕様.ハード.HC4067の丸め
+        屈伸 = (MMP.接続.Analog.ReadRoundDown(0,0,丸め) < 閾値) # 脚あげ(SW=OFF)
+        左手 = (MMP.接続.Analog.ReadRoundDown(0,1,丸め) > 閾値) # 握る(SW=ON)
+        右手 = (MMP.接続.Analog.ReadRoundDown(0,2,丸め) > 閾値) # 握る(SW=ON)
         判定   = 屈伸 and 左手 and 右手  # 脚を上げて両手を握る
         #│
         #●姿勢を『屈伸』にする
@@ -73,8 +74,9 @@ class 本体:
         #┬
         #○着地するかを調べる
         閾値 = DS.仕様.ハード.スイッチ閾値
-        左手 = (MMP.接続.mmpAnaVal[0][1]  < 閾値) # 離す(SW=OFF)
-        右手 = (MMP.接続.mmpAnaVal[0][2]  < 閾値) # 離す(SW=OFF)
+        丸め = DS.仕様.ハード.HC4067の丸め
+        左手 = (MMP.接続.Analog.ReadRoundDown(0,1,丸め) < 閾値) # 離す(SW=OFF)
+        右手 = (MMP.接続.Analog.ReadRoundDown(0,2,丸め) < 閾値) # 離す(SW=OFF)
         判定   = 左手 and 右手 # 両手を離す
         #│
         #●姿勢を『着地』にする

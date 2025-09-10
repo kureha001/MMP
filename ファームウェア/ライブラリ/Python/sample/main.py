@@ -28,6 +28,7 @@ def main():
 #============================================================
 def tf(b): return "True" if b else "False"
 
+
 #============================================================
 # 0) 基本情報(バージョン/PCA9685/DFPlayer)
 #============================================================
@@ -103,19 +104,16 @@ def RunMp3Playlist():
         time.sleep(3.0)
 
     ok = MMP.接続.Audio.Play.Stop(1)
-    time.sleep(0.1)
     print("　・停止 : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
 
     ok = MMP.接続.Audio.Play.Start(1, 2, 102)
     print("　・再生 → F=2,T=102 : {}".format(tf(ok)))
 
     ok = MMP.接続.Audio.Play.SetLoop(1, 1)
-    time.sleep(0.1)
     print("　・ループ → ON : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
     time.sleep(10.0)
 
     ok = MMP.接続.Audio.Play.Stop(1)
-    time.sleep(0.1)
     print("　・停止 : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
     print("　[終了]\n")
 
@@ -138,11 +136,11 @@ def RunMp3Control():
     print("　　← 総ファイル数 = {}".format(MMP.接続.Audio.Read.FileCounts(1)))
     print("　　← 現在ファイル = {}".format(MMP.接続.Audio.Read.FileNumber(1)))
 
-    ok = MMP.接続.Audio.Play.Pause(1); time.sleep(0.1)
+    ok = MMP.接続.Audio.Play.Pause(1)
     print("　・一時停止 : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
     time.sleep(2.0)
 
-    ok = MMP.接続.Audio.Play.Resume(1); time.sleep(0.1)
+    ok = MMP.接続.Audio.Play.Resume(1)
     print("　・再開 : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
 
     print("　・イコライザー")
@@ -155,7 +153,7 @@ def RunMp3Control():
         print("　　→ {} : {}".format(v, tf(MMP.接続.Audio.Volume(1, v))))
         time.sleep(1.0)
 
-    ok = MMP.接続.Audio.Play.Stop(1); time.sleep(0.1)
+    ok = MMP.接続.Audio.Play.Stop(1)
     print("　・停止 : {} : 状況 = {}".format(tf(ok), MMP.接続.Audio.Read.State(1)))
     print("　[終了]\n")
 

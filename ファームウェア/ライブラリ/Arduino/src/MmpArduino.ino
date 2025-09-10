@@ -74,27 +74,27 @@ void RunMp3Playlist() {
 
   Serial.println("３.ＭＰ３再生（ DFPlayer ）");
 
-  Serial.println("　・音量 → 20 : "         + bool2str(mmp.Audio.Volume(1, 20)     ) );
-  Serial.println("　・ループ → OFF : "      + bool2str(mmp.Audio.Play.SetLoop(1,0) ) );
+  Serial.println("　・音量 → 20 : "    + bool2str(mmp.Audio.Volume(1, 20)     ) );
+  Serial.println("　・ループ → OFF : " + bool2str(mmp.Audio.Play.SetLoop(1,0) ) );
 
   Serial.println("　・再生");
   for (int track = 1; track <= 3; ++track) {
     Serial.print("　　→ F=1,T=" + String(track) + " : "
-                                            + bool2str(mmp.Audio.Play.Start(1, 1, track) ) );
-    delay(100); Serial.println(" : 状況 = " + String(mmp.Audio.Read.State(1)             ) );
+                                + bool2str(mmp.Audio.Play.Start(1, 1, track) ) );
+    Serial.println(" : 状況 = " + String(mmp.Audio.Read.State(1)             ) );
     delay(3000);
   }
 
-  Serial.print  ("　・停止 : "              + bool2str(mmp.Audio.Play.Stop(1) ) );
-  delay(100); Serial.println(" : 状況 = "   + String(mmp.Audio.Read.State(1)  ) );
+  Serial.print  ("　・停止 : " + bool2str(mmp.Audio.Play.Stop(1) ) );
+  Serial.println(" : 状況 = "  + String(mmp.Audio.Read.State(1)  ) );
 
   Serial.println("　・再生 → F=2,T=102 : " + bool2str(mmp.Audio.Play.Start(1, 2, 102) ) );
   Serial.print  ("　・ループ → ON : "      + bool2str(mmp.Audio.Play.SetLoop(1, 1)    ) );
-  delay(100); Serial.println(" : 状況 = "   + String(mmp.Audio.Read.State(1)           ) );
+  Serial.println(" : 状況 = "               + String(mmp.Audio.Read.State(1)           ) );
   delay(10000);
 
-  Serial.print("　・停止 : "                + bool2str(mmp.Audio.Play.Stop(1) ) );
-  delay(100); Serial.println(" : 状況 = "   + String(mmp.Audio.Read.State(1)  ) );
+  Serial.print  ("　・停止 : " + bool2str(mmp.Audio.Play.Stop(1) ) );
+  Serial.println(" : 状況 = "  + String(mmp.Audio.Read.State(1)  ) );
 
   Serial.println("　[終了]\n");
 }
@@ -117,12 +117,12 @@ void RunMp3Control() {
   Serial.println("　　← 総ファイル数 = " + String(mmp.Audio.Read.FileCounts(1) ) );
   Serial.println("　　← 現在ファイル = " + String(mmp.Audio.Read.FileNumber(1) ) );
 
-  Serial.print  ("　・一時停止 : "        + bool2str(mmp.Audio.Play.Pause(1) ) );
-  delay(100); Serial.println(" : 状況 = " + String(mmp.Audio.Read.State(1)   ) );
+  Serial.print  ("　・一時停止 : " + bool2str(mmp.Audio.Play.Pause(1) ) );
+  Serial.println(" : 状況 = "      + String(mmp.Audio.Read.State(1)   ) );
   delay(2000);
   
-  Serial.print  ("　・再開 : "            + bool2str(mmp.Audio.Play.Resume(1) ) );
-  delay(100); Serial.println(" : 状況 = " + String(mmp.Audio.Read.State(1)    ) );
+  Serial.print  ("　・再開 : " + bool2str(mmp.Audio.Play.Resume(1) ) );
+  Serial.println(" : 状況 = "  + String(mmp.Audio.Read.State(1)    ) );
 
   // イコライザのモードを順次切り替える
   Serial.println("　・イコライザー");
@@ -133,13 +133,12 @@ void RunMp3Control() {
 
   Serial.println("　・音量");
   for (int cnt_vol = 0; cnt_vol <= 30; cnt_vol += 5) {
-    Serial.println("　　→ " + String(cnt_vol) + " : "
-                                          + bool2str(mmp.Audio.Volume(1, cnt_vol) ) );
+    Serial.println("　　→ " + String(cnt_vol) + " : " + bool2str(mmp.Audio.Volume(1, cnt_vol) ) );
     delay(1000);
   }
 
-  Serial.print("　・停止 : "              + bool2str(mmp.Audio.Play.Stop(1) ) );
-  delay(100); Serial.println(" : 状況 = " + String(mmp.Audio.Read.State(1)  ) );
+  Serial.print  ("　・停止 : " + bool2str(mmp.Audio.Play.Stop(1) ) );
+  Serial.println(" : 状況 = "  + String(mmp.Audio.Read.State(1)  ) );
 
   Serial.println("　[終了]\n");
 }

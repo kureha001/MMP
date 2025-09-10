@@ -134,21 +134,21 @@ namespace Mmp.Tool
             Console.WriteLine("　・再生");
             for (int track = 1; track <= 3; track++)
             {
-                Console.Write("　　→ F=1,T=" + track + " : "     + mmp.Audio.Play.Start(1, 1, track) );
-                Thread.Sleep(100); Console.WriteLine(" : 状況 = " + mmp.Audio.Read.State(1)           );
+                Console.Write("　　→ F=1,T=" + track + " : " + mmp.Audio.Play.Start(1, 1, track) );
+                Console.WriteLine(" : 状況 = "                + mmp.Audio.Read.State(1)           );
                 Thread.Sleep(3000);
             }
 
-            Console.Write("　・停止 : " + mmp.Audio.Play.Stop(1));
-            Console.WriteLine(" : 状況 = " + mmp.Audio.Read.State(1));
+            Console.Write    ("　・停止 : " + mmp.Audio.Play.Stop(1));
+            Console.WriteLine(" : 状況 = "  + mmp.Audio.Read.State(1));
 
-            Console.WriteLine("　・再生 → F=2,T=102 : "          + mmp.Audio.Play.Start(1, 2, 102) );
-            Console.Write    ("　・ループ → ON : "               + mmp.Audio.Play.SetLoop(1, true) );
-            Thread.Sleep(100); Console.WriteLine(" : 状況 = "     + mmp.Audio.Read.State(1)         );
+            Console.WriteLine("　・再生 → F=2,T=102 : " + mmp.Audio.Play.Start(1, 2, 102) );
+            Console.Write    ("　・ループ → ON : "      + mmp.Audio.Play.SetLoop(1, true) );
+            Console.WriteLine(" : 状況 = "               + mmp.Audio.Read.State(1)         );
             Thread.Sleep(10000);
 
-            Console.Write("　・停止 : "                  　       + mmp.Audio.Play.Stop(1)  );
-            Thread.Sleep(100); Console.WriteLine(" : 状況 = "     + mmp.Audio.Read.State(1) );
+            Console.Write    ("　・停止 : "  + mmp.Audio.Play.Stop(1)  );
+            Console.WriteLine(" : 状況 = "   + mmp.Audio.Read.State(1) );
 
             Console.WriteLine("　[終了]\n");
         }
@@ -171,12 +171,12 @@ namespace Mmp.Tool
             Console.WriteLine("　　← 総ファイル数 = " + mmp.Audio.Read.FileCounts(1) );
             Console.WriteLine("　　← 現在ファイル = " + mmp.Audio.Read.FileNumber(1) );
 
-            Console.Write("　・一時停止 : "            + mmp.Audio.Play.Pause(1)        );
-            Thread.Sleep(100); Console.WriteLine(" : 状況 = " + mmp.Audio.Read.State(1) );
+            Console.Write    ("　・一時停止 : "        + mmp.Audio.Play.Pause(1) );
+            Console.WriteLine(" : 状況 = "             + mmp.Audio.Read.State(1) );
             Thread.Sleep(2000);
 
-            Console.Write("　・再開 : "                + mmp.Audio.Play.Resume(1)       );
-            Thread.Sleep(100); Console.WriteLine(" : 状況 = " + mmp.Audio.Read.State(1) );
+            Console.Write    ("　・再開 : "            + mmp.Audio.Play.Resume(1) );
+            Console.WriteLine(" : 状況 = "             + mmp.Audio.Read.State(1)  );
 
             Console.WriteLine("　・イコライザー ");
             for (int cnt_eq = 0; cnt_eq <= 5; cnt_eq++)
@@ -194,8 +194,8 @@ namespace Mmp.Tool
                 Thread.Sleep(1000);
             }
 
-            Console.Write("　・停止 : "                + mmp.Audio.Play.Stop(1)         );
-            Thread.Sleep(100); Console.WriteLine(" : 状況 = " + mmp.Audio.Read.State(1) );
+            Console.Write    ("　・停止 : "            + mmp.Audio.Play.Stop(1)  );
+            Console.WriteLine(" : 状況 = "             + mmp.Audio.Read.State(1) );
 
             Console.WriteLine("　[終了]\n");
         }

@@ -111,7 +111,9 @@ private:
   //====================
   //===== ヘルパー =====
   //====================
-  // Analog ビット数 
+  //--------------------
+  // Analogビット数 
+  //--------------------
   static inline int32_t _clampBits(int32_t v, int32_t bits, int32_t defaultBits) {
     int32_t useBits =
       (bits >= 1 && bits <= 30) ? bits :
@@ -121,8 +123,9 @@ private:
     if (v > maxv) return maxv;
     return v;
   }
-
-  // Analog 丸め 
+  //--------------------
+  // Analog丸め 
+  //--------------------
   static inline int32_t _roundNearest(int32_t raw, int32_t step, int32_t bits, int32_t defaultBits) {
     if (raw < 0) return raw;
     if (step <= 0) return _clampBits(raw, bits, defaultBits);
@@ -138,8 +141,9 @@ private:
     if (r > maxv) r = maxv;
     return r;
   }
-
-  // Analog 丸め(切り上げ) 
+  //--------------------
+  // Analog丸め(切り上げ) 
+  //--------------------
   static inline int32_t _roundUp(int32_t raw, int32_t step, int32_t bits, int32_t defaultBits) {
     if (raw < 0) return raw;
     if (step <= 0) return _clampBits(raw, bits, defaultBits);
@@ -151,8 +155,9 @@ private:
     if (r > maxv) r = maxv;
     return r;
   }
-
-  // Analog 丸め(切り下げ) 
+  //--------------------
+  // Analog丸め(切り下げ) 
+  //--------------------
   static inline int32_t _roundDown(int32_t raw, int32_t step, int32_t bits, int32_t defaultBits) {
     if (raw < 0) return raw;
     if (step <= 0) return _clampBits(raw, bits, defaultBits);
@@ -212,24 +217,25 @@ public:
     MmpClient* _p;
   public:
     explicit AnalogModule(MmpClient* p): _p(p) {}
-    // 構成・更新
+    // ---- 構成 ----
     bool    Configure(int32_t hc4067chTtl, int32_t hc4067devTtl, int32_t timeoutMs = 0) { return _p->AnalogConfigure(hc4067chTtl, hc4067devTtl, timeoutMs); }
+    // ---- 更新 ----
     bool    Update   (int32_t timeoutMs = 0) { return _p->AnalogUpdate(timeoutMs); }
-    // 取得（丸めなし）
+    // ---- 読取：生値 ----
     int32_t Read           (int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t timeoutMs = 0) {
       return _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
     }
-    // 取得（中央値での四捨五入）
+    // ---- 読取：丸め(中央値判定) ----
     int32_t ReadRound      (int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits = 0, int32_t timeoutMs = 0) {
       int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
       return _roundNearest(raw, step, bits, _p->Settings.AnalogBits);
     }
-    // 取得（切り上げ）
+    // ---- 読取：丸め(切り上げ) ----
     int32_t ReadRoundUp    (int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits = 0, int32_t timeoutMs = 0) {
       int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
       return _roundUp(raw, step, bits, _p->Settings.AnalogBits);
     }
-    // 取得（切り下げ）
+    // ---- 読取：丸め(切り下げ) ----
     int32_t ReadRoundDown  (int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t step, int32_t bits = 0, int32_t timeoutMs = 0) {
       int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
       return _roundDown(raw, step, bits, _p->Settings.AnalogBits);
@@ -243,7 +249,9 @@ public:
     MmpClient* _p;
   public:
     explicit DigitalModule(MmpClient* p): _p(p) {}
+    // ---- 入力 ----
     int32_t In(int32_t gpioId, int32_t timeoutMs = 0) { return _p->DigitalIn(gpioId, timeoutMs); }
+    // ---- 出力 ----
     bool    Out(int32_t gpioId, int32_t val0or1, int32_t timeoutMs = 0) { return _p->DigitalOut(gpioId, val0or1, timeoutMs); }
   } Digital;
 
@@ -254,11 +262,15 @@ public:
     MmpClient* _p;
   public:
     explicit PwmModule(MmpClient* p): _p(p) {}
+    // ---- 接続情報 ----
     uint16_t Info     (int32_t devId0to15,                      int32_t timeoutMs = 0) { return _p->GetPwx  (devId0to15,                         timeoutMs); }
+    // ---- 出力(生値指定) ----
     bool     Out      (int32_t chId0to255, int32_t val0to4095,  int32_t timeoutMs = 0) { return _p->PwmValue(chId0to255, val0to4095,             timeoutMs); }
+    // ---- 角度設定 ----
     bool     AngleInit(int32_t angleMin,   int32_t angleMax,
                        int32_t pwmMin,     int32_t pwmMax,
                                                                 int32_t timeoutMs = 0) { return _p->PwmInit (angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
+    // ---- 出力(角度指定) ----
     bool     AngleOut (int32_t chId0to255, int32_t angle0to180, int32_t timeoutMs = 0) { return _p->PwmAngle(chId0to255, angle0to180,            timeoutMs); }
   } Pwm;
 
@@ -271,8 +283,11 @@ public:
     // ----------------------
     // ---- 単独コマンド ----
     // ----------------------
+    // ---- 接続情報 ----
     uint16_t Info  (int32_t devId1to4,                   int32_t timeoutMs = 0) { return _p->GetDpx  (devId1to4,           timeoutMs); }
+    // ---- 音量指定 ----
     bool     Volume(int32_t devId1to4, int32_t vol0to30, int32_t timeoutMs = 0) { return _p->DfVolume(devId1to4, vol0to30, timeoutMs); }
+    // ---- イコライザーのモード指定 ----
     bool     SetEq (int32_t devId1to4, int32_t mode0to5, int32_t timeoutMs = 0) { return _p->DfSetEq (devId1to4, mode0to5, timeoutMs); }
 
     // ------------------------
@@ -287,11 +302,16 @@ public:
       MmpClient* _p;
     public:
       explicit PlayModule(MmpClient* p): _p(p) {}
+    // ---- 再生 ----
       bool Start  (int32_t devId1to4, int32_t dir1to255, int32_t file1to255,
                                                    int32_t timeoutMs = 0 ) { return _p->DfStart  (devId1to4, dir1to255, file1to255, timeoutMs); }
+    // ---- リピート再生指定 ----
       bool SetLoop(int32_t devId1to4, bool enable, int32_t timeoutMs = 0 ) { return _p->DfSetLoop(devId1to4, enable ? 1 : 0,        timeoutMs); }
+    // ---- 停止 ----
       bool Stop   (int32_t devId1to4,              int32_t timeoutMs = 0 ) { return _p->DfStop   (devId1to4,                        timeoutMs); }
+    // ---- 一時停止 ----
       bool Pause  (int32_t devId1to4,              int32_t timeoutMs = 0 ) { return _p->DfPause  (devId1to4,                        timeoutMs); }
+    // ---- 再開 ----
       bool Resume (int32_t devId1to4,              int32_t timeoutMs = 0 ) { return _p->DfResume (devId1to4,                        timeoutMs); }
     } Play;
 
@@ -302,10 +322,15 @@ public:
       MmpClient* _p;
     public:
       explicit ReadModule(MmpClient* p): _p(p) {}
+      // ---- 再生状態を参照 ----
       int32_t State     (int32_t devId1to4, int32_t timeoutMs = 0) { return _p->DfReadState     (devId1to4, timeoutMs ); }
+      // ---- 音量を参照 ----
       int32_t Volume    (int32_t devId1to4, int32_t timeoutMs = 0) { return _p->DfReadVolume    (devId1to4, timeoutMs ); }
+      // ---- イコライザーのモードを参照 ----
       int32_t Eq        (int32_t devId1to4, int32_t timeoutMs = 0) { return _p->DfReadEq        (devId1to4, timeoutMs ); }
+      // ---- 総ファイル数を参照 ----
       int32_t FileCounts(int32_t devId1to4, int32_t timeoutMs = 0) { return _p->DfReadFileCounts(devId1to4, timeoutMs ); }
+      // ---- 現在ファイル番号を参照 ----
       int32_t FileNumber(int32_t devId1to4, int32_t timeoutMs = 0) { return _p->DfReadFileNumber(devId1to4, timeoutMs ); }
     } Read;
 
@@ -318,7 +343,9 @@ public:
     MmpClient* _p;
   public:
     explicit I2cModule(MmpClient* p): _p(p) {}
+    // ---- 書込 ----
     bool    Write(int32_t addr, int32_t reg, int32_t val, int32_t timeoutMs = 0) { return _p->I2cWrite(addr, reg, val, timeoutMs); }
+    // ---- 読込 ----
     int32_t Read (int32_t addr, int32_t reg,              int32_t timeoutMs = 0) { return _p->I2cRead (addr, reg,      timeoutMs); }
   } I2c;
 };

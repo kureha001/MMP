@@ -169,7 +169,6 @@ def PWM_出力(argCh一覧, pwm値):
 # PWM値を徐々に移動
 #------------------------------------------------------
 def PWM_移動(
-    MMP                 ,
     argCh一覧           ,
     arg開始値           ,
     arg終了値           ,
@@ -179,7 +178,7 @@ def PWM_移動(
     Ch一覧 = _to_ch_list(argCh一覧)
     ok_all = True
     try:
-        ok = MMP.PWM_MOVE(
+        ok = MMP.接続.Pwm.Out(
             Ch一覧      ,
             arg開始値   ,
             arg終了値   ,
@@ -188,7 +187,7 @@ def PWM_移動(
             )
     except Exception:
         ok = False
-        print(f"NG: CH={ch}")
+        print(f"NG: CH={Ch一覧}")
         ok_all = False
     return ok_all
 
@@ -213,7 +212,6 @@ def PWM_移動_上中下(
 
     print("  2/4.PWM: Mid to Max")
     PWM_移動(
-        MMP         ,
         argCh一覧   ,
         中央値      ,
         arg最大値   ,
@@ -224,7 +222,6 @@ def PWM_移動_上中下(
 
     print("  3/4.PWM: Max to Min")
     PWM_移動(
-        MMP         ,
         argCh一覧   ,
         arg最大値   ,
         arg最小値   ,
@@ -235,7 +232,6 @@ def PWM_移動_上中下(
 
     print("  4/4.PWM: Min to Mid")
     PWM_移動(
-        MMP         ,
         argCh一覧   ,
         arg最小値   ,
         中央値      ,

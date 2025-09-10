@@ -1,48 +1,47 @@
 
-# mmp_adapter_base.py
-# Common adapter interface for CPython / MicroPython / CircuitPython.
-# Each concrete adapter must implement a minimal non-blocking I/O surface.
-
+#============================================================
+# Python共通：ＵＡＲＴ接続アダプタ
+#------------------------------------------------------------
+# ＭＭＰシリアルコマンドを直接扱うコア処理のスケルトン
+# 実際にプロダクト別のアダプタを配置しないと、ここで
+# エラーをライズさせる。
+#============================================================
 class MmpAdapterBase:
-    """Minimal adapter surface used by mmp_core.MmpClient."""
+
+    # mmp_core.MmpClient が用いる初期アダプター サーフェス
     def __init__(self):
         self.connected_baud = None
 
-    # --- lifecycle ---
-    def open_baud(self, baud: int) -> bool:
-        """Open transport at baud. Returns True on success."""
-        raise NotImplementedError
+    #------------------------------------------------------------
+    # 未実装時のエラー発生用
+    #------------------------------------------------------------
+    # ボーレート指定でポートを開く。
+    def open_baud(self, baud: int) -> bool  : raise NotImplementedError
 
-    def close(self) -> None:
-        """Close transport if open."""
-        raise NotImplementedError
+    # ポートが開いている場合は閉じる。
+    def close(self) -> None                 : raise NotImplementedError
 
-    # --- I/O ---
-    def clear_input(self) -> None:
-        """Non-blocking: drain / discard any pending input bytes."""
-        raise NotImplementedError
+    # バッファをクリアする。
+    def clear_input(self) -> None           : raise NotImplementedError
 
-    def write_ascii(self, s: str) -> None:
-        """Write ASCII text (non-blocking or buffered)."""
-        raise NotImplementedError
+    # ASCII文字列を書き込む。
+    def write_ascii(self, s: str) -> None   : raise NotImplementedError
 
-    def read_one_char(self):
-        """Return one character (str len 1) if available, else None (non-blocking)."""
-        raise NotImplementedError
+    # 読み取れた1文字を返す。失敗は Noneを返す。
+    def read_one_char(self)                 : raise NotImplementedError
 
-    def flush(self) -> None:
-        """Flush output if the platform supports it."""
-        pass
+    # 出力をクリアする。
+    def flush(self) -> None                 : pass
 
-    # --- timing ---
-    def sleep_ms(self, ms: int) -> None:
-        raise NotImplementedError
+    # 時間調整する。
+    def sleep_ms(self, ms: int) -> None     : raise NotImplementedError
 
-    def now_ms(self) -> int:
-        """Return a monotonic millisecond counter (wrap allowed)."""
-        raise NotImplementedError
+    # 現在時間をミリ秒で返す。
+    def now_ms(self) -> int                 : raise NotImplementedError
 
+    #------------------------------------------------------------
+    # ヘルパー
+    #------------------------------------------------------------
+    # 経過時間をミリ秒で返す。
     def ticks_diff(self, now_ms: int, start_ms: int) -> int:
-        """Return (now_ms - start_ms) in ms, handling wrap if needed."""
-        # Default naive implementation works for large monotonic counters.
         return int(now_ms - start_ms)

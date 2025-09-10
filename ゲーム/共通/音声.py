@@ -6,7 +6,7 @@ import time
 import pyxel
 
 # [アプリ共通]
-import MMP # アプリとのコネクション
+import MMP
 
 #────────────────────────────────────
 # データセット：情報

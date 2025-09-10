@@ -1,9 +1,8 @@
-# mmp_core.py
-# Unified layered API for CPython / MicroPython / CircuitPython.
-# Mirrors the structure used in C# and Arduino:
-#   Info, Analog, Pwm, Audio(Play/Read), Digital, I2c.
-#
-# Transport is provided by an Adapter (see mmp_adapter_*.py)
+#============================================================
+# Python共通：ＭＭＰコア機能
+#------------------------------------------------------------
+# ＭＭＰシリアルコマンドを直接扱う
+#============================================================
 
 from mmp_adapter_base import MmpAdapterBase
 

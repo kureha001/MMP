@@ -6,7 +6,6 @@ import pyxel
 
 # [アプリ共通]
 import MMP
-import 音声
 
 # [ゲーム共通]
 from   main.データセット import DS

@@ -3,6 +3,8 @@
 #======================================================
 import time
 from 共通ユーティリティ import (
+    通信接続,
+    通信切断,
     アナログ入力測定,
     MP3_再生        ,
     PWM_電源        ,
@@ -12,44 +14,37 @@ from 共通ユーティリティ import (
 )
 
 #======================================================
-def テスト実行(new_mmp):
+def テスト実行():
 
     print("####################")
     print("#                  #")
     print("#  02:MECH SAURUS  #")
     print("#                  #")
     print("####################")
-    MMP = new_mmp()
-    if not MMP.通信接続():
-        print(f"Failed to connect !!")
-        return
 
-    #======================================================
     try:
+        通信接続()
+
         print("-------------------")
         print("Foot pedals(ANA-IN)")
         print("-------------------")
         アナログ入力測定(
-            MMP,
             スイッチ数   = 2,      # 各コントローラ 2 スイッチ
             参加人数     = 2,      # 2 プレイヤー
             丸め         = 200,
             繰返回数     = 50,
             待時間       = 0.05,
-            全件表示     = True    # そのまま全件表示
         )
 
         print("---------------")
         print("Sensors(ANA-IN)")
         print("---------------")
         アナログ入力測定(
-            MMP,
             スイッチ数      = 2,          # 各センサ 2 スイッチ（0,1）
             参加人数        = 10,         # PL=0..7 は予約、PL=8,9 を使うため 10 まで確保
             丸め            = 100,
             繰返回数        = 50,
             待時間          = 0.05,
-            全件表示        = False,      # フィルタ表示に切替えるので無視される
             表示プレイヤー  = (8, 9),     # ← ここで最後の 2 プレイヤーだけ表示
             表示スイッチ    = (0, 1)      # ← スイッチ 0 と 1 を表示
         )
@@ -64,19 +59,19 @@ def テスト実行(new_mmp):
         待ちs        = 0.2
 
         print("  1/4.Power ON")
-        PWM_電源(MMP, 基盤CH, True)   # 恐竜アイランド基盤
+        PWM_電源(基盤CH, True)   # 恐竜アイランド基盤
         time.sleep(1)
 
         print("  2/4.DC Motor: PWM min to max")
-        PWM_移動(MMP, モータCH ,最小v, 最大v, 間隔S, 待ちs)
+        PWM_移動(モータCH ,最小v, 最大v, 間隔S, 待ちs)
         time.sleep(1)
 
         print("  3/4.DC Motor: PWM max to min")
-        PWM_移動(MMP, モータCH ,最大v, 最小v, 間隔E, 待ちs)
+        PWM_移動(モータCH ,最大v, 最小v, 間隔E, 待ちs)
 
         print("  4/4.Power OFF")
-        PWM_出力(MMP, モータCH, 0)
-        PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤
+        PWM_出力(モータCH, 0)
+        PWM_電源(基盤CH, False)   # 恐竜アイランド基盤
 
         print("------------")
         print("Hut:Dinosaur")
@@ -85,7 +80,7 @@ def テスト実行(new_mmp):
         最小v, 最大v = 120, 380
         中央補正     = -18
         増分, 間隔s, 待ちs = 5, 0.01, 0.5
-        PWM_移動_上中下(MMP, 恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        PWM_移動_上中下(恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("---------")
         print("Hut:Meter")
@@ -94,7 +89,7 @@ def テスト実行(new_mmp):
         最小v, 最大v = 120, 370
         中央補正     = 0
         増分, 間隔s, 待ちs = 5, 0.01, 0.5
-        PWM_移動_上中下(MMP, メータCH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        PWM_移動_上中下(メータCH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
 
         print("-------")
         print("Diorama")
@@ -105,7 +100,7 @@ def テスト実行(new_mmp):
         砂_増分, 砂_待ちs   = 5, 0.002
 
         print(">Hourglass: PWM min to max")
-        PWM_移動(MMP, 砂時計CH ,砂_最小v, 砂_最大v, 砂_増分, 砂_待ちs)
+        PWM_移動(砂時計CH ,砂_最小v, 砂_最大v, 砂_増分, 砂_待ちs)
         time.sleep(1)
 
         print(">Dinosaur")
@@ -113,17 +108,16 @@ def テスト実行(new_mmp):
         中央補正            = 0
         増分, 間隔s, 待ちs  = 3, 0.005, 0.2
         ジオラマ恐竜CH = (7, 6)
-        PWM_移動_上中下(MMP, ジオラマ恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
+        PWM_移動_上中下(ジオラマ恐竜CH, 最小v, 最大v, 中央補正, 増分, 間隔s, 待ちs)
         time.sleep(1)
 
         print(">Hourglass: PWM max to min")
-        PWM_移動(MMP, 砂時計CH ,砂_最大v, 砂_最小v, 砂_増分, 砂_待ちs)
+        PWM_移動(砂時計CH ,砂_最大v, 砂_最小v, 砂_増分, 砂_待ちs)
 
         print("--------")
         print("BGM(MP3)")
         print("--------")
         MP3_再生(
-            MMP,
             arg再生一覧 = [
                 (2,1),  # メインBGM：タイトル画面
                 (2,2),  # メインBGM：プレイ画面
@@ -133,9 +127,9 @@ def テスト実行(new_mmp):
 
     finally:
         try:
-            PWM_電源(MMP, 基盤CH, False)   # 恐竜アイランド基盤
+            PWM_電源(基盤CH, False)   # 恐竜アイランド基盤
         except Exception: pass
         try:
-            PWM_出力(MMP, モータCH, 0)     # DCモータ
+            PWM_出力(モータCH, 0)     # DCモータ
         except Exception: pass
-        MMP.通信切断()
+        通信切断()

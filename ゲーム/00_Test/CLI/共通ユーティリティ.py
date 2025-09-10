@@ -10,6 +10,7 @@
 # 　同一 または libフォルダー(推奨)
 #======================================================
 import time
+import MMP
 
 #------------------------------------------------------
 # 時間計測の差異を吸収
@@ -17,6 +18,10 @@ import time
 #   ・時刻開始()   -> 計測開始時刻（内部表現は実装依存）
 #   ・経過秒(t0)   -> 現在までの経過秒(float)
 #------------------------------------------------------
+
+#======================================================
+# 時間ヘルパー
+#======================================================
 # MicroPython版
 try:
     _ticks_ms   = time.ticks_ms    
@@ -30,72 +35,68 @@ except AttributeError:
     def 時刻開始(): return time.time()
     def 経過秒(t0): return time.time() - t0
 
+#======================================================
+# 通信関連
+#======================================================
+def 通信接続(): MMP.通信接続()
+def 通信切断(): MMP.接続.Close()
 
 #======================================================
 # アナログ入力(HC4067)
 #======================================================
 def アナログ入力測定(
-    MMP,
     スイッチ数      = 4,      # 使用するHC4067の個数(1～4)
     参加人数        = 1,      # 使用するHC4067のPin数(1～16)
     丸め            = 10,     # アナログ値の丸め(数値のバタつきを抑止)
     繰返回数        = 100,    # アドレス切替回数
     待時間          = 0.05,   # ウェイト(秒)
-    全件表示        = True,   # True:全件表示／False:先頭末尾のみ表示
     表示プレイヤー  = None,   # 例：(8, 9) のようなタプル/リスト。Noneなら無指定
     表示スイッチ    = None    # 例：(0, 1)。Noneなら無指定
     ):
 
-    # 設定
-    MMP.アナログ設定(スイッチ数, 参加人数, 丸め)
+    #●アナログ入力を設定する
+    MMP.接続.Analog.Configure(スイッチ数, 参加人数)
 
     # 計測・取得
     print(" 1.Analog values")
     t0 = 時刻開始()
     for cnt in range(繰返回数):
 
-        MMP.アナログ読取()
+        MMP.接続.Analog.Update()
         if 待時間 > 0: time.sleep(待時間)
 
-        # フィルタ指定があれば、フィルタ優先表示
-        if (表示プレイヤー is not None) or (表示スイッチ is not None):
-            # 選択範囲を決定
-            pls = 表示プレイヤー if 表示プレイヤー is not None else range(MMP.参加総人数)
-            sws = 表示スイッチ   if 表示スイッチ   is not None else range(MMP.スイッチ数)
+        # 選択範囲を決定
+        pls = 表示プレイヤー if 表示プレイヤー is not None else range(参加人数)
+        sws = 表示スイッチ   if 表示スイッチ   is not None else range(スイッチ数)
 
-            parts = []
-            for pl in pls:
-                for sw in sws:
-                    try:
-                        v = MMP.mmpAnaVal[pl][sw]
-                        parts.append(f"{pl:02d}-{sw}:{v}")
-                    except Exception:
-                        parts.append(f"{pl:02d}-{sw}:ERR")
-            print("  %03d :" % cnt, " ".join(parts))
-
-        else:
-            # 従来表示（全件 or 先頭末尾のみ）
-            if 全件表示: print("  %03d :" % cnt, MMP.mmpAnaVal)
-            else       : print("  %03d :" % cnt, MMP.mmpAnaVal[0], "～", MMP.mmpAnaVal[-1])
+        parts = []
+        for pl in pls:
+            parts.append(f"{pl:02d}[")
+            for sw in sws:
+                try:
+                    v = MMP.接続.Analog.ReadRoundDown(pl,sw,丸め)
+                    parts.append(f"{v}")
+                except Exception:
+                    parts.append(f"ERR")
+            parts.append("]")
+        print("  %03d :" % cnt, " ".join(parts))
 
     # 結果表示
     sec = 経過秒(t0)
     print("\n 2.Conditions")
     print(" - Repeat Read   : %d times" % (繰返回数))
-    print(" - Address Change: %d times" % (MMP.参加総人数 * 繰返回数))
+    print(" - Address Change: %d times" % (pl * 繰返回数))
 
     print("\n 3.Results")
-    件数 = 繰返回数 * MMP.スイッチ数 * MMP.参加総人数
+    件数 = 繰返回数 * スイッチ数 * 参加人数
     平均 = (sec / 件数) if 件数 else 0.0
     print("  - Total  : %02.06f sec"   % (sec))
     print("  - Average: %01.06f sec\n" % (平均))
-
 
 #======================================================
 # MP3(DFPlayer)
 #======================================================
 def MP3_再生(
-    MMP             , # MMPサーバーの mmp インスタンス
     arg再生一覧     , # [(フォルダ, トラック), ...]
     arg機器No   = 1 , # 1 or 2
     arg音量     = 20, # 0～30
@@ -103,20 +104,20 @@ def MP3_再生(
     ):
 
     print(" 1.Device Status")
-    print("   - 1st: ", MMP.DFP_Info(1))
-    print("   - 2nd: ", MMP.DFP_Info(2))
+    print("   - 1st: ", MMP.接続.Info.Dev.Audio(1))
+    print("   - 2nd: ", MMP.接続.Info.Dev.Audio(2))
 
     print(f" 2.Volume: {arg音量}")
-    MMP.DFP_Volume(arg機器No, arg音量)
+    MMP.接続.Audio.Volume(arg機器No, arg音量)
 
     print(" 3.Play MP3")
     for (f, t) in arg再生一覧:
         print(f"  - Folder={f} Track={t}")
-        MMP.DFP_PlayFolderTrack(arg機器No, f, t)
+        MMP.接続.Audio.Play.Start(arg機器No, f, t)
         time.sleep(arg再生sec)
 
     print(" 4.Stop")
-    MMP.DFP_Stop(arg機器No)
+    MMP.接続.Audio.Play.Stop(arg機器No)
 
 
 #======================================================
@@ -132,12 +133,12 @@ def _to_ch_list(argCh一覧):
 #------------------------------------------------------
 # 電源ON/OFF
 #------------------------------------------------------
-def PWM_電源(MMP, argCh一覧, argスイッチ):
+def PWM_電源(argCh一覧, argスイッチ):
 
     ok_all = True
 
     for ch in _to_ch_list(argCh一覧):
-        ok = bool(MMP.PWM_POWER(ch, argスイッチ))
+        ok = bool(MMP.接続.Pwm.Out(ch, argスイッチ))
         if ok: continue
         print(
             "NG: PWM 電源{}  CH={:02X}".format(
@@ -152,11 +153,11 @@ def PWM_電源(MMP, argCh一覧, argスイッチ):
 #------------------------------------------------------
 # 指定値をそのまま出力
 #------------------------------------------------------
-def PWM_出力(MMP, argCh一覧, pwm値):
+def PWM_出力(argCh一覧, pwm値):
     Ch一覧 = _to_ch_list(argCh一覧)
     ok_all = True
     for ch in Ch一覧:
-        try             : ok = bool(MMP.PWM_VALUE(ch, pwm値))
+        try             : ok = bool(MMP.接続.Pwm.Out(ch, pwm値))
         except Exception: ok = False
         if ok: continue
         try             : print("NG: CH={} PWM={:04X}".format(ch, int(pwm値) & 0xFFFF))
@@ -207,7 +208,7 @@ def PWM_移動_上中下(
 
     print("  1/4.PWM: Cnter")
     中央値 = int((arg最小値 + arg最大値) / 2) + arg中央補正
-    PWM_出力(MMP, argCh一覧, 中央値)
+    PWM_出力(argCh一覧, 中央値)
     time.sleep(arg一時停止sec)
 
     print("  2/4.PWM: Mid to Max")

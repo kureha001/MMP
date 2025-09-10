@@ -1,18 +1,13 @@
 #============================================================
-# MicroPython 用 UART アダプタ
-#  - MmpClient（mmp_core.py）が呼ぶ最小APIを実装
-#    * open_baud(baud) -> bool
-#    * connected_baud  : 実際に開いたボーレート
-#    * clear_input()
-#    * write_ascii(s)
-#    * flush()
-#    * read_one_char() -> 1文字 or None（非ブロッキング）
-#    * now_ms() / ticks_diff(a,b)
-#    * sleep_ms(ms)
-#    * close()
+# MicroPython用：ＵＡＲＴ接続アダプタ
 #------------------------------------------------------------
-# 既定は UART(0) / ピン未指定（ボードのデフォルト割当を使用）
-# 必要に応じて tx_pin / rx_pin を指定してください。
+# ＭＭＰシリアルコマンドを直接扱うコア処理
+#------------------------------------------------------------
+# 動作環境には「mmp_adapter.py」にリネームする
+#------------------------------------------------------------
+# 既定は UART(0)/uart_id=0/tx_pin=1
+# uart_id=None/tx_pin=None で、ボードのデフォルトになる
+# 必要に応じて tx_pin / rx_pin を指定のこと。
 #============================================================
 
 try:
@@ -24,8 +19,8 @@ except ImportError:
     _time = None
 
 
-class MicroPyAdapter:
-    def __init__(self, uart_id=0, tx_pin=None, rx_pin=None):
+class MmpAdapter:
+    def __init__(self, uart_id=0, tx_pin=0, rx_pin=1):
         self._uart_id = uart_id
         self._tx_pin = tx_pin
         self._rx_pin = rx_pin

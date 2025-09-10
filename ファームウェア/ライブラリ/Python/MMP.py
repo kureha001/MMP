@@ -1,13 +1,12 @@
-# MMP.py
 #============================================================
 # Python共通：ＭＭＰ接続
 #------------------------------------------------------------
-# アプリケーションは本プリグラムを通しての接続を推奨
+# アプリケーションは本プリグラムを利用して接続することを推奨
 #============================================================
 from mmp_core    import MmpClient
 from mmp_adapter import MmpAdapter
 
-#引数指定の場合、各プラットフォーム毎に合わせておこなう。
+#引数指定の場合、各プラットフォームのアダプタを確認のこと。。
 #・CPython      ： port= None, preferred_ports=None
 #・MicroPython  ： uart_id=0, tx_pin=0, rx_pin=1
 #・CircuitPython： tx_pin=None, rx_pin=None, timeout_s=0.05, buffer_size=128

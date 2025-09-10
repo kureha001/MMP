@@ -1,17 +1,13 @@
-# mmp_adapter_circuitpy.py
-# Adapter for CircuitPython to be used by mmp_core.MmpClient
-# Provides a minimal UART transport with the methods expected by the core:
-#   - open_baud(baud) -> bool
-#   - clear_input(), write_ascii(s), read_one_char(), flush()
-#   - now_ms(), ticks_diff(a, b), sleep_ms(ms)
-#   - close()
-#   - connected_baud (property)
-#
-# Notes:
-# - No 'uart_id' parameter (CircuitPython busio.UART doesn't support it).
-# - Default pins assume RP2040/2350 family with TX=GP0, RX=GP1.
-# - Keep implementation compact and deterministic; avoid platform heuristics.
-
+#============================================================
+# CircuitPython用：ＵＡＲＴ接続アダプタ
+#------------------------------------------------------------
+# ＭＭＰシリアルコマンドを直接扱うコア処理
+#------------------------------------------------------------
+# 動作環境には「mmp_adapter.py」にリネームする
+#------------------------------------------------------------
+# 'uart_id' パラメータがありません。
+# ※CircuitPython busio.UART はこれをサポートしていません。
+#============================================================
 from mmp_adapter_base import MmpAdapterBase
 
 import time
@@ -19,7 +15,7 @@ import board
 import busio
 
 
-class CircuitPyAdapter(MmpAdapterBase):
+class MmpAdapter(MmpAdapterBase):
     def __init__(self, tx_pin=None, rx_pin=None, timeout_s=0.05, buffer_size=128):
         # Default pins (RP2040/2350 typical wiring: TX=GP0, RX=GP1)
         self.tx_pin = tx_pin if tx_pin is not None else getattr(board, "GP0")

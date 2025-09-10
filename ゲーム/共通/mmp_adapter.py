@@ -4,7 +4,7 @@
 
 from mmp_adapter_base import MmpAdapterBase
 
-class CpyAdapter(MmpAdapterBase):
+class MmpAdapter(MmpAdapterBase):
     def __init__(self, port: str = None, preferred_ports=None):
         super().__init__()
         self._port_name = port

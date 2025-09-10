@@ -55,7 +55,8 @@ class 開始:
         pyxel.load("./resource.pyxres")
         #│
         #●MMPを初期化する
-        MMP.初期化(
+        MMP.通信接続()
+        MMP.接続.Analog.Configure(
             DS.仕様.ハード.HC4067の個数,
             DS.仕様.ハード.HC4067のCh数,
         )

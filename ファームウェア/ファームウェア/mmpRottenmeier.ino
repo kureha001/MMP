@@ -4,10 +4,9 @@
 // ボード情報：Waveshae RP2040 Zero
 // ボード情報：Waveshae RP2350 Zero
 //----------------------------------------------------------------------------- 
-// Ver 0.3.07 - 2025/09/05 By Takanari.Kureha
-//   ・DFPlayerのリピート設定コマンドを追加
-//   ・デジタルの入出力コマンドを廃止
-//   ・デジタル入力ピンをすべてPULLUPに変更(速度変更WS,デジタル入力)
+// Ver 0.3.08 - 2025/09/10 By Takanari.Kureha
+//   ・DFPlayerでStatusのバグを修正
+//   　(同コマンドを２度連続で実行しないと、正しい戻り値を得られないバグ)
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
@@ -584,18 +583,23 @@ void loop() {
           switch (s) {
             case 1:
               state = dfPlayer[n].readState();
+              state = dfPlayer[n].readState();
               if (state<=0) {state=0;}
               break;
             case 2:
               state = dfPlayer[n].readVolume();
+              state = dfPlayer[n].readVolume();
               break;
             case 3:
+              state = dfPlayer[n].readEQ();
               state = dfPlayer[n].readEQ();
               break;
             case 4:
               state = dfPlayer[n].readFileCounts();
+              state = dfPlayer[n].readFileCounts();
               break;
             case 5:
+              state = dfPlayer[n].readCurrentFileNumber();
               state = dfPlayer[n].readCurrentFileNumber();
               break;
             default:

@@ -169,72 +169,49 @@ def PWM_出力(argCh一覧, pwm値):
 # PWM値を徐々に移動
 #------------------------------------------------------
 def PWM_移動(
-    argCh一覧           ,
-    arg開始値           ,
-    arg終了値           ,
-    arg増減     = 2     ,
-    arg待ちsec  = 0.02  ,
+    argCh一覧 ,
+    arg開始値 ,
+    arg終了値 ,
+    arg増減   ,
+    arg待ちsec,
     ):
-    Ch一覧 = _to_ch_list(argCh一覧)
-    ok_all = True
-    try:
-        ok = MMP.接続.Pwm.Out(
-            Ch一覧      ,
-            arg開始値   ,
-            arg終了値   ,
-            arg増減     ,
-            arg待ちsec  ,
-            )
-    except Exception:
-        ok = False
-        print(f"NG: CH={Ch一覧}")
-        ok_all = False
-    return ok_all
+    for pwm_val in range(arg開始値,arg終了値,arg増減):
+        for ch in argCh一覧:
+            MMP.接続.Pwm.Out(ch, pwm_val)
+            time.sleep(arg待ちsec)
 
 #------------------------------------------------------
 # PWM値を中→上→下→中に移動
 #------------------------------------------------------
 def PWM_移動_上中下(
-    MMP                     ,
-    argCh一覧               ,
-    arg最小値               ,
-    arg最大値               ,
-    arg中央補正     = 0     , # 中央がずれる場合、この値で調整
-    arg増分         = 2     ,
-    arg待ちsec      = 0.02  ,
-    arg一時停止sec  = 1.0   ,
+    argCh一覧            ,
+    arg最小              ,
+    arg最大              ,
+    arg増分         = 2  ,
+    arg待ちsec      = 0.2,
+    arg一時停止sec  = 1.0,
     ):
 
+    pem中央 = (arg最小 + arg最大) // 2
+
     print("  1/4.PWM: Cnter")
-    中央値 = int((arg最小値 + arg最大値) / 2) + arg中央補正
-    PWM_出力(argCh一覧, 中央値)
+    for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pem中央)
     time.sleep(arg一時停止sec)
 
     print("  2/4.PWM: Mid to Max")
-    PWM_移動(
-        argCh一覧   ,
-        中央値      ,
-        arg最大値   ,
-        arg増分     ,
-        arg待ちsec  ,
-        )
+    for i in range(0, arg増分 + 1):
+        pwmAngle = arg最小 + (arg最大 - arg最小) * i // arg増分
+        for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pwmAngle)
+        time.sleep(arg待ちsec)
     time.sleep(arg一時停止sec)
 
     print("  3/4.PWM: Max to Min")
-    PWM_移動(
-        argCh一覧   ,
-        arg最大値   ,
-        arg最小値   ,
-        arg増分     ,
-        arg待ちsec  ,
-        )
+    for i in range(arg増分, -1, -1):
+        pwmAngle = arg最小 + (arg最大 - arg最小) * i // arg増分
+        for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pwmAngle)
+        time.sleep(arg待ちsec)
     time.sleep(arg一時停止sec)
 
     print("  4/4.PWM: Min to Mid")
-    PWM_移動(
-        argCh一覧   ,
-        arg最小値   ,
-        中央値      ,
-        arg増分     ,
-        arg待ちsec  ,
-        )
+    for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pem中央)
+    time.sleep(arg一時停止sec)

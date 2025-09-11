@@ -1,4 +1,7 @@
-# 使用例：IchigoJamで扱うには
+# IchigoJamで扱うには
+
+---
+IchigoJam Type-R/Pで、MMPを利用する方法を解説します。
 
 ---
 ## 接続表

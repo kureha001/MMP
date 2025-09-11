@@ -14,7 +14,7 @@
 - **富士通**
   - FM-8
 - **シャープ**
-  - X1
+  - X1ターボ
   - MZ-2500
 - **日立**
   - BASIC MASTER Level3 mark2

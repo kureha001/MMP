@@ -21,14 +21,19 @@ __all__ = ["MmpClient", "MmpAdapter"]
 #────────────────────────────────────    
 def 通信接続():
     #┬
-    print("<< ＭＭＰライブラリ >>")
-    print("接続中...", end="")
+    print("<< ＭＭＰライブラリ for Python>>")
+    print("")
+    print("接続中...")
     #│
     if not 接続.ConnectAutoBaud():
         print("ＭＭＰとの接続に失敗しました...")
-        return
+        return False
     #│
-    print("[システム情報]")
-    print("　・バージョン  : {}".format(接続.Info.Version()))
-    print("　・PCA9685 [0] : 0x{:04X}".format(接続.Info.Dev.Pwm(0)))
-    print("　・DFPlayer[1] : 0x{:04X}".format(接続.Info.Dev.Audio(1)))
+    if 接続.PortName is not None:
+        print(f"　・通信ポート　: {接続.PortName}")
+    print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
+    print( "　・バージョン  : {}".format(接続.Info.Version()))
+    print( "　・PCA9685 [0] : 0x{:04X}".format(接続.Info.Dev.Pwm(0)))
+    print( "　・DFPlayer[1] : 0x{:04X}".format(接続.Info.Dev.Audio(1)))
+
+    return True

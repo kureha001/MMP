@@ -16,25 +16,25 @@ namespace Mmp.Tool
             {
                 using (var mmp = new Mmp.Core.MmpClient())
                 {
-                    mmp.Settings.BaudRate = 115200;
-                    mmp.Settings.TimeoutAudio = 800;
-
-                    bool connected = (port != null) ? mmp.Connect(port) : mmp.Connect();
+                    //mmp.Settings.BaudRate = 115200;
+                    //mmp.Settings.TimeoutAudio = 800;
+                    //bool connected = (port != null) ? mmp.Connect(port) : mmp.Connect();
+                    bool connected = (port == null) ?  mmp.ConnectAutoBaud(out port) : mmp.Connect(port);
                     if (!connected || !mmp.IsOpen)
                     {
                         Console.WriteLine("ＭＭＰとの接続に失敗しました...");
                         return 1;
                     }
 
-                    Console.WriteLine("自動検出 " + mmp.PortName + "\n");
+                    Console.WriteLine("");
+                    RunInfo(mmp); // 情報系
 
                     // === 必要なテストだけコメントを外して実行してください ===
-                    Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
-                    RunInfo(mmp)         ; // 情報系
-                    //RunAnalog(mmp)       ; // アナログ入力
-                    //RunDigital(mmp)      ; // デジタル入出力
-                    RunMp3Playlist(mmp)  ; // MP3プレイヤー(基本)
-                    RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
+                    Console.WriteLine("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
+                    RunAnalog(mmp)       ; // アナログ入力
+                    RunDigital(mmp)      ; // デジタル入出力
+                    //RunMp3Playlist(mmp)  ; // MP3プレイヤー(基本)
+                    //RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
                     //RunPwmByValue(mmp)   ; // PWM出力
                     //RunI2cServoSweep(mmp); // I2C→PCA9685 直接制御
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
@@ -53,11 +53,11 @@ namespace Mmp.Tool
         //============================================================
         private static void RunInfo(Mmp.Core.MmpClient mmp)
         {
-            Console.WriteLine("０.システム情報");
+            Console.WriteLine("　・通信ポート  : " + mmp.PortName);
+            Console.WriteLine("　・接続速度    : " + mmp.ConnectedBaud + "bps");
             Console.WriteLine("　・バージョン  : " + mmp.Info.Version());
             Console.WriteLine("　・PCA9685 [0] : 0x{0:X4}", mmp.Info.Dev.Pwm(0));
             Console.WriteLine("　・DFPlayer[1] : 0x{0:X4}", mmp.Info.Dev.Audio(1));
-            Console.WriteLine("　[終了]\n");
         }
 
         //============================================================

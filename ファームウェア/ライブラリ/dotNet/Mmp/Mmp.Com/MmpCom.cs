@@ -42,8 +42,10 @@ namespace Mmp.Com
         internal readonly Mmp.Core.MmpClient _cli = new Mmp.Core.MmpClient();
         private string _lastError = "";
 
-        public bool IsOpen       { get { return _cli.IsOpen; } }
-        public string LastError  { get { return _lastError;  } }
+        public bool   IsOpen        { get { return _cli.IsOpen          ; } }
+        public string PortName      { get { return _cli.PortName        ; } }
+        public int    ConnectedBaud { get { return _cli.ConnectedBaud   ; } }
+        public string LastError     { get { return _lastError           ; } }
 
         // 例外を LastError へ吸収するヘルパ
         private T Guard<T>(Func<T> f, T fallback)
@@ -67,11 +69,24 @@ namespace Mmp.Com
         {
             return Guard<string>(delegate ()
             {
-                // ★ 引数を Settings に書き込まず、そのまま MmpClient.Connect に渡す
-                //    0 指定は MmpClient 側で Settings へフォールバック（既存仕様）
-                bool ok = _cli.Connect(string.IsNullOrEmpty(portName) ? null : portName,
-                                       baud, timeoutMs, verifyTimeoutMs);
-                return ok ? (_cli.PortName ?? "") : "";
+                // ★ Added: baud <= 0 の場合はポート自動探索 + 自動ボーレート接続へ
+                if (baud <= 0)
+                {
+                    string found;
+                    bool ok = _cli.ConnectAutoBaud(
+                        out found,
+                        cand            : null,             // 既定候補(MmpClient.BAUD_CANDIDATES)を使用
+                        timeoutMsPerTry : timeoutMs,        // 1トライあたりのIOタイムアウト
+                        verifyTimeoutMs : verifyTimeoutMs,
+                        preferredOrder  : _cli.Settings.PreferredPorts
+                    );
+                    return ok ? (found ?? "") : "";
+                }
+
+                // 従来の固定ボーレート接続（互換）
+                bool okFixed = _cli.Connect(string.IsNullOrEmpty(portName) ? null : portName,
+                                            baud, timeoutMs, verifyTimeoutMs);
+                return okFixed ? (_cli.PortName ?? "") : "";
             }, "");
         }
 

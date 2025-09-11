@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace Mmp.Core
 {
+
     /// <summary>
     /// MMP クライアント（シリアル経由）
     /// ・プロトコル：固定5文字（HEX4 + '!' または "!!!!!" など）、末尾 '!' 終端
@@ -13,6 +14,9 @@ namespace Mmp.Core
     /// </summary>
     public sealed class MmpClient : IDisposable
     {
+        // ★ Added: 既定ボーレート候補（Arduinoの MMP_BAUD_CANDIDATES に相当）
+        public static readonly int[] BAUD_CANDIDATES = new int[] { 115200, 9600, 230400, 921600 };
+
         private SerialPort _port;
 
         //================================
@@ -21,6 +25,8 @@ namespace Mmp.Core
         /// <summary>設定（既定値の集約）。数値は >0 指定で優先、<=0 は既定にフォールバック。</summary>
         public sealed class MmpSettings
         {
+            /// <summary>既定ボーレート</summary>
+            public string PortName = null;
             /// <summary>既定ボーレート</summary>
             public int BaudRate = 115200;
             /// <summary>Open() 時の Read/Write タイムアウト（ミリ秒）</summary>
@@ -48,14 +54,17 @@ namespace Mmp.Core
         /// <summary>設定オブジェクト。必要に応じてプロパティを書き換えてください。</summary>
         public MmpSettings Settings { get; } = new MmpSettings();
 
-        // ----------------
-        // ---- 情報系 ----
-        // ----------------
+        //------------------------
+        //---- プロパティ実装 ----
+        //------------------------
         /// <summary>ポートが開いているか</summary>
-        public bool   IsOpen     { get { return _port != null && _port.IsOpen; } }
+        public bool   IsOpen        { get { return _port != null && _port.IsOpen    ; } }
 
         /// <summary>現在接続中のポート名（未接続なら null）</summary>
-        public string PortName   { get { return IsOpen ? _port.PortName : null; } }
+        public string PortName      { get { return IsOpen ? _port.PortName : null   ; } }
+
+        /// <summary>現在接続中のボーレート（未接続なら null）</summary>
+        public int    ConnectedBaud { get { return IsOpen ? _port.BaudRate : 0      ; } }
 
         // ========================
         // ==== モジュール実装 ====
@@ -81,6 +90,65 @@ namespace Mmp.Core
         //=============================
         //===== 低レイヤ コマンド =====
         //=============================
+        //------------------------------
+        // 自動ボーレート接続
+        //------------------------------
+        // ★ Added: 候補ボーレートを順次トライして接続
+        public bool ConnectAutoBaud(
+            out string connectedPort        ,
+            int[] cand               = null ,
+            int timeoutMsPerTry      = 0    ,
+            int verifyTimeoutMs      = 0    ,
+            string[] preferredOrder  = null
+        ){
+            connectedPort = null;
+
+            // 候補リスト（未指定ならデフォルト候補）
+            int[] candidates = (cand != null && cand.Length > 0) ? cand : BAUD_CANDIDATES;
+
+            int useIo  = Resolve(timeoutMsPerTry, Settings.TimeoutIo);
+            int useVer = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
+
+            // ポート列挙（既存ロジック踏襲）
+            string[] ports = (preferredOrder != null && preferredOrder.Length > 0)
+                ? preferredOrder
+                : Settings.PreferredPorts ?? System.IO.Ports.SerialPort.GetPortNames();
+
+            Array.Sort(ports, delegate (string a, string b)
+            {
+                int na = ExtractComNumber(a);
+                int nb = ExtractComNumber(b);
+                if (na == nb) return string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+                return na.CompareTo(nb);
+            });
+
+            foreach (string p in ports)
+            {
+                foreach (int baud in candidates)
+                {
+                    try
+                    {
+                        if (ConnectSpecified(p, baud, useIo, useVer))
+                        {
+                            connectedPort = p;
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    finally
+                    {
+                        if (!IsOpen)
+                        {
+                            try { Close(); } catch { }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         //------------------------------------------------------------
         // 接続（複数タイプ）
         // Connect: 明示引数(>0)が最優先、0/未指定は Settings を使用
@@ -431,8 +499,8 @@ namespace Mmp.Core
         public bool ConnectSpecified(string portName, int baud, int timeoutMs, int verifyTimeoutMs)
         {
             int useBaud = Resolve(baud, Settings.BaudRate);
-            int useIo = Resolve(timeoutMs, Settings.TimeoutIo);
-            int useVer = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
+            int useIo   = Resolve(timeoutMs, Settings.TimeoutIo);
+            int useVer  = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
 
             try
             {
@@ -440,7 +508,11 @@ namespace Mmp.Core
                 try { _port.DiscardInBuffer(); _port.DiscardOutBuffer(); } catch { }
                 string ver = GetVersion(useVer); // private 呼び出し
                 if (!string.IsNullOrEmpty(ver))
+                {
+                    Settings.PortName = portName;
+                    Settings.BaudRate = useBaud;
                     return true;
+                }
             }
             catch
             {
@@ -453,8 +525,8 @@ namespace Mmp.Core
         public bool ConnectAuto(out string connectedPort, int baud, int timeoutMsPerPort, int verifyTimeoutMs, string[] preferredOrder)
         {
             int useBaud = Resolve(baud, Settings.BaudRate);
-            int useIo = Resolve(timeoutMsPerPort, Settings.TimeoutIo);
-            int useVer = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
+            int useIo   = Resolve(timeoutMsPerPort, Settings.TimeoutIo);
+            int useVer  = Resolve(verifyTimeoutMs, Settings.TimeoutVerify);
 
             connectedPort = null;
 
@@ -500,13 +572,13 @@ namespace Mmp.Core
             if (IsOpen) Close();
 
             _port = new SerialPort(portName, baud, Parity.None, 8, StopBits.One);
-            _port.Encoding = Encoding.ASCII;
-            _port.ReadTimeout = timeoutMs;
+            _port.Encoding     = Encoding.ASCII;
+            _port.ReadTimeout  = timeoutMs;
             _port.WriteTimeout = timeoutMs;
-            _port.Handshake = Handshake.None;
-            _port.DtrEnable = true;
-            _port.RtsEnable = true;
-            _port.NewLine = "!";
+            _port.Handshake    = Handshake.None;
+            _port.DtrEnable    = true;
+            _port.RtsEnable    = true;
+            _port.NewLine =    "!";
 
             _port.Open();
 

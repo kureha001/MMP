@@ -7,15 +7,9 @@ import MMP
 #============================================================
 def main():
 
-    print("<< ＭＭＰライブラリ>>\n")
+    if not MMP.通信接続(): return
 
-    if MMP.通信接続():
-        print("自動検出１ {} bps\n".format(MMP.接続.Settings.BaudRate))
-        print("自動検出２ {} bps\n".format(MMP.接続.ConnectedBaud))
-
-    print("＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunInfo()            # 情報系
-    RunAnalog()          # アナログ入力
+    print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
     RunDigital()         # デジタル入出力
     RunMp3Playlist()     # MP3プレイヤー(基本)
     RunMp3Control()      # MP3プレイヤー(制御)
@@ -27,18 +21,6 @@ def main():
 # 出力文字ヘルパ
 #============================================================
 def tf(b): return "True" if b else "False"
-
-
-#============================================================
-# 0) 基本情報(バージョン/PCA9685/DFPlayer)
-#============================================================
-def RunInfo():
-
-    print("０.システム情報")
-    print("　・バージョン  : {}".format(MMP.接続.Info.Version()))
-    print("　・PCA9685 [0] : 0x{:04X}".format(MMP.接続.Info.Dev.Pwm(0)))
-    print("　・DFPlayer[1] : 0x{:04X}".format(MMP.接続.Info.Dev.Audio(1)))
-    print("　[終了]\n")
 
 
 #============================================================

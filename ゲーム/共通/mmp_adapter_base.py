@@ -18,6 +18,9 @@ class MmpAdapterBase:
     #------------------------------------------------------------
     # 未実装時のエラー発生用
     #------------------------------------------------------------
+    # 通信確立したCOMポート名を返す
+    def get_port_name(self) -> None         : raise NotImplementedError
+
     # ボーレート指定でポートを開く。
     def open_baud(self, baud: int) -> bool  : raise NotImplementedError
 

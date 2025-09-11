@@ -38,6 +38,7 @@ def _try_parse_hex4_bang(s: str):
 #============================
 class Settings:
     def __init__(self):
+        self.PortName       = None
         self.BaudRate       = 115200
         self.TimeoutIo      = 200
         self.TimeoutVerify  = 400
@@ -66,6 +67,7 @@ class MmpClient:
         self._is_open        = False
         self._last_error     = ""
         self._connected_baud = None
+        self._get_port_name  = None
 
         #========================
         #==== モジュール実装 ====
@@ -77,17 +79,20 @@ class MmpClient:
         self.Digital= self._DigitalModule(self)
         self.I2c    = self._I2cModule(self)
 
-    #----------------
-    #---- 情報系 ----
-    #----------------
+    #------------------------
+    #---- プロパティ実装 ----
+    #------------------------
     @property
-    def IsOpen(self): return self._is_open
+    def IsOpen(self)        : return self._is_open
 
     @property
-    def ConnectedBaud(self): return self._connected_baud
+    def PortName(self)      : return self._get_port_name
 
     @property
-    def LastError(self): return self._last_error
+    def ConnectedBaud(self) : return self._connected_baud
+
+    @property
+    def LastError(self)     : return self._last_error
 
     #=============================
     #===== 低レイヤ コマンド =====
@@ -116,8 +121,13 @@ class MmpClient:
                 return False
 
             self._is_open = True
+
             self._connected_baud = self.adapter.connected_baud or int(baud)
             self.Settings.BaudRate = int(self._connected_baud)
+
+            self._get_port_name = self.adapter.get_port_name() 
+            self.Settings.PortName = self._get_port_name
+
             return True
 
         except Exception as ex:

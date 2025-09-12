@@ -35,8 +35,8 @@ namespace Mmp.Tool
                     //RunDigital(mmp)    ; // デジタル入出力
                     //RunMp3Playlist(mmp); // MP3プレイヤー(基本)
                     //RunMp3Control(mmp) ; // MP3プレイヤー(制御)
-                    RunPwm(mmp, true ) ; // PWM出力
-                    RunPwm(mmp, false) ; // I2C→PCA9685 直接制御
+                    //RunPwm(mmp, true ) ; // PWM出力
+                    //RunPwm(mmp, false) ; // I2C→PCA9685 直接制御
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
                 }
                 return 0;

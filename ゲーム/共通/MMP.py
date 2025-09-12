@@ -26,6 +26,7 @@ def 通信接続():
     print("接続中...")
     #│
     if not 接続.ConnectAutoBaud():
+    #if not 接続.ConnectWithBaud(115200):
         print("ＭＭＰとの接続に失敗しました...")
         return False
     #│

@@ -16,6 +16,13 @@ from mmp_adapter_base import MmpAdapterBase
 #=================
 class MmpAdapter(MmpAdapterBase):
 
+    # 接続情報を初期化する。
+    _uart           = None
+    _is_open        = False
+    _connected_port = None
+    _connected_baud = None
+    _lastError      = None
+
     #========================================================
     # コンストラクタ
     #========================================================
@@ -29,11 +36,6 @@ class MmpAdapter(MmpAdapterBase):
         # 通信条件を設定する。
         self._port_name = port
         self._preferred = preferred_ports or []
-
-        # 接続情報を更新する。
-        self.uart            = None
-        self._connected_baud = None
-        self._connected_port = None
 
 
     #========================================================
@@ -55,6 +57,7 @@ class MmpAdapter(MmpAdapterBase):
             pref   = [p for p in self._preferred if p in     ports]
             others = [p for p in ports           if p not in pref ]
             return pref + others        # 戻り値 → [成功]
+
         return ports                    # 戻り値 → [成功]
 
 
@@ -86,9 +89,8 @@ class MmpAdapter(MmpAdapterBase):
             except Exception: pass
 
             # 接続情報を更新する。
-            self._ser           = ser
-            self.connected_baud = baud
-            self.connected_port = name
+            self._uart      = ser
+            self._is_open   = True
 
             # 受信バッファをクリア
             self.clear_input()
@@ -104,6 +106,12 @@ class MmpAdapter(MmpAdapterBase):
         baud: int   # ① ボーレート
     ) -> bool:      # 戻り値：True=成功／False=失敗
 
+        # 接続情報を更新する。
+        self._is_open           = False
+        self._connected_port    = None
+        self._connected_baud    = None
+        self._lastError         = None
+
         # ボーレートの指定がある場合：
         if self._port_name:
             # 接続されたCOMポートで接続する。
@@ -113,8 +121,22 @@ class MmpAdapter(MmpAdapterBase):
         # ボーレートの指定がない場合：
         # COMポートのリストを用いて総当たりで接続する。
         for p in self._iter_ports():
-            if self._open_named(p, baud): return True # 戻り値 → [成功]
-        return False                                  # 戻り値 → [失敗]
+            if self._open_named(p, baud):
+
+                # 接続情報を更新する。
+                self._connected_port    = p
+                self._connected_baud    = int(baud)
+                self._lastError        = None
+
+                return True     # 戻り値 → [成功]
+
+        # 接続情報を更新する。
+        self._uart           = None
+        self._is_open        = False
+        self._connected_port = None
+        self._connected_baud = None
+
+        return False            # 戻り値 → [失敗]
 
     #------------------------------
     # 受信バッファを消去する
@@ -123,13 +145,13 @@ class MmpAdapter(MmpAdapterBase):
     ) -> None:  # 戻り値：なし
 
         # シリアルが無効な場合は処理を中断
-        if not self._ser: return
+        if not self._uart: return
 
-        try             : n = self._ser.in_waiting
+        try             : n = self._uart.in_waiting
         except Exception: n = 0
 
         if n:
-            try             : self._ser.read(n)
+            try             : self._uart.read(n)
             except Exception: pass
 
     #------------------------------
@@ -140,10 +162,10 @@ class MmpAdapter(MmpAdapterBase):
     ) -> None:  # 戻り値：なし
 
         # シリアルが無効な場合は処理を中断
-        if not self._ser: return
+        if not self._uart: return
 
         # 引数の文字列をASCII変換して送信
-        try             : self._ser.write(s.encode("ascii", "ignore"))
+        try             : self._uart.write(s.encode("ascii", "ignore"))
         except Exception: pass
 
     #------------------------------
@@ -153,14 +175,14 @@ class MmpAdapter(MmpAdapterBase):
     ) -> str:   # 戻り値：１文字=取得文字／None=バッファが空
 
         # シリアルが無効な場合は処理を中断
-        if not self._ser: return None
+        if not self._uart: return None
 
         # 受信バッファから１文字取得する
         try:
             # 受信バッファから空以外の場合：
-            if self._ser.in_waiting > 0:
+            if self._uart.in_waiting > 0:
                 # 受信バッファの先頭１文字を取得する
-                b = self._ser.read(1)
+                b = self._uart.read(1)
                 if b:
                     # 取得文字をASCIIから復元して返す
                                                     # 戻り値 → [成功]
@@ -178,9 +200,9 @@ class MmpAdapter(MmpAdapterBase):
     ) -> None:  # 戻り値：なし
 
         # シリアルが無効な場合は処理を中断
-        if not self._ser: return None
+        if not self._uart: return None
 
-        try             : self._ser.flush()
+        try             : self._uart.flush()
         except Exception: pass
 
     #------------------------------
@@ -189,14 +211,16 @@ class MmpAdapter(MmpAdapterBase):
     def close(self
     ) -> None:  # 戻り値：なし
 
-        if self._ser:
-            try             : self._ser.close()
-            except Exception: pass
+        if not self._uart: return None
+
+        try             : self._uart.close()
+        except Exception: pass
 
         # 接続情報を更新する。
-        self._ser           = None
-        self.connected_baud = None
-        self._port_name     = None
+        self._uart           = None
+        self._is_open        = False
+        self._connected_port = None
+        self._connected_baud = None
 
 
     #========================================================

@@ -11,11 +11,13 @@
 #============================================================
 class MmpAdapterBase:
 
-    # mmp_core.MmpClient が用いる初期アダプター サーフェス
-    def __init__(self):
-        self.connected_port = None
-        self.connected_baud = None
-
+    # 接続情報を初期化する。
+    _uart           = None
+    _is_open        = False
+    _connected_port = None
+    _connected_baud = None
+    _lastError      = None
+    
     #------------------------------------------------------------
     # 未実装時のエラー発生用
     #------------------------------------------------------------

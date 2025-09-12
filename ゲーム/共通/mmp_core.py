@@ -12,7 +12,16 @@ from mmp_adapter_base import MmpAdapterBase
 #=========================
 # 通信速度のプリセット一覧
 #=========================
-BAUD_CANDIDATES = ( 115200, 9600, 230400, 921600, 300 )
+BAUD_CANDIDATES = (
+    115200  ,
+    921600  ,
+    230400  ,
+    9600    ,
+    4800    ,
+    2400    ,
+    1200    ,
+    300     ,
+)
 
 #========================
 # ヘルパ
@@ -38,7 +47,7 @@ def _try_parse_hex4_bang(s: str):
 #========================
 class Settings:
     def __init__(self):
-        self.PortName       = None
+        self.PortName       = ""
         self.BaudRate       = 115200
         self.TimeoutIo      = 200
         self.TimeoutVerify  = 400
@@ -80,28 +89,20 @@ class MmpClient:
         self.Digital= self._DigitalModule(self)
         self.I2c    = self._I2cModule(self)
 
-        # 接続情報を更新する。
-        self._is_open        = False
-        self._connected_baud = None
-        self._connected_port = None
-        self._last_error     = ""
-
-
     #========================
     # プロパティ
     #========================
     @property
-    def IsOpen(self)        : return self._is_open
+    def IsOpen(self)        : return self.adapter._is_open
 
     @property
-    def ConnectedPort(self) : return self._connected_port
+    def ConnectedPort(self) : return self.adapter._connected_port
 
     @property
-    def ConnectedBaud(self) : return self._connected_baud
+    def ConnectedBaud(self) : return self.adapter._connected_baud
 
     @property
-    def LastError(self)     : return self._last_error
-
+    def LastError(self)     : return self.adapter._lastError
 
     #========================
     # 低レイヤ コマンド
@@ -115,6 +116,12 @@ class MmpClient:
         verifyTimeoutMs: int = 0,   # ③ ベリファイ用タイムアウト(単位；ミリ秒)
     ) -> bool:                      # 戻り値：True=成功／False=失敗
 
+        # 接続情報を初期化する。
+        self.adapter._is_open        = False
+        self.adapter._connected_port = None
+        self.adapter._connected_baud = None
+        self.adapter._lastError      = None
+
         use_io = _resolve(timeoutIo, self.Settings.TimeoutIo)
         use_ver= _resolve(verifyTimeoutMs, self.Settings.TimeoutVerify)
 
@@ -122,12 +129,13 @@ class MmpClient:
             # 指定の通信速度でポートを開く。
             if not self.adapter.open_baud(int(baud)):
                 # 接続情報を更新する。
-                self._last_error = "Open failed"
+                self.adapter._lastError = f"{baud}bpsで、ポートを開けませんでした。"
                 return False            # 戻り値 → [失敗]
 
             # 入力バッファを消去する。
             self.adapter.sleep_ms(10)
             self.adapter.clear_input()
+            self.adapter.flush()
 
             # バージョンを取得して、ベリファイを実行する。
             if not self._verify(use_ver):
@@ -136,18 +144,14 @@ class MmpClient:
                 self.adapter.close()
 
                 # 接続情報を更新する。
-                self._is_open    = False
-                self._last_error = "Verify failed"
+                self.adapter._lastError = f"{baud}bpsで、MMPが見つかりませんでした。"
 
                 return False            # 戻り値 → [失敗]
 
             # 接続情報を更新する。
-            self._is_open          = True
-            self._connected_baud   = self.adapter.connected_baud or int(baud)
-            self.Settings.BaudRate = int(self._connected_baud)
-            self._connected_port   = self.adapter.connected_port
-            self.Settings.PortName = self._connected_port
-            self._last_error       = None
+            self.Settings.PortName  = str(self.adapter._connected_port)
+            self.Settings.BaudRate  = int(self.adapter._connected_baud)
+            self.adapter._lastError = None
 
             return True                 # 戻り値 → [成功]
 
@@ -158,8 +162,8 @@ class MmpClient:
             except  : pass
 
             # 接続情報を更新する。
-            self._is_open    = False
-            self._last_error = str(ex)
+            self.adapter._is_open   = False
+            self.adapter._lastError = str(ex)
 
             return False                # 戻り値 → [失敗]
 
@@ -175,7 +179,7 @@ class MmpClient:
             if self.ConnectWithBaud(b, 0, 0): return True   # 戻り値 → [成功]
 
         # 接続情報を更新する。
-        self._last_error = "No baud matched"
+        self.adapter._lastError = f"以下のボーレートでは、MMPが見つかりませんでした。\n{candidates}"
 
         return False                                        # 戻り値 → [失敗]
 
@@ -194,6 +198,9 @@ class MmpClient:
         timeout_ms: int     # ① タイムアウト(単位：ミリ秒)
     ) -> bool:              # 戻り値：True=成功／False=失敗
         # ＭＭＰからバージョンを取得し、実行ステータスを返す。
+        # 通信速度切替で不安定になるので、最初にダミーのコマンドを送信してから
+        # バージョンコマンドを送信する。
+        resp = self._send_command("!"   , _resolve(timeout_ms, self.Settings.TimeoutVerify))
         resp = self._send_command("VER!", _resolve(timeout_ms, self.Settings.TimeoutVerify))
         return len(resp) == 5 and resp.endswith('!')
 
@@ -207,7 +214,7 @@ class MmpClient:
 
         if not cmd or not isinstance(cmd, str):
             # 接続情報を更新する。
-            self._last_error = "Empty command"
+            self.adapter._lastError = "コマンド文字列がありません。"
             return ""       # 戻り値 → [失敗]
 
         # 末尾の"!"が無ければ補正する。
@@ -215,8 +222,12 @@ class MmpClient:
 
         # 入力バッファを消去→コマンドを送信→送信バッファを消去
         self.adapter.clear_input()
-        self.adapter.write_ascii(cmd)
         self.adapter.flush()
+        self.adapter.sleep_ms(50)
+        self.adapter.write_ascii(cmd)
+        self.adapter.sleep_ms(50)
+        self.adapter.flush()
+        self.adapter.sleep_ms(50)
 
         # 5文字の戻り値を取得する まはた タイムアウト まで、繰り返す。
         resp_chars = []
@@ -235,7 +246,7 @@ class MmpClient:
                             # 戻り値 → [正常]
 
         # 接続情報を更新する。
-        self._last_error = "Timeout or invalid 5-char reply"
+        self.adapter._lastError = "時間内にMMPの返信を受け取れませんでした。"
 
         return ""           # 戻り値 → [失敗]
 

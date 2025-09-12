@@ -25,6 +25,13 @@ except ImportError:
 #=================
 class MmpAdapter:
 
+    # 接続情報を初期化する。
+    _uart           = None
+    _is_open        = False
+    _connected_port = None
+    _connected_baud = None
+    _lastError      = None
+
     #========================================================
     # コンストラクタ
     #========================================================
@@ -39,12 +46,6 @@ class MmpAdapter:
         self._tx_pin    = tx_pin
         self._rx_pin    = rx_pin
 
-        # 通信条件を設定する。
-
-        # 接続情報を更新する。
-        self.uart           = None
-        self.connected_baud = None
-
 
     #========================================================
     # アダプタ共通コマンド：通信関連
@@ -56,39 +57,50 @@ class MmpAdapter:
         baud: int   # ① ボーレート
     ) -> bool:      # 戻り値：True=成功／False=失敗
 
+        # 接続情報を更新する。
+        self._is_open           = False
+        self._connected_port    = None
+        self._connected_baud    = None
+        self._lastError         = None
+
         try:
             # 既に接続がある場合は、切断する。
             # ※deinitを実装しない場合もある
-            if self.uart and hasattr(self.uart, "deinit"):
-                try             : self.uart.deinit()
+            if self._uart and hasattr(self._uart, "deinit"):
+                try             : self._uart.deinit()
                 except Exception: pass
 
             # ピン指定の有無に応じて接続する。
             if not self._tx_pin and not self._rx_pin:
                 tx = machine.Pin(self._tx_pin)
                 rx = machine.Pin(self._rx_pin)
-                self.uart = machine.UART(self._uart_id, baudrate=int(baud), tx=tx, rx=rx)
+                self._uart = machine.UART(self._uart_id, baudrate=int(baud), tx=tx, rx=rx)
             else:
-                self.uart = machine.UART(self._uart_id, baudrate=int(baud))
+                self._uart = machine.UART(self._uart_id, baudrate=int(baud))
 
             # 入力バッファを消去する。
             self.clear_input()
 
             # 接続情報を更新する。
-            self.connected_baud = int(baud)
+            self._is_open           = True
+            self._connected_port    = f"UART(Tx={self.tx_pin}/Rx={self.rx_pin})"
+            self._connected_baud    = int(baud)
+            self._lastError         = None
 
             return True         # 戻り値 → [成功]
 
         except Exception:
             # 既に接続がある場合は、切断する。
             # ※deinitを実装しない場合もある
-            if self.uart and hasattr(self.uart, "deinit"):
-                try             : self.uart.deinit()
+            if self._uart and hasattr(self._uart, "deinit"):
+                try             : self._uart.deinit()
                 except Exception: pass
 
             # 接続情報を更新する。
-            self.uart           = None
-            self.connected_baud = None
+            self._uart           = None
+            self._is_open        = False
+            self._connected_port = None
+            self._connected_baud = None
 
             return False        # 戻り値 → [失敗]
 
@@ -99,12 +111,12 @@ class MmpAdapter:
     ) -> None:  # 戻り値：なし
 
         # シリアルが無効な場合は処理を中断
-        if not self.uart: return
+        if not self._uart: return
 
         try:
-            n = self.uart.any()
+            n = self._uart.any()
             if n and n > 0:
-                try             : self.uart.read(n)
+                try             : self._uart.read(n)
                 except Exception: pass
         except Exception        : pass
 
@@ -116,13 +128,13 @@ class MmpAdapter:
     ) -> None:  # 戻り値：なし
 
         # シリアルが無効 または 空文字指定 の場合は処理を中断
-        if not self.uart  or not s: return
+        if not self._uart  or not s: return
 
         # 引数の文字列をASCII変換して送信
         #※MicroPython の UART.write は bytes/str を受け付ける実装が多い
-        try                 : self.uart.write(s)
+        try                 : self._uart.write(s)
         except Exception:
-            try             : self.uart.write(s.encode("ascii", "ignore"))
+            try             : self._uart.write(s.encode("ascii", "ignore"))
             except Exception: pass
 
     #------------------------------
@@ -132,11 +144,11 @@ class MmpAdapter:
     ) -> str:   # 戻り値：１文字=取得文字／None=バッファが空
 
         # シリアルが無効な場合は処理を中断
-        if not self.uart: return
+        if not self._uart: return
 
         try:
-            if self.uart.any() > 0:
-                b = self.uart.read(1)
+            if self._uart.any() > 0:
+                b = self._uart.read(1)
                 if b:
                     # ASCII 1文字へ（不正バイトは無視）
                     try: return b.decode("ascii", "ignore")
@@ -161,13 +173,15 @@ class MmpAdapter:
     ) -> None:  # 戻り値：なし
 
         try:
-            if self.uart:
-                if hasattr(self.uart, "deinit"):
-                    self.uart.deinit()
+            if self._uart:
+                if hasattr(self._uart, "deinit"):
+                    self._uart.deinit()
         except Exception: pass
         finally:
             # 接続情報を更新する。
-            self.uart            = None
+            self._uart           = None
+            self._is_open        = False
+            self._connected_port = None
             self._connected_baud = None
 
 

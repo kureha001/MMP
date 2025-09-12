@@ -10,9 +10,9 @@ def main():
     if not MMP.通信接続(): return
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    #RunDigital()        # デジタル入出力
-    #RunMp3Playlist()    # MP3プレイヤー(基本)
-    #RunMp3Control()     # MP3プレイヤー(制御)
+    RunDigital()        # デジタル入出力
+    RunMp3Playlist()    # MP3プレイヤー(基本)
+    RunMp3Control()     # MP3プレイヤー(制御)
     RunPwm(True)        # PWM出力
     RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
@@ -144,24 +144,23 @@ def RunMp3Control():
 # 5) PWM 生値：ch0=180度型、ch15=連続回転型
 # 6) I2C：サーボスイープ（PCA9685 レジスタ直書き）
 #============================================================
-SERVO_MIN    = 150     # PCA9685 12bitの生値（例: 150）
-SERVO_MAX    = 600     # 同上（例: 600）
-SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
-STEPS        = 80
-STEP         = 8
-STEP_DELAY_S = 0
-CH_180       = 0
-CH_360       = 15
-PCA_ADDR     = 0x40
-#------------------------------------------------------------
 def RunPwm(mode):
 
-    if mode: print("５.ＰＷＭ（ PCA9685：サーボモータ180度型,連続回転型 ）")
-    else   : print("６.Ｉ２Ｃ（ PCA9685：サーボモータ180度型,連続回転型 ）")
+    Title = ("５.ＰＷＭ") if mode else ("６.Ｉ２Ｃ")
+    print(f"{Title}（ PCA9685：サーボモータ180度型,連続回転型 ）")
+
+    SERVO_MIN    = 150 # PCA9685 12bitの生値（例: 150）
+    SERVO_MAX    = 600 # 同上               （例: 600）
+    SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
+    OffsetMax360 = 60
+    STEPS        = 80
+    STEP         = 8
+    STEP_DELAY_S = 0
+    CH_180       = 0
+    CH_360       = 15
+    PCA_ADDR     = 0x40
 
     def RunI2C(ch, ticks):
-        if (ticks < 0   ): ticks = 0
-        if (ticks > 4095): ticks = 4095
         base_reg  = 0x06 + 4 * ch
         MMP.接続.I2c.Write(PCA_ADDR, base_reg + 2, (ticks     ) & 0xFF)
         MMP.接続.I2c.Write(PCA_ADDR, base_reg + 3, (ticks >> 8) & 0x0F)
@@ -175,12 +174,10 @@ def RunPwm(mode):
         RunI2C(CH_360, SERVO_MID)
     time.sleep(0.3)
 
-    rotOffsetMax = 60
-
     print("　・正転,加速")
     for i in range(0, STEPS + 1,STEP):
         pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        pwm360 = SERVO_MID + (rotOffsetMax * i)          // STEPS
+        pwm360 = SERVO_MID + (OffsetMax360 * i)          // STEPS
         if mode:
             MMP.接続.Pwm.Out(CH_180, pwm180)
             MMP.接続.Pwm.Out(CH_360, pwm360)
@@ -192,7 +189,7 @@ def RunPwm(mode):
     print("　・逆転,減速")
     for i in range(STEPS, -1, -STEP):
         pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        pwm360 = SERVO_MID + (rotOffsetMax * i)          // STEPS
+        pwm360 = SERVO_MID + (OffsetMax360 * i)          // STEPS
         if mode:
             MMP.接続.Pwm.Out(CH_180, pwm180)
             MMP.接続.Pwm.Out(CH_360, pwm360)

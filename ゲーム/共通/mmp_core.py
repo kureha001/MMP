@@ -33,9 +33,9 @@ def _try_parse_hex4_bang(s: str):
     try                     : return True , int(s[:4], 16)
     except Exception        : return False, 0
 
-#============================
-#===== 規定値モジュール =====
-#============================
+#========================
+# 規定値モジュール 
+#========================
 class Settings:
     def __init__(self):
         self.PortName       = None
@@ -113,7 +113,7 @@ class MmpClient:
         baud: int               ,   # ① 通信速度
         timeoutIo:       int = 0,   # ② 一般用タイムアウト(単位；ミリ秒)
         verifyTimeoutMs: int = 0,   # ③ ベリファイ用タイムアウト(単位；ミリ秒)
-    ) -> bool:                      # 戻り値：
+    ) -> bool:                      # 戻り値：True=成功／False=失敗
 
         use_io = _resolve(timeoutIo, self.Settings.TimeoutIo)
         use_ver= _resolve(verifyTimeoutMs, self.Settings.TimeoutVerify)
@@ -167,7 +167,7 @@ class MmpClient:
     # 接続：自動
     #-------------------
     def ConnectAutoBaud(self,
-        candidates = BAUD_CANDIDATES    # 通信速度一覧
+        candidates = BAUD_CANDIDATES    # ①通信速度一覧
     ) -> bool:                          # 戻り値：True=成功／False=失敗
 
         # 通信速度一覧の通信速度を用いて、総当たりで接続を試みる。
@@ -268,7 +268,7 @@ class MmpClient:
             def __init__(self, p:'MmpClient'): self._p = p
 
             #---------------------------
-            # 2-1.ＰＷＭデバイス(PCA9685)
+            # 2-1.ＰＷＭデバイス
             #---------------------------
             def Pwm(self, devId0to15:int, timeoutMs:int=0) -> int:
                 t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
@@ -277,7 +277,7 @@ class MmpClient:
                 return v if ok else -1
 
             #---------------------------
-            # 2-2.音声デバイス(DFPlayer)
+            # 2-2.音声デバイス
             #---------------------------
             def Audio(self, devId1to4:int, timeoutMs:int=0) -> int:
                 t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
@@ -404,18 +404,18 @@ class MmpClient:
         #----------------------
         def __init__(self, p:'MmpClient'): self._p = p
 
-        #---------
+        #----------------------
         # １．入力
-        #---------
+        #----------------------
         def In(self, gpioId:int, timeoutMs:int=0) -> int:
             t = _resolve(timeoutMs, self._p.Settings.TimeoutDigital)
             resp = self._p._send_command(f"POR:{_hex2(gpioId)}!", t)
             ok, v = _try_parse_hex4_bang(resp); 
             return v if ok else 0
 
-        #---------
+        #----------------------
         # ２．出力
-        #---------
+        #----------------------
         def Out(self, gpioId:int, val0or1:int, timeoutMs:int=0) -> bool:
             t = _resolve(timeoutMs, self._p.Settings.TimeoutDigital)
             bit = '1' if (val0or1 & 1) else '0'
@@ -431,31 +431,31 @@ class MmpClient:
         #----------------------
         def __init__(self, p:'MmpClient'): self._p = p
 
-        #---------------------
+        #----------------------
         # １．デバイス情報
-        #---------------------
+        #----------------------
         def Info(self, devId0to15:int, timeoutMs:int=0) -> int:
             return self._p.Info.Dev.Pwm(devId0to15, timeoutMs)
 
-        #---------------------
-        # ２．出力（boolに変更）
-        #---------------------
+        #----------------------
+        # ２．出力
+        #----------------------
         def Out(self, chId0to255:int, val0to4095:int, timeoutMs:int=0) -> bool:
             t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
             resp = self._p._send_command(f"PWM:{_hex2(chId0to255)}:{_hex4(val0to4095)}!", t)
             return resp == "!!!!!"
 
-        #---------------------
+        #----------------------
         # ３．角度設定
-        #---------------------
+        #----------------------
         def AngleInit(self, angleMin:int, angleMax:int, pwmMin:int, pwmMax:int, timeoutMs:int=0) -> bool:
             t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
             resp = self._p._send_command(f"PWI:{_hex3(angleMin)}:{_hex3(angleMax)}:{_hex4(pwmMin)}:{_hex4(pwmMax)}!", t)
             return resp == "!!!!!"
 
-        #-------------------------
-        # ４．角度指定（boolに変更）
-        #-------------------------
+        #----------------------
+        # ４．角度指定
+        #----------------------
         def AngleOut(self, chId0to255:int, angle0to180:int, timeoutMs:int=0) -> bool:
             t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
             resp = self._p._send_command(f"PWA:{_hex2(chId0to255)}:{_hex3(angle0to180)}!", t)
@@ -562,7 +562,7 @@ class MmpClient:
                 return self._dst_query(devId1to4, 1, timeoutMs)
 
             #----------------------
-            # 3-2. ボリューム
+            # 3-2. 音量
             #----------------------
             def Volume(self, devId1to4:int, timeoutMs:int=0) -> int:
                 return self._dst_query(devId1to4, 2, timeoutMs)

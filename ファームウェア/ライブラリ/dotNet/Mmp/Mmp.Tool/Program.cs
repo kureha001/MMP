@@ -205,8 +205,10 @@ namespace Mmp.Tool
         //============================================================
         private static void RunPwm(Mmp.Core.MmpClient mmp, bool mode)
         {
-            string Title = mode ? "５.ＰＷＭ" : "６.Ｉ２Ｃ";
-            Console.WriteLine(Title + "（ PCA9685：サーボモータ180度型,連続回転型 ）");
+            Console.WriteLine(
+                mode ? "５.ＰＷＭ" : "６.Ｉ２Ｃ"
+                + "（ PCA9685：サーボモータ180度型,連続回転型 ）"
+            );
 
             const int SERVO_MIN     = 150; // CA9685 12bitの生値（例: 150）
             const int SERVO_MAX     = 600; // 同上              （例: 600）
@@ -240,10 +242,10 @@ namespace Mmp.Tool
             Thread.Sleep(300);
 
             Console.WriteLine("　・正転,加速");
-            for (int i = 0; i <= STEPS; i=i+STEP)
+            for (int i = 0; i <= STEPS; i+=STEP)
             {
-                int pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / STEPS;
-                int pwm360 = SERVO_MID + (OffsetMax360 * i) / STEPS;
+                int pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i  / STEPS;
+                int pwm360 = SERVO_MID + (OffsetMax360           * i) / STEPS;
                 if (mode)
                 {
                     mmp.Pwm.Out(CH_180, pwm180);
@@ -258,7 +260,7 @@ namespace Mmp.Tool
             }
 
             Console.WriteLine("　・逆転,減速");
-            for (int i = STEPS; i >= 0; i=i-STEP)
+            for (int i = STEPS; i >= 0; i-=STEP)
             {
                 int pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i   / STEPS;
                 int pwm360 = SERVO_MID + (OffsetMax360           * i ) / STEPS;

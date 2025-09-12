@@ -37,7 +37,8 @@ static const uint32_t MMP_BAUD_CANDIDATES[] = {
   115200,  // BAUD_00（物理スイッチ実装あり）
   9600,    // BAUD_10（物理スイッチ実装あり）
   230400,  // BAUD_01
-  921600   // BAUD_11
+  921600,  // BAUD_11
+  300      // 古いマイコン
 };
 static const size_t MMP_BAUD_CANDIDATES_LEN =
   sizeof(MMP_BAUD_CANDIDATES) / sizeof(MMP_BAUD_CANDIDATES[0]);

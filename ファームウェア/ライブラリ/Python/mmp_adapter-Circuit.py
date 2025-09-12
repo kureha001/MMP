@@ -10,121 +10,186 @@
 # 'uart_id' パラメータがありません。
 # ※CircuitPython busio.UART はこれをサポートしていません。
 #============================================================
-from mmp_adapter_base import MmpAdapterBase
-
 import time
 import board
 import busio
+from mmp_adapter_base import MmpAdapterBase
 
 
+#=================
+# アダプタ クラス
+#=================
 class MmpAdapter(MmpAdapterBase):
-    def __init__(self, tx_pin=None, rx_pin=None, timeout_s=0.05, buffer_size=128):
-        # Default pins (RP2040/2350 typical wiring: TX=GP0, RX=GP1)
-        self.tx_pin = tx_pin if tx_pin is not None else getattr(board, "GP0")
-        self.rx_pin = rx_pin if rx_pin is not None else getattr(board, "GP1")
 
-        self.timeout_s = float(timeout_s)
+    #========================================================
+    # コンストラクタ
+    #========================================================
+    def __init__(self,
+        tx_pin      = None  ,   # ① UARTのTxに用いるGPIO番号
+        rx_pin      = None  ,   # ② UARTのRxに用いるGPIO番号
+        timeout_s   = 0.05  ,   # ③ タイムアウト(単位：ミリ秒)
+        buffer_size = 128   ,   # ④ バッファサイズ(単位：バイト)
+    ) -> None:                  # 戻り値：なし
+
+        # UARTピンを設定する。
+        self.tx_pin = (tx_pin) if not tx_pin else (getattr(board, "GP0"))
+        self.rx_pin = (rx_pin) if not rx_pin else (getattr(board, "GP1"))
+
+        # 通信条件を設定する。
+        self.timeout_s   = float(timeout_s)
         self.buffer_size = int(buffer_size)
 
-        self.uart = None
+        # 接続情報を更新する。
+        self.uart            = None
         self._connected_baud = None
 
-    # ---------- time helpers ----------
-    def now_ms(self) -> int:
-        return int(time.monotonic() * 1000)
 
-    def ticks_diff(self, a: int, b: int) -> int:
-        # monotonic-based difference (ms)
-        return a - b
+    #========================================================
+    # アダプタ共通コマンド：通信関連
+    #========================================================
+    #------------------------------
+    # UART を指定ボーレートで開く
+    #------------------------------
+    def open_baud(self,
+        baud: int   # ① ボーレート
+    ) -> bool:      # 戻り値：True=成功／False=失敗
 
-    def sleep_ms(self, ms: int) -> None:
-        time.sleep(ms / 1000.0)
-
-    # ---------- transport ----------
-    @property
-    def connected_baud(self):
-        return self._connected_baud
-
-    def open_baud(self, baud: int) -> bool:
-        # Re-open UART cleanly for each baud attempt
         try:
-            if self.uart is not None:
-                try:
-                    self.uart.deinit()
-                except Exception:
-                    pass
-                self.uart = None
+            # 既に接続がある場合は、切断する。
+            # ※deinitを実装しない場合もある
+            if self.uart:
+                try             : self.uart.deinit()
+                except Exception: pass
+                self.uart            = None
                 self._connected_baud = None
-                self.sleep_ms(2)  # small settle
+                self.sleep_ms(2)
 
-            # CircuitPython UART: busio.UART(tx, rx, baudrate=..., timeout=..., receiver_buffer_size=...)
+            # 指定の通信速度で接続する。
             self.uart = busio.UART(
-                self.tx_pin,
-                self.rx_pin,
-                baudrate=int(baud),
-                timeout=self.timeout_s,
-                receiver_buffer_size=self.buffer_size,
+                self.tx_pin                             ,
+                self.rx_pin                             ,
+                baudrate             = int(baud)        ,
+                timeout              = self.timeout_s   ,
+                receiver_buffer_size = self.buffer_size ,
             )
-            # small settle + drain any line noise
             self.sleep_ms(2)
+
+            # 入力バッファを消去する。
             self.clear_input()
 
+            # 接続情報を更新する。
             self._connected_baud = int(baud)
-            return True
-        except Exception:
-            # Ensure closed state on failure
-            try:
-                if self.uart is not None:
-                    self.uart.deinit()
-            except Exception:
-                pass
-            self.uart = None
+
+            return True         # 戻り値 → [成功]
+
+        except Exception:            
+            # 既に接続がある場合は、切断する。
+            # ※deinitを実装しない場合もある
+            if self.uart:
+                try             : self.uart.deinit()
+                except Exception: pass
+
+            # 接続情報を更新する。
+            self.uart            = None
             self._connected_baud = None
-            return False
 
-    def clear_input(self) -> None:
-        if self.uart is None:
-            return
-        # Drain until empty (non-blocking reads)
+            return False        # 戻り値 → [失敗]
+
+    #------------------------------
+    # 受信バッファを消去する
+    #------------------------------
+    def clear_input(self
+    ) -> None:  # 戻り値：なし
+
+        # シリアルが無効な場合は処理を中断
+        if not self.uart: return
+
         while True:
-            data = self.uart.read(64)  # type: ignore[arg-type]
-            if not data:
-                break
+            data = self.uart.read(64)
+            if not data: break
 
-    def write_ascii(self, s: str) -> None:
-        if self.uart is None:
-            return
-        data = s.encode("ascii", "ignore")
-        self.uart.write(data)
+    #------------------------------
+    # ASCII文字を送信
+    #------------------------------
+    def write_ascii(self,
+        s: str  # ① 送信する文字列
+    ) -> None:  # 戻り値：なし
 
-    def read_one_char(self):
-        if self.uart is None:
-            return None
+        # シリアルが無効 または 空文字指定 の場合は処理を中断
+        if not self.uart or not s: return
+
+        # 引数の文字列をASCII変換して送信
+        try             : self.uart.write(s.encode("ascii", "ignore"))
+        except Exception: pass
+
+    #------------------------------
+    # 受信バッファから１文字取得
+    #------------------------------
+    def read_one_char(self
+    ) -> str:   # 戻り値：１文字=取得文字／None=バッファが空
+
+        # シリアルが無効な場合は処理を中断
+        if not self.uart: return
+
+        # 受信バッファから１文字取得する
+            # 受信バッファから空以外の場合：
         data = self.uart.read(1)
         if data and len(data) > 0:
-            # Return single-character string (core expects str, not bytes)
-            try:
-                return chr(data[0])
+            try: return chr(data[0])                # 戻り値 → [成功]
             except Exception:
-                # Fallback safe path
-                try:
-                    return data.decode("ascii", "ignore")[:1] or None
-                except Exception:
-                    return None
-        return None
+                    # 取得文字をASCIIから復元して返す
+                                                    # 戻り値 → [成功]
+                try             : return data.decode("ascii", "ignore")[:1] or None
+                except Exception: return None       # 戻り値 → [失敗]
 
-    def flush(self) -> None:
-        # busio.UART has no flush; writes are immediate. Keep as no-op.
+        return None                                 # 戻り値 → [失敗]
+
+    #------------------------------
+    # 送信バッファを消去する
+    #------------------------------
+    def flush(self
+    ) -> None:  # 戻り値：なし
         return
 
-    def close(self) -> None:
+    #------------------------------
+    # 通信を切断
+    #------------------------------
+    def close(self
+    ) -> None:  # 戻り値：なし
+
         try:
-            if self.uart is not None:
-                try:
-                    self.uart.deinit()
-                except Exception:
-                    pass
+            if not self.uart:
+                try             : self.uart.deinit()
+                except Exception: pass
         finally:
-            self.uart = None
+            # 接続情報を更新する。
+            self.uart            = None
             self._connected_baud = None
-            self.sleep_ms(2)
+
+
+    #========================================================
+    # アダプタ共通コマンド：ヘルパ
+    #========================================================
+    #------------------------------
+    # 一時停止
+    #------------------------------
+    def sleep_ms(self,
+        ms: int # ① 停止する時間(単位：ミリ秒)
+    ) -> None:  # 戻り値：なし
+        time.sleep(ms / 1000.0)
+
+    #------------------------------
+    # 現在時刻ミリ秒で返す
+    #------------------------------
+    def now_ms(self
+    ) -> int:   # 戻り値：現在時刻(単位：ミリ秒)
+        return int(time.monotonic() * 1000)
+
+    #------------------------------
+    # 経過時間をミリ秒で返す
+    #------------------------------
+    def ticks_diff(self,
+        a: int, # ① 終了時刻
+        b: int, # ② 開始時刻
+    ) -> int:   # 戻り値：経過時間(単位：ミリ秒)
+        return a - b

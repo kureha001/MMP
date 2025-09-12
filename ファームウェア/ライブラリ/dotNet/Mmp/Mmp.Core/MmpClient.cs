@@ -64,7 +64,7 @@ namespace Mmp.Core
         public string PortName      { get { return IsOpen ? _port.PortName : null   ; } }
 
         /// <summary>現在接続中のボーレート（未接続なら null）</summary>
-        public int    ConnectedBaud { get { return IsOpen ? _port.BaudRate : 0      ; } }
+        public int    ConnectedBaud { get { return IsOpen ? _port.BaudRate : -1     ; } }
 
         // ========================
         // ==== モジュール実装 ====

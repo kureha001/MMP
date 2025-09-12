@@ -13,14 +13,12 @@ class MmpAdapterBase:
 
     # mmp_core.MmpClient が用いる初期アダプター サーフェス
     def __init__(self):
+        self.connected_port = None
         self.connected_baud = None
 
     #------------------------------------------------------------
     # 未実装時のエラー発生用
     #------------------------------------------------------------
-    # 通信確立したCOMポート名を返す
-    def get_port_name(self) -> None         : raise NotImplementedError
-
     # ボーレート指定でポートを開く。
     def open_baud(self, baud: int) -> bool  : raise NotImplementedError
 
@@ -39,15 +37,15 @@ class MmpAdapterBase:
     # 出力をクリアする。
     def flush(self) -> None                 : pass
 
+    #------------------------------------------------------------
+    # ヘルパー
+    #------------------------------------------------------------
     # 時間調整する。
     def sleep_ms(self, ms: int) -> None     : raise NotImplementedError
 
     # 現在時間をミリ秒で返す。
     def now_ms(self) -> int                 : raise NotImplementedError
 
-    #------------------------------------------------------------
-    # ヘルパー
-    #------------------------------------------------------------
-    # 経過時間をミリ秒で返す。
+    # 経過時間をミリ秒で返す
     def ticks_diff(self, now_ms: int, start_ms: int) -> int:
         return int(now_ms - start_ms)

@@ -29,8 +29,8 @@ def 通信接続():
         print("ＭＭＰとの接続に失敗しました...")
         return False
     #│
-    if 接続.PortName is not None:
-        print(f"　・通信ポート　: {接続.PortName}")
+    if 接続.IsOpen is not None:
+        print(f"　・通信ポート　: {接続.ConnectedPort}")
     print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
     print( "　・バージョン  : {}".format(接続.Info.Version()))
     print( "　・PCA9685 [0] : 0x{:04X}".format(接続.Info.Dev.Pwm(0)))

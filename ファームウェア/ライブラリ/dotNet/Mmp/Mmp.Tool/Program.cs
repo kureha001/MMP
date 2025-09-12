@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Runtime.Remoting.Messaging;
 using System.Threading;
 
@@ -18,8 +19,7 @@ namespace Mmp.Tool
                 {
                     //mmp.Settings.BaudRate = 115200;
                     //mmp.Settings.TimeoutAudio = 800;
-                    //bool connected = (port != null) ? mmp.Connect(port) : mmp.Connect();
-                    bool connected = (port == null) ?  mmp.ConnectAutoBaud(out port) : mmp.Connect(port);
+                    bool connected = (port == null) ? mmp.ConnectAutoBaud(out port) : mmp.Connect(port);
                     if (!connected || !mmp.IsOpen)
                     {
                         Console.WriteLine("ＭＭＰとの接続に失敗しました...");
@@ -31,12 +31,12 @@ namespace Mmp.Tool
 
                     // === 必要なテストだけコメントを外して実行してください ===
                     Console.WriteLine("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
-                    RunAnalog(mmp)       ; // アナログ入力
-                    RunDigital(mmp)      ; // デジタル入出力
-                    //RunMp3Playlist(mmp)  ; // MP3プレイヤー(基本)
-                    //RunMp3Control(mmp)   ; // MP3プレイヤー(制御)
-                    //RunPwmByValue(mmp)   ; // PWM出力
-                    //RunI2cServoSweep(mmp); // I2C→PCA9685 直接制御
+                    //RunAnalog(mmp)     ; // アナログ入力
+                    //RunDigital(mmp)    ; // デジタル入出力
+                    //RunMp3Playlist(mmp); // MP3プレイヤー(基本)
+                    //RunMp3Control(mmp) ; // MP3プレイヤー(制御)
+                    RunPwm(mmp, true ) ; // PWM出力
+                    RunPwm(mmp, false) ; // I2C→PCA9685 直接制御
                     Console.WriteLine("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
                 }
                 return 0;
@@ -203,105 +203,89 @@ namespace Mmp.Tool
         //============================================================
         // 5) PWM 生値：ch0=180度型、ch15=連続回転型
         //============================================================
-        private static void RunPwmByValue(Mmp.Core.MmpClient mmp)
+        private static void RunPwm(Mmp.Core.MmpClient mmp, bool mode)
         {
-            Console.WriteLine("５.ＰＷＭ（ PCA9685：サーボモータ180度型,連続回転型 ）");
+            string Title = mode ? "５.ＰＷＭ" : "６.Ｉ２Ｃ";
+            Console.WriteLine(Title + "（ PCA9685：サーボモータ180度型,連続回転型 ）");
 
-            const int SERVO_MIN = 150;
-            const int SERVO_MAX = 600;
-            const int SERVO_MID = (SERVO_MIN + SERVO_MAX) / 2;
+            const int SERVO_MIN     = 150; // CA9685 12bitの生値（例: 150）
+            const int SERVO_MAX     = 600; // 同上              （例: 600）
+            const int SERVO_MID     = (SERVO_MIN + SERVO_MAX) / 2;
+            const int OffsetMax360  = 60;
+            const int STEPS         = 80;
+            const int STEP          = 2;
+            const int STEP_DELAY_MS = 0;
+            const int CH_180        = 0;
+            const int CH_360        = 15;
+            const int PCA_ADDR      = 0x40;
 
-            int chAngle = 0;
-            int chRot = 15;
+            void RunI2C(int ch, int ticks)
+            {
+                int base_reg = 0x06 + 4 * ch;
+                mmp.I2c.Write(PCA_ADDR, base_reg + 2, (ticks)      & 0xFF);
+                mmp.I2c.Write(PCA_ADDR, base_reg + 3, (ticks >> 8) & 0x0F);
+            }
 
             Console.WriteLine("　・初期位置");
-            mmp.Pwm.Out(chAngle, SERVO_MID);
-            mmp.Pwm.Out(chRot, SERVO_MID);
+            if (mode)
+            {
+                mmp.Pwm.Out(CH_180, SERVO_MID);
+                mmp.Pwm.Out(CH_360, SERVO_MID);
+            }
+            else
+            {
+                RunI2C(CH_180, SERVO_MID);
+                RunI2C(CH_360, SERVO_MID);
+            }
             Thread.Sleep(300);
 
-            int steps        = 80;
-            int delayMs      = 20;
-            int rotOffsetMax = 60;
-
             Console.WriteLine("　・正転,加速");
-            for (int i = 0; i <= steps; i++)
+            for (int i = 0; i <= STEPS; i=i+STEP)
             {
-                int pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
-                int pwmRot = SERVO_MID + (rotOffsetMax * i) / steps;
-                mmp.Pwm.Out(chAngle, pwmAngle);
-                mmp.Pwm.Out(chRot, pwmRot);
-                Thread.Sleep(delayMs);
+                int pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / STEPS;
+                int pwm360 = SERVO_MID + (OffsetMax360 * i) / STEPS;
+                if (mode)
+                {
+                    mmp.Pwm.Out(CH_180, pwm180);
+                    mmp.Pwm.Out(CH_360, pwm360);
+                }
+                else
+                {
+                    RunI2C(CH_180, pwm180);
+                    RunI2C(CH_360, pwm360);
+                }
+                Thread.Sleep(STEP_DELAY_MS);
             }
 
             Console.WriteLine("　・逆転,減速");
-            for (int i = steps; i >= 0; i--)
+            for (int i = STEPS; i >= 0; i=i-STEP)
             {
-                int pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
-                int pwmRot = SERVO_MID + (rotOffsetMax * i) / steps;
-                mmp.Pwm.Out(chAngle, pwmAngle);
-                mmp.Pwm.Out(chRot, pwmRot);
-                Thread.Sleep(delayMs);
+                int pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i   / STEPS;
+                int pwm360 = SERVO_MID + (OffsetMax360           * i ) / STEPS;
+                if (mode)
+                {
+                    mmp.Pwm.Out(CH_180, pwm180);
+                    mmp.Pwm.Out(CH_360, pwm360);
+                }
+                else
+                {
+                    RunI2C(CH_180, pwm180);
+                    RunI2C(CH_360, pwm360);
+                }
+                Thread.Sleep(STEP_DELAY_MS);
             }
 
             Console.WriteLine("　・初期位置");
-            mmp.Pwm.Out(chRot, SERVO_MID);
-            mmp.Pwm.Out(chAngle, SERVO_MID);
-
-            Console.WriteLine("　[終了]\n");
-        }
-
-        //============================================================
-        // 6) I2C：PCA9685 を直接叩いてサーボスイープ（追加）
-        //============================================================
-        private static void RunI2cServoSweep(Mmp.Core.MmpClient mmp)
-        {
-            Console.WriteLine("６.I2C（ PCA9685：サーボスイープ ）");
-
-            const int PCA_ADDR = 0x40;   // 一般的な PCA9685 の I2C アドレス
-            const int CH = 0;      // CH0 を使用
-            int baseReg = 0x06 + 4 * CH;   // LEDn_ON_L（0x06）以降 4byte/CH
-
-            // ON を 0 に固定
-            mmp.I2c.Write(PCA_ADDR, baseReg + 0, 0x00); // ON_L
-            mmp.I2c.Write(PCA_ADDR, baseReg + 1, 0x00); // ON_H
-
-            const int SERVO_MIN = 150;
-            const int SERVO_MAX = 600;
-            const int SERVO_MID = (SERVO_MIN + SERVO_MAX) / 2;
-
-            void SetPulse(int ticks)
+            if (mode)
             {
-                if (ticks < 0) ticks = 0;
-                if (ticks > 4095) ticks = 4095;
-                mmp.I2c.Write(PCA_ADDR, baseReg + 2, (ticks) & 0xFF); // OFF_L
-                mmp.I2c.Write(PCA_ADDR, baseReg + 3, (ticks >> 8) & 0x0F); // OFF_H (12bit)
+                mmp.Pwm.Out(CH_180, SERVO_MID);
+                mmp.Pwm.Out(CH_360, SERVO_MID);
             }
-
-            Console.WriteLine("　・初期位置");
-            SetPulse(SERVO_MID);
-            Thread.Sleep(300);
-
-            int steps = 80;
-            int delayMs = 20;
-
-            Console.WriteLine("　・スイープ(往路)");
-            for (int i = 0; i <= steps; i++)
+            else
             {
-                int v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
-                SetPulse(v);
-                Thread.Sleep(delayMs);
+                RunI2C(CH_180, SERVO_MID);
+                RunI2C(CH_360, SERVO_MID);
             }
-
-            Console.WriteLine("　・スイープ(復路)");
-            for (int i = steps; i >= 0; i--)
-            {
-                int v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i / steps;
-                SetPulse(v);
-                Thread.Sleep(delayMs);
-            }
-
-            Console.WriteLine("　・初期位置");
-            SetPulse(SERVO_MID);
 
             Console.WriteLine("　[終了]\n");
         }

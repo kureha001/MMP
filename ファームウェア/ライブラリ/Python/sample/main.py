@@ -10,17 +10,17 @@ def main():
     if not MMP.通信接続(): return
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunDigital()         # デジタル入出力
-    RunMp3Playlist()     # MP3プレイヤー(基本)
-    RunMp3Control()      # MP3プレイヤー(制御)
-    RunPwmByValue()      # PWM出力
-    RunI2cServoSweep()   # I2C→PCA9685 直接制御
+    #RunDigital()        # デジタル入出力
+    #RunMp3Playlist()    # MP3プレイヤー(基本)
+    #RunMp3Control()     # MP3プレイヤー(制御)
+    RunPwm(True)        # PWM出力
+    RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 #============================================================
 # 出力文字ヘルパ
 #============================================================
-def tf(b): return "True" if b else "False"
+def tf(b): return "True" if b>0 else "False"
 
 
 #============================================================
@@ -142,126 +142,74 @@ def RunMp3Control():
 
 #============================================================
 # 5) PWM 生値：ch0=180度型、ch15=連続回転型
+# 6) I2C：サーボスイープ（PCA9685 レジスタ直書き）
 #============================================================
-def RunPwmByValue():
+SERVO_MIN    = 150     # PCA9685 12bitの生値（例: 150）
+SERVO_MAX    = 600     # 同上（例: 600）
+SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
+STEPS        = 80
+STEP         = 8
+STEP_DELAY_S = 0
+CH_180       = 0
+CH_360       = 15
+PCA_ADDR     = 0x40
+#------------------------------------------------------------
+def RunPwm(mode):
 
-    print("５.ＰＷＭ（ PCA9685：サーボモータ180度型,連続回転型 ）")
+    if mode: print("５.ＰＷＭ（ PCA9685：サーボモータ180度型,連続回転型 ）")
+    else   : print("６.Ｉ２Ｃ（ PCA9685：サーボモータ180度型,連続回転型 ）")
 
-    SERVO_MIN = 150
-    SERVO_MAX = 600
-    SERVO_MID = (SERVO_MIN + SERVO_MAX) // 2
-    chAngle = 0
-    chRot   = 15
+    def RunI2C(ch, ticks):
+        if (ticks < 0   ): ticks = 0
+        if (ticks > 4095): ticks = 4095
+        base_reg  = 0x06 + 4 * ch
+        MMP.接続.I2c.Write(PCA_ADDR, base_reg + 2, (ticks     ) & 0xFF)
+        MMP.接続.I2c.Write(PCA_ADDR, base_reg + 3, (ticks >> 8) & 0x0F)
 
     print("　・初期位置")
-    MMP.接続.Pwm.Out(chAngle, SERVO_MID)
-    MMP.接続.Pwm.Out(chRot,   SERVO_MID)
+    if mode:
+        MMP.接続.Pwm.Out(CH_180, SERVO_MID)
+        MMP.接続.Pwm.Out(CH_360, SERVO_MID)
+    else:
+        RunI2C(CH_180, SERVO_MID)
+        RunI2C(CH_360, SERVO_MID)
     time.sleep(0.3)
 
     rotOffsetMax = 60
 
     print("　・正転,加速")
-    for i in range(0, STEPS + 1):
-        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        pwmRot   = SERVO_MID + (rotOffsetMax * i) // STEPS
-        MMP.接続.Pwm.Out(chAngle, pwmAngle)
-        MMP.接続.Pwm.Out(chRot,   pwmRot)
+    for i in range(0, STEPS + 1,STEP):
+        pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        pwm360 = SERVO_MID + (rotOffsetMax * i)          // STEPS
+        if mode:
+            MMP.接続.Pwm.Out(CH_180, pwm180)
+            MMP.接続.Pwm.Out(CH_360, pwm360)
+        else:
+            RunI2C(CH_180, pwm180)
+            RunI2C(CH_360, pwm360)
         time.sleep(STEP_DELAY_S)
 
     print("　・逆転,減速")
-    for i in range(STEPS, -1, -1):
-        pwmAngle = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        pwmRot   = SERVO_MID + (rotOffsetMax * i) // STEPS
-        MMP.接続.Pwm.Out(chAngle, pwmAngle)
-        MMP.接続.Pwm.Out(chRot,   pwmRot)
+    for i in range(STEPS, -1, -STEP):
+        pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
+        pwm360 = SERVO_MID + (rotOffsetMax * i)          // STEPS
+        if mode:
+            MMP.接続.Pwm.Out(CH_180, pwm180)
+            MMP.接続.Pwm.Out(CH_360, pwm360)
+        else:
+            RunI2C(CH_180, pwm180)
+            RunI2C(CH_360, pwm360)
         time.sleep(STEP_DELAY_S)
 
     print("　・初期位置")
-    MMP.接続.Pwm.Out(chRot,   SERVO_MID)
-    MMP.接続.Pwm.Out(chAngle, SERVO_MID)
-    print("　[終了]\n")
-
-
-#============================================================
-# 6) I2C：サーボスイープ（PCA9685 レジスタ直書き）
-#------------------------------------------------------------
-#  LEDn の ON=0 / OFF=val でデューティ設定
-#  LED0_ON_L=0x06 からチャネル毎に 4 レジスタ
-#------------------------------------------------------------
-#  base = 0x06 + 4*ch
-#   [base+0]=ON_L,
-#   [base+1]=ON_H,
-#   [base+2]=OFF_L,
-#   [base+3]=OFF_H
-#============================================================
-PCA9685_ADDR  = 0x40
-CHANNEL_SERVO = 0       # テストする PCA9685 のチャネル
-SERVO_MIN     = 150     # PCA9685 12bitの生値（例: 150）
-SERVO_MAX     = 600     # 同上（例: 600）
-SERVO_MID     = (SERVO_MIN + SERVO_MAX) // 2
-STEPS         = 80
-STEP_DELAY_S  = 0.02
-#------------------------------------------------------------
-def _pca9685_set_pwm(接続, ch: int, value_0_4095: int) -> bool:
-
-    base = 0x06 + 4 * ch
-    on_l, on_h = 0x00, 0x00
-    off = max(0, min(4095, int(value_0_4095)))
-    off_l = (off & 0xFF)
-    off_h = ((off >> 8) & 0x0F)  # 上位4bitのみ
-
-    ok  = MMP.接続.I2c.Write(PCA9685_ADDR, base + 0, on_l)   # ON_L
-    ok &= MMP.接続.I2c.Write(PCA9685_ADDR, base + 1, on_h)   # ON_H
-    ok &= MMP.接続.I2c.Write(PCA9685_ADDR, base + 2, off_l)  # OFF_L
-    ok &= MMP.接続.I2c.Write(PCA9685_ADDR, base + 3, off_h)  # OFF_H
-    return ok
-#------------------------------------------------------------
-def _pca9685_get_pwm(接続, ch: int) -> int:
-    base = 0x06 + 4 * ch
-    off_l = MMP.接続.I2c.Read(PCA9685_ADDR, base + 2)
-    off_h = MMP.接続.I2c.Read(PCA9685_ADDR, base + 3) & 0x0F
-    if off_l < 0 or off_h < 0:
-        return -1
-    return (off_h << 8) | off_l
-#------------------------------------------------------------
-def RunI2cServoSweep():
-
-    print("６.I2C（ PCA9685：サーボスイープ ）")
-
-    print("　・初期位置")
-    if not _pca9685_set_pwm(MMP.接続, CHANNEL_SERVO, SERVO_MID):
-        print("　[Err:中断]\n")
-        return
-    time.sleep(0.3)
-
-    print("　・スイープ(往路)")
-    for i in range(STEPS + 1):
-        v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        if not _pca9685_set_pwm(MMP.接続, CHANNEL_SERVO, v):
-            print("　[Err:中断]\n")
-            return
-        time.sleep(STEP_DELAY_S)
-
-    print("　・スイープ(復路)")
-    for i in range(STEPS, -1, -1):
-        v = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
-        if not _pca9685_set_pwm(MMP.接続, CHANNEL_SERVO, v):
-            print("　[Err:中断]\n")
-            return
-        time.sleep(STEP_DELAY_S)
-
-    # 読み出し確認（最後に設定した値）
-    last = _pca9685_get_pwm(MMP.接続, CHANNEL_SERVO)
-    print(f"　・現在の OFF 値 = {last}")
-
-    print("　・初期位置")
-    _pca9685_set_pwm(MMP.接続, CHANNEL_SERVO, SERVO_MID)
-    if not _pca9685_set_pwm(MMP.接続, CHANNEL_SERVO, SERVO_MID):
-        print("　[Err:中断]\n")
-        return
+    if mode:
+        MMP.接続.Pwm.Out(CH_180, SERVO_MID)
+        MMP.接続.Pwm.Out(CH_360, SERVO_MID)
+    else:
+        RunI2C(CH_180, SERVO_MID)
+        RunI2C(CH_360, SERVO_MID)
 
     print("　[終了]\n")
-
 
 #======================================================
 if __name__ == "__main__": main()

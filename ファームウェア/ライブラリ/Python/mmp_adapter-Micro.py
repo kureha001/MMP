@@ -8,17 +8,9 @@
 # ２．動作環境には「mmp_adapter.py」にリネーム
 #------------------------------------------------------------
 # 既定は UART(0)/uart_id=0/tx_pin=1
-# uart_id=None/tx_pin=None で、ボードのデフォルトになる
-# 必要に応じて tx_pin / rx_pin を指定のこと。
 #============================================================
-try:
-    import machine
-    import utime as _time
-except ImportError:
-    # MicroPython 以外ではインポートできない想定
-    machine = None
-    _time   = None
-
+import machine
+import utime as _time
 
 #=================
 # アダプタ クラス
@@ -36,15 +28,15 @@ class MmpAdapter:
     # コンストラクタ
     #========================================================
     def __init__(self, 
-        uart_id      = 0     ,  # ① UART番号
-        tx_pin      = None  ,   # ② UARTのTxに用いるGPIO番号
-        rx_pin      = None  ,   # ③ UARTのRxに用いるGPIO番号
-    ) -> None:                  # 戻り値：なし
+        uart_id     = 0	,  	# ① UART番号
+        tx_pin      = 0 ,   # ② UARTのTxに用いるGPIO番号
+        rx_pin      = 1 ,	# ③ UARTのRxに用いるGPIO番号
+    ) -> None:             	# 戻り値：なし
 
         # UARTピンを設定する。
-        self._uart_id   = uart_id
-        self._tx_pin    = tx_pin
-        self._rx_pin    = rx_pin
+        self._uart_id  = uart_id
+        self.Tx_pin    = tx_pin
+        self.Rx_pin    = rx_pin
 
 
     #========================================================
@@ -71,19 +63,25 @@ class MmpAdapter:
                 except Exception: pass
 
             # ピン指定の有無に応じて接続する。
-            if not self._tx_pin and not self._rx_pin:
-                tx = machine.Pin(self._tx_pin)
-                rx = machine.Pin(self._rx_pin)
-                self._uart = machine.UART(self._uart_id, baudrate=int(baud), tx=tx, rx=rx)
+            if not self.Tx_pin and not self.Rx_pin:
+                self._uart = machine.UART(
+                    self._uart_id,
+                    baudrate=int(baud),
+                    tx=self.Tx_pin,
+                    rx=self.Rx_pin
+                )
             else:
-                self._uart = machine.UART(self._uart_id, baudrate=int(baud))
+                self._uart = machine.UART(
+                    self._uart_id,
+                    baudrate=int(baud)
+                )
 
             # 入力バッファを消去する。
             self.clear_input()
 
             # 接続情報を更新する。
             self._is_open           = True
-            self._connected_port    = f"UART(Tx={self.tx_pin}/Rx={self.rx_pin})"
+            self._connected_port    = f"UART(Tx={self.Tx_pin}/Rx={self.Rx_pin})"
             self._connected_baud    = int(baud)
             self._lastError         = None
 
@@ -211,4 +209,5 @@ class MmpAdapter:
         b: int, # ② 開始時刻
     ) -> int:   # 戻り値：経過時間(単位：ミリ秒)
         return _time.ticks_diff(a, b)
+
 

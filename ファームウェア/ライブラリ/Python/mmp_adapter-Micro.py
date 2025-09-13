@@ -56,23 +56,20 @@ class MmpAdapter:
         self._lastError         = None
 
         try:
-            # 既に接続がある場合は、切断する。
-            # ※deinitを実装しない場合もある
-            if self._uart and hasattr(self._uart, "deinit"):
-                try             : self._uart.deinit()
-                except Exception: pass
+            # 既にある接続を切断する。
+            self.close()
 
             # ピン指定の有無に応じて接続する。
             if not self.Tx_pin and not self.Rx_pin:
                 self._uart = machine.UART(
-                    self._uart_id,
-                    baudrate=int(baud),
-                    tx=self.Tx_pin,
-                    rx=self.Rx_pin
+                    self._uart_id            ,
+                    baudrate    = int(baud)  ,
+                    tx          = self.Tx_pin,
+                    rx          = self.Rx_pin
                 )
             else:
                 self._uart = machine.UART(
-                    self._uart_id,
+                    self._uart_id     ,
                     baudrate=int(baud)
                 )
 
@@ -170,18 +167,17 @@ class MmpAdapter:
     def close(self
     ) -> None:  # 戻り値：なし
 
-        try:
-            if self._uart:
-                if hasattr(self._uart, "deinit"):
-                    self._uart.deinit()
-        except Exception: pass
-        finally:
-            # 接続情報を更新する。
-            self._uart           = None
-            self._is_open        = False
-            self._connected_port = None
-            self._connected_baud = None
 
+        if not self._uart: return None
+
+        try             : self._uart.deinit()
+        except Exception: pass
+
+        # 接続情報を更新する。
+        self._uart           = None
+        self._is_open        = False
+        self._connected_port = None
+        self._connected_baud = None
 
     #========================================================
     # アダプタ共通コマンド：ヘルパ

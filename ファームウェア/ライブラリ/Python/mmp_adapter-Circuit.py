@@ -39,8 +39,8 @@ class MmpAdapter(MmpAdapterBase):
     ) -> None:                  # 戻り値：なし
 
         # UARTピンを設定する。
-        self.tx_pin = (tx_pin) if not tx_pin else (getattr(board, "GP0"))
-        self.rx_pin = (rx_pin) if not rx_pin else (getattr(board, "GP1"))
+        self.Tx_pin = board.GP0 if tx_pin is None else tx_pin 
+        self.Rx_pin = board.GP1 if rx_pin is None else rx_pin
 
         # 通信条件を設定する。
         self.timeout_s   = float(timeout_s)
@@ -64,22 +64,16 @@ class MmpAdapter(MmpAdapterBase):
         self._lastError         = None
 
         try:
-            # 既に接続がある場合は、切断する。
-            # ※deinitを実装しない場合もある
-            if self._uart:
-                try             : self._uart.deinit()
-                except Exception: pass
-                self._uart           = None
-                self._connected_baud = None
-                self.sleep_ms(2)
+            # 既にある接続を切断する。
+            self.close()
 
             # 指定の通信速度で接続する。
             self._uart = busio.UART(
-                self.tx_pin                             ,
-                self.rx_pin                             ,
+                tx                   = self.Tx_pin	,
+                rx                   = self.Rx_pin	,
                 baudrate             = int(baud)        ,
                 timeout              = self.timeout_s   ,
-                receiver_buffer_size = self.buffer_size ,
+                receiver_buffer_size = self.buffer_size , 
             )
             self.sleep_ms(2)
 
@@ -88,7 +82,7 @@ class MmpAdapter(MmpAdapterBase):
 
             # 接続情報を更新する。
             self._is_open           = True
-            self._connected_port    = f"UART(Tx={self.tx_pin}/Rx={self.rx_pin})"
+            self._connected_port    = f"UART(Tx={self.Tx_pin}/Rx={self.Rx_pin})"
             self._connected_baud    = int(baud)
             self._lastError         = None
 
@@ -171,16 +165,16 @@ class MmpAdapter(MmpAdapterBase):
     def close(self
     ) -> None:  # 戻り値：なし
 
-        try:
-            if not self._uart:
-                try             : self._uart.deinit()
-                except Exception: pass
-        finally:
-            # 接続情報を更新する。
-            self._uart           = None
-            self._is_open        = False
-            self._connected_port = None
-            self._connected_baud = None
+        if not self._uart: return None
+
+        try             : self._uart.deinit()
+        except Exception: pass
+
+        # 接続情報を更新する。
+        self._uart           = None
+        self._is_open        = False
+        self._connected_port = None
+        self._connected_baud = None
 
 
     #========================================================

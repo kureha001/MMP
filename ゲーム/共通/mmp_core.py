@@ -49,6 +49,7 @@ class Settings:
     def __init__(self):
         self.PortName       = ""
         self.BaudRate       = 115200
+        self.Timeout        = 400
         self.TimeoutIo      = 200
         self.TimeoutVerify  = 400
         self.TimeoutGeneral = 400
@@ -82,12 +83,13 @@ class MmpClient:
         self.Settings        = Settings()
 
         # 機能モジュールを実装する
-        self.Info   = self._InfoModule(self)
-        self.Analog = self._AnalogModule(self)
-        self.Pwm    = self._PwmModule(self)
-        self.Audio  = self._AudioModule(self)
-        self.Digital= self._DigitalModule(self)
-        self.I2c    = self._I2cModule(self)
+        self.Command = self._Command(self)
+        self.Info    = self._InfoModule(self)
+        self.Analog  = self._AnalogModule(self)
+        self.Pwm     = self._PwmModule(self)
+        self.Audio   = self._AudioModule(self)
+        self.Digital = self._DigitalModule(self)
+        self.I2c     = self._I2cModule(self)
 
     #========================
     # プロパティ
@@ -253,6 +255,26 @@ class MmpClient:
     #========================
     #（公開用）階層化API
     #========================
+    #----------------------
+    # << コマンドモジュール >>
+    #----------------------
+    class _Command:
+        #----------------------
+        # コンストラクタ
+        #----------------------
+        def __init__(self, p:'MmpClient'): self._p = p
+ 
+        def typeOk(self, argCMD:str, timeoutMs:int=0) -> int:
+            t = _resolve(timeoutMs, self._p.Settings.Timeout)
+            resp = self._p._send_command(argCMD, t)
+            return resp == "!!!!!"
+
+        def typeVal(self, argCMD:str, timeoutMs:int=0) -> int:
+            t = _resolve(timeoutMs, self._p.Settings.Timeout)
+            resp = self._p._send_command(argCMD, t)
+            ok, v = _try_parse_hex4_bang(resp); 
+            return v if ok else -1
+
     #----------------------
     # << 情報モジュール >>
     #----------------------

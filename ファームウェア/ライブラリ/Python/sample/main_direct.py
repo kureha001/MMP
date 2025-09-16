@@ -8,10 +8,10 @@ import time
 import serial
 
 # プラットフォーム別のポート名
-_NAME = "COM85"                   # Windowsの場合
+#_NAME = "COM85"                   # Windowsの場合
 #_NAME = "dev/cu.usbmodem1101"     # iOS の例（ser2net/RFC2217ブリッジ越し）
 #_NAME = "/dev/ttyACM0"            # Linux の例（RP2040などCDC-ACM。CH340等は /dev/ttyUSB0）
-#_NAME = "socket//:127.0.0.1:1234" # Pydroidの場合
+_NAME = "socket://127.0.0.1:5333" # Pydroidの場合
 
 # ボーレート
 BAUD_CANDIDATES = (
@@ -58,11 +58,17 @@ def ConnectWithBaud(argBaud):
     global _NAME
     global _UART
     try:
-        _UART = serial.Serial(
-            _NAME       ,
-            argBaud     ,
-            timeout = 0 ,
-        )
+        # TCPブリッジの場合
+        判定 = (_NAME.startswith("socket://")) or (_NAME.startswith("rfc2217://"))
+        if 判定:
+            _UART = serial.serial_for_url(_NAME)
+        # 通常のポートの場合
+        else:
+            _UART = serial.Serial(
+                _NAME       ,
+                argBaud     ,
+                timeout = 0 ,
+            )
 
         # 受信バッファをクリア
         time.sleep(0.01)

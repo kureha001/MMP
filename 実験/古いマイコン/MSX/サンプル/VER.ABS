@@ -1,0 +1,58 @@
+'==========================================
+' MSX-BASIC  RS-232C 送受信ユーティリティ
+' 9600 / 8N1 / TX,RX,GND
+' 送信前に受信バッファ全消去
+' 送信: 末尾'!'付与、総バイト<=30、改行なし
+' 受信: 5バイト固定、5B目'!'のみ採用
+' ENDで終了
+'==========================================
+
+10 DEVICE$="COM:"              ' 必要なら "COM1:" 等に変更
+20 OPEN DEVICE$+"9600,N,8,1" AS #1
+30 MAXLEN%=30
+40 TIMEOUTLOOP%=4000           ' 環境に合わせて調整
+
+50 PRINT "Type message (END to quit). No CR/LF is sent."
+60 PRINT "Max length including '!' = 30."
+70 PRINT
+
+80 LINE INPUT "> ";MSG$
+90 IF UCASE$(MSG$)="END" THEN CLOSE #1: PRINT "Bye.": END
+100 IF LEN(MSG$)=0 THEN PRINT "(empty skipped)": GOTO 80
+
+'--- 末尾'!'保証 + 30B上限 ---
+110 IF RIGHT$(MSG$,1)<>"!" THEN MSG$=MSG$+"!"
+120 IF LEN(MSG$)>MAXLEN% THEN MSG$=RIGHT$(MSG$,MAXLEN%)
+
+'--- 送信前：受信バッファ全消去 ---
+130 GOSUB 500
+
+'--- 改行なしで送信 ---
+140 PRINT #1, MSG$;
+150 PRINT "TX [";MSG$;"] (";LEN(MSG$);"B)"
+
+'--- 5バイト固定受信（5B目'!'必須・簡易タイムアウト） ---
+160 GOSUB 700
+170 IF RX$="" THEN PRINT "RX [timeout]" ELSE PRINT "RX [";RX$;"]"
+180 GOTO 80
+
+'--- Flush RX ---
+500 N%=LOC(1)
+510 IF N%>0 THEN D$=INPUT$(N%,#1): GOTO 500
+520 RETURN
+
+'--- Recv5 (frame of 5, last='!') ---
+700 RX$="": BUF$=""
+710 FOR T%=1 TO TIMEOUTLOOP%
+720   N%=LOC(1)
+730   IF N%>0 THEN
+740     BUF$=BUF$+INPUT$(N%,#1)
+750     IF LEN(BUF$)>=5 THEN
+760       F$=LEFT$(BUF$,5)
+770       IF RIGHT$(F$,1)="!" THEN RX$=F$: RETURN
+780       BUF$=MID$(BUF$,6)      ' ずれた5Bを破棄して再同期
+790     END IF
+800   END IF
+810 NEXT T%
+820 RX$=""
+830 RETURN

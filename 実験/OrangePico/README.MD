@@ -1,4 +1,5 @@
 # Orange Picoで扱うには
+## ～検証中～
 OrangePicoで、MMPを利用する方法を解説します。
 
 ---

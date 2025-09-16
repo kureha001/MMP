@@ -9,7 +9,6 @@ IchigoJam Type-R/Pで、MMPを利用する方法を解説します。
 | RXD        | GPIO0 (Serial1 TX) |
 | TXD        | GPIO1 (Serial1 RX) |
 | GND        | GND                |
-| 3.3V       | 3.3V               |
 
 ---
 ## 2. 通信設定

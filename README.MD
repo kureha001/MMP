@@ -54,7 +54,8 @@ MMPハード開発に必要な情報です。
 - [音声プレイヤー(DFPlayer)](./ハードウェア/MMP本体/DFPlayer.MD)※作成中
 
 ### 5.その他
-- [IchigoJamで扱うには   ](./移植中/IchigoJam/README.MD)
-- [Machikaniaで扱うには  ](./移植中/Machikania/README.MD)
-- [Orange Picoで扱うには ](./移植中/OrangePico/README.MD) 
-- [古いマイコンで扱うには](./移植中/古いマイコン/README.MD)
+- [IchigoJamで扱うには   ](./実験/IchigoJam/README.MD)
+- [Machikaniaで扱うには  ](./実験/Machikania/README.MD)
+- [micro:bitで扱うには   ](./実験/microbit/README.MD) 
+- [Orange Picoで扱うには ](./実験/OrangePico/README.MD) 
+- [古いマイコンで扱うには](./実験/古いマイコン/README.MD)

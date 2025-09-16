@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+#============================================================
+# ＭＭＰコマンド テスト（ＡＰＩ経由でで実行）
+#============================================================
 import time
 import MMP
 
@@ -10,11 +13,11 @@ def main():
     if not MMP.通信接続(): return
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunDigital()        # デジタル入出力
-    RunMp3Playlist()    # MP3プレイヤー(基本)
-    RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
-    RunPwm(False)       # I2C→PCA9685 直接制御
+    #RunDigital()        # デジタル入出力
+    #RunMp3Playlist()    # MP3プレイヤー(基本)
+    #RunMp3Control()     # MP3プレイヤー(制御)
+    #RunPwm(True)        # PWM出力
+    #RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 #============================================================

@@ -1,19 +1,43 @@
 # -*- coding: utf-8 -*-
 #============================================================
 # ＭＭＰコマンド テスト（シリアル コマンドを直接実行）
-# パソコン／スマホ(Android[Pydroid])用
+# CPython用
+# パソコン／Android(Pydroid])対応
 # このファイル単独で実行できます。
 #============================================================
 import time
 import serial
 
-# プラットフォーム別のポート名
-#_NAME = "COM85"                   # Windowsの場合
-#_NAME = "dev/cu.usbmodem1101"     # iOS の例（ser2net/RFC2217ブリッジ越し）
-#_NAME = "/dev/ttyACM0"            # Linux の例（RP2040などCDC-ACM。CH340等は /dev/ttyUSB0）
-_NAME = "socket://127.0.0.1:5333" # Pydroidの場合
+_UART = None
 
+# usbserial4aのインポート
+try:
+    import kivy
+    from usb4a       import usb
+    from usbserial4a import serial4a
+    _HAS_USB4A  = True
+except Exception:
+    usb         = None
+    serial4a    = None
+    _HAS_USB4A  = False
+
+#=============== プラットフォーム別ポート定義 ===============
+# 例）"usb4a://<index>"   <index>:0,1,....
+_NAME = "usb4a://0"                 # Pydroid
+#------------------------------------------------------------
+# 例）"socket://192.168.2.50:3331" … ser2net(raw TCP)
+#     "rfc2217://192.168.2.50:3331"… ser2net(RFC2217)
+#_NAME = "socket://127.0.0.1:5333"   # Pydroid
+#------------------------------------------------------------
+# 例）"/dev/ttyACM0" / "COM3" … 直接接続
+#_NAME = "COM85"                     # Windows
+#_NAME = "/dev/ttyACM0"              # Linux
+#_NAME = "dev/cu.usbmodem1101"       # MacOS
+#============================================================
+
+#============================================================
 # ボーレート
+#============================================================
 BAUD_CANDIDATES = (
     921600  ,
     115200  ,
@@ -24,8 +48,6 @@ BAUD_CANDIDATES = (
     1200    ,
     300     ,
 )
-
-_UART = None
 
 #============================================================
 # メイン（共通）
@@ -38,12 +60,12 @@ def main():
         return False
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunAnalog()         # アナログ入出力
-    RunDigital()        # デジタル入出力
-    RunMp3Playlist()    # MP3プレイヤー(基本)
-    RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
-    RunPwm(False)       # I2C→PCA9685 直接制御
+    #RunAnalog()         # アナログ入出力
+    #RunDigital()        # デジタル入出力
+    #RunMp3Playlist()    # MP3プレイヤー(基本)
+    #RunMp3Control()     # MP3プレイヤー(制御)
+    #RunPwm(True)        # PWM出力
+    #RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 
@@ -53,40 +75,75 @@ def main():
 #-------------------
 # 接続：条件指定
 #-------------------
-def ConnectWithBaud(argBaud):
+def ConnectWithBaud(
+    argBaud     # ① 通信速度(単位：bps)
+) -> bool:      # 戻り値：True=成功／False=失敗
 
+    global _HAS_USB4A
     global _NAME
     global _UART
     try:
-        # TCPブリッジの場合
-        判定 = (_NAME.startswith("socket://")) or (_NAME.startswith("rfc2217://"))
-        if 判定:
+        # １．usb4a（Android直結）
+        if _NAME.startswith("usb4a://"):
+            if not _HAS_USB4A: raise RuntimeError("この環境はusb4a/usbserial4a対象外")
+
+            # 形式: usb4a://<index>   例) usb4a://0
+            idx_str = _NAME.split("://", 1)[1]
+            index   = int(idx_str) if idx_str else 0
+
+            # デバイス列挙
+            devs = usb.get_usb_device_list()
+            dev  = devs[index]
+
+            # 権限が無ければ要求（初回はダイアログ）
+                # 許可はユーザ操作次第。
+                # ここでは待たず、そのまま open を試みる
+                # （失敗時は except に落ちて False を返す＝既存仕様）
+            if not usb.has_usb_permission(dev):
+                usb.request_usb_permission(dev)
+
+            # device_name は UsbDevice の getDeviceName()
+            device_name = dev.getDeviceName()
+
+            # ポートを開く（作者サンプルどおり get_serial_port を使用）
+            _UART = serial4a.get_serial_port(
+                device_name,
+                argBaud,               # Baudrate
+                8,                     # Data bits
+                'N',                   # Parity
+                1                      # Stop bits
+            )
+
+        # ２．TCPブリッジ
+        elif (_NAME.startswith("socket://")) or (_NAME.startswith("rfc2217://")):
             _UART = serial.serial_for_url(_NAME)
-        # 通常のポートの場合
+
+        # ３．通常の物理ポート
         else:
             _UART = serial.Serial(
-                _NAME       ,
-                argBaud     ,
-                timeout = 0 ,
+                _NAME,
+                argBaud,
+                timeout = 0,
             )
 
         # 受信バッファをクリア
         time.sleep(0.01)
         MmpOpenFlush()
 
-        # バージョンを取得
+        # バージョン確認（戻り5文字＋'!'前提）
         resp = MmpCMD("VER!")
-        if len(resp) != 5 or not  resp.endswith('!'): return False
+        if len(resp) != 5 or not resp.endswith('!'): return False
 
-        print(f"　・通信ポート　: {_NAME}"    )
-        print(f"　・通信速度　　: {argBaud}bps" )
-        print(f"　・バージョン  : {resp}"       )
+        print(f"　・通信ポート　: {_NAME}")
+        print(f"　・通信速度　　: {argBaud}bps")
+        print(f"　・バージョン  : {resp}")
         print( "　・PCA9685 [0] : 0x{:04X}".format(MmpCMD_VAL("PWX:0!")))
         print( "　・DFPlayer[1] : 0x{:04X}".format(MmpCMD_VAL("DPX:1!")))
-
         return True
 
-    except Exception: return False
+    except Exception as e:
+        print(e)
+        return False
 
 #------------------------------
 # 自動接続
@@ -94,22 +151,26 @@ def ConnectWithBaud(argBaud):
 def ConnectAutoBaud(
     candidates = BAUD_CANDIDATES    # ①通信速度一覧
 ) -> bool:                          # 戻り値：True=成功／False=失敗
-    # 通信速度一覧の通信速度を用いて、総当たりで接続を試みる。
+
+    # 通信速度一覧の通信速度を用い、総当たりで接続を試みる。
     for b in candidates:
-        if ConnectWithBaud(b): return True   # 戻り値 → [成功]
-    return False                                        # 戻り値 → [失敗]
+        if ConnectWithBaud(b): return True  # 戻り値 → [成功]
+    return False                            # 戻り値 → [失敗]
 
 #------------------------------
 # 受信バッファを消去する
 #------------------------------
 def MmpOpenFlush():
+
     # シリアルが無効な場合は処理を中断
     global _UART
     if not _UART: return
 
+    # バッファのデータ量を参照
     try             : n = _UART.in_waiting
     except Exception: n = 0
 
+    # バッファに溜まっている分を空読み
     if n:
         try             : _UART.read(n)
         except Exception: pass
@@ -299,7 +360,7 @@ def RunMp3Control():
 
     print("　・イコライザー")
     for mode in range(0, 6):
-        print("　　→ {} : {}".format(mode, tf(MmpCMD_OK(f"DEF:1!{mode}!"))))
+        print("　　→ {} : {}".format(mode, tf(MmpCMD_OK(f"DEF:1:{mode}!"))))
         time.sleep(3.0)
 
     print("　・音量")

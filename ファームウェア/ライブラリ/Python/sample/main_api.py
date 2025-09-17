@@ -13,6 +13,7 @@ def main():
     if not MMP.通信接続(): return
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
+    #RunAnalog()         # アナログ入出力
     #RunDigital()        # デジタル入出力
     #RunMp3Playlist()    # MP3プレイヤー(基本)
     #RunMp3Control()     # MP3プレイヤー(制御)

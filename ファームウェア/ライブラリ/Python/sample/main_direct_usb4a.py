@@ -66,6 +66,7 @@ def main():
     #RunMp3Control()     # MP3プレイヤー(制御)
     #RunPwm(True)        # PWM出力
     #RunPwm(False)       # I2C→PCA9685 直接制御
+    _UART.close()
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 

@@ -11,7 +11,8 @@ import serial
 #_NAME = "COM85"                   # Windowsの場合
 #_NAME = "dev/cu.usbmodem1101"     # iOS の例（ser2net/RFC2217ブリッジ越し）
 #_NAME = "/dev/ttyACM0"            # Linux の例（RP2040などCDC-ACM。CH340等は /dev/ttyUSB0）
-_NAME = "socket://127.0.0.1:5333" # Pydroidの場合
+#_NAME = "socket://127.0.0.1:5333" # Pydroidの場合
+_NAME = "socket://192.168.2.113:3331" # Pydroidの場合
 
 # ボーレート
 BAUD_CANDIDATES = (
@@ -37,15 +38,15 @@ def main():
         print("接続失敗")
         return False
 
-    print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    RunAnalog()         # アナログ入出力
-    RunDigital()        # デジタル入出力
-    RunMp3Playlist()    # MP3プレイヤー(基本)
-    RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
-    RunPwm(False)       # I2C→PCA9685 直接制御
+    #print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
+    #RunAnalog()         # アナログ入出力
+    #RunDigital()        # デジタル入出力
+    #RunMp3Playlist()    # MP3プレイヤー(基本)
+    #RunMp3Control()     # MP3プレイヤー(制御)
+    #RunPwm(True)        # PWM出力
+    #RunPwm(False)       # I2C→PCA9685 直接制御
+    _UART.close()
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
-
 
 #============================================================
 # シリアル関連
@@ -61,9 +62,11 @@ def ConnectWithBaud(argBaud):
         # TCPブリッジの場合
         判定 = (_NAME.startswith("socket://")) or (_NAME.startswith("rfc2217://"))
         if 判定:
+            print("ＴＣＰ版：",_NAME)
             _UART = serial.serial_for_url(_NAME)
         # 通常のポートの場合
         else:
+            print("物理ポート版")
             _UART = serial.Serial(
                 _NAME       ,
                 argBaud     ,

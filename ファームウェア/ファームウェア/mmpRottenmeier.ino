@@ -4,9 +4,9 @@
 // ボード情報：Waveshae RP2040 Zero
 // ボード情報：Waveshae RP2350 Zero
 //----------------------------------------------------------------------------- 
-// Ver 0.3.08 - 2025/09/10 By Takanari.Kureha
-//   ・DFPlayerでStatusのバグを修正
-//   　(同コマンドを２度連続で実行しないと、正しい戻り値を得られないバグ)
+// Ver 0.3.09 - 2025/09/17 By Takanari.Kureha
+//   ・RP2040/23350のRGB-LEDの色指定引数が異なる件
+//   　※SETUP()のソース修正のこと
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
@@ -31,10 +31,10 @@ Stream* serialPort;         // インスタンス
 #define BAUD_SELECT_PIN2  7 // スイッチ３：ボーレート選択
 
 // ボーレートのプリセット
-#define BAUD_00 115200      // 緑：OFF｜OFF
-#define BAUD_10 9600        // 赤：ON ｜OFF
-#define BAUD_01 230400      // 青：OFF｜ON
-#define BAUD_11 921600      // 白：ON ｜ON
+#define BAUD_00 115200 // 緑：OFF｜OFF
+#define BAUD_10 300    // 赤：ON ｜OFF
+#define BAUD_01 9600   // 青：OFF｜ON
+#define BAUD_11 921600 // 白：ON ｜ON
 
 //----------------------------------------------------------
 // ＰＷＭ機器(PCA9685)
@@ -107,10 +107,16 @@ void setup() {
   // 通信速度をRGB LEDで表現
   pixels.begin();
   pixels.clear();
-  if      (selectedBaud == BAUD_00) { pixels.setPixelColor(0, pixels.Color( 0,10, 0)); } // 緑
-  else if (selectedBaud == BAUD_10) { pixels.setPixelColor(0, pixels.Color(10, 0, 0)); } // 赤
-  else if (selectedBaud == BAUD_01) { pixels.setPixelColor(0, pixels.Color( 0, 0,10)); } // 青
-  else if (selectedBaud == BAUD_11) { pixels.setPixelColor(0, pixels.Color(10,10,10)); } // 白
+  // RP2040:R,G,B
+  //if      (selectedBaud == BAUD_00) pixels.setPixelColor(0, pixels.Color( 0,10, 0)); // 緑
+  //else if (selectedBaud == BAUD_10) pixels.setPixelColor(0, pixels.Color(10, 0, 0)); // 赤
+  //else if (selectedBaud == BAUD_01) pixels.setPixelColor(0, pixels.Color( 0, 0,10)); // 青
+  //else if (selectedBaud == BAUD_11) pixels.setPixelColor(0, pixels.Color(10,10,10)); // 白
+  // 2350:G,R,B
+  if      (selectedBaud == BAUD_00) pixels.setPixelColor(0, pixels.Color(10, 0,  0)); // 緑
+  else if (selectedBaud == BAUD_10) pixels.setPixelColor(0, pixels.Color( 0,10,  0)); // 赤
+  else if (selectedBaud == BAUD_01) pixels.setPixelColor(0, pixels.Color( 0, 0, 10)); // 青
+  else if (selectedBaud == BAUD_11) pixels.setPixelColor(0, pixels.Color(10,10, 10)); // 白
   pixels.show();
 
   // PCA9685 16台を初期化、接続済フラグをONにする

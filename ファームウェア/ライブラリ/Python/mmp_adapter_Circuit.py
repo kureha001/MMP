@@ -1,14 +1,11 @@
 #============================================================
 # CircuitPython用：ＵＡＲＴ接続アダプタ
 #------------------------------------------------------------
-# ＭＭＰシリアルコマンドを直接扱うコア処理
-#------------------------------------------------------------
 # [インストール方法]
-# １．PYTHONPASTH(推奨)か、プロジェクトと動ディレクトリに格納
-# ２．動作環境には「mmp_adapter.py」にリネーム
-#------------------------------------------------------------
-# 'uart_id' パラメータがありません。
-# ※CircuitPython busio.UART はこれをサポートしていません。
+# 同じフォルダ（または PYTHONPATH）に以下の実装ファイルを配置
+#   mmp_adapter_base.py
+# 　mmp_core.py
+# 　MMP.py
 #============================================================
 import time
 import board
@@ -38,9 +35,12 @@ class MmpAdapter(MmpAdapterBase):
         buffer_size = 128   ,   # ④ バッファサイズ(単位：バイト)
     ) -> None:                  # 戻り値：なし
 
-        # UARTピンを設定する。
-        self.Tx_pin = board.GP0 if tx_pin is None else tx_pin 
-        self.Rx_pin = board.GP1 if rx_pin is None else rx_pin
+        super().__init__()
+
+        # 将来のために保持（現状未使用でもOK）
+        # 通信条件をboardから設定する。
+        self.Tx_pin = tx_pin if tx_pin is not None else getattr(board, "GP0")
+        self.Rx_pin = rx_pin if rx_pin is not None else getattr(board, "GP1")
 
         # 通信条件を設定する。
         self.timeout_s   = float(timeout_s)
@@ -69,11 +69,11 @@ class MmpAdapter(MmpAdapterBase):
 
             # 指定の通信速度で接続する。
             self._uart = busio.UART(
-                tx                   = self.Tx_pin	,
-                rx                   = self.Rx_pin	,
-                baudrate             = int(baud)        ,
-                timeout              = self.timeout_s   ,
-                receiver_buffer_size = self.buffer_size , 
+                self.Tx_pin,
+                self.Rx_pin,
+                baudrate=int(baud),
+                timeout=self.timeout_s,
+                receiver_buffer_size=self.buffer_size,
             )
             self.sleep_ms(2)
 

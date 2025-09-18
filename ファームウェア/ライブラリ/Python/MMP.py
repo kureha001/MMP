@@ -1,92 +1,156 @@
 # -*- coding: utf-8 -*-
-"""
-MMP.py
-- 上位アプリのエントリポイント。
-- 1つの接続指定子（conn）で、各プラットフォームのアダプタを自動選択します。
-- 既存の設計（mmp_core.MmpClient + 各アダプタ）には変更を加えません。
-
-使い方（例）:
-    from mmp_core import MmpClient
-    from MMP      import MmpAdapterFactory
-
-    # TCP（ser2net）:
-    client = MmpClient(MmpAdapterFactory(conn="tcp://192.168.2.113:3331?timeout=0.2"))
-
-    # 直結（自動）: 実行系に応じて CPython/Micro/Circuit のシリアルアダプタを選択
-    client = MmpClient(MmpAdapterFactory(conn="auto"))
-"""
-
+#=================================================================
+# MMP.py
+#-----------------------------------------------------------------
+# - アプリの入口 / Factory
+# - ConnSpec（接続指定子）でアダプタ自動選択:
+#   "tcp://host:port[?timeout=0.2]"
+# 　　　… TCPブリッジ(ser2net, socket://相当)
+#   "auto" … 実行系（CPython/Micro/Circuit）に応じて直結アダプタ
+# - 後方互換API: 通信接続() / 接続
+#-----------------------------------------------------------------
+# [インストール方法]
+# - 同じフォルダ（または PYTHONPATH）に以下の実装ファイルを配置
+# 　mmp_core.py             (必須)
+#   mmp_adapter_base.py     (必須)
+#     mmp_adapter_C.py        (選択)
+#     mmp_adapter_Micro.py    (選択)
+# 　  mmp_adapter_Circuit.py  (選択)
+# 　  mmp_adapter_Tcp.py      (選択)
+# 　  mmp_adapter_Usb4a.py    (選択)
+#=================================================================
 import sys
 
 # mmp_core は既存のまま利用
-from mmp_core import MmpClient  # re-export したい場合は __all__ に含める
+from mmp_core import MmpClient
+
+接続 = None  # type: ignore[assignment]
 
 __all__ = [
-    "MmpClient",
-    "MmpAdapterFactory",
-    "new_client",
+    "MmpClient"         ,
+    "ファクトリ別接続" ,
+    "通信接続"          ,
+    "接続"              ,
 ]
 
-def _parse_tcp_conn(conn):
-    """
-    'tcp://host:port?timeout=0.2' を解析して (host, port, timeout_s) を返す。
-    Micro/Circuit では urllib.parse が無い可能性があるため、ここで遅延 import する。
-    """
-    # Lazy import（CPythonでTCPを使う時だけ必要）
-    from urllib.parse import urlparse, parse_qs
+#=================================================================
+# 'tcp://host:port?timeout=0.2' を解析して (host, port, timeout_s) を返す。
+# urllib.parse は Micro/Circuit では無いことがあるため、ここで遅延 import。
+#=================================================================
+def TCPブリッジ情報取得(conn: str):
+    from urllib.parse import urlparse, parse_qs  # lazy import
 
-    u  = urlparse(conn)
+    u = urlparse(conn)
     if u.scheme.lower() != "tcp":
         raise ValueError("conn は 'tcp://host:port[?timeout=...]' を指定してください")
+
     host = u.hostname
     port = u.port
+
     if not host or not port:
         raise ValueError("tcp 接続には host と port が必須です（例: tcp://192.168.2.113:3331）")
-    qs   = parse_qs(u.query or "")
+
+    qs = parse_qs(u.query or "")
     timeout_s = float(qs.get("timeout", [0.2])[0])
+
     return host, port, timeout_s
 
+#=================================================================
+# 指定モジュールから MmpAdapter を動的 import して返す。
+# 分かりやすいエラーにラップする。
+#=================================================================
+def アダプタ生成(module_name: str):
+    try:
+        mod = __import__(module_name)
+        Adp = getattr(mod, "MmpAdapter")
+        return Adp
+    except Exception as e:
+        raise ImportError(f"'{module_name}.py' の読込失敗: {e}") from e
 
-def MmpAdapterFactory(conn="auto"):
-    """
-    接続指定子（ConnSpec）から適切なアダプタを生成して返すファクトリ。
-    - conn="tcp://host:port[?timeout=0.2]" : TCPブリッジ（ser2net, socket://）
-    - conn="auto"                         : 実行系（CPython/MicroPython/CircuitPython）に応じて
-                                             シリアル前提の従来アダプタを自動選択
-    戻り値: アダプタのインスタンス（MmpAdapterBaseの実装）
-    """
+#=================================================================
+# 接続指定子（ConnSpec）から適切なアダプタを生成して返すファクトリ
+#-----------------------------------------------------------------
+# -  conn="tcp://host:port[?timeout=0.2]" :
+#    TCPブリッジ（ser2net, socket://）
+# - conn="auto" :
+#    実行系（CPython/MicroPython/CircuitPython）に応じて
+#    シリアル前提の従来アダプタを自動選択
+#-----------------------------------------------------------------
+# 戻り値: アダプタのインスタンス（mmp_adapter_base の実装）
+#=================================================================
+def ファクトリ別接続(conn="auto"):
 
-    # 1) TCP（ser2net, socket://）— 決め打ちの内部処理
+    print(conn)
+
+    # 0) usb4a
+    if isinstance(conn, str) and conn.lower().startswith("usb4a://"):
+        idx_str = conn.split("://", 1)[1]
+        try: index = int(idx_str) if idx_str else 0
+        except Exception: index = 0
+        Adapter = アダプタ生成("mmp_adapter_Usb4a")
+        return Adapter(device_index=index)
+
+    # 1) TCP（ser2net）
     if isinstance(conn, str) and conn.lower().startswith("tcp://"):
-        host, port, timeout_s = _parse_tcp_conn(conn)
-        # 固有名のTCPアダプタを遅延 import（他環境への影響を避ける）
-        from mmp_adapter_Tcp import MmpAdapter
-        return MmpAdapter(host=host, port=port, timeout_s=timeout_s)
+        host, port, timeout_s = TCPブリッジ情報取得(conn)
+        Adapter = アダプタ生成("mmp_adapter_Tcp")
+        return Adapter(host=host, port=port, timeout_s=timeout_s)
 
-    # 2) “auto” の場合：実行系名で分岐（Micro/Circuit/CPython）
+    # 2) auto の場合：実行系名で分岐（Micro/Circuit/CPython）
     impl = getattr(sys, "implementation", None)
     name = (getattr(impl, "name", "") or "").lower()
 
-    if name == "micropython":
-        # MicroPython 用アダプタ
-        from mmp_adapter_Micro import MmpAdapter
-        return MmpAdapter()
+    # 2-1) MicroPythonのコンストラクタの引数：
+    # ① uart_id = 0：UART番号
+    # ② tx_pin  = 0：UARTのTxに用いるGPIO番号
+    # ③ rx_pin  = 1：UARTのRxに用いるGPIO番号 
+    if   name == "micropython":
+        Adapter = アダプタ生成("mmp_adapter_Micro")
+        return Adapter()
 
-    if name == "circuitpython":
-        # CircuitPython 用アダプタ
-        from mmp_adapter_Circuit import MmpAdapter
-        return MmpAdapter()
+    # 2-2) CircuitPythonのコンストラクタの引数：
+    # ① tx_pin      = None：UARTのTxに用いるGPIO番号
+    # ② rx_pin      = None：UARTのRxに用いるGPIO番号
+    # ③ timeout_s   = 0.05：タイムアウト(単位：ミリ秒)
+    # ④ buffer_size = 128 ：バッファサイズ(単位：バイト)
+    elif name == "circuitpython":
+        Adapter = アダプタ生成("mmp_adapter_Circuit")
+        return Adapter()
 
-    # 既定: CPython（従来の COM 総当たりロジックのアダプタ）
-    from mmp_adapter_C import MmpAdapter
-    return MmpAdapter()
+    # 2-3) CPythonのコンストラクタの引数：
+    # ① port            = None：ポート名
+    # ② preferred_ports = None：ポートリスト
+    else:
+        # 既定: CPython
+        Adapter = アダプタ生成("mmp_adapter_C")
+        return Adapter()
 
 
-def new_client(conn="auto"):
-    """
-    便宜メソッド：上位からはこれ一発で MmpClient を用意可能。
-    例:
-        from MMP import new_client
-        client = new_client("tcp://192.168.2.113:3331")
-    """
-    return MmpClient(MmpAdapterFactory(conn))
+#=================================================================
+def 通信接続(conn="auto"):
+
+    print("<< ＭＭＰライブラリ for Python>>")
+    print("")
+    print("接続中...")
+
+    global 接続
+
+    try:
+        接続 = MmpClient(ファクトリ別接続(conn))
+        if 接続.ConnectAutoBaud():
+            print(f"　・通信ポート　: {接続.ConnectedPort}")
+            print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
+            print( "　・バージョン  : {}".format(接続.Info.Version()))
+            print( "　・PCA9685 [0] : 0x{:04X}".format(接続.Info.Dev.Pwm(0)))
+            print( "　・DFPlayer[1] : 0x{:04X}".format(接続.Info.Dev.Audio(1)))
+            return True
+
+        else:
+            print("ＭＭＰとの接続に失敗しました...", 接続.LastError)
+            接続 = None
+            return False
+
+    except Exception as e:
+        接続 = None
+        print("例外:", e)
+        return False

@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 #============================================================
-# TCPブリッジ用アダプタ（ser2net の socket:// に接続）
-# 使い方:
-#   このファイルを "mmp_adapter.py" にリネームし、アプリ側で
-#   from mmp_adapter import MmpAdapter
-#   MmpClient(MmpAdapter(host="192.168.2.113", port=3331))
-# 依存: 標準ライブラリのみ（socket, select, time）
+# CPython用：TCPブリッジアダプタ(ser2netの"socket://"に接続)
+#------------------------------------------------------------
+# [インストール方法]
+# 同じフォルダ（または PYTHONPATH）に以下の実装ファイルを配置
+#   mmp_adapter_base.py
+# 　mmp_core.py
+# 　MMP.py
 #============================================================
 import socket
 import select
 import time
-from typing import Optional
+from typing           import Optional
 from mmp_adapter_base import MmpAdapterBase
 
-
+#=================
+# アダプタ クラス
+#=================
 class MmpAdapter(MmpAdapterBase):
-    """
-    TCP越しに MMP 機器へ接続するためのアダプタ。
-    ser2net の raw ソケット (socket://) を前提に、バイト透過で送受信する。
-    """
 
     _sock           = None
     _is_open        = False
@@ -26,16 +25,19 @@ class MmpAdapter(MmpAdapterBase):
     _connected_baud = None
     _lastError      = None
 
+    #========================================================
+    # コンストラクタ
+    #--------------------------------------------------------
+    #  host      : ser2netの IPv4/IPv6 アドレス or ホスト名
+    #  port      : ser2netの待受ポート
+    #  timeout_s : 読取時の最長待ち時間（秒）
+    #========================================================
     def __init__(self,
             host: str,
             port: int,
             timeout_s: float = 0.2
     ):
-        """
-        host      : ser2net サーバの IPv4/IPv6 アドレス or ホスト名
-        port      : ser2net の待受ポート
-        timeout_s : 読み取り時の最長待ち時間（秒）※上位のタイムアウトと併用
-        """
+
         if not host or not isinstance(port, int):
             raise ValueError("host/port は必須です")
 
@@ -49,14 +51,14 @@ class MmpAdapter(MmpAdapterBase):
         self._connected_baud = None
         self._lastError      = None
 
-    #========================================================
+    #==============================================
     # アダプタ共通コマンド：通信関連
-    #========================================================
+    #----------------------------------------------
+    #  TCP なのでボーレートの概念はないが、
+    #  上位互換のために受け取り、
+    #  接続確立後に ConnectedBaud として保持する。
+    #==============================================
     def open_baud(self, baud: int) -> bool:
-        """
-        TCP なのでボーレートの概念はないが、上位互換のために受け取り、
-        接続確立後に ConnectedBaud として保持する。
-        """
         try             : self.close()
         except Exception: pass
 
@@ -104,7 +106,6 @@ class MmpAdapter(MmpAdapterBase):
     # 受信バッファを消去する
     #------------------------------
     def clear_input(self) -> None:
-        """受信バッファを可能な範囲で捨てる。"""
         s = self._sock
         if not s: return
         try:
@@ -138,14 +139,14 @@ class MmpAdapter(MmpAdapterBase):
             if sent <= 0: raise RuntimeError("送信に失敗しました")
             total += sent
 
-    #------------------------------
+    #-----------------------------------------
     # 受信バッファから１文字取得
-    #------------------------------
+    #-----------------------------------------
+    #  1バイトだけ読む。データがなければ None
+    #  上位はポーリングで繰り返し呼ぶ前提
+    # （mmp_core._send_command）
+    #-----------------------------------------
     def read_one_char(self) -> Optional[str]:
-        """
-        1バイトだけ読む。データがなければ None。
-        上位はポーリングで繰り返し呼ぶ前提（mmp_core._send_command）。
-        """
         s = self._sock
         if not s: return None
         try:
@@ -165,7 +166,8 @@ class MmpAdapter(MmpAdapterBase):
 
     #------------------------------
     # 送信フラッシュ
-    # (未対応実装もあるため未使用)
+    #------------------------------
+    #  未対応実装もあるため未使用
     #------------------------------
     def flush(self) -> None:
         return

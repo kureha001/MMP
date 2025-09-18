@@ -1,30 +1,73 @@
 # -*- coding: utf-8 -*-
 #============================================================
-# ＭＭＰコマンド テスト（ＡＰＩ経由でで実行）
+# ＭＭＰコマンド テスト（ＡＰＩ経由で実行） - Factory 対応版
+#   ・新しい MMP.py の Factory (new_client) を利用
+#   ・MMP.通信接続() / MMP.接続 の呼び出しは既存互換
+#   ・テスト対象は冒頭の「テスト構成」でコメント切替
 #============================================================
 import time
-import MMP
+import MMP  # 既存互換のため残す（このモジュールに互換シムを差し込む）
+
+#============================================================
+# テスト構成（コメントのON/OFFで切替）
+#============================================================
+#(1) 直結：シリアル接続（プラットフォーム自動）
+USE_SERIAL_AUTO = True
+
+#(2) TCPブリッジ：ser2net
+USE_TCP_SER2NET_PC   = False
+SER2NET_HOST_PC      = "192.168.2.113"
+SER2NET_PORT_PC      = 3331
+
+#(3) TCPブリッジ：Android(usb4aアプリ) 
+# 例：Android直結（usb4a）
+USE_USB4A_DIRECT = True
+USB4A_INDEX = 0
+
+#(4) TCP共通：read_one_char の待ち秒（?timeout=） 
+TCP_TIMEOUT_S        = 0.2   # ネットワーク品質に応じて調整
+
+#============================================================
+# Factory 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
+#============================================================
+def 引数取得():
+
+    # 1) シリアル直結（自動）
+    if USE_SERIAL_AUTO      : return "auto"
+
+    # 2) ser2net
+    elif USE_TCP_SER2NET_PC:
+        return f"tcp://{SER2NET_HOST_PC}:{SER2NET_PORT_PC}?timeout={TCP_TIMEOUT_S}"
+
+    # 3) usb4a (pydroid専用)
+    elif USE_USB4A_DIRECT   : return f"usb4a://{USB4A_INDEX}"
+
+    # 何も選ばれていなければ既定はシリアル自動
+    return "auto"
+
 
 #============================================================
 # メイン（共通）
 #============================================================
 def main():
 
-    if not MMP.通信接続(): return
+    if not MMP.通信接続(引数取得()): return
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    #RunAnalog()         # アナログ入出力
-    #RunDigital()        # デジタル入出力
-    #RunMp3Playlist()    # MP3プレイヤー(基本)
-    #RunMp3Control()     # MP3プレイヤー(制御)
-    #RunPwm(True)        # PWM出力
-    #RunPwm(False)       # I2C→PCA9685 直接制御
+    # 実施するテストだけコメントを外してください（複数可）
+    RunAnalog()         # アナログ入出力
+    RunDigital()        # デジタル入出力
+    RunMp3Playlist()    # MP3プレイヤー(基本)
+    RunMp3Control()     # MP3プレイヤー(制御)
+    RunPwm(True)        # PWM出力
+    RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 #============================================================
 # 出力文字ヘルパ
 #============================================================
-def tf(b): return "True" if b>0 else "False"
+def tf(b): 
+    return "True" if b>0 else "False"
 
 
 #============================================================
@@ -213,4 +256,5 @@ def RunPwm(mode):
     print("　[終了]\n")
 
 #======================================================
-if __name__ == "__main__": main()
+if __name__ == "__main__": 
+    main()

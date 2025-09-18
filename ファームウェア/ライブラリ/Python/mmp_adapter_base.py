@@ -19,7 +19,7 @@ class MmpAdapterBase:
     _lastError      = None
     
     #------------------------------------------------------------
-    # 未実装時のエラー発生用
+    # 通信関連
     #------------------------------------------------------------
     # ボーレート指定でポートを開く。
     def open_baud(self, baud: int) -> bool  : raise NotImplementedError

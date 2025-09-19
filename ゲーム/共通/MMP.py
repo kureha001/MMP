@@ -38,22 +38,31 @@ __all__ = [
 # urllib.parse は Micro/Circuit では無いことがあるため、ここで遅延 import。
 #=================================================================
 def TCPブリッジ情報取得(conn: str):
-    from urllib.parse import urlparse, parse_qs  # lazy import
 
-    u = urlparse(conn)
-    if u.scheme.lower() != "tcp":
+    s = (conn or "").strip()
+    if not s.lower().startswith("tcp://"):
         raise ValueError("conn は 'tcp://host:port[?timeout=...]' を指定してください")
 
-    host = u.hostname
-    port = u.port
+    rest = s[6:]  # "tcp://"
+    if "?" in rest  : hostport, query = rest.split("?", 1)
+    else            : hostport, query = rest, ""
 
-    if not host or not port:
+    if ":" not in hostport:
         raise ValueError("tcp 接続には host と port が必須です（例: tcp://192.168.2.113:3331）")
 
-    qs = parse_qs(u.query or "")
-    timeout_s = float(qs.get("timeout", [0.2])[0])
+    host, port_str = hostport.rsplit(":", 1)
+    try: port = int(port_str)
+    except Exception: raise ValueError("port は整数で指定してください（例: 3331）")
+
+    timeout_s = 0.2
+    if query:
+        for kv in query.split("&"):
+            if kv.startswith("timeout="):
+                try: timeout_s = float(kv.split("=", 1)[1])
+                except Exception: pass
 
     return host, port, timeout_s
+
 
 #=================================================================
 # 指定モジュールから MmpAdapter を動的 import して返す。
@@ -93,7 +102,11 @@ def ファクトリ別接続(conn="auto"):
     # 1) TCP（ser2net）
     if isinstance(conn, str) and conn.lower().startswith("tcp://"):
         host, port, timeout_s = TCPブリッジ情報取得(conn)
-        Adapter = アダプタ生成("mmp_adapter_Tcp")
+        impl = getattr(sys, "implementation", None)
+        name = (getattr(impl, "name", "") or "").lower()
+        if   name == "micropython"  : Adapter = アダプタ生成("mmp_adapter_Tcp_Micro")
+        elif name == "circuitpython": Adapter = アダプタ生成("mmp_adapter_Tcp")
+        else                        : Adapter = アダプタ生成("mmp_adapter_Tcp")
         return Adapter(host=host, port=port, timeout_s=timeout_s)
 
     # 2) auto の場合：実行系名で分岐（Micro/Circuit/CPython）

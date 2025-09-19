@@ -260,12 +260,12 @@ class MmpAdapterBase:
 ```
 
 #### 実装状況
-|通信ハンドル|C |Micro|Circuit|
-|---|---|---|---|
-|_uart|Serial|UART|UART|Socket|
-
-| プロパティ|C(Serial)|Micro(Serial)|Circuit(Serial)|C(TCP)|
+|通信ハンドル|C(Pydroid)|C(PC)|Micro|Circuit|
 |---|---|---|---|---|
+|_uart|CDC(usb4a)<br>TCP(非CDCをブリッジ)<br>TCP(ser2net)<br>|非CDC･CDC<br>TCP(ser2net)|非CDCT<br>TCP(ser2net)|非CDC<br>TCP(ser2net)|
+
+| プロパティ|C(CDC,非CDC)|Micro(非CDC)|Circuit(非CDC)|C(TCP)|C(TCP)|C(TCP)|
+|---|---|---|---|---|---|---|
 |_is_open       |○|○|○|○|
 |_connected_port|○(例: `COM5`/`/dev/ttyACM0`)|○|○|○(`tcp://host:port`)|
 |_connected_baud|○(物理値)|○|○|○(**記録のみ**)|

@@ -93,10 +93,8 @@ class MmpAdapter(MmpAdapterBase):
                 pass
 
     def write_ascii(self, s: str) -> None:
-        """ASCII を送信（例外は上位に影響しないよう握りつぶし）"""
         sck = self._uart
-        if not sck:
-            return
+        if not sck: return
         data = s.encode("ascii", "ignore")
         total = 0
         try:

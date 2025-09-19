@@ -128,16 +128,19 @@ class MmpAdapter(MmpAdapterBase):
     #------------------------------
     # ASCII文字を送信
     #------------------------------
-    def write_ascii(self, s: str) -> None:
+    def write_ascii(self, argCommand: str) -> None:
         if not self._sock: raise RuntimeError("ソケット未接続です")
-        if not s: return
-        b = s.encode("ascii", "ignore")
-        view = memoryview(b)
+        data = argCommand.encode("ascii", "ignore")
         total = 0
-        while total < len(b):
-            sent = self._sock.send(view[total:])
-            if sent <= 0: raise RuntimeError("送信に失敗しました")
-            total += sent
+        try:
+            while total < len(data):
+                print(f"　　・{total}：{data[total:]}")
+                sent = self._sock.send(data[total:])
+                if not sent:
+                    self._is_open = False
+                    break
+                total += sent
+        except Exception: self._is_open = False
 
     #-----------------------------------------
     # 受信バッファから１文字取得

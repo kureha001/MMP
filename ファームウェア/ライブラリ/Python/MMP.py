@@ -104,9 +104,9 @@ def ファクトリ別接続(conn="auto"):
         host, port, timeout_s = TCPブリッジ情報取得(conn)
         impl = getattr(sys, "implementation", None)
         name = (getattr(impl, "name", "") or "").lower()
-        if   name == "micropython"  : Adapter = アダプタ生成("mmp_adapter_Tcp_Micro")
-        elif name == "circuitpython": Adapter = アダプタ生成("mmp_adapter_Tcp")
-        else                        : Adapter = アダプタ生成("mmp_adapter_Tcp")
+        if   name == "micropython"  : Adapter = アダプタ生成("mmp_adapter_Tcp_Micro"    )
+        elif name == "circuitpython": Adapter = アダプタ生成("mmp_adapter_Tcp_Circuit"  )
+        else                        : Adapter = アダプタ生成("mmp_adapter_Tcp_C"        )
         return Adapter(host=host, port=port, timeout_s=timeout_s)
 
     # 2) auto の場合：実行系名で分岐（Micro/Circuit/CPython）
@@ -167,3 +167,4 @@ def 通信接続(conn="auto"):
         接続 = None
         print("例外:", e)
         return False
+

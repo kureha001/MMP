@@ -656,3 +656,4 @@ class MmpClient:
             resp = self._p._send_command(f"I2R:{_hex2(addr)}:{_hex2(reg)}!", t)
             ok, v = _try_parse_hex4_bang(resp); 
             return v if ok else 0
+

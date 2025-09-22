@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+# mmp_adapter_Tcp_C.py
 #============================================================
-# CPython用：TCPブリッジアダプタ(ser2netの"socket://"に接続)
+# CPython用：TCPブリッジアダプタ
+#------------------------------------------------------------
+# [設置方法]
+#  ser2netの"socket://"に接続するため、同一セグメントの
+#  ネットワークに接続する
 #------------------------------------------------------------
 # [インストール方法]
-# 同じフォルダ（または PYTHONPATH）に以下の実装ファイルを配置
-#   mmp_adapter_base.py
-# 　mmp_core.py
-# 　MMP.py
+# ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
+# ・マイコン：[LIB]
+# ・プロジェクトと同一ディレクトリ
 #============================================================
 import socket
 import select
@@ -71,7 +75,6 @@ class MmpAdapter(MmpAdapterBase):
             # 接続時のみタイムアウト（以降はselectで扱う）
             s.settimeout(max(self._timeout_s, 0.01))
             s.connect((self._host, self._port))
-
             # 接続後はブロッキングに戻す（selectで制御）
             s.settimeout(None)
             self._sock = s
@@ -128,19 +131,16 @@ class MmpAdapter(MmpAdapterBase):
     #------------------------------
     # ASCII文字を送信
     #------------------------------
-    def write_ascii(self, argCommand: str) -> None:
+    def write_ascii(self, s: str) -> None:
         if not self._sock: raise RuntimeError("ソケット未接続です")
-        data = argCommand.encode("ascii", "ignore")
+        if not s: return
+        b = s.encode("ascii", "ignore")
+        view = memoryview(b)
         total = 0
-        try:
-            while total < len(data):
-                print(f"　　・{total}：{data[total:]}")
-                sent = self._sock.send(data[total:])
-                if not sent:
-                    self._is_open = False
-                    break
-                total += sent
-        except Exception: self._is_open = False
+        while total < len(b):
+            sent = self._sock.send(view[total:])
+            if sent <= 0: raise RuntimeError("送信に失敗しました")
+            total += sent
 
     #-----------------------------------------
     # 受信バッファから１文字取得

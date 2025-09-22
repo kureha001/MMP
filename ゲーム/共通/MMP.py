@@ -1,23 +1,12 @@
 # -*- coding: utf-8 -*-
-#=================================================================
 # MMP.py
-#-----------------------------------------------------------------
-# - アプリの入口 / Factory
-# - ConnSpec（接続指定子）でアダプタ自動選択:
-#   "tcp://host:port[?timeout=0.2]"
-# 　　　… TCPブリッジ(ser2net, socket://相当)
-#   "auto" … 実行系（CPython/Micro/Circuit）に応じて直結アダプタ
-# - 後方互換API: 通信接続() / 接続
+#=================================================================
+# Python共通：アプリ接続
 #-----------------------------------------------------------------
 # [インストール方法]
-# - 同じフォルダ（または PYTHONPATH）に以下の実装ファイルを配置
-# 　mmp_core.py             (必須)
-#   mmp_adapter_base.py     (必須)
-#     mmp_adapter_C.py        (選択)
-#     mmp_adapter_Micro.py    (選択)
-# 　  mmp_adapter_Circuit.py  (選択)
-# 　  mmp_adapter_Tcp.py      (選択)
-# 　  mmp_adapter_Usb4a.py    (選択)
+# ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
+# ・マイコン：[LIB]
+# ・プロジェクトと同一ディレクトリ
 #=================================================================
 import sys
 
@@ -28,14 +17,14 @@ from mmp_core import MmpClient
 
 __all__ = [
     "MmpClient"         ,
-    "ファクトリ別接続" ,
+    "ファクトリ別接続"  ,
     "通信接続"          ,
     "接続"              ,
 ]
 
 #=================================================================
-# 'tcp://host:port?timeout=0.2' を解析して (host, port, timeout_s) を返す。
-# urllib.parse は Micro/Circuit では無いことがあるため、ここで遅延 import。
+# 'tcp://host:port?timeout=0.2'を解析し(host,port,timeout_s)を返す
+# urllib.parseはMicro/Circuitでは無いことを考慮しここで遅延import
 #=================================================================
 def TCPブリッジ情報取得(conn: str):
 
@@ -118,7 +107,7 @@ def ファクトリ別接続(conn="auto"):
     # ② tx_pin  = 0：UARTのTxに用いるGPIO番号
     # ③ rx_pin  = 1：UARTのRxに用いるGPIO番号 
     if   name == "micropython":
-        Adapter = アダプタ生成("mmp_adapter_Micro")
+        Adapter = アダプタ生成("mmp_adapter_Ser_Micro")
         return Adapter()
 
     # 2-2) CircuitPythonのコンストラクタの引数：
@@ -127,7 +116,7 @@ def ファクトリ別接続(conn="auto"):
     # ③ timeout_s   = 0.05：タイムアウト(単位：ミリ秒)
     # ④ buffer_size = 128 ：バッファサイズ(単位：バイト)
     elif name == "circuitpython":
-        Adapter = アダプタ生成("mmp_adapter_Circuit")
+        Adapter = アダプタ生成("mmp_adapter_Ser_Circuit")
         return Adapter()
 
     # 2-3) CPythonのコンストラクタの引数：
@@ -135,7 +124,7 @@ def ファクトリ別接続(conn="auto"):
     # ② preferred_ports = None：ポートリスト
     else:
         # 既定: CPython
-        Adapter = アダプタ生成("mmp_adapter_C")
+        Adapter = アダプタ生成("mmp_adapter_Ser_C")
         return Adapter()
 
 

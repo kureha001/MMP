@@ -1,46 +1,46 @@
 # -*- coding: utf-8 -*-
 #============================================================
-# ＭＭＰコマンド テスト（ＡＰＩ経由で実行） - Factory 対応版
-#   ・新しい MMP.py の Factory (new_client) を利用
-#   ・MMP.通信接続() / MMP.接続 の呼び出しは既存互換
-#   ・テスト対象は冒頭の「テスト構成」でコメント切替
+# ＭＭＰコマンド テスト（ＡＰＩ経由で実行）
 #============================================================
 import time
 import MMP  # 既存互換のため残す（このモジュールに互換シムを差し込む）
 
 #============================================================
-# テスト構成（コメントのON/OFFで切替）
+# テスト構成
+# `USE_*` の ON/OFF で切替る
+# `USE_*` 意外は 各自の環境に合わせる
 #============================================================
 #(1) 直結：シリアル接続（プラットフォーム自動）
-USE_SERIAL_AUTO = True
+USE_SERIAL_AUTO     = False
 
 #(2) TCPブリッジ：ser2net
-USE_TCP_SER2NET_PC   = False
-SER2NET_HOST_PC      = "192.168.2.113"
-SER2NET_PORT_PC      = 3331
+USE_TCP  = True
 
-#(3) TCPブリッジ：Android(usb4aアプリ) 
-# 例：Android直結（usb4a）
-USE_USB4A_DIRECT = True
-USB4A_INDEX = 0
+TCP_PORT_PC     = 5331
+TCP_HOST_PC     = "192.168.2.124"
+#TCP_HOST_PC     = "127.0.0.1"
+
+#(3) TCPブリッジ：usb4a(Pydroid)
+USE_USB4A_DIRECT    = False
+USB4A_INDEX         = 0
 
 #(4) TCP共通：read_one_char の待ち秒（?timeout=） 
-TCP_TIMEOUT_S        = 0.2   # ネットワーク品質に応じて調整
+TCP_TIMEOUT_S       = 0.2   # ネットワーク品質に応じて調整
 
 #============================================================
-# Factory 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
+# 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
 #============================================================
 def 引数取得():
 
     # 1) シリアル直結（自動）
     if USE_SERIAL_AUTO      : return "auto"
 
-    # 2) ser2net
-    elif USE_TCP_SER2NET_PC:
-        return f"tcp://{SER2NET_HOST_PC}:{SER2NET_PORT_PC}?timeout={TCP_TIMEOUT_S}"
+    # 2) TCPブリッジ
+    if USE_TCP:
+        return f"tcp://{TCP_HOST_PC}:{TCP_PORT_PC}?timeout={TCP_TIMEOUT_S}"
 
     # 3) usb4a (pydroid専用)
-    elif USE_USB4A_DIRECT   : return f"usb4a://{USB4A_INDEX}"
+    if USE_USB4A_DIRECT   : return f"usb4a://{USB4A_INDEX}"
 
     # 何も選ばれていなければ既定はシリアル自動
     return "auto"

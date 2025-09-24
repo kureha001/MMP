@@ -32,11 +32,12 @@ String buildStartupStatusText(){
  */
 static void handleRoot(){
   http.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  http.send(200,"text/html",
-    "<h3>M5Stamp S3 Config Upload</h3>"
+  http.send(200, "text/html; charset=utf-8",
+    "<!doctype html><meta charset='utf-8'>"
+    "<h3>ＴＣＰ ブリッジ サーバー 設定画面</h3>"
     "<form method='POST' action='/upload' enctype='multipart/form-data'>"
-    "<input type='file' name='f'><button type='submit'>Upload</button>"
-    "</form><p><a href='/config'>View current config.json</a> | <a href='/status'>Status</a></p>");
+    "<input type='file' name='f'><button type='submit'>取り込み開始</button>"
+    "</form><p><a href='/config'>現在の設定ファイルの中身</a> | <a href='/status'>現在の接続状況</a></p>");
 }
 
 /**

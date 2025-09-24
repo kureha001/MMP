@@ -2,7 +2,7 @@
   "wifi": {
     "hostname": "m5-bridge",
     "candidates": [
-      {"ssid":"YOUR_SSID_1","pass":"YOUR_PASS_1","timeout_ms":8000}
+      {"ssid":"YOUR_SSID_1","pass":"YOUR_PASS_1","timeout_ms":00}
     ],
     "ap_fallback": { "enabled": true, "ssid": "m5-bridge-setup", "pass": "", "hold_seconds": 0 }
   },

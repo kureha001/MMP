@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MMP 単体テスト</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.6;margin:24px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  input,button,select{font-size:16px;padding:8px 10px}
+  input{width:18rem;max-width:100%}
+  fieldset{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0}
+  legend{font-weight:700}
+  pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap}
+  .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
+  small{color:#666}
+  label.inline{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
+</style>
+
+<header>
+  <strong>MMP 単体テスト</strong>
+</header>
+<hr>
+<div class="row">
+  <label class="inline">ホスト/IP:
+    <input id="host" placeholder="例: 192.168.2.124">
+  </label>
+  <label class="inline">ポート:
+    <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
+  </label>
+</div>
+
+<fieldset>
+  <legend>基本 / info / conn</legend>
+  <div class="row">
+    <button id="btnRoot"     >WEB-API</button>
+    <button id="btnInfoVer"  >バージョン</button>
+  </div>
+  <div class="row">
+    <button id="btnConnOpen">GET /conn/isOpen</button>
+    <button id="btnConnBaud">GET /conn/baud</button>
+    <button id="btnConnPort">GET /conn/port</button>
+    <button id="btnConnLErr">GET /conn/lastError</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>デジタル入出力</legend>
+  <div class="row">
+    <label class="inline">GPIO ID:<input id="din_id" value="2" style="width:6rem"></label>
+    <button id="btnDIn">デジタル入力</button>
+  </div>
+  <div class="row">
+    <label class="inline">GPIO ID:<input id="dout_id" value="3" style="width:6rem"></label>
+    <label class="inline">値:
+      <select id="dout_val"><option value="0">0 (LOW)</option><option value="1" selected>1 (HIGH)</option></select>
+    </label>
+    <button id="btnDOut">デジタル出力</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>アナログ入力（HC4067）</legend>
+  <div class="row">
+    <label class="inline">チャンネル数:<input id="an_chTtl" value="16" style="width:6rem"></label>
+    <label class="inline">機器数:<input id="an_devTtl" value="2" style="width:6rem"></label>
+    <button id="btnAnalogCfg">範囲セット</button>／
+    <button id="btnAnalogUpd">バッファ取込</button>
+  </div>
+  <div class="row">
+    <label class="inline">チャンネルID:<input id="an_ch" value="2" style="width:6rem"></label>
+    <label class="inline">機器ID:<input id="an_dev" value="1" style="width:6rem"></label>
+    <button id="btnAnalogRead">バッファ参照</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>ＰＷＭ出力（PCA9685）</legend>
+  <label class="inline">チャンネルID:<input id="pwm_ch"     value="0" style="width:6rem"></label>
+  <hr>
+  <div class="row">
+    <label class="inline">出力値(0-4095):<input id="pwm_val"  value="600" style="width:8rem"></label>
+    <button id="btnPwmOut">ＰＷＭ出力</button>
+  </div>
+  <div class="row">
+    <label class="inline">角度(最小):   <input id="ang_min"   value="0"   style="width:6rem"></label>
+    <label class="inline">角度(最大):   <input id="ang_max"   value="180" style="width:6rem"></label>
+    <label class="inline">出力値(最小):<input id="ang_pwmMin" value="150" style="width:6rem"></label>
+    <label class="inline">出力値(最大):<input id="ang_pwmMax" value="600" style="width:6rem"></label>
+    <button id="btnPwmAngleInit">セット</button>
+  </div>
+  <div class="row">
+    <label class="inline">角度(0-180):<input id="ang_angle"   value="90" style="width:8rem"></label>
+    <button id="btnPwmAngle">ＰＷＭ出力</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>ＭＰ３（DFPlayer）</legend>
+  <label class="inline">機器ID:    <input id="au_dev" value="1" style="width:6rem"></label>
+  <hr>
+  <div class="row">
+    <label class="inline">全体設定:</label>
+    <label class="inline">音量(0-30):<input id="au_value" value="20" style="width:6rem"></label>
+    <button id="btnAuVol">セット</button>／
+    <label class="inline">イコライザー(0-5):<input id="au_eq" value="3" style="width:6rem"></label>
+    <button id="btnAuEq">セット</button>
+  </div>
+  <div class="row">
+    <label class="inline">再生:</label>
+    <label class="inline">ディレクトリID(1-255):<input id="au_dir" value="1" style="width:6rem"></label>
+    <label class="inline">ファイルID(1-255):<input id="au_file" value="1" style="width:6rem"></label>
+    <button id="btnAuPlayStart">演奏</button>
+  </div>
+  <div class="row">
+    <label class="inline">再生制御:     </label>
+    <button id="btnAuPlayStop">停止     </button>／
+    <button id="btnAuPlayPause">一時停止</button>／
+    <button id="btnAuPlayResume">再開   </button>／
+    <select id="au_loop"><option value="0">0 (OFF)</option><option value="1">1 (ON)</option></select></label>
+    <button id="btnAuPlayLoop">ループ再生</button>
+  </div>
+  <div class="row">
+    <label class="inline">情報参照:</label>
+    <button id="btnAuState" >カレントファイル状況</button>／
+    <button id="btnAuRVol"  >音量                </button>／
+    <button id="btnAuEqRead">イコライザー        </button>
+    <button id="btnAuFiles" >ファイル総数        </button>／
+    <button id="btnAuFileNo">カレントファイルID  </button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>ｉ２ｃ通信</legend>
+  <div class="row">
+      <label class="inline">アドレス:<input id="i2c_addr" value="64" style="width:8rem"></label>
+  </div>
+  <hr>
+  <div class="row">
+    <label class="inline">レジスタ:<input  id="i2c_reg"  value="6" style="width:8rem"></label>
+    <label class="inline">値:<input  id="i2c_val"  value="255" style="width:8rem"></label>
+    <button id="btnI2cWrite">書込み</button>
+  </div>
+  <div class="row">
+    <label class="inline">レジスタ:<input  id="i2c_reg2"  value="6" style="width:8rem"></label>
+    <button id="btnI2cRead">読み込み</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>自由入力（GET固定）</legend>
+  <div class="row" style="gap:6px">
+    <input id="free_path" placeholder="/digital/out?id=3&val=1 など" style="flex:1">
+    <button id="btnFree">GET 送信</button>
+  </div>
+</fieldset>
+<hr>
+<fieldset>
+  <legend>ログ</legend>
+  <label>リクエスト<pre id="req"  class="mono"></pre></label>
+  <label>レスポンス（HTTP行とヘッダ）<pre id="hdrs" class="mono"></pre></label>
+  <label>ボディ（生テキスト）<pre id="raw"  class="mono"></pre></label>
+  <label>ボディ（JSON整形）<pre id="json" class="mono"></pre></label>
+</fieldset>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const hostEl=$('#host'), portEl=$('#port');
+  const preReq=$('#req'), preHdrs=$('#hdrs'), preRaw=$('#raw'), preJson=$('#json');
+
+  hostEl.value = location.hostname || '192.168.2.124';
+
+  function clearLogs(){ preReq.textContent=preHdrs.textContent=preRaw.textContent=preJson.textContent=''; }
+  function url(path){
+    const host=hostEl.value.trim(), port=(portEl.value||'8080').trim();
+    if (!path.startsWith('/')) path = '/' + path;
+    return `http://${host}:${port}${path}`;
+  }
+  async function run(path){
+    const u = url(path);
+    clearLogs();
+    preReq.textContent = `GET ${u}`;
+    try{
+      const res = await fetch(u, { method:'GET', cache:'no-store', credentials:'omit' });
+      let hdr = `HTTP ${res.status} ${res.statusText}\n`;
+      for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
+      preHdrs.textContent = hdr;
+      const text = await res.text();
+      preRaw.textContent = text.length ? text : '(空)';
+      try{ preJson.textContent = JSON.stringify(JSON.parse(text), null, 2); }
+      catch{ preJson.textContent='(JSONとして解釈できません)'; }
+    }catch(e){
+      preHdrs.textContent='リクエストに失敗しました。';
+      preRaw.textContent=String(e?.message||e||'UNKNOWN');
+      preJson.textContent='(取得不可)';
+    }
+  }
+
+  // 基本 / info / conn
+  $('#btnRoot').onclick      = () => run(`/`);
+  $('#btnInfoVer').onclick   = () => run(`/info/version`);
+
+  $('#btnConnOpen').onclick  = () => run(`/conn/isOpen`);
+  $('#btnConnBaud').onclick  = () => run(`/conn/baud`);
+  $('#btnConnPort').onclick  = () => run(`/conn/port`);
+  $('#btnConnLErr').onclick  = () => run(`/conn/lastError`);
+
+  // digital
+  $('#btnDIn').onclick  = () => run(`/digital/in?id=${encodeURIComponent($('#din_id').value.trim())}`);
+  $('#btnDOut').onclick = () => run(`/digital/out?id=${encodeURIComponent($('#dout_id').value.trim())}&val=${encodeURIComponent($('#dout_val').value)}`);
+
+  // analog
+  $('#btnAnalogCfg').onclick  = () => run(`/analog/configure?chTtl=${encodeURIComponent($('#an_chTtl').value.trim())}&devTtl=${encodeURIComponent($('#an_devTtl').value.trim())}`);
+  $('#btnAnalogUpd').onclick  = () => run(`/analog/update`);
+  $('#btnAnalogRead').onclick = () => run(`/analog/read?ch=${encodeURIComponent($('#an_ch').value.trim())}&dev=${encodeURIComponent($('#an_dev').value.trim())}`);
+
+  // pwm
+  $('#btnPwmOut').onclick      = () => run(`/pwm/out?ch=${encodeURIComponent($('#pwm_ch').value.trim())}&val=${encodeURIComponent($('#pwm_val').value.trim())}`);
+  $('#btnPwmAngleInit').onclick= () => run(`/pwm/angleInit?angleMin=${encodeURIComponent($('#ang_min').value.trim())}&angleMax=${encodeURIComponent($('#ang_max').value.trim())}&pwmMin=${encodeURIComponent($('#ang_pwmMin').value.trim())}&pwmMax=${encodeURIComponent($('#ang_pwmMax').value.trim())}`);
+  $('#btnPwmAngle').onclick    = () => run(`/pwm/angle?ch=${encodeURIComponent($('#pwm_ch').value.trim())}&angle=${encodeURIComponent($('#ang_angle').value.trim())}`);
+
+  // audio
+  $('#btnAuVol').onclick       = () => run(`/audio/volume?dev=${encodeURIComponent($('#au_dev').value.trim())}&value=${encodeURIComponent($('#au_value').value.trim())}`);
+  $('#btnAuEq').onclick        = () => run(`/audio/setEq?dev=${encodeURIComponent($('#au_dev').value.trim())}&mode=${encodeURIComponent($('#au_eq').value.trim())}`);
+
+  $('#btnAuPlayStart').onclick = () => run(`/audio/play/start?dev=${encodeURIComponent($('#au_dev').value.trim())}&dir=${encodeURIComponent($('#au_dir').value.trim())}&file=${encodeURIComponent($('#au_file').value.trim())}`);
+  $('#btnAuPlayLoop').onclick  = () => run(`/audio/play/setLoop?dev=${encodeURIComponent($('#au_dev').value.trim())}&mode=${encodeURIComponent($('#au_loop').value)}`);
+  $('#btnAuPlayStop').onclick  = () => run(`/audio/play/stop?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuPlayPause').onclick = () => run(`/audio/play/pause?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuPlayResume').onclick= () => run(`/audio/play/resume?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+
+  $('#btnAuState').onclick     = () => run(`/audio/read/state?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuRVol').onclick      = () => run(`/audio/read/volume?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuEqRead').onclick    = () => run(`/audio/read/eq?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuFiles').onclick     = () => run(`/audio/read/fileCounts?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+  $('#btnAuFileNo').onclick    = () => run(`/audio/read/fileNumber?dev=${encodeURIComponent($('#au_dev').value.trim())}`);
+
+  // i2c
+  $('#btnI2cWrite').onclick = () => run(`/i2c/write?addr=${encodeURIComponent($('#i2c_addr').value.trim())}&reg=${encodeURIComponent($('#i2c_reg').value.trim())}&val=${encodeURIComponent($('#i2c_val').value.trim())}`);
+  $('#btnI2cRead').onclick  = () => run(`/i2c/read?addr=${encodeURIComponent($('#i2c_addr').value.trim())}&reg=${encodeURIComponent($('#i2c_reg2').value.trim())}`);
+
+  // free
+  $('#btnFree').onclick = () => {
+    let p = $('#free_path').value.trim();
+    if (!p.startsWith('/')) p = '/' + p;
+    run(p);
+  };
+})();
+</script>
+</html>

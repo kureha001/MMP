@@ -1,8 +1,8 @@
-# ESP32 小型ブリッジサーバ ドキュメント（第一版）
+# TCPブリッジ 兼 WEB-API サーバ
 
 ## 1. はじめに（目的）
 本ツールは **ESP32小型マイコン（M5Stamp S3など）** を利用して、  
-PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCPブリッジを提供します。  
+PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCPブリッジを提供します。 また、MMPコマンドのWEB-APIも提供します。 
 
 - 省スペース  
 - 低コスト  
@@ -14,6 +14,7 @@ PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCP�
 
 ## 2. できること
 - **UART⇄TCPの透過ブリッジ（RAW）**  
+- **他ライブラリ同様、フルセットのMMP機能をもつWEB-API**  
 - **2系統のUARTをサポート**（例: TCPポート5331/5332）  
 - **Web UI搭載**  
   - `/` : 設定ファイルアップロード  
@@ -35,10 +36,15 @@ PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCP�
 ---
 
 ## 4. クイックスタート
-1. **初回起動** → APモード（SSID: `m5-bridge-setup`）で待機。  
-2. PC/スマホで接続 → `http://192.168.4.1/` → `/upload` から `config.json` をアップロード。  SIMのデータ通信が活性の場合、インターネットにアクセスしてしまう場合があるので、この場合はデータ通信をOFFにして利用してください。
-3. 自動再起動後、Wi-Fiに接続。`/status` ページで SSID / IP を確認。  
-4. TCPクライアント（例: `telnet <IP> 5331`）で接続確認。  
+![トップ画面](./images/0_TOP.png)
+1. **初回起動はAPモード**になっているので、WifiをSSID: `m5-bridge-setup`で接続します。
+2. WEBブラウザで`http://192.168.4.1/`にアクセスすると、トップ画面が表示されます。 
+3. `参照`ボタンをクリックし、設定ファイルを選択します。選択すると`参照`ボタンの横にファイル名が表示されます。
+4. `Upload`ボタンをクリックし、取り込みます。
+5. 自動再起動後、設定ファイルに従いWi-Fiに接続されます。この時点でWifiをもとのものに繋ぎ直してください。
+6. シリアルモニタの接続情報でIPアドレスを確認し、WEBブラウザで開くと、再びTop画面が表示されます。
+7. 現在の**接続状況**リンクを押すと、接続状況などを確認できます。
+8. 念のため**現在の設定ファイルの中身**リンクを押して、取り込みした内容と一致するかを確認します。
 
 ---
 
@@ -56,6 +62,8 @@ PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCP�
 ---
 
 ## 6. 使用方法
+
+### 6-1. TCPブリッジ編
 シリアルモニターに現在のIPアドレスが表示されます。そのアドレスをWEBブラウザで開きます。<br>
 （例）`http://192.168.1.110`<br>
 WEB画面で、設定ファイルの選択とアップロードができます。
@@ -67,11 +75,99 @@ WEB画面で、設定ファイルの選択とアップロードができます�
 - `/status` : 現在の動作状況を表示。  
 - **TCP接続** : `telnet <IP> 5331` または `5332`。  
 
+### 6-2. WEB-API編
+各種ライブラリと同様に、MMPの持つ機能をフルセットでWEB-APIで提供する。APIツリー構造とシグネチャは以下の通り。
+```
+/
+├─ GET  /                       … {"ok":true,"service":"MMP-WebAPI","note":"GET-only"}
+│
+├─ info
+│  ├─ GET  /info/version        … 返: {"ok":true,"version":"VER!"相当}
+│  ├─ GET  /info/pwm?dev=0      … 返: {"ok":true,"dev":0,"pwm":"0x...."}
+│  └─ GET  /info/audio?dev=1    … 返: {"ok":true,"dev":1,"audio":"0x...."}
+│
+├─ conn
+│  ├─ GET  /conn/isOpen         … 返: {"ok":true,"isOpen":true|false}
+│  ├─ GET  /conn/baud           … 返: {"ok":true,"baud":115200 など}
+│  ├─ GET  /conn/port           … 返: {"ok":true,"port":"UART1" など}
+│  └─ GET  /conn/lastError      … 返: {"ok":true,"lastError":"..."}
+│
+├─ digital
+│  ├─ GET  /digital/in?id=GPIO
+│  │        例: /digital/in?id=2
+│  │        返: {"ok":true,"id":2,"value":0|1}
+│  └─ GET  /digital/out?id=GPIO&val=0|1
+│           例: /digital/out?id=3&val=1
+│           返: {"ok":true|false,"id":3,"val":1}
+│
+├─ analog
+│  ├─ GET  /analog/configure?chTtl=N&devTtl=M
+│  │        例: /analog/configure?chTtl=16&devTtl=2
+│  │        返: {"ok":true|false,"chTtl":16,"devTtl":2}
+│  ├─ GET  /analog/update
+│  │        返: {"ok":true|false}
+│  └─ GET  /analog/read?ch=0..15&dev=0..3
+│           例: /analog/read?ch=2&dev=1
+│           返: {"ok":true,"ch":2,"dev":1,"value":1234}
+│
+├─ pwm
+│  ├─ GET  /pwm/out?ch=0..255&val=0..4095
+│  │        例: /pwm/out?ch=0&val=600
+│  │        返: {"ok":true|false,"ch":0,"val":600}
+│  ├─ GET  /pwm/angleInit?angleMin=A&angleMax=B&pwmMin=P&pwmMax=Q
+│  │        例: /pwm/angleInit?angleMin=0&angleMax=180&pwmMin=150&pwmMax=600
+│  │        返: {"ok":true|false}
+│  └─ GET  /pwm/angle?ch=0..255&angle=0..180
+│           例: /pwm/angle?ch=0&angle=90
+│           返: {"ok":true|false,"ch":0,"angle":90}
+│
+└─ audio
+   ├─ 単独設定
+   │  ├─ GET  /audio/volume?dev=1..4&value=0..30
+   │  │        例: /audio/volume?dev=1&value=20
+   │  │        返: {"ok":true|false,"dev":1,"value":20}
+   │  └─ GET  /audio/setEq?dev=1..4&mode=0..5
+   │           例: /audio/setEq?dev=1&mode=3
+   │           返: {"ok":true|false,"dev":1,"mode":3}
+   │
+   ├─ 再生（Play）
+   │  ├─ GET  /audio/play/start?dev=1..4&dir=1..255&file=1..255
+   │  │        例: /audio/play/start?dev=1&dir=2&file=10
+   │  │        返: {"ok":true|false,"dev":1,"dir":2,"file":10}
+   │  ├─ GET  /audio/play/setLoop?dev=1..4&mode=0|1
+   │  │        例: /audio/play/setLoop?dev=1&mode=1
+   │  │        返: {"ok":true|false,"dev":1,"mode":1}
+   │  ├─ GET  /audio/play/stop?dev=1..4
+   │  │        例: /audio/play/stop?dev=1
+   │  │        返: {"ok":true|false}
+   │  ├─ GET  /audio/play/pause?dev=1..4
+   │  │        例: /audio/play/pause?dev=1
+   │  │        返: {"ok":true|false}
+   │  └─ GET  /audio/play/resume?dev=1..4
+   │           例: /audio/play/resume?dev=1
+   │           返: {"ok":true|false}
+   │
+   └─ 参照（Read）
+      ├─ GET  /audio/read/state?dev=1..4
+      │        返: {"ok":true,"state":N}
+      ├─ GET  /audio/read/volume?dev=1..4
+      │        返: {"ok":true,"volume":N}
+      ├─ GET  /audio/read/eq?dev=1..4
+      │        返: {"ok":true,"eq":N}
+      ├─ GET  /audio/read/fileCounts?dev=1..4
+      │        返: {"ok":true,"fileCounts":N}
+      └─ GET  /audio/read/fileNumber?dev=1..4
+               返: {"ok":true,"fileNumber":N}
+```
+
 ---
 
 ## 7. シーケンス（処理順序）
+設定ファイル(後述)に従い、wifiに接続する。
+接続に失敗するとＡＰモードとして起動する。
 
-### 初回起動（config.jsonなし → APモード）
+### 1.ＡＰモード
+初回起動（config.jsonなし）または Wifi接続不可の場合、ＡＰモードとなり、各クライアントはシリアルターミナルに表示したアドレスで接続し、同一セグメントに参加する。そのままＡＰモードで使用してもよいし、設定ファイルを更新して、wifiモードに移行しても良い。
 ```mermaid
 sequenceDiagram
     participant ESP32
@@ -86,7 +182,8 @@ sequenceDiagram
     end
 ```
 
-### 設定済み起動（STAモード）
+### ＳＴＡモード
+wifiに接続するとSTAモードに切り替わる。
 ```mermaid
 sequenceDiagram
     participant ESP32

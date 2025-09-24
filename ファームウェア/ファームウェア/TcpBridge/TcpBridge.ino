@@ -1,3 +1,4 @@
+// TcpBridge.ino
 // =============================================================
 // M5Stamp S3 : 2x UART <-> TCP Bridge (RAW)
 // Split project (config / webui / bridge modules)
@@ -8,13 +9,17 @@
 // =============================================================
 
 #include <WiFi.h>
+#include <WebServer.h>
 #include "config.hpp"
 #include "bridge.hpp"
 #include "webui.hpp"
+#include "WebApiCore.h"
 
 // ---- Wi-Fi ランタイム状態（/status とシリアル表示で使用） ----
 String g_wifi_mode;   // "STA" もしくは "AP"
 String g_wifi_ssid;   // 接続中の SSID / AP の SSID
+
+WebServer httpApi(8080);
 
 //==============================================================
 // Wi-Fi 補助関数（宣言）
@@ -89,6 +94,10 @@ void setup(){
   // Web UI 起動
   webui_begin();
 
+  // WebAPI 起動
+  WebApiCore::begin(httpApi);
+  httpApi.begin();
+
   // UART<->TCP ブリッジ開始
   for (int i=0;i<NUM_UARTS;i++){
     ctxs[i] = new PortCtx(UARTS[i].tcpPort, SRV.maxClients);
@@ -111,7 +120,8 @@ void setup(){
  * - 各ポートでのクライアント管理／データ中継／ロック期限監視
  */
 void loop(){
-  webui_handle();
+  webui_handle();           // WEB-UI
+  httpApi.handleClient();   // WEB-API
   for (int i=0;i<NUM_UARTS;i++){
     acceptClients(ctxs[i]);                 // 新規接続受入／切断掃除／ロック期限解放
     pumpTCPtoRing(ctxs[i]);                 // TCP→リング

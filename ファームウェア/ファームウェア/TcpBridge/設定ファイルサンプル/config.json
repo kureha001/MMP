@@ -9,8 +9,8 @@
     "ap_fallback": { "enabled": true, "ssid": "m5-bridge-setup", "pass": "", "hold_seconds": 0 }
   },
   "uart": [
-    { "rx": 3,  "tx": 1,  "baud": 115200, "tcp_port": 5331 },
-    { "rx": 10, "tx": 9,  "baud": 115200, "tcp_port": 5332 }
+    { "rx": 3,  "tx": 1,  "baud": 921600, "tcp_port": 5331 },
+    { "rx": 10, "tx": 9,  "baud": 921600, "tcp_port": 5332 }
   ],
   "server": { "max_clients": 4, "write_lock": false, "write_lock_ms": 30000 }
 }

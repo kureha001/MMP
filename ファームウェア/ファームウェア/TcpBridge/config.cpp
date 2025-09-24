@@ -1,3 +1,4 @@
+// config.cpp
 #include "config.hpp"
 #include <LittleFS.h>
 #include <ArduinoJson.h>

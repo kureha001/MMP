@@ -229,11 +229,8 @@ class MmpClient:
         # 入力バッファを消去→コマンドを送信→送信バッファを消去
         self.adapter.clear_input()
         self.adapter.flush()
-        self.adapter.sleep_ms(50)
         self.adapter.write_ascii(cmd)
-        self.adapter.sleep_ms(50)
         self.adapter.flush()
-        self.adapter.sleep_ms(50)
 
         # 5文字の戻り値を取得する まはた タイムアウト まで、繰り返す。
         resp_chars = []

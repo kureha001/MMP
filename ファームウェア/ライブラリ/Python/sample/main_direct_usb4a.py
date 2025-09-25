@@ -389,8 +389,8 @@ def RunPwm(mode):
     SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
     OffsetMax360 = 60
     STEPS        = 80
-    STEP         = 8
-    STEP_DELAY_S = 0
+    STEP         = 1
+    STEP_DELAY_S = 0.01
     CH_180       = 0
     CH_360       = 15
     PCA_ADDR     = 0x40

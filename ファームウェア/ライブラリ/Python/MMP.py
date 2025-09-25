@@ -17,14 +17,14 @@ from mmp_core import MmpClient
 
 __all__ = [
     "MmpClient"         ,
-    "ファクトリ別接続" ,
+    "ファクトリ別接続"  ,
     "通信接続"          ,
     "接続"              ,
 ]
 
 #=================================================================
-# 'tcp://host:port?timeout=0.2' を解析して (host, port, timeout_s) を返す。
-# urllib.parse は Micro/Circuit では無いことがあるため、ここで遅延 import。
+# 'tcp://host:port?timeout=0.2'を解析し(host,port,timeout_s)を返す
+# urllib.parseはMicro/Circuitでは無いことを考慮しここで遅延import
 #=================================================================
 def TCPブリッジ情報取得(conn: str):
 

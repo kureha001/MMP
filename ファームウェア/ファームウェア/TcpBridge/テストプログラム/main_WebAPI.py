@@ -3,6 +3,7 @@
 # ＭＭＰコマンド テスト（ＷＥＢ－ＡＰＩ経由で実行）
 #------------------------------------------------------------
 # シリアル通信・TCPブリッジに対応
+# CPython / MicroPython / CircuitPython に対応
 #============================================================
 # -*- coding: utf-8 -*-
 # ============================================================
@@ -11,17 +12,95 @@
 # - API の詳細ログ（URL/HTTP/JSON）は VERBOSE_API で表示/非表示を切替
 # - 依存：標準ライブラリのみ（urllib）
 # ============================================================
-
-import json
-import time
-from urllib import request, error
+# -*- coding: utf-8 -*-
 
 # ====== 設定 ======
 HOST = "192.168.2.124"
 PORT = 8080
 
 # API 詳細ログ（URL/HTTP/JSON）を表示するか？
-VERBOSE_API = False   # ← True にすると詳細ログを出す。False で非表示（従来ログだけ）
+VERBOSE_API = False   # ← True で詳細ログ
+
+#============================================================
+# HTTP 互換レイヤ（CPython / MicroPython / CircuitPython）
+#============================================================
+import sys
+IS_MICRO   = (sys.implementation.name == "micropython")
+IS_CIRCUIT = (sys.implementation.name == "circuitpython")
+
+if IS_MICRO:
+    # --- MicroPython: urequests ---
+    import urequests as _requests
+    import utime as time
+    def _http_get(url, timeout=10.0):
+        try:
+            try:
+                resp = _requests.get(url, timeout=timeout)
+            except TypeError:
+                resp = _requests.get(url)  # 一部ポートはtimeout未対応
+            try:
+                status = getattr(resp, "status", getattr(resp, "status_code", 0))
+                text = resp.text if hasattr(resp, "text") else resp.content.decode("utf-8", "replace")
+                return status, text
+            finally:
+                try: resp.close()
+                except: pass
+        except Exception as e:
+            raise RuntimeError("MicroPython GET failed: {}".format(e))
+
+elif IS_CIRCUIT:
+    # --- CircuitPython: adafruit_requests + socketpool + ssl ---
+    import time
+    import ssl
+    import wifi          # 事前に wifi.radio.connect(...) 済み前提
+    import socketpool
+    import adafruit_requests as _ada_req
+
+    _CP_SESSION = None
+    def _get_cp_session():
+        global _CP_SESSION
+        if _CP_SESSION is None:
+            pool = socketpool.SocketPool(wifi.radio)
+            try:
+                ctx = ssl.create_default_context()
+            except Exception:
+                ctx = None
+            _CP_SESSION = _ada_req.Session(pool, ctx)
+            # どの版でも扱えるよう念のためデフォルトタイムアウトも設定可
+            try:
+                _CP_SESSION.timeout = 10  # サポートされる版のみ反映
+            except Exception:
+                pass
+        return _CP_SESSION
+
+    def _http_get(url, timeout=10.0):
+        s = _get_cp_session()
+        try:
+            try:
+                resp = s.get(url, timeout=timeout)  # 新しめの版
+            except TypeError:
+                resp = s.get(url)                   # 古い版
+            status = getattr(resp, "status_code", getattr(resp, "status", 0))
+            text = resp.text
+            return status, text
+        finally:
+            try: resp.close()
+            except: pass
+
+else:
+    # --- CPython: urllib ---
+    import time
+    from urllib import request as _urlreq, error as _urlerr
+
+    def _http_get(url, timeout=10.0):
+        try:
+            with _urlreq.urlopen(url, timeout=timeout) as resp:
+                status = getattr(resp, "status", 0)
+                text = resp.read().decode("utf-8", errors="replace")
+                return status, text
+        except _urlerr.URLError as e:
+            raise RuntimeError("URLError: {}".format(e))
+
 
 #============================================================
 # 共通ユーティリティ
@@ -32,62 +111,56 @@ def ConnInfo(argLogSW=False):
 
 def _api_get(path, timeout=10.0, argLog=False):
     """GET /path を実行し、(ok, status, json_obj, text) を返す。
-       VERBOSE_API が True のときは詳細ログも出力する。"""
-    url = f"http://{HOST}:{PORT}{path}"
+       VERBOSE_API or argLog が True のときは詳細ログも出力する。"""
+    url = "http://{}:{}{}".format(HOST, PORT, path)
     body_text = ""
     status = 0
     ok = False
     j = None
     try:
-        with request.urlopen(url, timeout=timeout) as resp:
-            status = resp.status
-            body_text = resp.read().decode("utf-8", errors="replace")
-            ok = (200 <= status < 300)
-            try:
-                j = json.loads(body_text)
-            except Exception:
-                j = None
-    except error.URLError as e:
-        body_text = f"(URLError: {e})"
+        status, body_text = _http_get(url, timeout=timeout)
+        ok = (200 <= status < 300)
+        try:
+            j = json.loads(body_text)
+        except Exception:
+            j = None
     except Exception as e:
-        body_text = f"(ERROR: {e})"
+        body_text = "(ERROR: {})".format(e)
 
     if VERBOSE_API or argLog:
-        print(f"\n=== API ===\nGET {url}\nHTTP {status}")
+        print("\n=== API ===\nGET {}\nHTTP {}".format(url, status))
         if j is not None:
-            print(json.dumps(j, ensure_ascii=False, indent=2))
+            try:
+                print(json.dumps(j, ensure_ascii=False, indent=2))
+            except Exception:
+                print(body_text or "(空)")
         else:
             print(body_text or "(空)")
         print("=== /API ===\n")
 
     return ok, status, j, body_text
 
-
 #============================================================
 # メイン（共通）
 #============================================================
 def main():
-
     ConnInfo(True)
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    # 実施するテストだけコメントアウトを外してください（複数可）
     # 実施するテストだけコメントを外してください（複数可）
     #RunAnalog()         # アナログ入出力
     #RunDigital()        # デジタル入出力
-    #RunMp3Playlist()    # MP3プレイヤー(基本)
-    #RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
+    RunMp3Playlist()     # MP3プレイヤー(基本)
+    RunMp3Control()     # MP3プレイヤー(制御)
+    #RunPwm(True)        # PWM出力
     #RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
-
 
 #============================================================
 # 出力文字ヘルパ
 #============================================================
 def tf(b):  # True/False を文字で
     return "True" if b else "False"
-
 
 #============================================================
 # 1) アナログ入力(HC4067)
@@ -114,11 +187,10 @@ def RunAnalog():
     for x in range(0, 2):
         print("　　JoyPad[{}]".format(x + 1))
         for y in range(0, 4):
-            _, _, jj, _ = _api_get(f"/analog/read?ch={x}&dev={y}")
+            _, _, jj, _ = _api_get("/analog/read?ch={}&dev={}".format(x, y))
             v = jj.get("value") if jj and ("value" in jj) else "NaN"
-            print(f"　　　← [{y}] = {v}")
+            print("　　　← [{}] = {}".format(y, v))
     print("　[終了]\n")
-
 
 #============================================================
 # 2) デジタル入出力
@@ -127,9 +199,9 @@ def RunDigital():
     print("２.デジタル入出力（ GPIO ）")
     print("　・入力")
     for pin in (2, 6, 7):
-        _, _, j, _ = _api_get(f"/digital/in?id={pin}")
+        _, _, j, _ = _api_get("/digital/in?id={}".format(pin))
         val = j.get("value") if j and ("value" in j) else 1
-        print(f"　　←[{pin}] = {'ON' if val==0 else 'OFF'}")
+        print("　　←[{}] = {}".format(pin, 'ON' if val==0 else 'OFF'))
 
     print("　・出力[3]")
     for _ in range(6):
@@ -140,7 +212,6 @@ def RunDigital():
         print("　　→ LOW  : {}".format(tf(j0 and j0.get("ok"))))
         time.sleep(0.5)
     print("　[終了]\n")
-
 
 #============================================================
 # 3) MP3：フォルダ1のトラック再生,リピート再生
@@ -156,16 +227,16 @@ def RunMp3Playlist():
 
     print("　・再生")
     for track in range(1, 4):
-        ok, _, j1, _ = _api_get(f"/audio/play/start?dev=1&dir=1&file={track}")
+        ok, _, j1, _ = _api_get("/audio/play/start?dev=1&dir=1&file={}".format(track))
         _, _, j2, _ = _api_get("/audio/read/state?dev=1")
         st = j2.get("state") if j2 and ("state" in j2) else "NaN"
-        print(f"　　→ F=1,T={track} : {tf(j1 and j1.get('ok'))}：状況 = {st}")
+        print("　　→ F=1,T={} : {}：状況 = {}".format(track, tf(j1 and j1.get('ok')), st))
         time.sleep(3.0)
 
     _, _, j, _ = _api_get("/audio/play/stop?dev=1")
     _, _, jj, _ = _api_get("/audio/read/state?dev=1")
     st = jj.get("state") if jj and ("state" in jj) else "NaN"
-    print(f"　・停止 : {tf(j and j.get('ok'))} : 状況 = {st}")
+    print("　・停止 : {} : 状況 = {}".format(tf(j and j.get('ok')), st))
 
     _, _, j, _ = _api_get("/audio/play/start?dev=1&dir=2&file=102")
     print("　・再生 → F=2,T=102 : {}".format(tf(j and j.get("ok"))))
@@ -173,15 +244,14 @@ def RunMp3Playlist():
     _, _, j, _ = _api_get("/audio/play/setLoop?dev=1&mode=1")
     _, _, jj, _ = _api_get("/audio/read/state?dev=1")
     st = jj.get("state") if jj and ("state" in jj) else "NaN"
-    print(f"　・ループ → ON : {tf(j and j.get('ok'))} : 状況 = {st}")
+    print("　・ループ → ON : {} : 状況 = {}".format(tf(j and j.get('ok')), st))
     time.sleep(10.0)
 
     _, _, j, _ = _api_get("/audio/play/stop?dev=1")
     _, _, jj, _ = _api_get("/audio/read/state?dev=1")
     st = jj.get("state") if jj and ("state" in jj) else "NaN"
-    print(f"　・停止 : {tf(j and j.get('ok'))} : 状況 = {st}")
+    print("　・停止 : {} : 状況 = {}".format(tf(j and j.get('ok')), st))
     print("　[終了]\n")
-
 
 #============================================================
 # 4) MP3 制御：状態取得/一時停止/再開/停止/EQ/音量
@@ -221,13 +291,13 @@ def RunMp3Control():
 
     print("　・イコライザー")
     for mode in range(0, 6):
-        _, _, j, _ = _api_get(f"/audio/setEq?dev=1&mode={mode}")
+        _, _, j, _ = _api_get("/audio/setEq?dev=1&mode={}".format(mode))
         print("　　→ {} : {}".format(mode, tf(j and j.get("ok"))))
         time.sleep(3.0)
 
     print("　・音量")
     for v in range(0, 31, 5):
-        _, _, j, _ = _api_get(f"/audio/volume?dev=1&value={v}")
+        _, _, j, _ = _api_get("/audio/volume?dev=1&value={}".format(v))
         print("　　→ {} : {}".format(v, tf(j and j.get("ok"))))
         time.sleep(1.0)
 
@@ -235,7 +305,6 @@ def RunMp3Control():
     _, _, st, _ = _api_get("/audio/read/state?dev=1")
     print("　・停止 : {} : 状況 = {}".format(tf(j and j.get("ok")), st.get("state") if st else "NaN"))
     print("　[終了]\n")
-
 
 #============================================================
 # 5) PWM 生値：ch0=180度型、ch15=連続回転型
@@ -245,26 +314,26 @@ def RunPwm(mode_pwm=True):
     title = "５.ＰＷＭ" if mode_pwm else "６.Ｉ２Ｃ"
     print("{}（ PCA9685：サーボモータ180度型,連続回転型 ）".format(title))
 
-    SERVO_MIN = 150
-    SERVO_MAX = 600
-    SERVO_MID = (SERVO_MIN + SERVO_MAX) // 2
+    SERVO_MIN    = 150
+    SERVO_MAX    = 600
+    SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
     OffsetMax360 = 60
-    STEPS = 80
-    STEP = 8
-    STEP_DELAY_S = 0
-    CH_180 = 0
-    CH_360 = 15
-    PCA_ADDR = 0x40  # 十進 64
+    STEPS        = 80
+    STEP         = 3
+    STEP_DELAY_S = 0.01
+    CH_180       = 0
+    CH_360       = 15
+    PCA_ADDR     = 0x40
 
     def RunI2C(ch, ticks):
         base_reg = 0x06 + 4 * ch
-        _api_get(f"/i2c/write?addr={PCA_ADDR}&reg={base_reg+2}&val={(ticks     ) & 0xFF}")
-        _api_get(f"/i2c/write?addr={PCA_ADDR}&reg={base_reg+3}&val={(ticks >> 8) & 0x0F}")
+        _api_get("/i2c/write?addr={}&reg={}&val={}".format(PCA_ADDR, base_reg+2, (ticks     ) & 0xFF))
+        _api_get("/i2c/write?addr={}&reg={}&val={}".format(PCA_ADDR, base_reg+3, (ticks >> 8) & 0x0F))
 
     print("　・初期位置")
     if mode_pwm:
-        _api_get(f"/pwm/out?ch={CH_180}&val={SERVO_MID}")
-        _api_get(f"/pwm/out?ch={CH_360}&val={SERVO_MID}")
+        _api_get("/pwm/out?ch={}&val={}".format(CH_180, SERVO_MID))
+        _api_get("/pwm/out?ch={}&val={}".format(CH_360, SERVO_MID))
     else:
         RunI2C(CH_180, SERVO_MID)
         RunI2C(CH_360, SERVO_MID)
@@ -275,8 +344,8 @@ def RunPwm(mode_pwm=True):
         pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
         pwm360 = SERVO_MID + (OffsetMax360 * i) // STEPS
         if mode_pwm:
-            _api_get(f"/pwm/out?ch={CH_180}&val={pwm180}")
-            _api_get(f"/pwm/out?ch={CH_360}&val={pwm360}")
+            _api_get("/pwm/out?ch={}&val={}".format(CH_180, pwm180))
+            _api_get("/pwm/out?ch={}&val={}".format(CH_360, pwm360))
         else:
             RunI2C(CH_180, pwm180)
             RunI2C(CH_360, pwm360)
@@ -288,8 +357,8 @@ def RunPwm(mode_pwm=True):
         pwm180 = SERVO_MIN + (SERVO_MAX - SERVO_MIN) * i // STEPS
         pwm360 = SERVO_MID + (OffsetMax360 * i) // STEPS
         if mode_pwm:
-            _api_get(f"/pwm/out?ch={CH_180}&val={pwm180}")
-            _api_get(f"/pwm/out?ch={CH_360}&val={pwm360}")
+            _api_get("/pwm/out?ch={}&val={}".format(CH_180, pwm180))
+            _api_get("/pwm/out?ch={}&val={}".format(CH_360, pwm360))
         else:
             RunI2C(CH_180, pwm180)
             RunI2C(CH_360, pwm360)
@@ -298,8 +367,8 @@ def RunPwm(mode_pwm=True):
 
     print("　・初期位置")
     if mode_pwm:
-        _api_get(f"/pwm/out?ch={CH_180}&val={SERVO_MID}")
-        _api_get(f"/pwm/out?ch={CH_360}&val={SERVO_MID}")
+        _api_get("/pwm/out?ch={}&val={}".format(CH_180, SERVO_MID))
+        _api_get("/pwm/out?ch={}&val={}".format(CH_360, SERVO_MID))
     else:
         RunI2C(CH_180, SERVO_MID)
         RunI2C(CH_360, SERVO_MID)
@@ -309,3 +378,4 @@ def RunPwm(mode_pwm=True):
 #======================================================
 if __name__ == "__main__":
     main()
+

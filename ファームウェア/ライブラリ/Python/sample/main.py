@@ -13,13 +13,12 @@ import MMP  # 既存互換のため残す（このモジュールに互換シム
 # `USE_*` 意外は 各自の環境に合わせる
 #============================================================
 #(1) 直結：シリアル接続（プラットフォーム自動）
-USE_SERIAL_AUTO     = False
+USE_SERIAL_AUTO     = True
 
 #(2) TCPブリッジ：ser2net
-USE_TCP  = True
-TCP_HOST_PC     = "192.168.2.124"
-#TCP_HOST_PC     = "127.0.0.1"
-TCP_PORT_PC     = 5331
+USE_TCP             = False
+TCP_HOST_PC         = "192.168.2.124"
+TCP_PORT_PC         = 5331
 
 #(3) TCPブリッジ：usb4a(Pydroid)
 USE_USB4A_DIRECT    = False
@@ -56,12 +55,12 @@ def main():
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
     # 実施するテストだけコメントを外してください（複数可）
-    RunAnalog()         # アナログ入出力
-    RunDigital()        # デジタル入出力
+    #RunAnalog()         # アナログ入出力
+    #RunDigital()        # デジタル入出力
     RunMp3Playlist()    # MP3プレイヤー(基本)
-    RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
-    RunPwm(False)       # I2C→PCA9685 直接制御
+    #RunMp3Control()     # MP3プレイヤー(制御)
+    #RunPwm(True)        # PWM出力
+    #RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 
@@ -76,7 +75,6 @@ def tf(b):
 # 1) アナログ入力(HC4067)
 #============================================================
 def RunAnalog():
-
     print("１.アナログ入力（ HC4067：JoyPad1,2 ）")
 
     ok = MMP.接続.Analog.Configure(2, 4)
@@ -121,7 +119,6 @@ def RunDigital():
 # 3) MP3：フォルダ1のトラック再生,リピート再生
 #============================================================
 def RunMp3Playlist():
-
     print("３.ＭＰ３再生（ DFPlayer ）")
 
     print("　・音量 → 20 : {}".format(tf(MMP.接続.Audio.Volume(1, 20))))
@@ -153,7 +150,6 @@ def RunMp3Playlist():
 # 4) MP3 制御：状態取得/一時停止/再開/停止/EQ/音量
 #============================================================
 def RunMp3Control():
-
     print("４.ＭＰ３制御（ DFPlayer ）")
 
     print("　・音量 → 20 : {}".format(tf(MMP.接続.Audio.Volume(1, 20))))
@@ -194,17 +190,16 @@ def RunMp3Control():
 # 6) I2C：サーボスイープ（PCA9685 レジスタ直書き）
 #============================================================
 def RunPwm(mode):
-
     Title = ("５.ＰＷＭ") if mode else ("６.Ｉ２Ｃ")
     print(f"{Title}（ PCA9685：サーボモータ180度型,連続回転型 ）")
 
-    SERVO_MIN    = 150 # PCA9685 12bitの生値（例: 150）
-    SERVO_MAX    = 600 # 同上               （例: 600）
+    SERVO_MIN    = 150
+    SERVO_MAX    = 600
     SERVO_MID    = (SERVO_MIN + SERVO_MAX) // 2
     OffsetMax360 = 60
     STEPS        = 80
-    STEP         = 8
-    STEP_DELAY_S = 0
+    STEP         = 1
+    STEP_DELAY_S = 0.01
     CH_180       = 0
     CH_360       = 15
     PCA_ADDR     = 0x40

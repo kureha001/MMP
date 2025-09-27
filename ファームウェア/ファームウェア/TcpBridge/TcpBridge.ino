@@ -6,6 +6,9 @@
 // - UART2 -> TCP:5332  (RX=G10, TX=G9)
 // - LittleFS /config.json (Wi-Fi candidates, UART, server)
 // - Web UI: / (upload), /upload (POST), /config (view), /status (text status)
+// -------------------------------------------------------------
+// ボード情報：M5StampS3 - esp32
+// ※M5Stackのボード情報を使わないこと
 // =============================================================
 
 #include <WiFi.h>
@@ -61,7 +64,7 @@ void startAPFallback();
  * - 起動ステータスをシリアル出力
  */
 void setup(){
-  Serial.begin(115200);
+  Serial.begin(921600);
 
   if (!loadConfig()) {
     Serial.println("Config load failed (LittleFS?). Continuing with defaults.");

@@ -23,7 +23,7 @@
 // ========== ボーレート候補（UART 自動接続で使用）=============
 #ifndef MMP_BAUD_CANDIDATES_DEFINED
   static const uint32_t MMP_BAUD_CANDIDATES[] = {
-    115200, 230400, 57600, 38400, 19200, 9600
+  921600,57600,38400,19200,9600,4800,2400,300
   };
   static const size_t   MMP_BAUD_CANDIDATES_LEN =
       sizeof(MMP_BAUD_CANDIDATES)/sizeof(MMP_BAUD_CANDIDATES[0]);

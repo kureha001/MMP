@@ -1,13 +1,29 @@
+// MmpClient.cpp
+//============================================================
+// ＭＭＰクライアント（コア機能／実態）
+//============================================================
 #include "MmpClient.h"
 
+//------------------------------------------------------------
+// ★TCP通信が必要な場合の条件付き実装
+//------------------------------------------------------------
+#if defined(MMP_ENABLE_TCP)
+  #include <WiFi.h>
+  // この翻訳単位内で完結する TCP ハンドル（メンバ不要）
+  static WiFiClient s_mmp_tcp;
+#endif
+
+
+//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 using namespace Mmp::Core;
+//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 //============================================================
-// 低レイヤ コマンドの実装
+// 低レイヤ コマンド：シリアル用
 //============================================================
 //【内部利用】
     //-------------------
-    // 接続：条件指定
+    // 接続：条件指定（UART）
     //-------------------
     bool MmpClient::Open(
         uint32_t baud,
@@ -18,9 +34,12 @@ using namespace Mmp::Core;
         Close();
 
         // 指定の通信速度でポートを開く。
-        _uart = &MMP_UART;
-        _uart->begin(baud);
+        _serial = &MMP_UART;
+        _serial->begin(baud);
         delay(100);
+
+        // I/O ハンドルを差し替え
+        _handle = _serial;
 
         // 入力バッファを消去する。
         ClearInput();
@@ -50,7 +69,7 @@ using namespace Mmp::Core;
         int32_t timeoutMs
     ){
         _lastError = "";
-        if (!_isOpen) { _lastError = "UART not open."; return String(); }
+        if (!_isOpen || !_handle) { _lastError = "I/O not open."; return String(); }
 
         // 必ず '!' 終端にする
         String cmd = command;
@@ -60,7 +79,7 @@ using namespace Mmp::Core;
         ClearInput();
 
         // 送信
-        _uart->print(cmd);
+        _handle->print(cmd);
 
         // 応答待ち（固定 5 文字）。末尾 5 文字だけ保持。
         String buf;
@@ -68,8 +87,8 @@ using namespace Mmp::Core;
 
         while ((long)(deadline - millis()) > 0) {
 
-            while (_uart->available() > 0) {
-                char c = (char)_uart->read();
+            while (_handle->available() > 0) {
+                char c = (char)_handle->read();
 
                 // プロトコルは 5 文字固定フレームなので改行は無視
                 if (c == '\r' || c == '\n') {continue;}
@@ -92,9 +111,79 @@ using namespace Mmp::Core;
         return "";           // 戻り値 → [失敗]
     }
 
+//============================================================
+// 低レイヤ コマンド：ＴＣＰ用
+//============================================================
+#if defined(MMP_ENABLE_TCP)
+    //-------------------
+    // 接続：条件指定（TCP）
+    //-------------------
+    bool MmpClient::OpenTcp(
+        const char* host,
+        uint16_t    port,
+        uint32_t    timeoutIoMs
+    ){
+        // 既に開いている場合は閉じる
+        Close();
+
+        _lastError = "";
+        if (!host || !*host) { _lastError = "host empty"; return false; }
+
+        if (!s_mmp_tcp.connect(host, port)) {
+            _lastError = "connect failed";
+            return false;
+        }
+        s_mmp_tcp.setTimeout(timeoutIoMs);
+
+        // I/O ハンドルを差し替え
+        _handle = &s_mmp_tcp;
+
+        // 入力バッファを消去する。
+        ClearInput();
+
+        // 接続情報を更新する。
+        _isOpen           = true;
+        _connected_port   = String("tcp://") + host + ":" + String(port);
+        _connected_baud   = 0; // TCP なので実意味なし（記録のみ）
+
+        return true;
+    }
+
+    //-------------------
+    // 接続：TCP + Verify
+    //-------------------
+    bool MmpClient::ConnectTcp(
+        const char* host,
+        uint16_t    port,
+        uint32_t    ioTimeoutMs,
+        uint32_t    verifyTimeoutMs
+    ){
+        // 接続情報を初期化する。
+         _isOpen            = false;
+        _connected_port     = "";
+        _connected_baud     = 0;
+        _lastError          = "";
+
+        if (!OpenTcp(host, port, ioTimeoutMs)) {
+            _lastError = "OpenTcp failed.";
+            return false;
+        }
+        if (!Verify(verifyTimeoutMs)) {
+            Close();
+            _lastError = "Verify failed.";
+            return false;
+        }
+        Settings.PortName = _connected_port;
+        Settings.BaudRate = _connected_baud;
+        _lastError        = "";
+        return true;
+    }
+#endif
+
+
 //【外部公開】
     //-------------------
-    // 接続：自動
+    // 接続：自動（UART）
     //-------------------
     bool MmpClient::ConnectAutoBaud(
         const uint32_t* cand,   // ①通信速度一覧
@@ -129,7 +218,7 @@ using namespace Mmp::Core;
     }
 
     //-------------------
-    // 接続：条件指定
+    // 接続：条件指定（UART）
     //-------------------
     bool MmpClient::ConnectWithBaud(
         uint32_t baud           ,   // ① 通信速度
@@ -174,17 +263,27 @@ using namespace Mmp::Core;
     }
 
     //-------------------
-    // 切断
+    // 切断（UART/TCP共通）
     //-------------------
     void MmpClient::Close(){
         // ポートが開いていたら閉じる。
         if (_isOpen) {
 
-            // ポートを閉じる。
-            _uart->flush();
-            _uart->end();
+            // TCP の場合
+            #if defined(MMP_ENABLE_TCP)
+                if (_handle == (Stream*)&s_mmp_tcp) {
+                    s_mmp_tcp.stop();
+                }
+            #endif
+
+            // UART の場合
+            if (_serial && _handle == _serial) {
+                _serial->flush();
+                _serial->end();
+            }
 
             // 接続情報を更新する。
+            _handle = nullptr;
             _isOpen = false;
         }
     }
@@ -601,9 +700,9 @@ using namespace Mmp::Core;
             }
 
 
-    //===========================
-    // << Ｉ２Ｃモジュール >>
-    //===========================
+//===========================
+// << Ｉ２Ｃモジュール >>
+//===========================
         //----------------------
         // １．書き込み
         //----------------------

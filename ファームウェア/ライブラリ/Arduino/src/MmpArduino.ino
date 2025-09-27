@@ -1,10 +1,44 @@
+// MmpArduino.ino
 //============================================================
-// ＭＭＰ ライブラリ：ＡＰＩテスト プログラム
+// ＭＭＰコマンド テスト（ＡＰＩ経由で実行）
 //============================================================
 #include <Arduino.h>
+#include "MMP.h"
+#include "webui.hpp"
 #include "MmpClient.h"
+
+//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 using Mmp::Core::MmpClient;
 MmpClient mmp;
+//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+//============================================================
+// Wifi設定情報（各自の環境に合わせる）
+//============================================================
+const char*     WIFI_SSID = "Buffalo-G-C0F0";
+const char*     WIFI_PASS = "6shkfa53dk8ks";
+
+//============================================================
+// テスト構成
+// `USE_*` の ON/OFF で切替る
+// `USE_*` 意外は 各自の環境に合わせる
+//============================================================
+//(1) 直結：シリアル接続（プラットフォーム自動）
+const bool      USE_SERIAL_AUTO = false;
+
+//(2) TCPブリッジ：ser2net
+const bool      USE_TCP   = true;
+const char*     TCP_HOST  = "192.168.2.124";
+const uint16_t  TCP_PORT  = 5331;
+
+//(3) TCPブリッジ：usb4a(Pydroid)
+// ※未使用
+const bool      USE_USB4A_DIRECT    = false;
+const uint16_t  USB4A_INDEX         = 0;
+
+//(4) TCP共通：read_one_char の待ち秒（?timeout=） 
+const uint32_t  IO_MS     = 1000;
+const uint32_t  VERIFY_MS = 2000;
 
 //============================================================
 // 0) 基本情報(バージョン/PCA9685/DFPlayer)
@@ -224,40 +258,67 @@ void RunI2C(int ch, int ticks){
 }
 
 //============================================================
-// ヘルパ
+// 出力文字ヘルパ
 //============================================================
 static String bool2str(int source){return String(source ? "True" : "False");}
 static String int2strOnOff(int source){return String(source == 0 ? "ON" : "OFF");}
 
 //============================================================
-// セットアップ
+// 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
+//============================================================
+static String 引数取得(){
+    static String spec;
+
+    // 1) シリアル直結（自動）
+    if (USE_SERIAL_AUTO){ return "auto"; }
+
+    // 2) TCPブリッジ
+    if (USE_TCP){
+        spec =
+            String("tcp://") + TCP_HOST + ":" + String(TCP_PORT)
+            + "?io="     + String(IO_MS)
+            + "&verify=" + String(VERIFY_MS);
+        return spec;
+    }
+
+    // 3) usb4a (pydroid専用)
+    // ※未使用
+    if (USE_USB4A_DIRECT){
+        spec = String("usb4a://") + String(USB4A_INDEX);
+        return spec;
+    }
+
+    // 何も選ばれていなければ既定はシリアル自動
+    return "auto";
+}
+
+//============================================================
+// メイン
 //============================================================
 void setup() {
 
-    // 通信開始
     Serial.begin(115200);
-    while (!Serial) {}
-    delay(200);
 
-    // 通信速度を自動で検出し接続
-    Serial.println("<< ＭＭＰライブラリ for Arduino >>\n");
-    Serial.print("接続中...");
-    if (!mmp.ConnectAutoBaud()) {
-        Serial.println("ＭＭＰとの接続に失敗しました...");
-        return;
-    }
-
-    Serial.println("");
-    RunInfo(); // 情報系
+    //if (!MMP::通信接続_WiFi(WIFI_SSID, WIFI_PASS, &Serial)){ return; }  // 個別1-1：Wifi接続(規定値)
+    if (!MMP::通信接続_WiFi_外部(nullptr, &Serial)){return; }           // 個別1-2：Wifi接続(外部取込)
+    if (!MMP::通信接続_Tcp(引数取得(), mmp, &Serial)){ return; }        // 個別2：TCPスタック
+    //if (!MMP::通信接続(引数取得(), mmp, WIFI_SSID, WIFI_PASS, &Serial )){ return; } // 統一入口
+    //if (!MMP::通信接続(引数取得(), mmp, WIFI_SSID, nullptr,   &nullptr)){ return; } // 統一入口(外部取込)
 
     Serial.println("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
-    RunAnalog()       ; // アナログ入力
-    RunDigital()      ; // デジタル入出力
-    RunMp3Playlist()  ; // MP3プレイヤー(基本)
-    RunMp3Control()   ; // MP3プレイヤー(制御)
-    RunPwm(true)      ; // PWM出力
-    RunPwm(false)     ; // I2C→PCA9685 直接制御
+    // 実施するテストだけコメントを外してください（複数可）
+    //RunAnalog()       ; // アナログ入力
+    //RunDigital()      ; // デジタル入出力
+    //RunMp3Playlist()  ; // MP3プレイヤー(基本)
+    //RunMp3Control()   ; // MP3プレイヤー(制御)
+    //RunPwm(true)      ; // PWM出力
+    //RunPwm(false)     ; // I2C→PCA9685 直接制御
     Serial.println("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
+
+    mmp.Close();
 }
 
-void loop() {}
+void loop() {
+  webui_handle();  // HTTPリクエスト処理を回す（Web UI のリスナー）
+  delay(1);        // CPU占有を避ける最低限のウェイト
+}

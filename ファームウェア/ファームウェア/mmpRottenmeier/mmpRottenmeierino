@@ -1,17 +1,20 @@
 //=============================================================================
 //  mmpRottenmeier（HC4067/PCA9685/DigitalIO/I2C/DFPlayer）
 //----------------------------------------------------------------------------- 
-// ボード情報：Waveshae RP2040 Zero
-// ボード情報：Waveshae RP2350 Zero
+// ボード情報：
+//   Raspberry Pi Pico/EP2040/RP2350 by Earle F, Philhower
+//   Ver 4.7.1 ※新しいバージョンだと動かない場合あり
+//     Waveshae RP2040 Zero
+//     Waveshae RP2350 Zero
 //----------------------------------------------------------------------------- 
-// Ver 0.3.09 - 2025/09/17 By Takanari.Kureha
+// Ver 0.3.0A - 2025/09/25 By Takanari.Kureha
 //   ・RP2040/23350のRGB-LEDの色指定引数が異なる件
 //   　※SETUP()のソース修正のこと
 //=============================================================================
 #include <Wire.h>
 #include <PCA9685.h>
 #include <DFRobotDFPlayerMini.h>
-const char* Version = "0304!";
+const char* Version = "030A!";
 int inp_cnt = 0;            // 受信データ・カウンタ
 
 //----------------------------------------------------------

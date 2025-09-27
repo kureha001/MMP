@@ -1,15 +1,20 @@
+// MmpClient.h
 //============================================================
-// Ａｒｄｕｉｎｏ用：ＭＭＰコア機能
-//------------------------------------------------------------
-// ＭＭＰシリアルコマンドを直接扱う
-//------------------------------------------------------------
-// [インストール方法]
-// １．プロジェクトと同ディレクトリに格納
+// ＭＭＰクライアント（コア機能／ヘッダ）
 //============================================================
 #pragma once
 #include <Arduino.h>
+#include <Stream.h>
 #include "MmpHardware.h"
 
+//------------------------------------------------------------
+// ★TCP通信が必要な場合の条件付き実装
+//------------------------------------------------------------
+#if defined(MMP_ENABLE_TCP)
+#include <WiFi.h>
+#endif
+
+//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 namespace Mmp { namespace Core{
 class MmpClient{
 
@@ -17,11 +22,22 @@ class MmpClient{
 // プロパティ
 //========================
 private:
-    HardwareSerial* _uart = &MMP_UART;
+    // I/Oハンドラ（UART/TCPを共通化）
+    Stream*         _handle         = nullptr;
+
+    // UART 実体（従来の Serial。必要に応じて &MMP_UART を使う）
+    HardwareSerial* _serial         = &MMP_UART;
+
+    // TCP 実体（Pico2W）
+    #if defined(USE_PICO2W_WIFI)
+        WiFiClient      _tcp;
+    #endif
+
     bool    _isOpen             = false;
     String  _connected_port     = "";
     int32_t _connected_baud     = 0;
     String  _lastError          = "";
+
 
 public:
     //----------------
@@ -37,7 +53,7 @@ public:
     //----------------
     struct MmpSettings {
         String  PortName       = "";
-        int32_t BaudRate       = 115200;
+        int32_t BaudRate       = 921600;
         int32_t TimeoutIo      = 200;
         int32_t TimeoutVerify  = 400;
         int32_t TimeoutGeneral = 400;
@@ -55,14 +71,29 @@ public:
 // 低レイヤ コマンド
 //========================
 //【内部利用】
+
 private:
     bool   Open       (uint32_t baud,         int32_t timeoutIo);
     bool   Verify     (int32_t timeoutVerify                   );
     String SendCommand(const String& command, int32_t timeoutMs);
-    inline void ClearInput() { while (_uart->available() > 0) (void)_uart->read(); }
+    inline void ClearInput() {
+        if (!_handle) return;
+        while (_handle->available() > 0) (void)_handle->read();
+    }
+
+    // 追加：TCPオープン（ser2net等）
+    bool   OpenTcp    (const char* host, uint16_t port, uint32_t timeoutIoMs);
+
 
 //【外部公開】
 public:
+    //----------------
+    // TCP接続＋Verify
+    //----------------
+    bool   ConnectTcp (const char* host, uint16_t port,
+                       uint32_t ioTimeoutMs     = 300,
+                       uint32_t verifyTimeoutMs = 600);
+
     //----------------
     // 接続：自動
     //----------------
@@ -648,4 +679,5 @@ private:
         return r;
     }
 };
-}} // namespace
+}} // namespace Mmp
+//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲

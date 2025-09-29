@@ -15,7 +15,8 @@
 # -*- coding: utf-8 -*-
 
 # ====== 設定 ======
-HOST = "192.168.2.124"
+#HOST = "192.168.2.124"      # LANの場合
+HOST = "203.141.144.142"    #WANの場合
 PORT = 8080
 
 # API 詳細ログ（URL/HTTP/JSON）を表示するか？
@@ -148,12 +149,12 @@ def main():
 
     print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
     # 実施するテストだけコメントを外してください（複数可）
-    #RunAnalog()         # アナログ入出力
-    #RunDigital()        # デジタル入出力
+    RunAnalog()         # アナログ入出力
+    RunDigital()        # デジタル入出力
     RunMp3Playlist()     # MP3プレイヤー(基本)
     RunMp3Control()     # MP3プレイヤー(制御)
-    #RunPwm(True)        # PWM出力
-    #RunPwm(False)       # I2C→PCA9685 直接制御
+    RunPwm(True)        # PWM出力
+    RunPwm(False)       # I2C→PCA9685 直接制御
     print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
 
 #============================================================

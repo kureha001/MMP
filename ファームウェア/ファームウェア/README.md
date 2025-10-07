@@ -28,14 +28,14 @@ flowchart LR
 言語非依存"]
   end
 
-  subgraph Bridge["Wifi型サーバ"]
+  subgraph Bridge["無線サーバ"]
     B1["TCP Bridge
 UART⇄TCP 透過"]
     B2["Web API
 HTTP→シリアル変換"]
   end
 
-  subgraph Firmware["MMPサーバ"]
+  subgraph Firmware["MMPサーバ:ファームウェア"]
     R["Serial Router（Perser）
 終端 '!' でパース"]
     M["Modules（PWM/ANALOG/I2C/DIGITAL/MP3/INFO）"]
@@ -54,7 +54,7 @@ HTTP→シリアル変換"]
 
 ## 3. 役割と特徴
 
-|  | サーバーA：MMPファーム | サーバーB：TCPブリッジ＋Web‑API |
+|  | MMPファーム | TCPブリッジ＋Web‑API |
 |---|---|---|
 | 主目的 | デバイス制御の本体（有線） | 無線化（Wi‑Fi）＋API公開 |
 | 接続 | USB / UART0 | Wi‑Fi（TCP/HTTP）＋ UART直結 |

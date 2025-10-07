@@ -21,21 +21,21 @@ Wifiで無線化することもできます
 
 ```mermaid
 flowchart LR
-  subgraph Client["Client（PC/アプリ/クラウド）"]
+  subgraph Client["アプリ"]
     A1["A) TCP (5331/5332)
 生コマンド"] 
     A2["B) Web API (HTTP/GET)
 言語非依存"]
   end
 
-  subgraph Bridge["サーバーB：TCPブリッジ＋Web-API"]
+  subgraph Bridge["Wifi型サーバ"]
     B1["TCP Bridge
 UART⇄TCP 透過"]
     B2["Web API
 HTTP→シリアル変換"]
   end
 
-  subgraph Firmware["サーバーA：MMPファーム（RP2040/2350）"]
+  subgraph Firmware["MMPサーバ"]
     R["Serial Router（Perser）
 終端 '!' でパース"]
     M["Modules（PWM/ANALOG/I2C/DIGITAL/MP3/INFO）"]

@@ -28,8 +28,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    LedScope  scopeLed(ctx, led);   // ＬＥＤ点滅をRAIIガードで実行
-    Stream&   sp = MMP_SERIAL(ctx); // 対象ストリーム
+    // スコープ
+    LedScope  scopeLed(ctx, led);
+
+    // カレント・クライアント
+    Stream&   sp = MMP_SERIAL(ctx);
 
     // ───────────────────────────────
     // POR  : 入力バッファ読取り

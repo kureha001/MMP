@@ -2,36 +2,45 @@
 //========================================================
 // コマンド パーサーのフロント・対象資源の登録
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.01 (2025/10/07)
-// - 関連ファイルを統合
+// 変更履歴: Ver 0.4.01 (2025/10/08)
+//  - 初期化処理をスケッチ側から移管
 //========================================================
 #pragma once
 #include <vector>
 #include "module.h"
 
-#define MMP_INPUT_LINE_LENGTH 96  // リクエスト全体のバッファ長
-#define MMP_INPUT_DAT_COUNT   8   // コマンド＋引数の個数
-#define MMP_INPUT_DAT_LENGTH  10  // 上記1個あたりの上限バイト数
+// 監視対象のモジュール
+#include "mINF.h"
+#include "mANA.h"
+#include "mDIG.h"
+#include "mPWM.h"
+#include "mI2C.h"
+#include "mMP3.h"
+
+// クライアントからのリクエスト条件
+#define REQUEST_LENGTH      96  // リクエスト全体のバッファ長
+#define REQUEST_DAT_COUNT   8   // コマンド＋引数の個数
+#define REQUEST_DAT_LENGTH  10  // 上記1個あたりの上限バイト数
 
 //━━━━━━━━━━━━━━━━━
 // ストリーム(RAIIガード実行)
 //━━━━━━━━━━━━━━━━━
 class SerialScope {
   MmpContext& ctx;        // コンテクスト
-  Stream*     prev;       //
-  int         prevClient; //
+  Stream*     prevSerial;       //
+  int         prevClientID; //
 public:
   //───── コンストラクタ(対象ストリーム) ─────
-  SerialScope(MmpContext& c, Stream* s, int clientIndex) : ctx(c){
-    prev                = *ctx.serial;
-    prevClient          = *ctx.currentClient;
-    *ctx.serial         = s;
-    *ctx.currentClient  = clientIndex;
+  SerialScope(MmpContext& c, Stream* argSerial, int argClientID) : ctx(c){
+    prevSerial    = *ctx.serial;
+    prevClientID  = ctx.clientID;
+    *ctx.serial   = argSerial;
+    ctx.clientID  = argClientID;
   }
   //───── デストラクタ(元のストリーム) ─────
   ~SerialScope(){
-    *ctx.serial         = prev;
-    *ctx.currentClient  = prevClient;
+    *ctx.serial   = prevSerial;
+    ctx.clientID  = prevClientID;
   }
 };
 
@@ -42,28 +51,31 @@ class Perser {
 
   // ストリーム(クライアント)定義
   struct Source {
-    Stream*     s;                            // ストリーム オブジェクト
-    const char* name;                         // 名称
-    int         clientIndex;                  // クライアントID：0=USB, 1=UART0
-    char        buf[ MMP_INPUT_LINE_LENGTH ]; // リクエスト受信バッファ
-    int         len = 0;                      // リクエスト長カウンタ 
+    Stream*     s;                      // ストリーム オブジェクト
+    const char* name;                   // 名称
+    int         clientIndex;            // クライアントID：0=USB, 1=UART0
+    char        buf[ REQUEST_LENGTH ];  // リクエスト受信バッファ
+    int         len = 0;                // リクエスト長カウンタ 
   };
 
-  MmpContext&               ctx;      //コンテクスト
-  std::vector<ModuleBase*>  modules;  // モジュール一覧(動的配列)
-  std::vector<Source>       sources;  // ストリーム(クライアント)一覧(動的配列)
+  // 依存性注入
+  MmpContext&               ctx;        //コンテクスト
+
+  // 保有情報
+  std::vector<ModuleBase*>  modules;    // モジュール一覧(動的配列)
+  std::vector<Source>       sources;    // ストリーム(クライアント)一覧(動的配列)
 
   //━━━━━━━━━━━━━━━━━
   // コマンド実行
   //━━━━━━━━━━━━━━━━━
   void runCommand(Source& src){
 
-    char dat[ MMP_INPUT_DAT_COUNT ][ MMP_INPUT_DAT_LENGTH ];  // 要素バッファ
+    char dat[ REQUEST_DAT_COUNT ][ REQUEST_DAT_LENGTH ];  // 要素バッファ
     int dat_cnt=0;                                            // 要素数
 
     // リクエストメッセージを要素分解
     char* tok = strtok(src.buf, ":");
-    while( tok && dat_cnt < MMP_INPUT_DAT_COUNT ){
+    while( tok && dat_cnt < REQUEST_DAT_COUNT ){
       strncpy(dat[dat_cnt], tok, sizeof(dat[0])-1);
       dat[dat_cnt][sizeof(dat[0])-1] = '\0';
       dat_cnt++;
@@ -97,16 +109,20 @@ public:
   //━━━━━━━━━━━━━━━━━
   // 対象資源の登録
   //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // モジュール登録
-    //─────────────────
-    void addModule(ModuleBase* m){
-      modules.push_back(m);           // 要素を追加
-    }
+    void Init(){
+      // 監視対象のモジュールを登録
+      modules.push_back(new ModuleInfo   (ctx, RGB_INFO    ));
+      modules.push_back(new ModuleAnalog (ctx, RGB_ANALOG  ));
+      modules.push_back(new ModuleDigital(ctx, RGB_DIGITAL ));
+      modules.push_back(new ModulePwm    (ctx, RGB_PWM     ));
+      modules.push_back(new ModuleI2C    (ctx, RGB_I2C     ));
+      modules.push_back(new ModuleDF     (ctx, RGB_MP3     ));
 
-    //─────────────────
-    // ストリーム登録
-    //─────────────────
+      // 監視対象のクライアントを登録
+      addSource(&Serial,  "USB",   0);
+      addSource(&Serial1, "UART0", 1);
+    }
+    // ───────────────────────
     void addSource(Stream* s, const char* name, int clientIndex){
       Source src;
       src.s           = s;            // ストリーム オブジェクト
@@ -114,7 +130,10 @@ public:
       src.clientIndex = clientIndex;  // クライアントID：0=USB, 1=UART0
       src.buf[0]      = 0;            // リクエスト受信バッファ            
       src.len         = 0;            // リクエスト長カウンタ
-      sources.push_back(src);         // 要素を追加
+      sources.push_back(src);         // クライアント要素を追加
+
+      // クライアント最大IDをインクリメント
+      if (clientIndex > ctx.clientID_max) ctx.clientID_max = clientIndex;
     }
 
   //━━━━━━━━━━━━━━━━━

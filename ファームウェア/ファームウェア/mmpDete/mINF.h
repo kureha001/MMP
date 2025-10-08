@@ -3,7 +3,7 @@
 // モジュール：システム情報
 //-------------------------------------------------------- 
 // 変更履歴: Ver 0.4.01 (2025/10/07)
-// - 他モジュール同様、コマンド名でパース化
+// - VERコマンドを名称でパースする方式に修正
 //========================================================
 #pragma once
 #include "module.h"
@@ -25,8 +25,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    LedScope  scopeLed(ctx, led);   // ＬＥＤ点滅をRAIIガードで実行
-    Stream&   sp = MMP_SERIAL(ctx); // 対象ストリーム
+    // スコープ
+    LedScope  scopeLed(ctx, led);
+
+    // カレント・クライアント
+    Stream&   sp = MMP_SERIAL(ctx);
 
     // ───────────────────────────────
     // VER  : バージョン
@@ -42,7 +45,7 @@ public:
       { ResCmdErr(sp, dat[0]); return; }
 
       // ２．バージョン(文字列)を返す
-      sp.print(ctx.versionStr);
+      sp.print(ctx.version);
       //MMP_SERIAL(ctx).print(ctx.versionStr);
     }
   }

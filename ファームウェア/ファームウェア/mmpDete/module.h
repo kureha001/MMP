@@ -11,25 +11,22 @@
 // モジュール別のRGB-LED点灯色
 //─────────────────
 struct LedColor { uint8_t r,g,b; };
-static constexpr LedColor LED_PALETTE_INFO    = {  5,  5,  5};
-static constexpr LedColor LED_PALETTE_ANALOG  = { 10,  0, 10};
-static constexpr LedColor LED_PALETTE_DIGITAL = { 10,  0,  0};
-static constexpr LedColor LED_PALETTE_PWM     = {  0,  0, 50};
-static constexpr LedColor LED_PALETTE_I2C     = { 10, 10,  0};
-static constexpr LedColor LED_PALETTE_MP3     = {  0, 10,  0};
+static constexpr LedColor RGB_INFO    = {  5,  5,  5};
+static constexpr LedColor RGB_ANALOG  = { 10,  0, 10};
+static constexpr LedColor RGB_DIGITAL = { 10,  0,  0};
+static constexpr LedColor RGB_PWM     = {  0,  0, 50};
+static constexpr LedColor RGB_I2C     = { 10, 10,  0};
+static constexpr LedColor RGB_MP3     = {  0, 10,  0};
 
 //━━━━━━━━━━━━━━━━━
 // コンテクスト(共通の疎結合データ)
 //━━━━━━━━━━━━━━━━━
 struct MmpContext {
-
-  // ===== 基本 =====
-  int*                currentClient;  // カレントのストリームID: 0=USB, 1=UART0
-  Stream**            serial;         // ストリームのハンドル
-  Adafruit_NeoPixel*  pixels;         // コマンド別のRGB-LED発行用
-
-  // ===== システム情報 =====
-  const char*         versionStr;
+  int                 clientID ; // 対象クライアントID: 0=USB, 1=UART0
+  int                 clientID_max   ; // クライアントIDの上限
+  Stream**            serial        ; // ストリームのハンドル
+  Adafruit_NeoPixel*  pixels        ;  // コマンド別のRGB-LED発行用
+  const char*         version       ;
 };
 inline Stream& MMP_SERIAL(MmpContext& ctx){ return **ctx.serial; }
 
@@ -54,27 +51,28 @@ public:
 
 
 //━━━━━━━━━━━━━━━━━
-// ＬＥＤ点滅(RAIIガード実行)
-//━━━━━━━━━━━━━━━━━
-class LedScope {
-  MmpContext& ctx;  // コンテクスト
-public:
-  //───── コンストラクタ(点灯) ─────
-  LedScope(MmpContext& c, LedColor col) : ctx(c){
-    ctx.pixels->setPixelColor(0, ctx.pixels->Color(col.g, col.r, col.b));
-    ctx.pixels->show();
-  }
-  //───── デストラクタ(消灯) ─────
-  ~LedScope(){
-    ctx.pixels->clear();
-    ctx.pixels->show();
-  }
-};
-
-
-//━━━━━━━━━━━━━━━━━
 // モジュール用ユーティリティ
 //━━━━━━━━━━━━━━━━━
+  // ───────────────────────
+  // ＬＥＤ点滅(RAIIガード実行)
+  // ───────────────────────
+  class LedScope {
+    // 依存性注入
+    MmpContext& ctx;  // コンテクスト
+
+  public:
+    //───── コンストラクタ(点灯) ─────
+    LedScope(MmpContext& c, LedColor col) : ctx(c){
+      ctx.pixels->setPixelColor(0, ctx.pixels->Color(col.g, col.r, col.b));
+      ctx.pixels->show();
+    }
+    //───── デストラクタ(消灯) ─────
+    ~LedScope(){
+      ctx.pixels->clear();
+      ctx.pixels->show();
+    }
+  };
+
   // ───────────────────────
   // 16進数(string)→10進数(long)パース
   // ───────────────────────

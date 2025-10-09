@@ -22,10 +22,10 @@ static constexpr LedColor RGB_MP3     = {  0, 10,  0};
 // コンテクスト(共通の疎結合データ)
 //━━━━━━━━━━━━━━━━━
 struct MmpContext {
-  int                 clientID ; // 対象クライアントID: 0=USB, 1=UART0
-  int                 clientID_max   ; // クライアントIDの上限
+  int                 clientID      ; // 対象クライアントID: 0=USB, 1=UART0
+  int                 clientID_max  ; // クライアントIDの上限
   Stream**            serial        ; // ストリームのハンドル
-  Adafruit_NeoPixel*  pixels        ;  // コマンド別のRGB-LED発行用
+  Adafruit_NeoPixel*  pixels        ; // コマンド別のRGB-LED発行用
   const char*         version       ;
 };
 inline Stream& MMP_SERIAL(MmpContext& ctx){ return **ctx.serial; }
@@ -36,8 +36,13 @@ inline Stream& MMP_SERIAL(MmpContext& ctx){ return **ctx.serial; }
 //━━━━━━━━━━━━━━━━━
 class ModuleBase {
 protected:
-  MmpContext& ctx;  // コンテクスト
+
+  // 依存性注入
+  MmpContext& ctx;  //コンテクスト
+
+  // スコープ
   LedColor    led;  // モジュール別ＬＥＤ色
+
 public:
   //───── コンストラクタ(実行開始) ─────
   ModuleBase(MmpContext& c, LedColor col): ctx(c), led(col) {}
@@ -57,6 +62,7 @@ public:
   // ＬＥＤ点滅(RAIIガード実行)
   // ───────────────────────
   class LedScope {
+
     // 依存性注入
     MmpContext& ctx;  // コンテクスト
 
@@ -93,16 +99,19 @@ public:
   // ───────────────────────
   // 16進数変換（5バイト固定: 末尾は '!' で埋める）
   // ───────────────────────
-  inline void ResHex4(Stream& sp, int16_t v){
-    char buf[5];
-    snprintf(buf, sizeof(buf), "%04X!", v & 0xFFFF );
+  inline void ResHex4(Stream& sp, int16_t v) {
+    char buf[6]; //終端NUL(\0)が必要なので 5 + 1 = 6
+    snprintf(buf, sizeof(buf), "%04X!", (uint16_t)v);
     sp.print(buf);
   }
-
   // ───────────────────────
   // コマンドエラー "<CMD>!!"
   // ───────────────────────
   inline void ResCmdErr(Stream& sp, const char* cmd3){
-    char err[6]; strncpy(err, cmd3, 3); err[3]='!'; err[4]='!'; err[5]='\0';
+    char err[6]; //終端NUL(\0)が必要なので 5 + 1 = 6
+    strncpy(err, cmd3, 3);  // コマンド名
+    err[3]='!';
+    err[4]='!';
+    err[5]='\0';
     sp.print(err);
   }

@@ -136,11 +136,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    // スコープ
-    LedScope  scopeLed(ctx, led);
+    // コンテクストの依存性注入
+    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
 
-    // カレント・クライアント
-    Stream&   sp = MMP_SERIAL(ctx);
+    // スコープ
+    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
 
     // ───────────────────────────────
     // PWX  : モジュールの接続確認
@@ -151,14 +151,14 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if ( dat_cnt != 1 )
+        if (dat_cnt!=2)
         { ResCmdErr(sp, dat[0]); return; }
   
       // ２．主要データ取得：
         // ※ 該当処理なし
 
       // ３．接続状態を1桁HEXで返す(Boolean相当)：
-        ResHex4(sp, (int16_t)g_maxDeviceID);
+      ResHex4(sp, (int16_t)g_maxDeviceID);
 
       // ４．後処理：
       return;

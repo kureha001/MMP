@@ -46,9 +46,9 @@ public:
   // コマンド在籍確認(実装)
   //━━━━━━━━━━━━━━━━━
   bool owns(const char* cmd) const override {
-    return strcmp(cmd,"DIR")==0 || strcmp(cmd,"DLP")==0 || strcmp(cmd,"DSP")==0 ||
-           strcmp(cmd,"DPA")==0 || strcmp(cmd,"DPR")==0 || strcmp(cmd,"VOL")==0 ||
-           strcmp(cmd,"DEF")==0 || strcmp(cmd,"DST")==0 || strcmp(cmd,"DPX")==0;
+    return  strcmp(cmd,"DIR")==0 || strcmp(cmd,"DLP")==0 || strcmp(cmd,"DSP")==0 ||
+            strcmp(cmd,"DPA")==0 || strcmp(cmd,"DPR")==0 || strcmp(cmd,"VOL")==0 ||
+            strcmp(cmd,"DEF")==0 || strcmp(cmd,"DST")==0 || strcmp(cmd,"DPX")==0;
   }
 
   bool checkDev(const char* cmd, const char* s, int& idx, Stream& sp){
@@ -64,11 +64,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    // スコープ
-    LedScope  scopeLed(ctx, led);
+    // コンテクストの依存性注入
+    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
 
-    // カレント・クライアント
-    Stream&   sp = MMP_SERIAL(ctx);
+    // スコープ
+    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
 
     //----------------------------------------------------------
     // 機能　　　　：ファームウェアのバージョン
@@ -76,13 +76,27 @@ public:
     // 返却値　　　："xyzz!" x:メジャー／y:マイナー／zz:リビジョン
     //----------------------------------------------------------
     if (strcmp(dat[0],"DPX")==0){
-      if (dat_cnt<2){ ResCmdErr(sp,"DPX"); return; }
-      long dev;
-      if (!strHex2long(dat[1], dev, 1, 2)) { ResCmdErr(sp,"DPX"); return; }
-      int idx = (int)dev - 1;
-      if (idx<0 || idx>=2) { ResCmdErr(sp,"DPX"); return; }
-      if (!g_mp3Connected[idx]){ ResCmdErr(sp,"DPX"); return; } // per spec: invalid/unconnected -> error
-      ResHex4(sp, 1);
+
+      // １．前処理
+        // 1.1. 書式
+        if (dat_cnt!=2)
+        { ResCmdErr(sp, dat[0]); return; }
+
+        // 1.2. 単項目チェック
+        long dev;
+        if (!strHex2long(dat[1], dev, 1, 2))
+        { ResCmdErr(sp, dat[0]); return; }
+
+        // 1.3. 相関チェック
+        int idx = (int)dev - 1;
+        if (idx<0 || idx>=2)
+          { ResCmdErr(sp, dat[0]); return; }
+
+        // 1.2. 対象外チェック
+        if (!g_mp3Connected[idx])
+        { ResCmdErr(sp, dat[0]); return; }
+
+      ResHex4(sp, (int16_t)g_mp3Connected[idx]);
       return;
     }
 
@@ -92,12 +106,26 @@ public:
     // 返却値　　　："!!!!!" 正常 ／ "DIR!!" エラー
     //----------------------------------------------------------
     if (strcmp(dat[0],"DIR")==0){
-      if (dat_cnt<4){ ResCmdErr(sp,"DIR"); return; }
-      int idx; if (!checkDev("DIR", dat[1], idx, sp)) return;
-      long folder, track;
-      if (!strHex2long(dat[2], folder, 0, 0xFFFF) ||
-          !strHex2long(dat[3], track,  0, 0xFFFF)){ ResCmdErr(sp,"DIR"); return; }
+
+      // １．前処理
+        // 1.1. 書式
+        if (dat_cnt<4)
+        { ResCmdErr(sp, dat[0]); return; }
+
+        // 1.2. 対象外チェック
+        int idx;
+        if (!checkDev("DIR", dat[1], idx, sp)) return;
+
+        // 1.2. 単項目チェック
+        long folder, track;
+        if (!strHex2long(dat[2], folder, 0, 0xFFFF) ||
+            !strHex2long(dat[3], track,  0, 0xFFFF))
+        { ResCmdErr(sp, dat[0]); return; }
+
+      // ２．処理
       g_mp3[idx].playFolder((int)folder,(int)track);
+
+      // ３．応答
       sp.print("!!!!!");
       return;
     }

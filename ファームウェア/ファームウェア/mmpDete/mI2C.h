@@ -19,7 +19,8 @@ public:
   // コマンド在籍確認(実装)
   //━━━━━━━━━━━━━━━━━
   bool owns(const char* cmd) const override {
-    return strcmp(cmd,"I2W")==0 || strcmp(cmd,"I2R")==0;
+    return  strcmp(cmd,"I2W")==0 ||
+            strcmp(cmd,"I2R")==0;
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -27,11 +28,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    // スコープ
-    LedScope  scopeLed(ctx, led);
+    // コンテクストの依存性注入
+    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
 
-    // カレント・クライアント
-    Stream&   sp = MMP_SERIAL(ctx);
+    // スコープ
+    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
 
     //----------------------------------------------------------
     // 出力コマンド

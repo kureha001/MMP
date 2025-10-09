@@ -18,18 +18,20 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コマンド在籍確認(実装)
   //━━━━━━━━━━━━━━━━━
-  bool owns(const char* cmd) const override { return strcmp(cmd,"VER")==0; }
+  bool owns(const char* cmd) const override {
+    return strcmp(cmd,"VER")==0;
+  }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド・パーサー(実装)
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    // スコープ
-    LedScope  scopeLed(ctx, led);
+    // コンテクストの依存性注入
+    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
 
-    // カレント・クライアント
-    Stream&   sp = MMP_SERIAL(ctx);
+    // スコープ
+    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
 
     // ───────────────────────────────
     // VER  : バージョン
@@ -41,12 +43,12 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-      if ( dat_cnt != 2 )
+      if ( dat_cnt != 1 )
       { ResCmdErr(sp, dat[0]); return; }
 
       // ２．バージョン(文字列)を返す
       sp.print(ctx.version);
-      //MMP_SERIAL(ctx).print(ctx.versionStr);
+      //MMP_SERIAL(ctx).print(ctx.version);
     }
   }
 };

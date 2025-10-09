@@ -22,12 +22,15 @@
 #define REQUEST_DAT_COUNT   8   // コマンド＋引数の個数
 #define REQUEST_DAT_LENGTH  10  // 上記1個あたりの上限バイト数
 
+// コンテクストのメンバ
+Stream*     g_serial        = nullptr;
+
 //━━━━━━━━━━━━━━━━━
 // ストリーム(RAIIガード実行)
 //━━━━━━━━━━━━━━━━━
 class SerialScope {
-  MmpContext& ctx;        // コンテクスト
-  Stream*     prevSerial;       //
+  MmpContext& ctx;          // コンテクスト
+  Stream*     prevSerial;   //
   int         prevClientID; //
 public:
   //───── コンストラクタ(対象ストリーム) ─────
@@ -62,8 +65,8 @@ class Perser {
   MmpContext&               ctx;        //コンテクスト
 
   // 保有情報
-  std::vector<ModuleBase*>  modules;    // モジュール一覧(動的配列)
-  std::vector<Source>       sources;    // ストリーム(クライアント)一覧(動的配列)
+  std::vector<ModuleBase*>  modules;    // 監視対象のモジュール
+  std::vector<Source>       sources;    // 監視対象のクライアント
 
   //━━━━━━━━━━━━━━━━━
   // コマンド実行

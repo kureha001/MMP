@@ -1,13 +1,14 @@
 // filename : mmpDete.ino
-const char* g_version = "0401!";  // コンテクストのメンバ
+const char* g_version = "0402!";  // コンテクストのメンバ
 //========================================================
 //  MMP Firmware : Code Name -- Dete -- 
 //-------------------------------------------------------- 
 // ボード情報：Waveshare RP2040 Zero
 // ボード情報：Waveshare RP2350 Zero
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.01 (2025/10/08)
-//  - 固有部分を各ファイルに移管
+// 変更履歴: Ver 0.4.02 (2025/10/09)
+// mANA：
+//  - バッファのインデックスずれバグを修正
 //========================================================
 #include <Arduino.h>
 #include <Wire.h>
@@ -21,12 +22,11 @@ const char* g_version = "0401!";  // コンテクストのメンバ
 MmpContext g_ctx = {
   .clientID     = 0         , // カレントのクライアントID: 0=USB, 1=UART0
   .clientID_max = -1        , // クライアントIDの上限(0～)
-  .serial       = nullptr   , // クライアントのストリーム
+  .serial       = &g_serial , // クライアントのストリーム
   .pixels       = &g_pixels , // コマンド別のRGB-LED発行用
   .version      = g_version   // ファームウェア・バージョン
 };
-
-Perser g_router(g_ctx);                   // コンストラクタで依存性注入
+Perser g_router(g_ctx);       // コンストラクタで依存性注入
 
 //━━━━━━━━━━━━━━━━━
 // セットアップ
@@ -35,7 +35,7 @@ void setup(){
 
   // 基本機能
   InitPort();       // シリアルポート
-  g_router.Init();  // パーサー
+  g_router.Init();  // パーサー ※コンストラクタ依存性注入済
 
   // モジュール機能
   InitAnalog(g_ctx);  // アナログ入力

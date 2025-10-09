@@ -2,6 +2,8 @@
 //========================================================
 // モジュール：アナログ入力
 //-------------------------------------------------------- 
+// 変更履歴: Ver 0.4.02 (2025/10/09)
+//  - バッファのインデックスずれバグを修正
 // 変更履歴: Ver 0.4.01 (2025/10/08)
 //  - 初期化処理をスケッチ側から移管
 //  - クライアント別で使い分けが可能
@@ -66,17 +68,17 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle(char dat[][10], int dat_cnt) override {
 
-    // スコープ
-    LedScope  scopeLed(ctx, led);
+    // コンテクストの依存性注入
+    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
 
-    // カレント・クライアント
-    Stream&   sp = MMP_SERIAL(ctx);
+    // スコープ
+    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
 
     // ───────────────────────────────
     // ANS  : 使用範囲設定
-    // 引数 : ① プレイヤー数
-    // 　　　 ② スイッチ数
-    // 　　　 ③ 対象クライアントID ※未制定はカレント クライアント
+    // 引数 : ① プレイヤー数        ※IDより１つ大きい
+    // 　　　 ② スイッチ数          ※IDより１つ大きい
+    // 　　　 ③ 対象クライアントID  ※未制定はカレント クライアント
     // 戻り : ・正常 [!!!!!]
     //        ・異常 [ANS!!]
     // ───────────────────────────────
@@ -89,9 +91,9 @@ public:
 
         // 1.2. 単項目チェック
         long plCnt, swCnt;
-        if (!strHex2long(dat[1], plCnt, 0, 15) ||
-            !strHex2long(dat[2], swCnt, 0,  3)  )
-            { ResCmdErr(sp, dat[0]); return; }
+        if (!strHex2long(dat[1], plCnt, 1, 16) ||
+            !strHex2long(dat[2], swCnt, 1,  4)  )
+        { ResCmdErr(sp, dat[0]); return; }
 
         // 1.3. 単項目チェック：クライアント指定（任意）
         long ID;
@@ -144,7 +146,7 @@ public:
           digitalWrite(g_addressBusGPIOs[i], (ch>>i) & 1);
         }
 
-        //delayMicroseconds(10); //時間調整
+        delayMicroseconds(10); //時間調整
 
         // データバスから読取り
         for (int dev = 0; dev < g_ana[ID].SwitchCnt; dev++) {
@@ -172,13 +174,7 @@ public:
         if (!(dat_cnt==3 || dat_cnt==4))
         { ResCmdErr(sp, dat[0]); return; }
 
-        // 1.2. 単項目チェック
-        long pl, sw;
-        if (!strHex2long(dat[1], pl, 0, 15) ||
-            !strHex2long(dat[2], sw, 0,  3)  )
-            { ResCmdErr(sp, dat[0]); return; }
-
-        // 1.3. 単項目チェック：クライアント指定（任意）
+        // 1.2. 単項目チェック：クライアント指定（任意）
         long ID;
         if (dat_cnt == 3) {
           ID = ctx.clientID;
@@ -186,6 +182,12 @@ public:
           if (!strHex2long(dat[3], ID, 0, (long)ctx.clientID_max))
           { ResCmdErr(sp, dat[0]); return; }
         }
+
+        // 1.3. 単項目チェック
+        long pl, sw;
+        if (!strHex2long(dat[1], pl, 0, long(g_ana[ID].PlayerCnt - 1) ) ||
+            !strHex2long(dat[2], sw, 0, long(g_ana[ID].SwitchCnt - 1) ) )
+            { ResCmdErr(sp, dat[0]); return; }
 
         // 1.4.機能チェック
         if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt)

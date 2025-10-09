@@ -1,23 +1,20 @@
-// filename : port.h
+// filename : openPort.h
 //========================================================
 // シリアルポートを開く
 //-------------------------------------------------------- 
 // 変更履歴: Ver 0.4.01 (2025/10/07)
 //  - スケッチから分離
 //  - 初期化処理をスケッチ側から移管
+//  - 2つの処理を1つの初期化関数にまとめた
 //========================================================
 #include <Adafruit_NeoPixel.h>
-
-static int  g_baudIndex = 0; // 現在のボーレートID
 
 // コンテクストのメンバ
 Adafruit_NeoPixel g_pixels(1, 16, NEO_GRB + NEO_KHZ800);
 
-
 //━━━━━━━━━━━━━━━━━
 // 通信速度の定義・設定
 //━━━━━━━━━━━━━━━━━
-
   //─────────────────
   // ボーレートのプリセット
   //─────────────────
@@ -47,54 +44,41 @@ Adafruit_NeoPixel g_pixels(1, 16, NEO_GRB + NEO_KHZ800);
     /*7:赤*/ {10, 0, 0}
   };
 
-  //─────────────────
-  // ボーレート設定
-  //─────────────────
-  static int readBaudPreset(){
-
-    pinMode(SW_PIN_A, INPUT_PULLUP);
-    pinMode(SW_PIN_B, INPUT_PULLUP);
-    pinMode(SW_PIN_C, INPUT_PULLUP);
-    delay(10);
-
-    int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
-    int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
-    int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
-
-    int id = 0;
-    if      (A==0 && B==0 && C==0) id = 0;
-    else if (A==1 && B==0 && C==0) id = 1;
-    else if (A==0 && B==1 && C==0) id = 2;
-    else if (A==0 && B==0 && C==1) id = 3;
-    else if (A==1 && B==1 && C==0) id = 4;
-    else if (A==0 && B==1 && C==1) id = 5;
-    else if (A==1 && B==0 && C==1) id = 6;
-    else id = 7;
-
-    g_baudIndex = id;
-    return BAUD_PRESETS[id];
-  }
-
 //━━━━━━━━━━━━━━━━━
 // 初期化処理
 //━━━━━━━━━━━━━━━━━
-static void InitPort(){
+void InitPort(){
 
-  // ボーレート設定
-  int baud = readBaudPreset();
+  pinMode(SW_PIN_A, INPUT_PULLUP);
+  pinMode(SW_PIN_B, INPUT_PULLUP);
+  pinMode(SW_PIN_C, INPUT_PULLUP);
+  delay(10);
+
+  int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
+  int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
+  int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
+
+  int id = 7;
+  if      (A==0 && B==0 && C==0) id = 0;
+  else if (A==1 && B==0 && C==0) id = 1;
+  else if (A==0 && B==1 && C==0) id = 2;
+  else if (A==0 && B==0 && C==1) id = 3;
+  else if (A==1 && B==1 && C==0) id = 4;
+  else if (A==0 && B==1 && C==1) id = 5;
+  else if (A==1 && B==0 && C==1) id = 6;
 
   // ボーレートに応じてRGB-LEDを点灯
-  RGB c = BAUD_COLORS[g_baudIndex]; // 色パターンを取得
-  g_pixels.begin();                 // RGB-LEDを点灯
+  RGB c = BAUD_COLORS[id]; // 色パターンを取得
+  g_pixels.begin();        // RGB-LEDを点灯
   g_pixels.clear();
   g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
   g_pixels.show();
 
   // シリアル通信を開始
-  Serial.begin(baud);   // USB用
-  Serial1.setTX(0);     // GPIO用
+  Serial1.setTX(0);                 // GPIO用
   Serial1.setRX(1);
-  Serial1.begin(baud);
+  Serial1.begin(BAUD_PRESETS[id]);
+  Serial.begin(BAUD_PRESETS[id]);   // USB用
 }
 
 

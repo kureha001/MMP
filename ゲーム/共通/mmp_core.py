@@ -1,45 +1,16 @@
 # -*- coding: utf-8 -*-
-# mmp_core.py
+# filename : mmp_core.py
 #============================================================
-# Python共通：ＭＭＰコア機能
-#------------------------------------------------------------
-# ＭＭＰシリアルコマンドを直接扱う
+# ＭＭＰコマンド
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-
 from mmp_adapter_base import MmpAdapterBase
-
-#=========================
-# 通信速度のプリセット一覧
-#=========================
 BAUD_CANDIDATES = (921600,57600,38400,19200,9600,4800,2400,300)
 
-#========================
-# ヘルパ
-#========================
-# HEX値変換ヘルパ(個別桁)
-def _hex1(v): return f"{v & 0xF:01X}"
-def _hex2(v): return f"{v & 0xFF:02X}"
-def _hex3(v): return f"{v & 0x3FF:03X}"
-def _hex4(v): return f"{v & 0xFFFF:04X}"
-
-# "!!!!!"判定ヘルパ
-def _is_five_bang(s: str) -> bool:
-    return isinstance(s, str) and len(s) == 5 and s.endswith('!')
-
-# HEX値変換ヘルパ(4桁)
-def _try_parse_hex4_bang(s: str):
-    if not _is_five_bang(s) : return False, 0
-    try                     : return True , int(s[:4], 16)
-    except Exception        : return False, 0
-
-#========================
-# 規定値モジュール 
-#========================
 class Settings:
     def __init__(self):
         self.PortName       = ""
@@ -55,14 +26,25 @@ class Settings:
         self.TimeoutI2c     = 400
         self.AnalogBits     = 10
 
-# ？？？これは何？？？
-def _resolve(v, fb): return v if (isinstance(v, int) and v > 0) else fb
+from mmp_core_INF import _InfoModule
+from mmp_core_ANA import _AnalogModule
+from mmp_core_DIG import _DigitalModule
+from mmp_core_PWM import _PwmModule
+from mmp_core_I2C import _I2cModule
+from mmp_core_MP3 import _AudioModule
 
+from mmp_core_COM import _resolve, _try_parse_hex4_bang, _hex1, _hex2, _hex3, _hex4
 
-#========================
-# メイン
-#========================
 class MmpClient:
+
+    # --- Backward-compatibility aliases for split modules ---
+    # 旧来コードの client._InfoModule / MmpClient._InfoModule 参照に対応
+    from mmp_core_INF import _InfoModule    as _InfoModule
+    from mmp_core_ANA import _AnalogModule  as _AnalogModule
+    from mmp_core_DIG import _DigitalModule as _DigitalModule
+    from mmp_core_PWM import _PwmModule     as _PwmModule
+    from mmp_core_I2C import _I2cModule     as _I2cModule
+    from mmp_core_MP3 import _AudioModule   as _AudioModule
 
     #========================
     # コンストラクタ
@@ -107,7 +89,7 @@ class MmpClient:
     #-------------------
     # 接続：条件指定
     #-------------------
-    def ConnectWithBaud(self,
+    def ConnectWithBaud(self    ,
         baud: int               ,   # ① 通信速度
         timeoutIo:       int = 0,   # ② 一般用タイムアウト(単位；ミリ秒)
         verifyTimeoutMs: int = 0,   # ③ ベリファイ用タイムアウト(単位；ミリ秒)
@@ -257,395 +239,12 @@ class MmpClient:
         def __init__(self, p:'MmpClient'): self._p = p
  
         def typeOk(self, argCMD:str, timeoutMs:int=0) -> int:
-            t = _resolve(timeoutMs, self._p.Settings.Timeout)
-            resp = self._p._send_command(argCMD, t)
+            t       = _resolve(timeoutMs, self._p.Settings.Timeout)
+            resp    = self._p._send_command(argCMD, t)
             return resp == "!!!!!"
 
         def typeVal(self, argCMD:str, timeoutMs:int=0) -> int:
-            t = _resolve(timeoutMs, self._p.Settings.Timeout)
-            resp = self._p._send_command(argCMD, t)
-            ok, v = _try_parse_hex4_bang(resp); 
+            t       = _resolve(timeoutMs, self._p.Settings.Timeout)
+            resp    = self._p._send_command(argCMD, t)
+            ok, v   = _try_parse_hex4_bang(resp); 
             return v if ok else -1
-
-    #----------------------
-    # << 情報モジュール >>
-    #----------------------
-    class _InfoModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p; self.Dev = self._DevModule(p)
-
-        #----------------------
-        # １．バージョン
-        #----------------------
-        def Version(self, timeoutMs: int = 0) -> str:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutGeneral)
-            return self._p._send_command("VER!", t)
-
-        #----------------------
-        # ２．デバイス情報
-        #----------------------
-        class _DevModule:
-            #---------------------------
-            # 2-0.コンストラクタ
-            #---------------------------
-            def __init__(self, p:'MmpClient'): self._p = p
-
-            #---------------------------
-            # 2-1.ＰＷＭデバイス
-            #---------------------------
-            def Pwm(self, devId0to15:int, timeoutMs:int=0) -> int:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-                resp = self._p._send_command(f"PWX:{_hex2(devId0to15)}!", t)
-                ok, v = _try_parse_hex4_bang(resp); 
-                return v if ok else -1
-
-            #---------------------------
-            # 2-2.音声デバイス
-            #---------------------------
-            def Audio(self, devId1to4:int, timeoutMs:int=0) -> int:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DPX:{_hex2(devId1to4)}!", t)
-                ok, v = _try_parse_hex4_bang(resp); 
-                return v if ok else -1
-
-    #---------------------------
-    # << アナログ モジュール >>
-    #---------------------------
-    class _AnalogModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
-
-        #------------------
-        # 内部ヘルパ
-        #------------------
-        def _clamp_bits(self, bits:int) -> int:
-            ub = bits if (isinstance(bits, int) and 1 <= bits <= 16) else self._p.Settings.AnalogBits
-            if not (1 <= ub <= 16): ub = 10
-            return ub
-        #----------------------
-        def _clamp_raw(self, raw:int, bits:int) -> int:
-            if raw < 0: return raw
-            maxv = (1 << bits) - 1
-            return 0 if raw < 0 else (maxv if raw > maxv else raw)
-        #----------------------
-        def _round_mid(self, raw:int, step:int, bits:int) -> int:
-            if raw < 0 or step <= 0: return raw
-            maxv = (1 << bits) - 1
-            v = raw if raw <= maxv else maxv
-            q, r = divmod(v, step)
-            mid = step // 2
-            # 中央値の扱い：偶数stepは r>=mid で切り上げ、奇数stepは r<=mid で切り捨て（= r>=mid+1 で切り上げ）
-            if r < mid: v2 = q * step
-            elif r > mid or (step % 2 == 0 and r == mid): v2 = (q + 1) * step
-            else: v2 = q * step
-            if v2 > maxv: v2 = maxv
-            return v2
-        #----------------------
-        def _round_up(self, raw:int, step:int, bits:int) -> int:
-            if raw < 0 or step <= 0: return raw
-            maxv = (1 << bits) - 1
-            v = raw if raw <= maxv else maxv
-            q, r = divmod(v, step)
-            v2 = v if r == 0 else (q + 1) * step
-            if v2 > maxv: v2 = maxv
-            return v2
-        #----------------------
-        def _round_down(self, raw:int, step:int, bits:int) -> int:
-            if raw < 0 or step <= 0: return raw
-            maxv = (1 << bits) - 1
-            v = raw if raw <= maxv else maxv
-            q = v // step
-            v2 = q * step
-            if v2 < 0: v2 = 0
-            return v2
-        #----------------------
-
-        #-----------------------
-        # １．使用範囲設定
-        #-----------------------
-        def Configure(self, hc4067chTtl:int, hc4067devTtl:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAnalog)
-            if not (1 <= hc4067chTtl <= 16) or not (1 <= hc4067devTtl <= 4):
-                return False
-            resp = self._p._send_command(f"ANS:{_hex2(hc4067chTtl)}:{_hex2(hc4067devTtl)}!", t)
-            return resp == "!!!!!"
-
-        #-----------------------
-        # ２．測定値バッファ更新
-        #-----------------------
-        def Update(self, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAnalog)
-            resp = self._p._send_command("ANU!", t)
-            return resp == "!!!!!"
-
-        #---------------------------------
-        # ３．測定値バッファ読取（丸めなし）
-        #---------------------------------
-        def Read(self, hc4067ch0to15:int, hc4067dev0to3:int, timeoutMs:int=0) -> int:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAnalog)
-            if not (0 <= hc4067ch0to15 <= 15) or not (0 <= hc4067dev0to3 <= 3):
-                return -1
-            resp = self._p._send_command(f"ANR:{_hex2(hc4067ch0to15)}:{_hex2(hc4067dev0to3)}!", t)
-            ok, v = _try_parse_hex4_bang(resp); 
-            return v if ok else -1
-
-        #-----------------------------------------
-        # ４．測定値バッファ読取（中央値基準の丸め）
-        #-----------------------------------------
-        def ReadRound(self, hc4067ch0to15:int, hc4067dev0to3:int, step:int, bits:int=0, timeoutMs:int=0) -> int:
-            raw = self.Read(hc4067ch0to15, hc4067dev0to3, timeoutMs)
-            if raw < 0: return raw
-            ub = self._clamp_bits(bits)
-            return self._round_mid(raw, step, ub)
-
-        #-----------------------------------------
-        # ５．測定値バッファ読取（切り上げ丸め）
-        #-----------------------------------------
-        def ReadRoundUp(self, hc4067ch0to15:int, hc4067dev0to3:int, step:int, bits:int=0, timeoutMs:int=0) -> int:
-            raw = self.Read(hc4067ch0to15, hc4067dev0to3, timeoutMs)
-            if raw < 0: return raw
-            ub = self._clamp_bits(bits)
-            return self._round_up(raw, step, ub)
-
-        #-----------------------------------------
-        # ６．測定値バッファ読取（切り捨て丸め）
-        #-----------------------------------------
-        def ReadRoundDown(self, hc4067ch0to15:int, hc4067dev0to3:int, step:int, bits:int=0, timeoutMs:int=0) -> int:
-            raw = self.Read(hc4067ch0to15, hc4067dev0to3, timeoutMs)
-            if raw < 0: return raw
-            ub = self._clamp_bits(bits)
-            return self._round_down(raw, step, ub)
-
-    #---------------------------
-    # << デジタル モジュール >>
-    #---------------------------
-    class _DigitalModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
-
-        #----------------------
-        # １．入力
-        #----------------------
-        def In(self, gpioId:int, timeoutMs:int=0) -> int:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutDigital)
-            resp = self._p._send_command(f"POR:{_hex2(gpioId)}!", t)
-            ok, v = _try_parse_hex4_bang(resp); 
-            return v if ok else 0
-
-        #----------------------
-        # ２．出力
-        #----------------------
-        def Out(self, gpioId:int, val0or1:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutDigital)
-            bit = '1' if (val0or1 & 1) else '0'
-            resp = self._p._send_command(f"POW:{_hex2(gpioId)}:{bit}!", t)
-            return resp == "!!!!!"
-
-    #------------------------
-    # << ＰＷＭモジュール >>
-    #------------------------
-    class _PwmModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
-
-        #----------------------
-        # １．デバイス情報
-        #----------------------
-        def Info(self, devId0to15:int, timeoutMs:int=0) -> int:
-            return self._p.Info.Dev.Pwm(devId0to15, timeoutMs)
-
-        #----------------------
-        # ２．出力
-        #----------------------
-        def Out(self, chId0to255:int, val0to4095:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            resp = self._p._send_command(f"PWM:{_hex2(chId0to255)}:{_hex4(val0to4095)}!", t)
-            return resp == "!!!!!"
-
-        #----------------------
-        # ３．角度設定
-        #----------------------
-        def AngleInit(self, angleMin:int, angleMax:int, pwmMin:int, pwmMax:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            resp = self._p._send_command(f"PWI:{_hex3(angleMin)}:{_hex3(angleMax)}:{_hex4(pwmMin)}:{_hex4(pwmMax)}!", t)
-            return resp == "!!!!!"
-
-        #----------------------
-        # ４．角度指定
-        #----------------------
-        def AngleOut(self, chId0to255:int, angle0to180:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            resp = self._p._send_command(f"PWA:{_hex2(chId0to255)}:{_hex3(angle0to180)}!", t)
-            return resp == "!!!!!"
-
-    #----------------------
-    # << 音声モジュール >>
-    #----------------------
-    class _AudioModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'):
-            self._p = p
-            self.Play = self._PlayModule(p)
-            self.Read = self._ReadModule(p)
-
-        #----------------------
-        # １. 単独コマンド
-        #----------------------
-        # 1-1. デバイス情報
-        #----------------------
-        def Info(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._p.Info.Dev.Audio(devId1to4, timeoutMs)
-
-        #----------------------
-        # 1-2. 音量設定
-        #----------------------
-        def Volume(self, devId1to4:int, vol0to30:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"VOL:{_hex2(devId1to4)}:{_hex2(vol0to30)}!", t) 
-            return resp == "!!!!!"
-
-        #----------------------
-        # 1-3.イコライザ設定
-        #----------------------
-        def SetEq(self, devId1to4:int, mode0to5:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DEF:{_hex2(devId1to4)}:{_hex2(mode0to5)}!", t) 
-            return resp == "!!!!!"
-
-        #----------------------
-        # ２. 再生サブモジュール
-        #----------------------
-        class _PlayModule:
-            #----------------------
-            # コンストラクタ
-            #----------------------
-            def __init__(self, p:'MmpClient'): self._p = p
-
-            #----------------------
-            # 2-1. 再生（Start）
-            #----------------------
-            def Start(self, devId1to4:int, dir1to255:int, file1to255:int, timeoutMs:int=0) -> bool:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DIR:{_hex2(devId1to4)}:{_hex2(dir1to255)}:{_hex2(file1to255)}!", t)
-                return resp == "!!!!!"
-
-            #----------------------
-            # 2-2. ループ再生指定
-            #----------------------
-            def SetLoop(self, devId1to4:int, enable:int, timeoutMs:int=0) -> bool:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DLP:{_hex2(devId1to4)}:{_hex1(1 if enable else 0)}!", t)
-                return resp == "!!!!!"
-
-            #----------------------
-            # 2-3. 停止
-            #----------------------
-            def Stop(self, devId1to4:int, timeoutMs:int=0) -> bool:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DSP:{_hex2(devId1to4)}!", t)
-                return resp == "!!!!!"
-
-            #----------------------
-            # 2-4. 一時停止
-            #----------------------
-            def Pause(self, devId1to4:int, timeoutMs:int=0) -> bool:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DPA:{_hex2(devId1to4)}!", t)
-                return resp == "!!!!!"
-
-            #----------------------
-            # 2-5. 再開
-            #----------------------
-            def Resume(self, devId1to4:int, timeoutMs:int=0) -> bool:
-                t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp = self._p._send_command(f"DPR:{_hex2(devId1to4)}!", t)
-                return resp == "!!!!!"
-
-        #----------------------
-        # ３. 参照サブモジュール
-        #----------------------
-        class _ReadModule:
-            #----------------------
-            # コンストラクタ
-            #----------------------
-            def __init__(self, p:'MmpClient'): self._p = p
-
-            #----------------------
-            # 3-1. 再生状況
-            #----------------------
-            def State(self, devId1to4:int, timeoutMs:int=0) -> int:
-                return self._dst_query(devId1to4, 1, timeoutMs)
-
-            #----------------------
-            # 3-2. 音量
-            #----------------------
-            def Volume(self, devId1to4:int, timeoutMs:int=0) -> int:
-                return self._dst_query(devId1to4, 2, timeoutMs)
-
-            #----------------------
-            # 3-3. イコライザのモード
-            #----------------------
-            def Eq(self, devId1to4:int, timeoutMs:int=0) -> int:
-                return self._dst_query(devId1to4, 3, timeoutMs)
-
-            #----------------------
-            # 3-4. 総ファイル総数
-            #----------------------
-            def FileCounts(self, devId1to4:int, timeoutMs:int=0) -> int:
-                return self._dst_query(devId1to4, 4, timeoutMs)
-
-            #----------------------
-            # 3-5. 現在のファイル番号
-            #----------------------
-            def FileNumber(self, devId1to4:int, timeoutMs:int=0) -> int:
-                return self._dst_query(devId1to4, 5, timeoutMs)
-
-            #----------------------
-            # 内部ヘルパ
-            #----------------------
-            def _dst_query(self,
-                devId1to4:int   ,   # ① デバイスID
-                kind:int        ,   # ② 種類ID(１～５)
-                timeoutMs:int   ,   # ③ タイムアウト(単位：ミリ秒)
-            ) -> int:               # 戻り値：ＭＭＰコマンドの戻り値
-                t     = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-                resp  = self._p._send_command(f"DST:{_hex2(devId1to4)}:{_hex2(kind)}!", t)
-                ok, v = _try_parse_hex4_bang(resp); 
-                return (v) if ok else (-1)
-
-    #------------------------
-    # << Ｉ２Ｃモジュール >>
-    #------------------------
-    class _I2cModule:
-        #----------------------
-        # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
-
-        #----------------------
-        # １．書き込み
-        #----------------------
-        def Write(self, addr:int, reg:int, val:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutI2c)
-            resp = self._p._send_command(f"I2W:{_hex2(addr)}:{_hex2(reg)}:{_hex2(val)}!", t)
-            return resp == "!!!!!"
-
-        #----------------------
-        # ２．読み出し
-        #----------------------
-        def Read(self, addr:int, reg:int, timeoutMs:int=0) -> int:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutI2c)
-            resp = self._p._send_command(f"I2R:{_hex2(addr)}:{_hex2(reg)}!", t)
-            ok, v = _try_parse_hex4_bang(resp); 
-            return v if ok else 0
-

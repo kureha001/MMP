@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# mmp_adapter_Tcp_C.py
+# filename : mmp_adapter_Tcp_C.py
 #============================================================
 # CPython用：TCPブリッジアダプタ
 #------------------------------------------------------------
@@ -75,7 +75,6 @@ class MmpAdapter(MmpAdapterBase):
             # 接続時のみタイムアウト（以降はselectで扱う）
             s.settimeout(max(self._timeout_s, 0.01))
             s.connect((self._host, self._port))
-
             # 接続後はブロッキングに戻す（selectで制御）
             s.settimeout(None)
             self._sock = s

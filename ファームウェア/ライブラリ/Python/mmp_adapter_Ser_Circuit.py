@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# mmp_adapter_Ser_Circuit.py
+# filename : mmp_adapter_Ser_Circuit.py
 #============================================================
 # CircuitPython用：ＵＡＲＴ接続アダプタ
 #------------------------------------------------------------

@@ -2,32 +2,33 @@
 //========================================================
 // モジュール：アナログ入力
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.02 (2025/10/09)
-//  - バッファのインデックスずれバグを修正
-// 変更履歴: Ver 0.4.01 (2025/10/08)
-//  - 初期化処理をスケッチ側から移管
-//  - クライアント別で使い分けが可能
-//  - 別クライアントの制御が可能
+// 変更履歴: Ver0.5.00 (2025/10/13)
+// - WEB-API書式対応
 //========================================================
 #pragma once
 #include "module.h"
 
-//─────────────────
-// GPIO
-//─────────────────
-const int g_addressBusGPIOs[4]  = {10, 11, 12, 13};  // アドレス・バス
-const int g_dateGPIOs[4]        = {26, 27, 28, 29};  // データ・バス
+//━━━━━━━━━━━━━━━━━
+// デバイス情報
+//━━━━━━━━━━━━━━━━━
+  const int g_addressBusGPIOs[4]  = {10, 11, 12, 13};  // アドレス・バス
+  const int g_dateGPIOs[4]        = {26, 27, 28, 29};  // データ・バス
 
-//─────────────────
-// クライアント別データ
-//─────────────────
-struct AnaClientData {
-  int Values[16*4];
-  int SwitchCnt;
-  int PlayerCnt;
-};
-static AnaClientData* g_ana = nullptr;  // InitAnalog() で確保
-
+//━━━━━━━━━━━━━━━━━
+// クライアント情報
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 型
+  //─────────────────
+  struct AnaClientData {
+    int Values[16*4];   // チャンネル別の入力信号
+    int SwitchCnt;      // 使用範囲(スイッチ数;デバイス数)
+    int PlayerCnt;      // 使用範囲(プレイヤ数;チャンネル数)
+  };
+  //─────────────────
+  // クライアント情報
+  //─────────────────
+  static AnaClientData* g_ana = nullptr;
 
 //━━━━━━━━━━━━━━━━━
 // 初期化処理
@@ -35,15 +36,14 @@ static AnaClientData* g_ana = nullptr;  // InitAnalog() で確保
 void InitAnalog(const MmpContext& ctx) {
 
   const int count = ctx.clientID_max + 1;         // 要素数＝最大インデックス＋1
-  void* p = calloc(count, sizeof(AnaClientData)); // 0 初期化で確保
+  void* p = calloc(count, sizeof(AnaClientData)); // 全要素0で初期化して確保
   if (!p) { return; }
   g_ana = static_cast<AnaClientData*>(p);
 
-  // 既定設定（従来どおり）
+  // 既定設定
   for (int i = 0; i < count; ++i) {
-    // Values は calloc により 0 初期化済み
-    g_ana[i].SwitchCnt = 4;
-    g_ana[i].PlayerCnt = 1;
+    g_ana[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
+    g_ana[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
 }
 
@@ -58,42 +58,40 @@ public:
   // コマンド在籍確認(実装)
   //━━━━━━━━━━━━━━━━━
   bool owns(const char* cmd) const override {
-    return  strcmp(cmd,"ANS")==0  ||
-            strcmp(cmd,"ANU")==0  ||
-            strcmp(cmd,"ANR")==0  ;
+      return cmd && strncmp(cmd, "ANALOG", 6) == 0;
   }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド・パーサー(実装)
   //━━━━━━━━━━━━━━━━━
-  void handle(char dat[][10], int dat_cnt) override {
+  void handle(char dat[][ DAT_LENGTH ], int dat_cnt) override {
 
-    // コンテクストの依存性注入
-    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
-
-    // スコープ
-    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
+    //━━━━━━━━━━━━━━━━━
+    // 前処理
+    //━━━━━━━━━━━━━━━━━
+    Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
+    LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
+    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
-    // ANS  : 使用範囲設定
+    // 機能 : セットアップ
+    // 書式 : ANALOG/SETUP
     // 引数 : ① プレイヤー数        ※IDより１つ大きい
     // 　　　 ② スイッチ数          ※IDより１つ大きい
     // 　　　 ③ 対象クライアントID  ※未制定はカレント クライアント
     // 戻り : ・正常 [!!!!!]
     //        ・異常 [ANS!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"ANS")==0){
+    if (strcmp(Cmd,"SETUP") == 0){
 
       // １．前処理
         // 1.1. 書式
-        if (!(dat_cnt==3 || dat_cnt==4))
-        { ResCmdErr(sp, dat[0]); return; }
+        if (!(dat_cnt == 3 || dat_cnt == 4)){ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック
         long plCnt, swCnt;
         if (!strHex2long(dat[1], plCnt, 1, 16) ||
-            !strHex2long(dat[2], swCnt, 1,  4)  )
-        { ResCmdErr(sp, dat[0]); return; }
+            !strHex2long(dat[2], swCnt, 1,  4) ){ResChkErr(sp); return;}
 
         // 1.3. 単項目チェック：クライアント指定（任意）
         long ID;
@@ -102,31 +100,30 @@ public:
         } else {
           long id;
           if (!strHex2long(dat[3], id, 0, (long)ctx.clientID_max))
-          { ResCmdErr(sp, dat[0]); return; }
+          {ResChkErr(sp); return;}
           ID = id;
         }
 
       // ２．処理
-      if (g_ana == nullptr) { ResCmdErr(sp, dat[0]); return; }
       g_ana[ID].PlayerCnt = (int)plCnt;
       g_ana[ID].SwitchCnt = (int)swCnt;
 
       // ３．応答
-      sp.print("!!!!!");
+      ResOK(sp);
     }
 
     // ───────────────────────────────
-    // ANU  : 入力バッファ更新(使用範囲)
+    // 機能 : 信号入力（入力バッファに更新）
+    // 書式 : ANALOG/IN
     // 引数 : ① 対象クライアントID ※未制定はカレント クライアント
     // 戻り : ・正常 [!!!!!]
     //        ・異常 [ANU!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"ANU")==0){
+    if (strcmp(Cmd,"INPUT") == 0){
 
       // １．前処理：
         // 1.1. 書式
-        if (!(dat_cnt==1 || dat_cnt==2))
-        { ResCmdErr(sp, dat[0]); return; }
+        if (!(dat_cnt == 1 || dat_cnt == 2)){ResChkErr(sp); return;}
 
         // 1.3. 単項目チェック：クライアント指定（任意）
         long ID;
@@ -134,7 +131,7 @@ public:
           ID = ctx.clientID;
         } else {
           if (!strHex2long(dat[1], ID, 0, (long)ctx.clientID_max))
-          { ResCmdErr(sp, dat[0]); return; }
+          {ResChkErr(sp); return;}
         }
 
       // ２．処理
@@ -156,23 +153,24 @@ public:
       }
 
       // ３．後処理：
-      sp.print("!!!!!");
+      ResOK(sp);
+      return;
     }
 
     // ───────────────────────────────
-    // ANR  : 入力バッファ読取り
+    // 機能 : 入力バッファ参照
+    // 書式 : ANALOG/READ
     // 引数 : ① プレイヤーID
     // 　　　 ② スイッチID
     // 　　　 ③ 対象クライアントID ※未制定はカレント クライアント
     // 戻り : ・正常 [XXXX!]
     //        ・異常 [ANR!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"ANR")==0){
+    if (strcmp(Cmd,"READ") == 0){
 
       // １．前処理
         // 1.1. 書式（第3引数は任意）
-        if (!(dat_cnt==3 || dat_cnt==4))
-        { ResCmdErr(sp, dat[0]); return; }
+        if (!(dat_cnt == 3 || dat_cnt == 4)){ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック：クライアント指定（任意）
         long ID;
@@ -180,22 +178,31 @@ public:
           ID = ctx.clientID;
         } else {
           if (!strHex2long(dat[3], ID, 0, (long)ctx.clientID_max))
-          { ResCmdErr(sp, dat[0]); return; }
+          {ResChkErr(sp); return;}
         }
 
         // 1.3. 単項目チェック
         long pl, sw;
         if (!strHex2long(dat[1], pl, 0, long(g_ana[ID].PlayerCnt - 1) ) ||
             !strHex2long(dat[2], sw, 0, long(g_ana[ID].SwitchCnt - 1) ) )
-            { ResCmdErr(sp, dat[0]); return; }
+            {ResChkErr(sp); return;}
 
         // 1.4.機能チェック
-        if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt)
-        { ResCmdErr(sp, dat[0]); return;}
+        if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt){ResChkErr(sp); return;}
 
       // ２．処理
       const int idx = (int)pl * 4 + (int)sw;        // 値のデータ位置
-      ResHex4( sp, (int16_t)g_ana[ID].Values[idx] );
+      int16_t res = (int16_t)g_ana[ID].Values[idx];
+
+      // ３．後処理：
+      ResHex4(sp, res);
+      return;
     }
+
+  //━━━━━━━━━━━━━━━━━
+  // コマンド名エラー
+  //━━━━━━━━━━━━━━━━━
+  ResNotCmd(sp);
+  return;
   }
 };

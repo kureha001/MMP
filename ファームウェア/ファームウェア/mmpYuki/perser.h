@@ -2,8 +2,8 @@
 //========================================================
 // コマンド パーサーのフロント・対象資源の登録
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.01 (2025/10/08)
-//  - 初期化処理をスケッチ側から移管
+// 変更履歴: Ver0.5.00 (2025/10/13)
+// - クライアントからのリクエスト条件をmoudule.hへ移管
 //========================================================
 #pragma once
 #include <vector>
@@ -16,11 +16,6 @@
 #include "mPWM.h"
 #include "mI2C.h"
 #include "mMP3.h"
-
-// クライアントからのリクエスト条件
-#define REQUEST_LENGTH      96  // リクエスト全体のバッファ長
-#define REQUEST_DAT_COUNT   8   // コマンド＋引数の個数
-#define REQUEST_DAT_LENGTH  10  // 上記1個あたりの上限バイト数
 
 // コンテクストのメンバ
 Stream*     g_serial        = nullptr;
@@ -73,12 +68,12 @@ class Perser {
   //━━━━━━━━━━━━━━━━━
   void runCommand(Source& src){
 
-    char dat[ REQUEST_DAT_COUNT ][ REQUEST_DAT_LENGTH ];  // 要素バッファ
-    int dat_cnt=0;                                            // 要素数
+    char dat[ DAT_COUNT ][ DAT_LENGTH ];  // 要素バッファ
+    int dat_cnt = 0;                      // 要素数
 
     // リクエストメッセージを要素分解
     char* tok = strtok(src.buf, ":");
-    while( tok && dat_cnt < REQUEST_DAT_COUNT ){
+    while( tok && dat_cnt < DAT_COUNT ){
       strncpy(dat[dat_cnt], tok, sizeof(dat[0])-1);
       dat[dat_cnt][sizeof(dat[0])-1] = '\0';
       dat_cnt++;
@@ -86,14 +81,14 @@ class Perser {
     }
 
     // 空の場合はリターン
-    if (dat_cnt==0) return;
+    if (dat_cnt == 0) return;
 
     // ストリームをRAIIガードで実行
     SerialScope scopeSerial(ctx, src.s, src.clientIndex);
 
     // 各モジュールからコマンドを走査
     for (auto* m: modules){
-      // コマンド名が該当すれば、コマンド実行してリターン
+      // コマンド名が在籍すれば、コマンド実行してリターン
       if (m->owns(dat[0])){ m->handle(dat, dat_cnt); return; }
     }
 

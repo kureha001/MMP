@@ -2,8 +2,8 @@
 //========================================================
 // モジュール：システム情報
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.01 (2025/10/07)
-// - VERコマンドを名称でパースする方式に修正
+// 変更履歴: Ver0.5.00 (2025/10/13)
+// - WEB-API書式対応
 //========================================================
 #pragma once
 #include "module.h"
@@ -19,19 +19,20 @@ public:
   // コマンド在籍確認(実装)
   //━━━━━━━━━━━━━━━━━
   bool owns(const char* cmd) const override {
-    return strcmp(cmd,"VER")==0;
+      return cmd && strncmp(cmd, "INFO", 4) == 0;
   }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド・パーサー(実装)
   //━━━━━━━━━━━━━━━━━
-  void handle(char dat[][10], int dat_cnt) override {
+  void handle(char dat[][ DAT_LENGTH ], int dat_cnt) override {
 
-    // コンテクストの依存性注入
-    Stream&   sp = MMP_SERIAL(ctx); // クライアントのストリーム
-
-    // スコープ
-    LedScope  scopeLed(ctx, led);   // コマンド色のLED発光
+    //━━━━━━━━━━━━━━━━━
+    // 前処理
+    //━━━━━━━━━━━━━━━━━
+    Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
+    LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
+    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
     // VER  : バージョン
@@ -39,16 +40,21 @@ public:
     // 戻り : ・正常 [NNNN!]：メジャー1桁 マイナー1桁 リビジョン2桁
     //        ・異常 [VER!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"VER") == 0 ){
+    if (strcmp(Cmd,"VERSION") == 0){
 
       // １．前処理：
         // 1.1.書式チェック
-      if ( dat_cnt != 1 )
-      { ResCmdErr(sp, dat[0]); return; }
+      if (dat_cnt != 1){ResChkErr(sp); return; }
 
       // ２．バージョン(文字列)を返す
       sp.print(ctx.version);
       //MMP_SERIAL(ctx).print(ctx.version);
     }
+
+  //━━━━━━━━━━━━━━━━━
+  // コマンド名エラー
+  //━━━━━━━━━━━━━━━━━
+  ResNotCmd(sp);
+  return;
   }
 };

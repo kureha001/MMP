@@ -2,10 +2,16 @@
 //========================================================
 // 各モジュールの共通機能・抽象基底クラス
 //-------------------------------------------------------- 
-// 変更履歴: Ver 0.4.01 (2025/10/07)
-// - 関連ファイルを統合
+// 変更履歴: Ver0.5.00 (2025/10/13)
+// - クライアントからのリクエスト条件をperse.hより移管
+// - コマンド応答ヘルパーを一新
 //========================================================
 #pragma once
+
+// クライアントからのリクエスト条件
+#define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
+#define DAT_COUNT       10  // コマンド＋引数の個数
+#define DAT_LENGTH      20  // 上記1個あたりの上限バイト数
 
 //─────────────────
 // モジュール別のRGB-LED点灯色
@@ -50,8 +56,8 @@ public:
   virtual ~ModuleBase() {}
 
   // 抽象基底クラス(モジュール インターフェース)
-  virtual bool owns(const char* cmd) const          = 0;  // コマンド在籍確認
-  virtual void handle(char dat[][10], int dat_cnt)  = 0;  // コマンド・パーサー
+  virtual bool owns(const char* cmd) const                    = 0;  // コマンド在籍確認
+  virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt)  = 0;  // コマンド・パーサー
 };
 
 
@@ -104,14 +110,58 @@ public:
     snprintf(buf, sizeof(buf), "%04X!", (uint16_t)v);
     sp.print(buf);
   }
-  // ───────────────────────
-  // コマンドエラー "<CMD>!!"
-  // ───────────────────────
-  inline void ResCmdErr(Stream& sp, const char* cmd3){
-    char err[6]; //終端NUL(\0)が必要なので 5 + 1 = 6
-    strncpy(err, cmd3, 3);  // コマンド名
-    err[3]='!';
-    err[4]='!';
-    err[5]='\0';
-    sp.print(err);
+
+  const char* remove1stToken(const char* s) {
+      if (!s) return s;
+      while (*s==' ' || *s=='\t') ++s;        // 先頭の空白を無視（任意）
+      const char* slash = strchr(s, '/');
+      if (slash && slash > s) return slash + 1; // 先頭カテゴリ＋'/'があれば、その直後
+      return s;                                 // なければそのまま
+  }
+
+  const char* getCommand(const char* s) {
+      if (!s) return s;
+      while (*s==' ' || *s=='\t') ++s;        // 先頭の空白を無視（任意）
+      const char* slash = strchr(s, '/');
+      if (slash && slash > s) return slash + 1; // 先頭カテゴリ＋'/'があれば、その直後
+      return s;                                 // なければそのまま
+  }
+  
+//━━━━━━━━━━━━━━━━━
+// コマンド応答
+//━━━━━━━━━━━━━━━━━
+  // ───────────────
+  // 正常終了
+  // ───────────────
+  inline void ResOK(Stream& sp){
+    char resp[6] = "!!!!!";
+    sp.print(resp);
+  }
+  // ───────────────
+  // コマンド名違反
+  // ───────────────
+  inline void ResNotCmd(Stream& sp){
+    char resp[6] = "#CMD!";
+    sp.print(resp);
+  }
+  // ───────────────
+  // チェック違反
+  // ───────────────
+  inline void ResChkErr(Stream& sp){
+    char resp[6] = "#CHK!";
+    sp.print(resp);
+  }
+  // ───────────────
+  // 初期化違反
+  // ───────────────
+  inline void ResChkIniErr(Stream& sp){
+    char resp[6] = "#INI!";
+    sp.print(resp);
+  }
+  // ───────────────
+  // デバイス違反
+  // ───────────────
+  inline void ResDevErr(Stream& sp){
+    char resp[6] = "#DEV!";
+    sp.print(resp);
   }

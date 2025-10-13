@@ -2,6 +2,7 @@
 # filename : mmp_core_INF.py
 #============================================================
 # ＭＭＰコマンド：システム情報
+# バージョン：0.4
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -21,7 +22,7 @@ class _InfoModule:
     #----------------------
     def Version(self, timeoutMs: int = 0) -> str:
         t = _resolve(timeoutMs, self._p.Settings.TimeoutGeneral)
-        return self._p._send_command("VER!", t)
+        return self._p._send_command("INF/VER!", t)
 
     #----------------------
     # ２．デバイス情報

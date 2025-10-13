@@ -2,6 +2,7 @@
 # filename : mmp_core.py
 #============================================================
 # ＭＭＰコマンド
+# バージョン：0.4
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -26,25 +27,23 @@ class Settings:
         self.TimeoutI2c     = 400
         self.AnalogBits     = 10
 
-from mmp_core_INF import _InfoModule
-from mmp_core_ANA import _AnalogModule
-from mmp_core_DIG import _DigitalModule
-from mmp_core_PWM import _PwmModule
-from mmp_core_I2C import _I2cModule
-from mmp_core_MP3 import _AudioModule
+from mmp_core_COM import _resolve, _try_parse_hex4_bang
 
-from mmp_core_COM import _resolve, _try_parse_hex4_bang, _hex1, _hex2, _hex3, _hex4
+# 対応バージョン
+VER_MAJOR = 0   # ベータ
+VER_MINOR = 4   # 従来コマンド
 
 class MmpClient:
 
-    # --- Backward-compatibility aliases for split modules ---
-    # 旧来コードの client._InfoModule / MmpClient._InfoModule 参照に対応
-    from mmp_core_INF import _InfoModule    as _InfoModule
-    from mmp_core_ANA import _AnalogModule  as _AnalogModule
-    from mmp_core_DIG import _DigitalModule as _DigitalModule
-    from mmp_core_PWM import _PwmModule     as _PwmModule
-    from mmp_core_I2C import _I2cModule     as _I2cModule
-    from mmp_core_MP3 import _AudioModule   as _AudioModule
+    #========================
+    # 使用モジュール
+    #========================
+    from mmp_core_INF import _InfoModule
+    from mmp_core_ANA import _AnalogModule
+    from mmp_core_DIG import _DigitalModule
+    from mmp_core_PWM import _PwmModule
+    from mmp_core_I2C import _I2cModule
+    from mmp_core_MP3 import _AudioModule
 
     #========================
     # コンストラクタ
@@ -176,12 +175,19 @@ class MmpClient:
     def _verify(self,
         timeout_ms: int     # ① タイムアウト(単位：ミリ秒)
     ) -> bool:              # 戻り値：True=成功／False=失敗
-        # ＭＭＰからバージョンを取得し、実行ステータスを返す。
-        # 通信速度切替で不安定になるので、最初にダミーのコマンドを送信してから
-        # バージョンコマンドを送信する。
-        resp = self._send_command("!"   , _resolve(timeout_ms, self.Settings.TimeoutVerify))
-        resp = self._send_command("VER!", _resolve(timeout_ms, self.Settings.TimeoutVerify))
-        return len(resp) == 5 and resp.endswith('!')
+        # 通信速度切替で不安定になるので、最初にダミーのコマンドを送信
+        resp   = self._send_command("!"   , _resolve(timeout_ms, self.Settings.TimeoutVerify))
+
+        # バージョンを取得
+        resp   = self._send_command("VER!", _resolve(timeout_ms, self.Settings.TimeoutVerify))
+
+        # レスポンスをチェック
+        if len(resp)    != 5         : return
+        if not resp.endswith('!')    : return
+        if int(resp[0]) != VER_MAJOR : return
+        if int(resp[1]) != VER_MINOR : return
+
+        return True
 
     #-------------------
     # ＭＭＰシリアル通信

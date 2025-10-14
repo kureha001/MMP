@@ -2,62 +2,72 @@
 # filename : mmp_core_PWM.py
 #============================================================
 # ＭＭＰコマンド：ＰＷＭ出力
-# バージョン：0.4
+# バージョン：0.5
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_core_COM import (
-    _resolve, _hex1, _hex2, _hex3, _hex4, _try_parse_hex4_bang,
-    enc_ch_end, enc_opt_u16, enc_deg3, enc_pwm4
-)
+from mmp_com import _DECtoHEX2, _HEX4toDEC
 
-class _PwmModule:
-    #----------------------
-    # コンストラクタ
-    #----------------------
-    def __init__(self, p:'MmpClient'):
-        self._p       = p
-        self.Angle    = self._AngleModule(p)
-        self.Rotation = self._RotationModule(p)
+class _Pwm:
+#━━━━━━━━━━━━━━━
+# コンストラクタ
+#━━━━━━━━━━━━━━━
+    def __init__(self, p:'MmpClient', argTimeOut):
+        self._p         = p
+        self.TimeOut    = argTimeOut
+        self.Info       = self._Info    (p, self.TimeOut)
+        self.Angle      = self._Angle   (p, self.TimeOut)
+        self.Rotation   = self._Rotation(p, self.TimeOut)
 
-    #----------------------
-    # ０．基本
-    #----------------------
-    #----------------------
-    # ① ＰＷＭ値出力
-    #----------------------
+#━━━━━━━━━━━━━━━
+# コマンド
+#━━━━━━━━━━━━━━━
+
+    #─────────────
+    # ＰＷＭ値出力
+    #─────────────
     def Out( self           ,
         chId      :int      , # チャンネルID
         pwmVal    :int      , # ＰＷＭ値
-        timeoutMs :int = 0
     ) -> bool:
-        timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-        cmd     = f"PWM:{int(chId):02X}:{int(pwmVal):04X}!"
-        resp    = self._p._send_command(cmd, timeOut)
+        cmd     = "PWM/OUTPUT"
+        cmd     = f"{cmd}:{int(chId):02X}:{int(pwmVal):04X}!"
+        resp    = self._p._send_command(cmd, self.TimeOut)
         return resp == "!!!!!"
-    #----------------------
-    # ②デバイス情報
-    #----------------------
-    def Info(self           ,
-        devId     :int      , # デバイスID
-        timeoutMs :int = 0  ,
-    ) -> int:
-        timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-        resp    = self._p._send_command(f"PWX:{int(devId):02X}!", timeOut)
-        ok, v   = _try_parse_hex4_bang(resp)
-        return v if ok else -1
 
-    #----------------------
-    # １．角度
-    #----------------------
-    class _AngleModule:
-        def __init__(self, p): self._p = p
-        #----------------------
-        # ① 初期化（PAI）
-        #----------------------
+    #─────────────
+    # サブ：インフォメーション
+    #─────────────
+    class _Info:
+
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
+
+        #─────────────
+        # 接続状況
+        #─────────────
+        def Connect(self) -> int:
+            cmd     = "PWM/INFO/CONNECT"
+            resp    = self._p._send_command(f"{cmd}!", self.TimeOut)
+            ok, v   = _HEX4toDEC(resp)
+            return v if ok else -1
+
+    #─────────────
+    # サブ：角度指定
+    #─────────────
+    class _Angle:
+
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
+
+        #─────────────
+        # 初期化
+        #─────────────
         def Init(self               ,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
@@ -67,111 +77,131 @@ class _PwmModule:
             pwmMiddle   :int = -1   , # ＰＷＭ値(中間) ※-1：自動
             *,timeoutMs :int = 0    ,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = (
-                f"PAI:{_hex2(int(chIDfrom))}:{enc_ch_end(chIDto)}:"
-                f"{enc_deg3(degTo)}:"
-                f"{enc_pwm4(pwmFrom)}:{enc_pwm4(pwmTo)}:{enc_opt_u16(pwmMiddle)}!"
+            cmd = "PWM/ANGLE/SETUP"
+            cmd = (
+                f"{cmd}:{_DECtoHEX2(int(chIDfrom))}:{_CHtoHEX2(chIDto)}:"
+                f"{_DEGtoHEX3(degTo)}:"
+                f"{_PWMtoHEX4(pwmFrom)}:{_PWMtoHEX4(pwmTo)}:{_PWMtoHEX4U(pwmMiddle)}!"
             )
-            resp    = self._p._send_command(cmd, timeOut)
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ② 設定削除（PAD）
-        #----------------------
+        #─────────────
+        # 設定削除
+        #─────────────
         def Delete(self             ,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
-            *,timeoutMs :int = 0    ,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PAD:{_hex2(int(chIDfrom))}:{enc_ch_end(chIDto)}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ANGLE/DELETE"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chIDfrom))}:{_CHtoHEX2(chIDto)}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ③ 出力（PAO）
-        #----------------------
+        #─────────────
+        # ＰＷＭ出力：通常
+        #─────────────
         def Out(self            ,
             chId        :int    , # チャンネルID
             angle       :int    , # 角度（0～degTo）
-            *,timeoutMs :int = 0,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PAO:{_hex2(int(chId))}:{enc_deg3(angle)}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ANGLE/OUTPUT"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chId))}:{_DEGtoHEX3(angle)}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ④ 中心に移動（PAN）
-        #----------------------
+        #─────────────
+        # ＰＷＭ出力：中間
+        #─────────────
         def Center(self         ,
             chId        :int    , # チャンネルID
-            *,timeoutMs :int = 0,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PAN:{_hex2(int(chId))}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ANGLE/CENTER"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chId))}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-    #----------------------
-    # ２．ローテーション
-    #----------------------
-    class _RotationModule:
-        def __init__(self, p): self._p = p
-        #----------------------
-        # ① 初期化（PRI）
-        #----------------------
+    #─────────────
+    # サブ：回転型サーボ
+    #─────────────
+    class _Rotation:
+
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
+
+        #─────────────
+        # プリセット登録
+        #─────────────
         def Init(self               ,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
             pwmLow      :int = 300  , # ＰＷＭ値(左周り最大)
             pwmHigh     :int = 600  , # ＰＷＭ値(右周り最大)
             pwmMiddle   :int = -1   , # ＰＷＭ値(停止) ※-1：自動
-            *,timeoutMs :int = 0    ,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
+            cmd     = "PWM/ROTATE/SETUP"
             cmd     = (
-                f"PRI:{_hex2(int(chIDfrom))}:{enc_ch_end(chIDto)}:"
-                f"{enc_pwm4(pwmLow)}:{enc_pwm4(pwmHigh)}:{enc_opt_u16(pwmMiddle)}!"
+                f"{cmd}:{_DECtoHEX2(int(chIDfrom))}:{_CHtoHEX2(chIDto)}:"
+                f"{_PWMtoHEX4(pwmLow)}:{_PWMtoHEX4(pwmHigh)}:{_PWMtoHEX4U(pwmMiddle)}!"
             )
-            resp = self._p._send_command(cmd, timeOut)
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ② 設定削除（PRD）
-        #----------------------
+        #─────────────
+        # プリセット削除
+        #─────────────
         def Delete(self             ,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
-            *,timeoutMs :int = 0    ,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PRD:{_hex2(int(chIDfrom))}:{enc_ch_end(chIDto)}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ROTATE/DELETE"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chIDfrom))}:{_CHtoHEX2(chIDto)}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ③ 出力（PRO）
-        #----------------------
+        #─────────────
+        # ＰＷＭ出力：通常
+        #─────────────
         def Out(self            ,
             chId        :int    , # チャンネルID
             rate        :int    , # 速度（-100～+100）
-            *,timeoutMs :int = 0,
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PRO:{_hex2(int(chId))}:{_hex2(int(rate + 100))}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ROTATE/OUTPUT"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chId))}:{_DECtoHEX2(int(rate + 100))}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
 
-        #----------------------
-        # ④ 停止
-        #----------------------
-        def Stop(self               ,
-            chId        :int        , # チャンネルID
-            *,timeoutMs :int = 0    ,
+        #─────────────
+        # ＰＷＭ出力：停止
+        #─────────────
+        def Stop(self           ,
+            chId        :int    , # チャンネルID
         ) -> bool:
-            timeOut = _resolve(timeoutMs, self._p.Settings.TimeoutPwm)
-            cmd     = f"PRN:{_hex2(int(chId))}!"
-            resp    = self._p._send_command(cmd, timeOut)
+            cmd     = "PWM/ROTATE/STOP"
+            cmd     = f"{cmd}:{_DECtoHEX2(int(chId))}!"
+            resp    = self._p._send_command(cmd, self.TimeOut)
             return resp == "!!!!!"
+
+#━━━━━━━━━━━━━━━
+# 内部ヘルパ
+#━━━━━━━━━━━━━━━
+def _DEGtoHEX3(deg: int) -> str:
+    try             : v = int(deg)
+    except Exception: v = 0
+    return f"{v & 0xFFF:03X}"
+
+def _PWMtoHEX4(pwm: int) -> str:
+    try             : v = int(pwm)
+    except Exception: v = 0
+    return f"{v & 0xFFFF:04X}"
+
+def _PWMtoHEX4U(val: int) -> str:
+    try             : v = int(val)
+    except Exception: return "FFFF"
+    return "FFFF" if v == -1 else f"{v & 0xFFFF:04X}"
+
+def _CHtoHEX2(toCh: int) -> str:
+    try             : v = int(toCh)
+    except Exception: return "FF"
+    return "FF" if v == -1 else f"{v & 0xFF:02X}"

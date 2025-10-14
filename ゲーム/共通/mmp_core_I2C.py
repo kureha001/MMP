@@ -9,28 +9,40 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_core_COM import _resolve, _hex2, _try_parse_hex4_bang
+from mmp_com import _DECtoHEX2, _HEX4toDEC
 
-class _I2cModule:
-    #----------------------
-    # コンストラクタ
-    #----------------------
-    def __init__(self, p:'MmpClient'): self._p = p
+class _I2C:
+#━━━━━━━━━━━━━━━
+# コンストラクタ
+#━━━━━━━━━━━━━━━
+    def __init__(self, p:'MmpClient', argTimeOut):
+        self._p         = p
+        self.TimeOut    = argTimeOut
 
-    #----------------------
-    # １．書き込み
-    #----------------------
-    def Write(self, addr:int, reg:int, val:int, timeoutMs:int=0) -> bool:
-        t = _resolve(timeoutMs, self._p.Settings.TimeoutI2c)
-        resp = self._p._send_command(f"I2W:{_hex2(addr)}:{_hex2(reg)}:{_hex2(val)}!", t)
+#━━━━━━━━━━━━━━━
+# コマンド
+#━━━━━━━━━━━━━━━
+    #─────────────
+    # 書き込み
+    #─────────────
+    def Write(self,
+        addr:int,   # アドレス
+        reg :int,   # レジスタ
+        val :int,   # 値
+    ) -> bool:
+        cmd     = "I2C/WRITE"
+        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}:{_DECtoHEX2(val)}!", self.TimeOut)
         return resp == "!!!!!"
 
-    #----------------------
-    # ２．読み出し
-    #----------------------
-    def Read(self, addr:int, reg:int, timeoutMs:int=0) -> int:
-        t = _resolve(timeoutMs, self._p.Settings.TimeoutI2c)
-        resp = self._p._send_command(f"I2R:{_hex2(addr)}:{_hex2(reg)}!", t)
-        ok, v = _try_parse_hex4_bang(resp); 
+    #─────────────
+    # 読み出し
+    #─────────────
+    def Read(self,
+        addr:int,   # アドレス
+        reg :int,   # レジスタ
+    ) -> int:
+        cmd     = "I2C/READ"
+        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}!", self.TimeOut)
+        ok, v   = _HEX4toDEC(resp); 
         return v if ok else 0
 

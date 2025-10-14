@@ -9,138 +9,176 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_core_COM import _resolve, _hex1, _hex2, _try_parse_hex4_bang
+from mmp_com import _DECtoHEX1, _DECtoHEX2, _HEX4toDEC
 
-class _AudioModule:
-    #----------------------
-    # コンストラクタ
-    #----------------------
-    def __init__(self, p:'MmpClient'):
-        self._p = p
-        self.Play = self._PlayModule(p)
-        self.Read = self._ReadModule(p)
+class _MP3:
+#━━━━━━━━━━━━━━━
+# コンストラクタ
+#━━━━━━━━━━━━━━━
+    def __init__(self, p:'MmpClient', argTimeOut):
+        self._p         = p
+        self.TimeOut    = argTimeOut
+        self.Info       = self._Info (p, self.TimeOut)
+        self.Set        = self._Set  (p, self.TimeOut)
+        self.Track      = self._Track(p, self.TimeOut)
 
-    #----------------------
-    # １. 単独コマンド
-    #----------------------
-    # 1-1. デバイス情報
-    #----------------------
-    def Info(self, devId1to4:int, timeoutMs:int=0) -> int:
-        return self._p.Info.Dev.Audio(devId1to4, timeoutMs)
-
-    #----------------------
-    # 1-2. 音量設定
-    #----------------------
-    def Volume(self, devId1to4:int, vol0to30:int, timeoutMs:int=0) -> bool:
-        t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-        resp = self._p._send_command(f"VOL:{_hex2(devId1to4)}:{_hex2(vol0to30)}!", t) 
-        return resp == "!!!!!"
-
-    #----------------------
-    # 1-3.イコライザ設定
-    #----------------------
-    def SetEq(self, devId1to4:int, mode0to5:int, timeoutMs:int=0) -> bool:
-        t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-        resp = self._p._send_command(f"DEF:{_hex2(devId1to4)}:{_hex2(mode0to5)}!", t) 
-        return resp == "!!!!!"
-
-    #----------------------
-    # ２. 再生サブモジュール
-    #----------------------
-    class _PlayModule:
-        #----------------------
+#━━━━━━━━━━━━━━━
+# コマンド
+#━━━━━━━━━━━━━━━
+    #─────────────
+    # サブ：デバイス設定
+    #─────────────
+    class _Set:
+        #─────────────
         # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
+        #─────────────
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
 
-        #----------------------
-        # 2-1. 再生（Start）
-        #----------------------
-        def Start(self, devId1to4:int, dir1to255:int, file1to255:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DIR:{_hex2(devId1to4)}:{_hex2(dir1to255)}:{_hex2(file1to255)}!", t)
-            return resp == "!!!!!"
+        #─────────────
+        # 音量
+        #─────────────
+        def Volume(self,
+            dev     :int,   # ① デバイスID
+            volume  :int,   # ② 音量
+        ) -> bool:
+            cmd = "MP3/SET/VOLUME"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(volume)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            return res == "!!!!!"
 
-        #----------------------
-        # 2-2. ループ再生指定
-        #----------------------
-        def SetLoop(self, devId1to4:int, enable:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DLP:{_hex2(devId1to4)}:{_hex1(1 if enable else 0)}!", t)
-            return resp == "!!!!!"
+        #─────────────
+        # イコライザ
+        #─────────────
+        def EQ(self,
+            dev     :int,   # ① デバイスID
+            mode    :int,   # ② モード
+        ) -> bool:
+            cmd = "MP3/SET/EQ"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(mode)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            return res == "!!!!!"
 
-        #----------------------
-        # 2-3. 停止
-        #----------------------
-        def Stop(self, devId1to4:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DSP:{_hex2(devId1to4)}!", t)
-            return resp == "!!!!!"
-
-        #----------------------
-        # 2-4. 一時停止
-        #----------------------
-        def Pause(self, devId1to4:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DPA:{_hex2(devId1to4)}!", t)
-            return resp == "!!!!!"
-
-        #----------------------
-        # 2-5. 再開
-        #----------------------
-        def Resume(self, devId1to4:int, timeoutMs:int=0) -> bool:
-            t = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp = self._p._send_command(f"DPR:{_hex2(devId1to4)}!", t)
-            return resp == "!!!!!"
-
-    #----------------------
-    # ３. 参照サブモジュール
-    #----------------------
-    class _ReadModule:
-        #----------------------
+    #─────────────
+    # サブ：トラック
+    #─────────────
+    class _Track:
+        #─────────────
         # コンストラクタ
-        #----------------------
-        def __init__(self, p:'MmpClient'): self._p = p
+        #─────────────
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
 
-        #----------------------
-        # 3-1. 再生状況
-        #----------------------
-        def State(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._dst_query(devId1to4, 1, timeoutMs)
+        #─────────────
+        # トラック再生
+        #─────────────
+        def Play(self,
+            dev     :int,   # ① デバイスID
+            dir     :int,   # ② フォルダID
+            file    :int,   # ③ ファイルID(フォルダ内)
+        ) -> int:
+            cmd = "MP3/TRACK/PLAY"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(dir)}:{_DECtoHEX2(file)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _HEX4toDEC(res); 
+            return (v) if ok else (-1)
 
-        #----------------------
-        # 3-2. 音量
-        #----------------------
-        def Volume(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._dst_query(devId1to4, 2, timeoutMs)
+        #─────────────
+        # ループ再生有無
+        #─────────────
+        def Loop(self,
+            dev     :int,   # ① デバイスID
+            enable  :int,   # ② ループ再生有無
+        ) -> int:
+            cmd = "MP3/TRACK/LOOP"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX1(1 if enable else 0)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _HEX4toDEC(res); 
+            return (v) if ok else (-1)
 
-        #----------------------
-        # 3-3. イコライザのモード
-        #----------------------
-        def Eq(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._dst_query(devId1to4, 3, timeoutMs)
+        #─────────────
+        # 停止
+        #─────────────
+        def Stop(self,
+            dev :int,   # ① デバイスID
+        ) -> int:
+            cmd = "MP3/TRACK/STOP"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v   = _HEX4toDEC(res); 
+            return (v) if ok else (-1)
 
-        #----------------------
-        # 3-4. 総ファイル総数
-        #----------------------
-        def FileCounts(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._dst_query(devId1to4, 4, timeoutMs)
+        #─────────────
+        # 一時停止
+        #─────────────
+        def Pause(self,
+            dev :int,   # ① デバイスID
+        ) -> int:
+            cmd = "MP3/TRACK/PAUSE"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _HEX4toDEC(res); 
+            return (v) if ok else (-1)
 
-        #----------------------
-        # 3-5. 現在のファイル番号
-        #----------------------
-        def FileNumber(self, devId1to4:int, timeoutMs:int=0) -> int:
-            return self._dst_query(devId1to4, 5, timeoutMs)
+        #─────────────
+        # 開始
+        #─────────────
+        def Start(self,
+            dev :int,   # ① デバイスID
+        ) -> int:
+            cmd = "MP3/TRACK/START"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _HEX4toDEC(res); 
+            return (v) if ok else (-1)
 
-        #----------------------
-        # 内部ヘルパ
-        #----------------------
-        def _dst_query(self,
-            devId1to4:int   ,   # ① デバイスID
-            kind:int        ,   # ② 種類ID(１～５)
-            timeoutMs:int   ,   # ③ タイムアウト(単位：ミリ秒)
-        ) -> int:               # 戻り値：ＭＭＰコマンドの戻り値
-            t     = _resolve(timeoutMs, self._p.Settings.TimeoutAudio)
-            resp  = self._p._send_command(f"DST:{_hex2(devId1to4)}:{_hex2(kind)}!", t)
-            ok, v = _try_parse_hex4_bang(resp); 
+    #─────────────
+    # サブ：インフォメーション
+    #─────────────
+    class _Info:
+        #─────────────
+        # コンストラクタ
+        #─────────────
+        def __init__(self, p, argTimeOut):
+            self._p = p
+            self.TimeOut = argTimeOut
+
+        #─────────────
+        # デバイス接続状況
+        #─────────────
+        def Connect(self, deb:int) -> int:
+            cmd = "MP3/INFO/CONNECT"
+            cmd = f"{cmd}:{_DECtoHEX2(deb)}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _HEX4toDEC(res); 
+            return v if ok else -1
+
+        #─────────────
+        # 再生状況
+        # 音量
+        # イコライザ
+        # 現在のファイル番号
+        # 総ファイル総数
+        #─────────────
+        def Track (self, dev:int) -> int: return self._Info(dev, "TRACK" )
+        def Volume(self, dev:int) -> int: return self._Info(dev, "VOLUME")
+        def EQ    (self, dev:int) -> int: return self._Info(dev, "EQ"    )
+        def FileID(self, dev:int) -> int: return self._Info(dev, "FILEID")
+        def Files (self, dev:int) -> int: return self._Info(dev, "FILES" )
+
+    #━━━━━━━━━━━━━━━
+    # 内部ヘルパ
+    #━━━━━━━━━━━━━━━
+        #─────────────
+        # ステータス計コマンド共通
+        #─────────────
+        def _Info(self,
+            argDev :int    ,   # ① デバイスID
+            argCmd :str    ,   # ② 種類ID(１～５)
+        ) -> int:           # 戻り値：ＭＭＰコマンドの戻り値
+            cmd = f"MP3/INFO/{argCmd}:{_DECtoHEX2(argDev)}!"
+            res = self._p._send_command(cmd, self.TimeOut)
+            ok, v = _HEX4toDEC(res); 
             return (v) if ok else (-1)

@@ -2,7 +2,7 @@
 # filename : MMP.py
 #=================================================================
 # Python共通：アプリ接続
-# バージョン：0.4
+# バージョン：0.5
 #-----------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -144,8 +144,8 @@ def 通信接続(conn="auto"):
             print(f"　・通信ポート　: {接続.ConnectedPort}")
             print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
             print( "　・バージョン  : {}".format(接続.Info.Version()))
-            print( "　・PCA9685 [0] : 0x{:04X}".format(接続.Info.Dev.Pwm(0)))
-            print( "　・DFPlayer[1] : 0x{:04X}".format(接続.Info.Dev.Audio(1)))
+            print( "　・PCA9685 [0] : 0x{:04X}".format(接続.PWM.Info.Connect()))
+            print( "　・DFPlayer[1] : 0x{:04X}".format(接続.MP3.Info.Connect(1)))
             return True
 
         else:

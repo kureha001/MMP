@@ -7,20 +7,20 @@
 ## 2. 役割と責務
 | ファイル | 役割 |
 |-----------|------|
-| **mmp_core.py** | Facade（入口）。公開APIは現状維持。内部は各モジュールへ委譲。 |
-| **mmp_core_INF.py** | `class _InfoModule` |
-| **mmp_core_ANA.py** | `class _AnalogModule` |
-| **mmp_core_DIG.py** | `class _DigitalModule` |
-| **mmp_core_PWM.py** | `class _PwmModule` |
-| **mmp_core_I2C.py** | `class _I2cModule` |
-| **mmp_core_MP3.py** | `class _AudioModule` |
-| **mmp_core_COM.py** | 共通ヘルパ一元化（送受信・応答判定・HEX整形・タイムアウト・クリア） |
+| **mmp_core.py** | Facade(入口)。<br>内部は各モジュールへ委譲。 |
+| **mmp_core_INF.py** | `class _Info` |
+| **mmp_core_ANA.py** | `class _Analog` |
+| **mmp_core_DIG.py** | `class _Digital` |
+| **mmp_core_PWM.py** | `class _PWM` |
+| **mmp_core_I2C.py** | `class _I2C` |
+| **mmp_core_MP3.py** | `class _MP3` |
+| **mmp_com.py**       | 共通ヘルパ一|
 
 ## 3. 依存関係の原則
 ```
 mmp_core.py（Facade）
    └─ import → mmp_core_*.py（各モジュール）
-             └─ import → mmp_core_COM.py（共通ヘルパ）
+             └─ import → mmp_com.py（共通ヘルパ）
 ```
 - 逆方向の参照は禁止（COMや各モジュールからFacadeを参照しない）
 - import時の副作用なし（接続などは明示メソッドのみ）

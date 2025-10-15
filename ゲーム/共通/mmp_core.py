@@ -64,12 +64,12 @@ class MmpClient:
         self.Settings   = Settings()
 
         # 機能モジュールを実装する
-        self.Info       = self._Info   (self, self.Settings.TimeoutGeneral)
-        self.Analog     = self._Analog (self, self.Settings.TimeoutAnalog )
-        self.Digital    = self._Digital(self, self.Settings.TimeoutDigital)
-        self.PWM        = self._Pwm    (self, self.Settings.TimeoutPWM    )
-        self.I2C        = self._I2C    (self, self.Settings.TimeoutI2C    )
-        self.MP3        = self._MP3    (self, self.Settings.TimeoutMP3    )
+        self.INFO    = self._Info   (self, self.Settings.TimeoutGeneral)
+        self.ANALOG  = self._Analog (self, self.Settings.TimeoutAnalog )
+        self.DIGITAL = self._Digital(self, self.Settings.TimeoutDigital)
+        self.PWM     = self._Pwm    (self, self.Settings.TimeoutPWM    )
+        self.I2C     = self._I2C    (self, self.Settings.TimeoutI2C    )
+        self.MP3     = self._MP3    (self, self.Settings.TimeoutMP3    )
 
     #━━━━━━━━━━━━━━━
     # プロパティ

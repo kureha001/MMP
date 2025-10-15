@@ -23,5 +23,5 @@ class _Info:
     #─────────────
     # バージョン
     #─────────────
-    def Version(self) -> str:
+    def VERSION(self) -> str:
         return self._p._send_command("INFO/VERSION!", self.TimeOut)

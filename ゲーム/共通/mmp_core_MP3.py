@@ -2,7 +2,7 @@
 # filename : mmp_core_MP3.py
 #============================================================
 # ＭＭＰコマンド：ＭＰ３プレイヤー
-# バージョン：0.4
+# バージョン：0.5
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -16,11 +16,11 @@ class _MP3:
 # コンストラクタ
 #━━━━━━━━━━━━━━━
     def __init__(self, p:'MmpClient', argTimeOut):
-        self._p         = p
-        self.TimeOut    = argTimeOut
-        self.Info       = self._Info (p, self.TimeOut)
-        self.Set        = self._Set  (p, self.TimeOut)
-        self.Track      = self._Track(p, self.TimeOut)
+        self._p      = p
+        self.TimeOut = argTimeOut
+        self.INFO    = self._Info (p, self.TimeOut)
+        self.SET     = self._Set  (p, self.TimeOut)
+        self.TRACK   = self._Track(p, self.TimeOut)
 
 #━━━━━━━━━━━━━━━
 # コマンド
@@ -39,7 +39,7 @@ class _MP3:
         #─────────────
         # 音量
         #─────────────
-        def Volume(self,
+        def VOLUME(self,
             dev     :int,   # ① デバイスID
             volume  :int,   # ② 音量
         ) -> bool:
@@ -74,7 +74,7 @@ class _MP3:
         #─────────────
         # トラック再生
         #─────────────
-        def Play(self,
+        def PLAY(self,
             dev     :int,   # ① デバイスID
             dir     :int,   # ② フォルダID
             file    :int,   # ③ ファイルID(フォルダ内)
@@ -88,7 +88,7 @@ class _MP3:
         #─────────────
         # ループ再生有無
         #─────────────
-        def Loop(self,
+        def LOOP(self,
             dev     :int,   # ① デバイスID
             enable  :int,   # ② ループ再生有無
         ) -> int:
@@ -101,19 +101,19 @@ class _MP3:
         #─────────────
         # 停止
         #─────────────
-        def Stop(self,
+        def STOP(self,
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/STOP"
             cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v   = _HEX4toDEC(res); 
+            ok, v = _HEX4toDEC(res); 
             return (v) if ok else (-1)
 
         #─────────────
         # 一時停止
         #─────────────
-        def Pause(self,
+        def PAUSE(self,
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/PAUSE"
@@ -125,7 +125,7 @@ class _MP3:
         #─────────────
         # 開始
         #─────────────
-        def Start(self,
+        def START(self,
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/START"
@@ -148,7 +148,7 @@ class _MP3:
         #─────────────
         # デバイス接続状況
         #─────────────
-        def Connect(self, deb:int) -> int:
+        def CONNECT(self, deb:int) -> int:
             cmd = "MP3/INFO/CONNECT"
             cmd = f"{cmd}:{_DECtoHEX2(deb)}!"
             res = self._p._send_command(cmd, self.TimeOut) 
@@ -162,11 +162,11 @@ class _MP3:
         # 現在のファイル番号
         # 総ファイル総数
         #─────────────
-        def Track (self, dev:int) -> int: return self._Info(dev, "TRACK" )
-        def Volume(self, dev:int) -> int: return self._Info(dev, "VOLUME")
+        def TRACK (self, dev:int) -> int: return self._Info(dev, "TRACK" )
+        def VOLUME(self, dev:int) -> int: return self._Info(dev, "VOLUME")
         def EQ    (self, dev:int) -> int: return self._Info(dev, "EQ"    )
-        def FileID(self, dev:int) -> int: return self._Info(dev, "FILEID")
-        def Files (self, dev:int) -> int: return self._Info(dev, "FILES" )
+        def FILEID(self, dev:int) -> int: return self._Info(dev, "FILEID")
+        def FILES (self, dev:int) -> int: return self._Info(dev, "FILES" )
 
     #━━━━━━━━━━━━━━━
     # 内部ヘルパ

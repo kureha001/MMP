@@ -2,7 +2,7 @@
 # filename : mmp_core_I2C.py
 #============================================================
 # ＭＭＰコマンド：Ｉ２Ｃ通信
-# バージョン：0.4
+# バージョン：0.5
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -25,24 +25,30 @@ class _I2C:
     #─────────────
     # 書き込み
     #─────────────
-    def Write(self,
+    def WRITE(self,
         addr:int,   # アドレス
         reg :int,   # レジスタ
         val :int,   # 値
     ) -> bool:
-        cmd     = "I2C/WRITE"
-        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}:{_DECtoHEX2(val)}!", self.TimeOut)
-        return resp == "!!!!!"
+        cmd = "I2C/WRITE"
+        res = self._p._send_command(
+            f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}:{_DECtoHEX2(val)}!",
+            self.TimeOut
+            )
+        return res == "!!!!!"
 
     #─────────────
     # 読み出し
     #─────────────
-    def Read(self,
+    def READ(self,
         addr:int,   # アドレス
         reg :int,   # レジスタ
     ) -> int:
-        cmd     = "I2C/READ"
-        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}!", self.TimeOut)
-        ok, v   = _HEX4toDEC(resp); 
+        cmd = "I2C/READ"
+        res = self._p._send_command(
+            f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}!",
+            self.TimeOut
+            )
+        ok, v = _HEX4toDEC(res); 
         return v if ok else 0
 

@@ -25,17 +25,17 @@ class _Digital:
     #─────────────
     # 信号入力
     #─────────────
-    def In(self, gpioId:int) -> int:
-        cmd     = "DIGITAL/INPUT"
-        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpioId)}!", self.TimeOut)
-        ok, v   = _HEX4toDEC(resp); 
+    def INPUT(self, gpioId:int) -> int:
+        cmd = "DIGITAL/INPUT"
+        res = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpioId)}!", self.TimeOut)
+        ok, v = _HEX4toDEC(res); 
         return v if ok else 0
 
     #─────────────
     # 信号出力
     #─────────────
-    def Out(self, gpioId:int, val0or1:int) -> bool:
-        cmd     = "DIGITAL/OUTPUT"
-        bit     = '1' if (val0or1 & 1) else '0'
-        resp    = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpioId)}:{bit}!", self.TimeOut)
-        return resp == "!!!!!"
+    def OUTPUT(self, gpioId:int, val0or1:int) -> bool:
+        cmd = "DIGITAL/OUTPUT"
+        bit = '1' if (val0or1 & 1) else '0'
+        res = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpioId)}:{bit}!", self.TimeOut)
+        return res == "!!!!!"

@@ -10,66 +10,77 @@ import time
 import MMP
 
 #============================================================
-# テスト構成
-# `USE_*` の ON/OFF で切替る
-# `USE_*` 意外は 各自の環境に合わせる
+# 接続情報
 #============================================================
 #(0) UART番号（ USB=0, UART1=1, UART2=2, ...）
-USE_UART_NO         = 0
 
 #(1) 直結：シリアル接続（プラットフォーム自動）
-USE_SERIAL_AUTO     = False
 
 #(2) TCPブリッジ：ser2net
-USE_TCP             = True
-TCP_HOST_PC         = "192.168.2.124"   # LANの場合
-#TCP_HOST_PC         = "203.141.144.142" #WANの場合
-TCP_PORT_PC         = 5331
+TCP_HOST_PC     = "192.168.2.124"   # LANの場合
+#TCP_HOST_PC     = "203.141.144.142" #WANの場合
+TCP_PORT_PC     = 5331
 
 #(3) TCPブリッジ：usb4a(Pydroid)
-USE_USB4A_DIRECT    = False
-USB4A_INDEX         = 0
+USB4A_INDEX     = 0
 
 #(4) TCP共通：read_one_char の待ち秒（?timeout=） 
-TCP_TIMEOUT_S       = 0.2   # ネットワーク品質に応じて調整
+TCP_TIMEOUT_S   = 0.2   # ネットワーク品質に応じて調整
 
 #============================================================
 # 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
 #============================================================
-def 引数取得():
+def 接続(argMode):
 
-    # 1) シリアル直結（自動）
-    if USE_SERIAL_AUTO      : return "auto"
+    文字 = None
+    if argMode == "SERIAL" : 文字 = "auto"
+    if argMode == "TCP"    : 文字 = f"tcp://{TCP_HOST_PC}:{TCP_PORT_PC}?timeout={TCP_TIMEOUT_S}"
+    if argMode == "ANDROID": 文字 = f"usb4a://{USB4A_INDEX}"
 
-    # 2) TCPブリッジ
-    if USE_TCP:
-        return f"tcp://{TCP_HOST_PC}:{TCP_PORT_PC}?timeout={TCP_TIMEOUT_S}"
-
-    # 3) usb4a (pydroid専用)
-    if USE_USB4A_DIRECT   : return f"usb4a://{USB4A_INDEX}"
-
-    # 何も選ばれていなければ既定はシリアル自動
-    return "auto"
-
+    if 文字 is None          : return None
+    if not MMP.通信接続(文字): return None
+    return argMode
 
 #============================================================
 # メイン（共通）
 #============================================================
 def main():
 
-    if not MMP.通信接続(引数取得()): return
+    状態 = None
 
-    print("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n")
-    # 実施するテストだけコメントを外してください（複数可）
-    #RunAnalog()         # アナログ入力
-    #RunDigital()        # デジタル入出力
-    #RunMp3Playlist()    # MP3プレイヤー(基本)
-    #RunMp3Control()     # MP3プレイヤー(制御)
-    RunPwm(True)        # PWM出力
-    RunPwm_Angle()      # PWM出力(角度指定)
-    RunPwm_Rotation()   # PWM出力(回転指定)
-    #RunPwm(False)       # I2C→PCA9685 直接制御
-    print("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝")
+    while True:
+        print("")
+        print("---------- ＭＭＰ ＡＰＩテスト -----------")
+        print(f"【通信方法】[S]erial  [T]cp  [A]ndroid")
+        文字 = f"READY [{状態}]" if 状態 else "-- NG --"
+        print(f"【接続状況】{文字}")
+
+        if 状態 is not None:
+            print("------------------------------------------"  )
+            print("Ｉ／Ｏ：[1]アナログ入力 [2]デジタル入出力"   )
+            print("ＭＰ３：[3]基本  [4]制御"                    )
+            print("ＰＷＭ：[5]基本  [6]角度  [7]回転"           )
+            print("Ｉ２Ｃ：[8]PCA9685を直接制御"                )
+
+        print("------------------------------------------")
+        print("[Q] 終了")
+        print("------------------------------------------")
+
+        入力 = input("> コマンドを入力：")
+        入力 = 入力.upper()
+        if   入力 == "Q": break
+        elif 入力 == "S": print("\n"); 状態 = 接続("SERIAL")
+        elif 入力 == "T": print("\n"); 状態 = 接続("TCP")
+        elif 入力 == "A": print("\n"); 状態 = 接続("ANDROID")
+        elif 入力 == "1": print("\n"); RunAnalog()
+        elif 入力 == "2": print("\n"); RunDigital()
+        elif 入力 == "3": print("\n"); RunMp3Playlist()
+        elif 入力 == "4": print("\n"); RunMp3Control()
+        elif 入力 == "5": print("\n"); RunPwm(True)
+        elif 入力 == "6": print("\n"); RunPwm_Angle()
+        elif 入力 == "7": print("\n"); RunPwm_Rotate()
+        elif 入力 == "8": print("\n"); RunPwm(False)
+        else            : print("\nエラー：入力誤り")
 
 
 #============================================================
@@ -83,15 +94,17 @@ def tf(b):
 # 1) アナログ入力(HC4067)
 #============================================================
 def RunAnalog():
-    print("１.アナログ入力（ HC4067：JoyPad1,2 ）")
 
-    ok = MMP.接続.Analog.Configure(2, 4)
+    print("１.アナログ入力（ HC4067：JoyPad1,2 ）")
+    命令 = MMP.接続.ANALOG
+
+    ok = 命令.SETUP(2, 4)
     print("　・アクセス範囲指定 → [2,4]  : {}".format(tf(ok)))
     if not ok:
         print("　 <<中断>>\n")
         return
 
-    ok = MMP.接続.Analog.Update()
+    ok = 命令.INPUT()
     print("　・アナログ値をバッファに格納 : {}".format(tf(ok)))
     if not ok:
         print("　 <<中断>>\n")
@@ -101,7 +114,12 @@ def RunAnalog():
     for x in range(0, 2):
         print("　　JoyPad[{}]".format(x + 1))
         for y in range(0, 4):
-            print("　　　← [{}] = {}".format(y, MMP.接続.Analog.Read(x, y)))
+            print("　　　[{}] = {}".format(y, 命令.READ(x, y)))
+
+    print("　・丸め処理")
+    print(f"　　　中間：{命令.ROUND (0, 0, 5, 10)}")
+    print(f"　　　切上：{命令.ROUNDU(0, 0, 5, 10)}")
+    print(f"　　　切下：{命令.ROUNDD(0, 0, 5, 10)}")
 
     print("　[終了]\n")
 
@@ -110,16 +128,19 @@ def RunAnalog():
 # 2) デジタル入出力
 #============================================================
 def RunDigital():
+
     print("２.デジタル入出力（ GPIO ）")
+    命令 = MMP.接続.DIGITAL
+
     print("　・入力")
-    print("　　←[2] = {}".format("ON" if MMP.接続.Digital.In(2) == 0 else "OFF"))
-    print("　　←[6] = {}".format("ON" if MMP.接続.Digital.In(6) == 0 else "OFF"))
-    print("　　←[7] = {}".format("ON" if MMP.接続.Digital.In(7) == 0 else "OFF"))
+    print("　　←[2] = {}".format("ON" if 命令.INPUT(2) == 0 else "OFF"))
+    print("　　←[6] = {}".format("ON" if 命令.INPUT(6) == 0 else "OFF"))
+    print("　　←[7] = {}".format("ON" if 命令.INPUT(7) == 0 else "OFF"))
 
     print("　・出力[3]")
-    for _ in range(6):
-        print("　　→ HIGH : {}".format(tf(MMP.接続.Digital.Out(3, 1)))); time.sleep(0.5)
-        print("　　→ LOW  : {}".format(tf(MMP.接続.Digital.Out(3, 0)))); time.sleep(0.5)
+    for _ in range(3):
+        print("　　→ HIGH : {}".format(tf(命令.OUTPUT(3, 1)))); time.sleep(0.5)
+        print("　　→ LOW  : {}".format(tf(命令.OUTPUT(3, 0)))); time.sleep(0.5)
     print("　[終了]\n")
 
 
@@ -127,24 +148,27 @@ def RunDigital():
 # 3) MP3：フォルダ1のトラック再生,リピート再生
 #============================================================
 def RunMp3Playlist():
+
     print("３.ＭＰ３再生（ DFPlayer ）")
+    命令0 = MMP.接続.MP3.SET
+    命令1 = MMP.接続.MP3.TRACK
 
     print("【基本】")
-    print(f"　・音量   → 20  : {MMP.接続.MP3.Set.Volume(1, 20)}")
-    print(f"　・ループ → OFF : {MMP.接続.MP3.Track.Loop(1, 0 )}")
+    print(f"　・音量   [20 ]: {命令0.VOLUME(1, 20)}")
+    print(f"　・ループ [OFF]: {命令1.LOOP  (1, 0 )}")
 
-    print("　・再生")
+    print("　・ループ再生")
     for track in range(1, 4):
-        print(f"　　　 → F=1,T={track} : {MMP.接続.MP3.Track.Play(1, 1, track)}")
+        print(f"　　　[F=1][T={track}]: {命令1.PLAY(1, 1, track)}")
         time.sleep(3.0)
-
-    print(f"　・停止　　　　 : {MMP.接続.MP3.Track.Stop(1)}")
+    print(f"　・停止　　　　　　　: {命令1.STOP(1)}")
 
     print(f"【ループ】")
-    print(f"　・再生 → F=2,T=102 : {MMP.接続.MP3.Track.Play(1, 2, 102)}")
-    print(f"　・ループ → ON　　  : {MMP.接続.MP3.Track.Loop(1, 1)}")
+    print(f"　・再生   [F=2][T=102] : {命令1.PLAY(1, 2, 102)}")
+    print(f"　・ループ [ON　　　　　: {命令1.LOOP(1, 1)}"     )
     time.sleep(10.0)
-    print(f"　・停止　　　　　　 : {MMP.接続.MP3.Track.Stop(1)}")
+    print(f"　・停止　　　　　　　　: {命令1.STOP(1)}"        )
+
     print("　[終了]\n")
 
 
@@ -152,37 +176,41 @@ def RunMp3Playlist():
 # 4) MP3 制御：状態取得/一時停止/再開/停止/EQ/音量
 #============================================================
 def RunMp3Control():
+
     print("４.ＭＰ３制御（ DFPlayer ）")
+    命令0 = MMP.接続.MP3.SET
+    命令1 = MMP.接続.MP3.TRACK
+    命令2 = MMP.接続.MP3.INFO
 
     print("【基本】")
-    print(f"　・音量 → 20     : {MMP.接続.MP3.Set.Volume(1, 20)}")
-    print(f"　・再生 → F=4,T=1: {MMP.接続.MP3.Track.Play(1, 4, 1)}")
-    print(f"　・ループ → OFF  : {MMP.接続.MP3.Track.Loop(1, 0)}")
+    print(f"　・音量 → 20     : {命令0.VOLUME(1, 20)}"   )
+    print(f"　・再生 → F=4,T=1: {命令1.PLAY(1, 4, 1)}" )
+    print(f"　・ループ → OFF  : {命令1.LOOP(1, 0)}"    )
 
     print("【インフォメーション】")
-    print(f"　　・状況　　　　: {MMP.接続.MP3.Info.Track   (1)}")
-    print(f"　　・音量　　　　: {MMP.接続.MP3.Info.Volume  (1)}")
-    print(f"　　・イコライザ　: {MMP.接続.MP3.Info.EQ      (1)}")
-    print(f"　　・現在ファイル: {MMP.接続.MP3.Info.FileID  (1)}")
-    print(f"　　・総ファイル数: {MMP.接続.MP3.Info.Files   (1)}")
+    print(f"　　・状況　　　　: {命令2.TRACK (1)}")
+    print(f"　　・音量　　　　: {命令2.VOLUME(1)}")
+    print(f"　　・イコライザ　: {命令2.EQ    (1)}")
+    print(f"　　・現在ファイル: {命令2.FILEID(1)}")
+    print(f"　　・総ファイル数: {命令2.FILES (1)}")
 
     print("【基本】")
-    print(f"　　・一時停止　　: {MMP.接続.MP3.Track.Pause(1)}")
+    print(f"　　・一時停止　　: {命令1.PAUSE(1)}")
 
     time.sleep(2.0)
-    print(f"　　・再開　　　　: {MMP.接続.MP3.Track.Start(1)}")
+    print(f"　　・再開　　　　: {命令1.START(1)}")
 
     print("【イコライザー】")
     for mode in range(0, 6):
-        print(f"　　・{mode} : {MMP.接続.MP3.Set.EQ(1, mode)}")
+        print(f"　　・{mode} : {命令0.EQ(1, mode)}")
         time.sleep(3.0)
 
     print("　・音量")
     for v in range(0, 31, 5):
-        print(f"　　・{v} : {MMP.接続.MP3.Set.Volume(1, v)}")
+        print(f"　　・{v} : {命令0.VOLUME(1, v)}")
         time.sleep(1.0)
 
-    print(f"　・停止 : {MMP.接続.MP3.Track.Stop(1)}")
+    print(f"　・停止 : {命令1.STOP(1)}")
     print("　[終了]\n")
 
 
@@ -198,8 +226,12 @@ PWM_MID = (PWM_MIN + PWM_MAX) // 2
 PAUSE_S = 0.5
 
 def RunPwm(argMode):
+
     Title = ("５.ＰＷＭ") if argMode else ("６.Ｉ２Ｃ")
     print(f"{Title}（ PCA9685：サーボモータ180度型,連続回転型 ）")
+
+    命令PWM = MMP.接続.PWM.OUTPUT
+    命令I2C = MMP.接続.I2C.WRITE
 
     STEP         = 3
     STEP_DELAY_S = 0.005
@@ -207,13 +239,13 @@ def RunPwm(argMode):
 
     def RunI2C(ch, ticks):
         base_reg  = 0x06 + 4 * ch
-        MMP.接続.I2C.Write(PCA_ADDR, base_reg + 2, (ticks     ) & 0xFF)
-        MMP.接続.I2C.Write(PCA_ADDR, base_reg + 3, (ticks >> 8) & 0x0F)
+        命令I2C(PCA_ADDR, base_reg + 2, (ticks     ) & 0xFF)
+        命令I2C(PCA_ADDR, base_reg + 3, (ticks >> 8) & 0x0F)
 
     print("　・初期位置")
     if argMode:
-        MMP.接続.PWM.Out(CH_180, PWM_MID)
-        MMP.接続.PWM.Out(CH_360, PWM_MID)
+        命令PWM(CH_180, PWM_MID)
+        命令PWM(CH_360, PWM_MID)
     else:
         RunI2C(CH_180, PWM_MID)
         RunI2C(CH_360, PWM_MID)
@@ -222,8 +254,8 @@ def RunPwm(argMode):
     print("　・正転:加速")
     for pwmVal in range(PWM_MID, PWM_MAX, STEP):
         if argMode:
-            MMP.接続.PWM.Out(CH_180, pwmVal)
-            MMP.接続.PWM.Out(CH_360, pwmVal)
+            命令PWM(CH_180, pwmVal)
+            命令PWM(CH_360, pwmVal)
         else:
             RunI2C(CH_180, pwmVal)
             RunI2C(CH_360, pwmVal)
@@ -233,8 +265,8 @@ def RunPwm(argMode):
     print("　・逆転:減速")
     for pwmVal in range(PWM_MAX, PWM_MIN, -STEP):
         if argMode:
-            MMP.接続.PWM.Out(CH_180, pwmVal)
-            MMP.接続.PWM.Out(CH_360, pwmVal)
+            命令PWM(CH_180, pwmVal)
+            命令PWM(CH_360, pwmVal)
         else:
             RunI2C(CH_180, pwmVal)
             RunI2C(CH_360, pwmVal)
@@ -243,8 +275,8 @@ def RunPwm(argMode):
 
     print("　・初期位置")
     if argMode:
-        MMP.接続.PWM.Out(CH_180, PWM_MID)
-        MMP.接続.PWM.Out(CH_360, PWM_MID)
+        命令PWM(CH_180, PWM_MID)
+        命令PWM(CH_360, PWM_MID)
     else:
         RunI2C(CH_180, PWM_MID)
         RunI2C(CH_360, PWM_MID)
@@ -255,28 +287,28 @@ def RunPwm(argMode):
 # 6) PWM 角度制御
 # 7) PWM 回転制御
 #============================================================
-def RunPwmSweep(mode, ch, start, end, step, delay):
+def RunPwmSweep(命令, ch, start, end, step, delay):
     if start < end  : rng = range(start, end + 1,  step)
     else            : rng = range(start, end - 1, -step)
     for pwmVal in rng:
-        if mode : MMP.接続.PWM.Angle.Out(ch, pwmVal)
-        else    : MMP.接続.PWM.Rotation.Out(ch, pwmVal)
+        命令.OUTPUT (ch, pwmVal)
         time.sleep(delay)
 
 #============================================================
 # 6) PWM 角度制御
 #============================================================
 def RunPwm_Angle():
-    print("６.ＰＷＭ（ 角度指定：180度型サーボ ）")
 
-    MODE            = True      # 180度型サーボモータ
+    print("６.ＰＷＭ（ 角度指定：180度型サーボ ）")
+    命令 = MMP.接続.PWM.ANGLE
+
     CH              = CH_180    # サーボを接続するGPIO番号 
     ANGLE_MAX       = 180       # 180度型
     STEP            = 3         # 変化量(度)
     STEP_DELAY_S    = 0.01      # 変化間隔(秒)
 
     print("　・設定(登録)")
-    res = MMP.接続.PWM.Angle.Init(
+    res = 命令.SETUP(
         CH_180      ,   # サーボを接続するGPIO番号
         -1          ,   # 単一
         ANGLE_MAX   ,   # 角度最大値
@@ -286,23 +318,23 @@ def RunPwm_Angle():
     )
 
     print("　・角度：０")
-    MMP.接続.PWM.Angle.Out(CH, 0)
+    命令.OUTPUT(CH, 0)
     time.sleep(PAUSE_S)
 
     print("　・角度：0度～最大")
-    RunPwmSweep(MODE, CH, 0, ANGLE_MAX, STEP, STEP_DELAY_S)
+    RunPwmSweep(命令, CH, 0, ANGLE_MAX, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
     print("　・角度：最大～0度")
-    RunPwmSweep(MODE, CH, ANGLE_MAX, 0, STEP, STEP_DELAY_S)
+    RunPwmSweep(命令, CH, ANGLE_MAX, 0, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
     print("　・中心位置")
-    MMP.接続.PWM.Angle.Center(CH)
+    命令.CENTER(CH)
     time.sleep(PAUSE_S)
 
     print("　・設定削除")
-    res = MMP.接続.PWM.Angle.Delete(
+    res = 命令.DELETE(
         CH  ,   # サーボを接続するGPIO番号
         -1  ,   # 単一
     )
@@ -312,16 +344,18 @@ def RunPwm_Angle():
 #============================================================
 # 7) PWM 回転制御
 #============================================================
-def RunPwm_Rotation():
-    print("７.ＰＷＭ（ 連続回転型サーボ ）")
+def RunPwm_Rotate():
 
-    MODE            = False     # 連続回転型サーボモータ
+    print("７.ＰＷＭ（ 連続回転型サーボ ）")
+    命令 = MMP.接続.PWM.ROTATE
+
     CH              = CH_360    # サーボを接続するGPIO番号 
     STEP            = 1         # 変化量(度)
-    STEP_DELAY_S    = 0.05      # 変化間隔(秒)
+    STEP_DELAY_S    = 0.1       # 変化間隔(秒)
+    RATE            = 30        # 出力率
 
     print("　・初期化")
-    MMP.接続.PWM.Rotation.Init(
+    MMP.接続.PWM.ROTATE.SETUP(
         CH_360  ,   # サーボを接続するGPIO番号
         -1      ,   # 単一のGPIO番号
         PWM_MIN ,   # ＰＷＭ値(右周り最大)
@@ -330,30 +364,30 @@ def RunPwm_Rotation():
     )
 
     print("　・停止")
-    MMP.接続.PWM.Rotation.Stop(CH)
+    命令.STOP(CH)
     time.sleep(PAUSE_S)
 
-    print("　・正転：0～100%")
-    RunPwmSweep(MODE, CH, 0, 100, STEP, STEP_DELAY_S)
+    print("　・正転：加速")
+    RunPwmSweep(命令, CH, 0, RATE, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
-    print("　・正転：100～0%")
-    RunPwmSweep(MODE, CH, 100, 0, STEP, STEP_DELAY_S)
+    print("　・正転：減速")
+    RunPwmSweep(命令, CH, RATE, 0, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
-    print("　・逆転：0～100%")
-    RunPwmSweep(MODE, CH, 0, -100, STEP, STEP_DELAY_S)
+    print("　・逆転：加速")
+    RunPwmSweep(命令, CH, 0, -RATE, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
-    print("　・逆転：100～0%")
-    RunPwmSweep(MODE, CH, -100, 0, STEP, STEP_DELAY_S)
+    print("　・逆転：減速")
+    RunPwmSweep(命令, CH, -RATE, 0, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
     print("　・停止")
-    MMP.接続.PWM.Rotation.Stop(CH)
+    命令.STOP(CH)
 
     print("　・設定削除")
-    res = MMP.接続.PWM.Rotation.Delete(
+    res = 命令.DELETE(
         CH  ,   # サーボを接続するGPIO番号
         -1  ,   # 単一
     )

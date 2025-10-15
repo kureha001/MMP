@@ -38,11 +38,11 @@ def TCPブリッジ情報取得(conn: str):
     else            : hostport, query = rest, ""
 
     if ":" not in hostport:
-        raise ValueError("tcp 接続には host と port が必須です（例: tcp://192.168.2.113:3331）")
+        raise ValueError("tcp 接続には host と port が必須です")
 
     host, port_str = hostport.rsplit(":", 1)
     try: port = int(port_str)
-    except Exception: raise ValueError("port は整数で指定してください（例: 3331）")
+    except Exception: raise ValueError("port は整数で指定してください")
 
     timeout_s = 0.2
     if query:
@@ -143,9 +143,9 @@ def 通信接続(conn="auto"):
         if 接続.ConnectAutoBaud():
             print(f"　・通信ポート　: {接続.ConnectedPort}")
             print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
-            print( "　・バージョン  : {}".format(接続.Info.Version()))
-            print( "　・PCA9685 [0] : 0x{:04X}".format(接続.PWM.Info.Connect()))
-            print( "　・DFPlayer[1] : 0x{:04X}".format(接続.MP3.Info.Connect(1)))
+            print( "　・バージョン  : {}".format(接続.INFO.VERSION()))
+            print( "　・PCA9685 [0] : 0x{:04X}".format(接続.PWM.INFO.CONNECT()))
+            print( "　・DFPlayer[1] : 0x{:04X}".format(接続.MP3.INFO.CONNECT(1)))
             return True
 
         else:

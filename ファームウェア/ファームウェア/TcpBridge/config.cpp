@@ -1,5 +1,5 @@
 // config.cpp
-#include "config.hpp"
+#include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
@@ -9,8 +9,8 @@
 // ---- 既定値（最小動作用） ----
 WifiCfg  WIFI; // hostname は JSON から設定
 UartCfg  UARTS[2] = {
-  { &Serial1, 3, 1, 115200, 5331 },   // UART1: RX=G3,  TX=G1
-  { &Serial2, 10, 9, 115200, 5332 }   // UART2: RX=G10, TX=G9
+  { &Serial1, 3, 1, 921600, 5331 },   // UART1: RX=G3,  TX=G1
+  { &Serial2, 10, 9, 921600, 5332 }   // UART2: RX=G10, TX=G9
 };
 int      NUM_UARTS = 2;
 ServerCfg SRV      = { 4, false, 30000 };

@@ -53,7 +53,6 @@
   <section>
     <div class="bar">
       <div class="group">
-        <button class="btn sec" id="btnConn">サーバー情報</button>
         <button class="btn sec" id="btnInfo">ＭＭＰバージョン</button>
       </div>
       <div class="group">
@@ -121,13 +120,13 @@
 
     // Configure(2,4) 相当（パラメータ名の差異を吸収するため両方送る）
     {
-      const r = await apiGet(`/analog/configure?start=2&count=4&chTtl=2&devTtl=4`);
+      const r = await apiGet(`/ANALOG/SETUP:2:4:2:4`);
       logStd("　・アクセス範囲指定 → [2,4]  : " + ((r.json&&r.json.ok) ? "True":"False"));
       if (!(r.json&&r.json.ok)){ logStd("　 <<中断>>\n"); return; }
     }
 
     {
-      const r = await apiGet(`/analog/update`);
+      const r = await apiGet(`/ANALOG/INPUT`);
       logStd("　・アナログ値をバッファに格納 : " + ((r.json&&r.json.ok) ? "True":"False"));
       if (!(r.json&&r.json.ok)){ logStd("　 <<中断>>\n"); return; }
     }
@@ -136,7 +135,7 @@
     for (let x=0; x<=1; x++){
       logStd(`　　JoyPad[${x+1}]`);
       for (let y=0; y<=3; y++){
-        const r = await apiGet(`/analog/read?ch=${x}&dev=${y}`);
+        const r = await apiGet(`/ANALOG/READ:${x}:${y}`);
         const v = (r.json&&typeof r.json.value!=="undefined") ? r.json.value : "NaN";
         logStd(`　　　← [${y}] = ${v}`);
         if (stopFlag) return;
@@ -150,7 +149,7 @@
     logStd("２.デジタル入出力（ GPIO ）");
     logStd("　・入力");
     for (let pin of [2,6,7]){
-      const r = await apiGet(`/digital/in?id=${pin}`);
+      const r = await apiGet(`/DIGITAL/INPUT:${pin}`);
       const val = (r.json && typeof r.json.value!=="undefined") ? r.json.value : 1;
       logStd(`　　←[${pin}] = ${val==0 ? "ON":"OFF"}`);
       if (stopFlag) return;
@@ -158,11 +157,11 @@
 
     logStd("　・出力[3]");
     for (let i=0; i<6; i++){
-      const r1 = await apiGet(`/digital/out?id=3&val=1`);
+      const r1 = await apiGet(`/DIGITAL/OUTPUT:3:1`);
       logStd(`　　→ HIGH : ${r1.json&&r1.json.ok ? "True":"False"}`); if (stopFlag) return;
       await sleep(500); if (stopFlag) return;
 
-      const r0 = await apiGet(`/digital/out?id=3&val=0`);
+      const r0 = await apiGet(`/DIGITAL/OUTPUT:3:0`);
       logStd(`　　→ LOW  : ${r0.json&&r0.json.ok ? "True":"False"}`); if (stopFlag) return;
       await sleep(500); if (stopFlag) return;
     }
@@ -173,38 +172,33 @@
     stopFlag = false;
     logStd("３.ＭＰ３再生（ DFPlayer ）");
 
-    let r = await apiGet(`/audio/volume?dev=1&value=20`);
+    let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
     logStd("　・音量 → 20 : " + (r.json&&r.json.ok ? "True":"False"));
 
-    r = await apiGet(`/audio/play/setLoop?dev=1&mode=0`);
-    logStd("　・ループ → OFF : " + (r.json&&r.json.ok ? "True":"False"));
+    r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    logStd(`　・ループ → OFF : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・再生");
     for (let track=1; track<=3; track++){
-      const r1 = await apiGet(`/audio/play/start?dev=1&dir=1&file=${track}`);
-      const r2 = await apiGet(`/audio/read/state?dev=1`);
-      const st = (r2.json&&typeof r2.json.state!=="undefined") ? r2.json.state : "NaN";
-      logStd(`　　→ F=1,T=${track} : ${(r1.json&&r1.json.ok)?"True":"False"} : 状況 = ${st}`);
+      const r = await apiGet(`/MP3/TRACK/PLAY:1:1:${track}`);
+      logStd(`　　→ F=1,T=${track} : ${r.json?r.json.value:"NaN"}`);
       if (stopFlag) return;
       await sleep(3000); if (stopFlag) return;
     }
 
-    r = await apiGet(`/audio/play/stop?dev=1`);
-    let r3 = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・停止 : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${r3.json?r3.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/audio/play/start?dev=1&dir=2&file=102`);
-    logStd("　・再生 → F=2,T=102 : " + (r.json&&r.json.ok ? "True":"False"));
+    r = await apiGet(`/MP3/TRACK/PLAY:1:2:102`);
+    logStd(`　・再生 → F=2,T=102 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/audio/play/setLoop?dev=1&mode=1`);
-    r3 = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・ループ → ON : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${r3.json?r3.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/LOOP:1:1`);
+    logStd(`　・ループ → ON : ${r.json?r.json.value:"NaN"}`);
     if (stopFlag) return;
     await sleep(10000); if (stopFlag) return;
 
-    r = await apiGet(`/audio/play/stop?dev=1`);
-    r3 = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・停止 : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${r3.json?r3.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　[終了]\n");
   }
@@ -213,56 +207,53 @@
     stopFlag = false;
     logStd("４.ＭＰ３制御（ DFPlayer ）");
 
-    let r = await apiGet(`/audio/volume?dev=1&value=20`);
-    logStd("　・音量 → 20 : " + (r.json&&r.json.ok ? "True":"False"));
+    let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
+    logStd("　・音量 20 : " + (r.json&&r.json.ok ? "True":"False"));
 
-    r = await apiGet(`/audio/play/start?dev=1&dir=4&file=1`);
-    logStd("　・再生 → F=4,T=1 : " + (r.json&&r.json.ok ? "True":"False"));
+    r = await apiGet(`/MP3/TRACK/PLAY:1:4:1`);
+    logStd(`　・再生 F=4,T=1 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/audio/play/setLoop?dev=1&mode=0`);
-    logStd("　・ループ → OFF : " + (r.json&&r.json.ok ? "True":"False"));
+    r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    logStd(`　・ループ OFF :  ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・参照");
-    let st = await apiGet(`/audio/read/state?dev=1`);
-    let vv = await apiGet(`/audio/read/volume?dev=1`);
-    let eq = await apiGet(`/audio/read/eq?dev=1`);
-    let fc = await apiGet(`/audio/read/fileCounts?dev=1`);
-    let fn = await apiGet(`/audio/read/fileNumber?dev=1`);
-    logStd(`　　← 状況         = ${st.json?st.json.state:"NaN"}`);
-    logStd(`　　← 音量         = ${vv.json?vv.json.volume:"NaN"}`);
-    logStd(`　　← イコライザ   = ${eq.json?eq.json.eq:"NaN"}`);
-    logStd(`　　← 総ファイル数 = ${fc.json?fc.json.fileCounts:"NaN"}`);
-    logStd(`　　← 現在ファイル = ${fn.json?fn.json.fileNumber:"NaN"}`);
+    let st = await apiGet(`/MP3/INFO/TRACK:1`);
+    let vv = await apiGet(`/MP3/INFO/VOLUME:1`);
+    let eq = await apiGet(`/MP3/INFO/EQ:1`);
+    let fc = await apiGet(`/MP3/INFO/FILES:1`);
+    let fn = await apiGet(`/MP3/INFO/FILEID:1`);
+    logStd(`　　・トラック状況 = ${st.json?st.json.value:"NaN"}`);
+    logStd(`　　・音量         = ${vv.json?vv.json.value:"NaN"}`);
+    logStd(`　　・イコライザ   = ${eq.json?eq.json.value:"NaN"}`);
+    logStd(`　　・総ファイル数 = ${fc.json?fc.json.value:"NaN"}`);
+    logStd(`　　・現在ファイル = ${fn.json?fn.json.value:"NaN"}`);
 
-    r = await apiGet(`/audio/play/pause?dev=1`);
-    st = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・一時停止 : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${st.json?st.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/PAUSE:1`);
+    logStd(`　・一時停止 : ${r.json?r.json.value:"NaN"}`);
     if (stopFlag) return;
     await sleep(2000); if (stopFlag) return;
 
-    r = await apiGet(`/audio/play/resume?dev=1`);
-    st = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・再開 : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${st.json?st.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/START:1`);
+    logStd(`　・再開 : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・イコライザー");
     for (let m=0; m<=5; m++){
-      r = await apiGet(`/audio/setEq?dev=1&mode=${m}`);
-      logStd(`　　→ ${m} : ${(r.json&&r.json.ok)?"True":"False"}`);
+      r = await apiGet(`/MP3/SET/EQ:1:${m}`);
+      logStd(`　　[${m}] ${(r.json&&r.json.ok)?"True":"False"}`);
       if (stopFlag) return;
       await sleep(3000); if (stopFlag) return;
     }
 
     logStd("　・音量");
     for (let v=0; v<=30; v+=5){
-      r = await apiGet(`/audio/volume?dev=1&value=${v}`);
-      logStd(`　　→ ${v} : ${(r.json&&r.json.ok)?"True":"False"}`);
+      r = await apiGet(`/MP3/SET/VOLUME:1:${v}`);
+      logStd(`　　[${v}] ${(r.json&&r.json.ok)?"True":"False"}`);
       if (stopFlag) return;
       await sleep(1000); if (stopFlag) return;
     }
 
-    r = await apiGet(`/audio/play/stop?dev=1`);
-    st = await apiGet(`/audio/read/state?dev=1`);
-    logStd(`　・停止 : ${(r.json&&r.json.ok)?"True":"False"} : 状況 = ${st.json?st.json.state:"NaN"}`);
+    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 :  ${r.json?r.json.value:"NaN"}`);
     logStd("　[終了]\n");
   }
 
@@ -276,7 +267,7 @@
     const CH_180=0, CH_360=15, PCA_ADDR_DEC=64; // 0x40=64
 
     async function I2CWrite(reg, val){
-      return apiGet(`/i2c/write?addr=${PCA_ADDR_DEC}&reg=${reg}&val=${val}`);
+      return apiGet(`/I2C/WRITE:${PCA_ADDR_DEC}:${reg}:${val}`);
     }
     async function RunI2C(ch, ticks){
       const base = 0x06 + 4*ch;
@@ -286,8 +277,8 @@
 
     logStd("　・初期位置");
     if (modeTrue){
-      await apiGet(`/pwm/out?ch=${CH_180}&val=${SERVO_MID}`);
-      await apiGet(`/pwm/out?ch=${CH_360}&val=${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_180}:${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_360}:${SERVO_MID}`);
     }else{
       await RunI2C(CH_180, SERVO_MID);
       await RunI2C(CH_360, SERVO_MID);
@@ -300,8 +291,8 @@
       const pwm180 = SERVO_MIN + Math.floor((SERVO_MAX-SERVO_MIN)*i/STEPS);
       const pwm360 = SERVO_MID + Math.floor(OffsetMax360*i/STEPS);
       if (modeTrue){
-        await apiGet(`/pwm/out?ch=${CH_180}&val=${pwm180}`);
-        await apiGet(`/pwm/out?ch=${CH_360}&val=${pwm360}`);
+        await apiGet(`/PWM/OUTPUT:${CH_180}:${pwm180}`);
+        await apiGet(`/PWM/OUTPUT:${CH_360}:${pwm360}`);
       }else{
         await RunI2C(CH_180, pwm180);
         await RunI2C(CH_360, pwm360);
@@ -315,8 +306,8 @@
       const pwm180 = SERVO_MIN + Math.floor((SERVO_MAX-SERVO_MIN)*i/STEPS);
       const pwm360 = SERVO_MID + Math.floor(OffsetMax360*i/STEPS);
       if (modeTrue){
-        await apiGet(`/pwm/out?ch=${CH_180}&val=${pwm180}`);
-        await apiGet(`/pwm/out?ch=${CH_360}&val=${pwm360}`);
+        await apiGet(`/PWM/OUTPUT:${CH_180}:${pwm180}`);
+        await apiGet(`/PWM/OUTPUT:${CH_360}:${pwm360}`);
       }else{
         await RunI2C(CH_180, pwm180);
         await RunI2C(CH_360, pwm360);
@@ -327,8 +318,8 @@
 
     logStd("　・初期位置");
     if (modeTrue){
-      await apiGet(`/pwm/out?ch=${CH_180}&val=${SERVO_MID}`);
-      await apiGet(`/pwm/out?ch=${CH_360}&val=${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_180}:${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_360}:${SERVO_MID}`);
     }else{
       await RunI2C(CH_180, SERVO_MID);
       await RunI2C(CH_360, SERVO_MID);
@@ -337,12 +328,8 @@
   }
 
   // ===== 付属（Info / Conn） =====
-  async function ConnProps(){
-    const paths = ['/conn/isOpen','/conn/baud','/conn/port','/conn/lastError'];
-    for (const p of paths) await apiGet(p);
-  }
   async function Info(){
-    await apiGet('/info/version');
+    await apiGet('/INFO/VERSION');
   }
 
   // ===== UI Wiring =====
@@ -357,7 +344,6 @@
   $('#btnClearStd').onclick = () => { stdEl.textContent = ""; };
   $('#btnClearDtl').onclick = () => { detailEl.textContent = ""; };
 
-  $('#btnConn').onclick = () => ConnProps();
   $('#btnInfo').onclick = () => Info();
 
 })();

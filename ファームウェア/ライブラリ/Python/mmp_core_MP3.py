@@ -9,7 +9,7 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_com import _DECtoHEX1, _DECtoHEX2, _HEX4toDEC
+from mmp_com import _getValue
 
 class _MP3:
 #━━━━━━━━━━━━━━━
@@ -41,10 +41,10 @@ class _MP3:
         #─────────────
         def VOLUME(self,
             dev     :int,   # ① デバイスID
-            volume  :int,   # ② 音量
-        ) -> bool:
+            vol     :int,   # ② 音量
+        ) -> bool   :       #
             cmd = "MP3/SET/VOLUME"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(volume)}!"
+            cmd = f"{cmd}:{dev}:{vol}!"
             res = self._p._send_command(cmd, self.TimeOut) 
             return res == "!!!!!"
 
@@ -56,7 +56,7 @@ class _MP3:
             mode    :int,   # ② モード
         ) -> bool:
             cmd = "MP3/SET/EQ"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(mode)}!"
+            cmd = f"{cmd}:{dev}:{mode}!"
             res = self._p._send_command(cmd, self.TimeOut) 
             return res == "!!!!!"
 
@@ -79,10 +79,9 @@ class _MP3:
             dir     :int,   # ② フォルダID
             file    :int,   # ③ ファイルID(フォルダ内)
         ) -> int:
-            cmd = "MP3/TRACK/PLAY"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(dir)}:{_DECtoHEX2(file)}!"
+            cmd = f"MP3/TRACK/PLAY:{dev}:{dir}:{file}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)
 
         #─────────────
@@ -93,9 +92,9 @@ class _MP3:
             enable  :int,   # ② ループ再生有無
         ) -> int:
             cmd = "MP3/TRACK/LOOP"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX1(1 if enable else 0)}!"
+            cmd = f"{cmd}:{dev}:{1 if enable else 0}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)
 
         #─────────────
@@ -105,9 +104,9 @@ class _MP3:
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/STOP"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            cmd = f"{cmd}:{dev}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)
 
         #─────────────
@@ -117,9 +116,9 @@ class _MP3:
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/PAUSE"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            cmd = f"{cmd}:{dev}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)
 
         #─────────────
@@ -129,9 +128,9 @@ class _MP3:
             dev :int,   # ① デバイスID
         ) -> int:
             cmd = "MP3/TRACK/START"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
+            cmd = f"{cmd}:{dev}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)
 
     #─────────────
@@ -148,15 +147,15 @@ class _MP3:
         #─────────────
         # デバイス接続状況
         #─────────────
-        def CONNECT(self, deb:int) -> int:
+        def CONNECT(self, dev:int) -> int:
             cmd = "MP3/INFO/CONNECT"
-            cmd = f"{cmd}:{_DECtoHEX2(deb)}!"
+            cmd = f"{cmd}:{dev}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return v if ok else -1
 
         #─────────────
-        # 再生状況
+        # トラック
         # 音量
         # イコライザ
         # 現在のファイル番号
@@ -178,7 +177,7 @@ class _MP3:
             argDev :int    ,   # ① デバイスID
             argCmd :str    ,   # ② 種類ID(１～５)
         ) -> int:           # 戻り値：ＭＭＰコマンドの戻り値
-            cmd = f"MP3/INFO/{argCmd}:{_DECtoHEX2(argDev)}!"
+            cmd = f"MP3/INFO/{argCmd}:{argDev}!"
             res = self._p._send_command(cmd, self.TimeOut)
-            ok, v = _HEX4toDEC(res); 
+            ok, v = _getValue(res); 
             return (v) if ok else (-1)

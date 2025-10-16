@@ -2,6 +2,8 @@
 //========================================================
 // 各モジュールの共通機能・抽象基底クラス
 //-------------------------------------------------------- 
+// 変更履歴: Ver0.5.01 (2025/10/16)
+// - 10進数統一
 // 変更履歴: Ver0.5.00 (2025/10/13)
 // - クライアントからのリクエスト条件をperse.hより移管
 // - コマンド応答ヘルパーを一新
@@ -84,42 +86,44 @@ public:
       ctx.pixels->show();
     }
   };
-
   // ───────────────────────
-  // 16進数(string)→10進数(long)パース
+  // 文字列→10進数パース
   // ───────────────────────
-  inline bool strHex2long(const char* s, long& out, long minv, long maxv){
+  inline bool _Str2Int(const char* s, int& out, int minv, int maxv){
 
     if (!s || !*s)                return false; // 文字列チェック
 
     char* end = nullptr;
-    out = strtol(s, &end, 16);
+    out = int(strtol(s, &end, 10));
 
-    if (*end != '\0'            ) return false; // 改行コード無しチェック
-    if (minv > maxv             ) return false; // 大小チェック
-    if (out < minv || out > maxv) return false; // 範囲チェック
+    if (*end != '\0'             ) return false; // 改行コード無しチェック
+    if (minv > maxv              ) return false; // 大小チェック
+    if (out  < minv || out > maxv) return false; // 範囲チェック
 
     return true;
   }
-
   // ───────────────────────
   // 16進数変換（5バイト固定: 末尾は '!' で埋める）
   // ───────────────────────
-  inline void ResHex4(Stream& sp, int16_t v) {
-    char buf[6]; //終端NUL(\0)が必要なので 5 + 1 = 6
-    snprintf(buf, sizeof(buf), "%04X!", (uint16_t)v);
+  inline void _ResValue(Stream& sp, int v) {
+
+    // 桁あふれ
+    if (v < -999 || v > 9999) { sp.print("#FLW!"); return; }
+
+    char buf[6];  // 5文字 + NUL
+
+    if (v < 0) {
+      int a = -v;  // 安全に絶対値化
+      snprintf(buf, sizeof(buf), "-%03ld!", a);
+    } else {
+      snprintf(buf, sizeof(buf), "%04d!", v);
+    }
     sp.print(buf);
   }
-
-  const char* remove1stToken(const char* s) {
-      if (!s) return s;
-      while (*s==' ' || *s=='\t') ++s;        // 先頭の空白を無視（任意）
-      const char* slash = strchr(s, '/');
-      if (slash && slash > s) return slash + 1; // 先頭カテゴリ＋'/'があれば、その直後
-      return s;                                 // なければそのまま
-  }
-
-  const char* getCommand(const char* s) {
+  // ───────────────────────
+  // 先頭トークンを削除したコマンドを取得
+  // ───────────────────────
+  const char* _Remove1st(const char* s) {
       if (!s) return s;
       while (*s==' ' || *s=='\t') ++s;        // 先頭の空白を無視（任意）
       const char* slash = strchr(s, '/');
@@ -127,41 +131,11 @@ public:
       return s;                                 // なければそのまま
   }
   
-//━━━━━━━━━━━━━━━━━
-// コマンド応答
-//━━━━━━━━━━━━━━━━━
-  // ───────────────
-  // 正常終了
-  // ───────────────
-  inline void ResOK(Stream& sp){
-    char resp[6] = "!!!!!";
-    sp.print(resp);
-  }
-  // ───────────────
-  // コマンド名違反
-  // ───────────────
-  inline void ResNotCmd(Stream& sp){
-    char resp[6] = "#CMD!";
-    sp.print(resp);
-  }
-  // ───────────────
-  // チェック違反
-  // ───────────────
-  inline void ResChkErr(Stream& sp){
-    char resp[6] = "#CHK!";
-    sp.print(resp);
-  }
-  // ───────────────
-  // 初期化違反
-  // ───────────────
-  inline void ResChkIniErr(Stream& sp){
-    char resp[6] = "#INI!";
-    sp.print(resp);
-  }
-  // ───────────────
-  // デバイス違反
-  // ───────────────
-  inline void ResDevErr(Stream& sp){
-    char resp[6] = "#DEV!";
-    sp.print(resp);
-  }
+  //━━━━━━━━━━━━━━━━━
+  // レスポンス
+  //━━━━━━━━━━━━━━━━━
+  inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
+  inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名違反
+  inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // チェック違反
+  inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // 初期化違反
+  inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // デバイス違反

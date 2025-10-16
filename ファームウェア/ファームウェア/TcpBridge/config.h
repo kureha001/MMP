@@ -1,4 +1,4 @@
-// config.hpp
+// config.h
 #pragma once
 #include <Arduino.h>
 #include <HardwareSerial.h>

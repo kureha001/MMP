@@ -17,15 +17,15 @@ import MMP
 #(1) 直結：シリアル接続（プラットフォーム自動）
 
 #(2) TCPブリッジ：ser2net
-TCP_HOST_PC     = "192.168.2.124"   # LANの場合
-#TCP_HOST_PC     = "203.141.144.142" #WANの場合
+NET_TIMEOUT_S   = 0.2   # ネットワーク品質に応じて調整
+NET_HOST_PC     = "192.168.2.124"   # LANの場合
+#NET_HOST_PC     = "203.141.144.142" #WANの場合
 TCP_PORT_PC     = 5331
+WEB_PORT_PC     = 8080
 
 #(3) TCPブリッジ：usb4a(Pydroid)
 USB4A_INDEX     = 0
 
-#(4) TCP共通：read_one_char の待ち秒（?timeout=） 
-TCP_TIMEOUT_S   = 0.2   # ネットワーク品質に応じて調整
 
 #============================================================
 # 互換シム（MMP.通信接続 / MMP.接続 を既存通り使えるように）
@@ -34,7 +34,8 @@ def 接続(argMode):
 
     文字 = None
     if argMode == "SERIAL" : 文字 = "auto"
-    if argMode == "TCP"    : 文字 = f"tcp://{TCP_HOST_PC}:{TCP_PORT_PC}?timeout={TCP_TIMEOUT_S}"
+    if argMode == "TCP"    : 文字 = f"tcp://{NET_HOST_PC}:{TCP_PORT_PC}?timeout={NET_TIMEOUT_S}"
+    if argMode == "WEB"    : 文字 = f"http://{NET_HOST_PC}:{WEB_PORT_PC}?timeout={NET_TIMEOUT_S}"
     if argMode == "ANDROID": 文字 = f"usb4a://{USB4A_INDEX}"
 
     if 文字 is None          : return None
@@ -51,7 +52,7 @@ def main():
     while True:
         print("")
         print("---------- ＭＭＰ ＡＰＩテスト -----------")
-        print(f"【通信方法】[S]erial  [T]cp  [A]ndroid")
+        print(f"【通信方法】[S]erial [T]cp [W]eb [A]ndroid")
         文字 = f"READY [{状態}]" if 状態 else "-- NG --"
         print(f"【接続状況】{文字}")
 
@@ -71,6 +72,7 @@ def main():
         if   入力 == "Q": break
         elif 入力 == "S": print("\n"); 状態 = 接続("SERIAL")
         elif 入力 == "T": print("\n"); 状態 = 接続("TCP")
+        elif 入力 == "W": print("\n"); 状態 = 接続("WEB")
         elif 入力 == "A": print("\n"); 状態 = 接続("ANDROID")
         elif 入力 == "1": print("\n"); RunAnalog()
         elif 入力 == "2": print("\n"); RunDigital()
@@ -165,7 +167,7 @@ def RunMp3Playlist():
 
     print(f"【ループ】")
     print(f"　・再生   [F=2][T=102] : {命令1.PLAY(1, 2, 102)}")
-    print(f"　・ループ [ON　　　　　: {命令1.LOOP(1, 1)}"     )
+    print(f"　・ループ [ON]　　　　 : {命令1.LOOP(1, 1)}"     )
     time.sleep(10.0)
     print(f"　・停止　　　　　　　　: {命令1.STOP(1)}"        )
 
@@ -318,7 +320,7 @@ def RunPwm_Angle():
     )
 
     print("　・角度：０")
-    命令.OUTPUT(CH, 0)
+    print(命令.OUTPUT(CH, 0))
     time.sleep(PAUSE_S)
 
     print("　・角度：0度～最大")
@@ -330,7 +332,7 @@ def RunPwm_Angle():
     time.sleep(PAUSE_S)
 
     print("　・中心位置")
-    命令.CENTER(CH)
+    print(命令.CENTER(CH))
     time.sleep(PAUSE_S)
 
     print("　・設定削除")

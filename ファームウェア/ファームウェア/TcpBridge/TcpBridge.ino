@@ -1,28 +1,36 @@
 // TcpBridge.ino
 // =============================================================
-// M5Stamp S3 : 2x UART <-> TCP Bridge (RAW)
-// Split project (config / webui / bridge modules)
+// ＭＭＰ ＴＣＰブリッジ＆ＷＥＢ－ＡＰＩ サーバ
+// バージョン：0.5
+//------------------------------------------------------------
+// M5Stamp S3 : 2x UART
 // - UART1 -> TCP:5331  (RX=G3,  TX=G1)
 // - UART2 -> TCP:5332  (RX=G10, TX=G9)
-// - LittleFS /config.json (Wi-Fi candidates, UART, server)
-// - Web UI: / (upload), /upload (POST), /config (view), /status (text status)
-// -------------------------------------------------------------
-// ボード情報：M5StampS3 - esp32
-// ※M5Stackのボード情報を使わないこと
+//------------------------------------------------------------
+// ラズパイPico: 2x UART
+// - UART1 -> TCP:5331  (RX=, TX=)
+// - UART2 -> TCP:5332  (RX=, TX=)
+//------------------------------------------------------------
+// LittleFS： config.json (Wi-Fi candidates, UART, server)
+//------------------------------------------------------------
+// 内部API：Web UI  
+// ‐(upload)：設定ファイル選択
+// ‐upload  ：設定ファイル登録
+// ‐config  ：状態参照表示
+// ‐status  ：設定ファイル表示
 // =============================================================
-
 #include <WiFi.h>
 #include <WebServer.h>
-#include "config.hpp"
-#include "bridge.hpp"
-#include "webui.hpp"
+#include "config.h"
+#include "bridge.h"
+#include "WebUI.h"
 #include "WebApiCore.h"
 
 // ---- Wi-Fi ランタイム状態（/status とシリアル表示で使用） ----
-String g_wifi_mode;   // "STA" もしくは "AP"
-String g_wifi_ssid;   // 接続中の SSID / AP の SSID
+String g_WIFI_MODE;   // "STA" もしくは "AP"
+String g_WIFI_SSID;   // 接続中の SSID / AP の SSID
 
-WebServer httpApi(8080);
+WebServer g_WEB_API(8080);
 
 //==============================================================
 // Wi-Fi 補助関数（宣言）
@@ -36,7 +44,7 @@ WebServer httpApi(8080);
  * 処理の流れ:
  * - WIFI_STA に設定し、WiFi.begin() を呼ぶ
  * - 指定の timeout_ms の間 WL_CONNECTED を待つ
- * - 成功→グローバル g_wifi_mode/g_wifi_ssid を更新
+ * - 成功→グローバル g_WIFI_MODE/g_WIFI_SSID を更新
  * - 失敗→WiFi.disconnect(true,true) で状態をクリア
  */
 bool tryConnectOne(const WifiCand& c);
@@ -46,7 +54,7 @@ bool tryConnectOne(const WifiCand& c);
  *
  * 処理の流れ:
  * - WIFI_AP に切替、softAP(ssid, pass) を起動
- * - g_wifi_mode/g_wifi_ssid を AP 情報で更新
+ * - g_WIFI_MODE/g_WIFI_SSID を AP 情報で更新
  */
 void startAPFallback();
 
@@ -64,7 +72,7 @@ void startAPFallback();
  * - 起動ステータスをシリアル出力
  */
 void setup(){
-  Serial.begin(921600);
+  Serial.begin(115200);
 
   if (!loadConfig()) {
     Serial.println("Config load failed (LittleFS?). Continuing with defaults.");
@@ -84,22 +92,22 @@ void setup(){
     if (WIFI.apfb.enabled){
       startAPFallback();
       Serial.printf("AP mode: SSID=%s  IP=%s\n",
-        g_wifi_ssid.c_str(), WiFi.softAPIP().toString().c_str());
+        g_WIFI_SSID.c_str(), WiFi.softAPIP().toString().c_str());
     } else {
       // ★ APフォールバック無効の場合：STAのままIP無しで継続
-      g_wifi_mode = "STA"; g_wifi_ssid = "(disconnected)";
+      g_WIFI_MODE = "STA"; g_WIFI_SSID = "(disconnected)";
     }
   } else {
     Serial.printf("WiFi connected: SSID=%s  IP=%s\n",
-      g_wifi_ssid.c_str(), WiFi.localIP().toString().c_str());
+      g_WIFI_SSID.c_str(), WiFi.localIP().toString().c_str());
   }
 
   // Web UI 起動
   webui_begin();
 
   // WebAPI 起動
-  WebApiCore::begin(httpApi);
-  httpApi.begin();
+  WebApiCore::begin(g_WEB_API);
+  g_WEB_API.begin();
 
   // UART<->TCP ブリッジ開始
   for (int i=0;i<NUM_UARTS;i++){
@@ -114,7 +122,7 @@ void setup(){
   }
 
   // 起動ステータス（/status と同じテキスト）
-  Serial.println(buildStartupStatusText());
+  Serial.println(StatusText());
 }
 
 /**
@@ -124,7 +132,7 @@ void setup(){
  */
 void loop(){
   webui_handle();           // WEB-UI
-  httpApi.handleClient();   // WEB-API
+  g_WEB_API.handleClient();   // WEB-API
   for (int i=0;i<NUM_UARTS;i++){
     acceptClients(ctxs[i]);                 // 新規接続受入／切断掃除／ロック期限解放
     pumpTCPtoRing(ctxs[i]);                 // TCP→リング
@@ -152,8 +160,8 @@ bool tryConnectOne(const WifiCand& c){
 
   if (WiFi.status() == WL_CONNECTED) {
     // ★ 成功：状態更新
-    g_wifi_mode = "STA";
-    g_wifi_ssid = c.ssid;
+    g_WIFI_MODE = "STA";
+    g_WIFI_SSID = c.ssid;
     return true;
   }
 
@@ -167,6 +175,6 @@ void startAPFallback(){
   if (!WIFI.apfb.enabled) return;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
-  g_wifi_mode = "AP";
-  g_wifi_ssid = WIFI.apfb.ssid;
+  g_WIFI_MODE = "AP";
+  g_WIFI_SSID = WIFI.apfb.ssid;
 }

@@ -2,8 +2,8 @@
 //========================================================
 // モジュール：ＰＷＭ出力
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.00 (2025/10/13)
-// - WEB-API書式対応
+// 変更履歴: Ver0.5.01 (2025/10/16)
+// - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -33,7 +33,7 @@ public:
     //━━━━━━━━━━━━━━━━━
     Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
-    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
+    const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     //----------------------------------------------------------
     // 入力コマンド
@@ -41,23 +41,23 @@ public:
     if (strcmp(Cmd,"READ") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt < 3){ResChkErr(sp); return;}
+        if (dat_cnt < 3){_ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック
-        long addr, reg;
-        if (!strHex2long(dat[1], addr, 0x00, 0x7F) ||
-            !strHex2long(dat[2], reg,  0x00, 0xFF)){ResChkErr(sp); return;}
+        int addr, reg;
+        if (!_Str2Int(dat[1], addr, 0x00, 0x7F) ||
+            !_Str2Int(dat[2], reg,  0x00, 0xFF)){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      Wire.beginTransmission((int)addr);
-      Wire.write((int)reg);
+      Wire.beginTransmission(addr);
+      Wire.write(reg);
       Wire.endTransmission(false);
-      int n = Wire.requestFrom((int)addr, 1);
-      if (n != 1){ResChkErr(sp); return;}
+      int n = Wire.requestFrom(addr, 1);
+      if (n != 1){_ResChkErr(sp); return;}
       int v = Wire.read();
 
       // ３．後処理：
-      ResHex4(sp, (int16_t)v);
+      _ResValue(sp, v);
       return;
     }
 
@@ -67,29 +67,29 @@ public:
     if (strcmp(Cmd,"WRITE") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt < 4){ResChkErr(sp); return;}
+        if (dat_cnt < 4){_ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック
-      long addr, reg, val;
-      if (!strHex2long(dat[1], addr, 0x00, 0x7F) ||
-          !strHex2long(dat[2], reg,  0x00, 0xFF) ||
-          !strHex2long(dat[3], val,  0x00, 0xFF)){ResChkErr(sp); return;}
+      int addr, reg, val;
+      if (!_Str2Int(dat[1], addr, 0x00, 0x7F) ||
+          !_Str2Int(dat[2], reg,  0x00, 0xFF) ||
+          !_Str2Int(dat[3], val,  0x00, 0xFF)){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      Wire.beginTransmission((int)addr);
-      Wire.write((int)reg);
-      Wire.write((int)val);
+      Wire.beginTransmission(addr);
+      Wire.write(reg);
+      Wire.write(val);
       Wire.endTransmission();
 
       // ３．後処理：
-      ResOK(sp);
+      _ResOK(sp);
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  ResNotCmd(sp);
+  _ResNotCmd(sp);
   return;
   }
 };

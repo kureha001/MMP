@@ -1,5 +1,5 @@
 // bridge.cpp
-#include "bridge.hpp"
+#include "bridge.h"
 
 // ===================== ブリッジ 実装 =====================
 

@@ -2,8 +2,8 @@
 //========================================================
 // モジュール：アナログ入力
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.00 (2025/10/13)
-// - WEB-API書式対応
+// 変更履歴: Ver0.5.01 (2025/10/16)
+// - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -71,7 +71,7 @@ public:
     //━━━━━━━━━━━━━━━━━
     Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
-    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
+    const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
     // 機能 : セットアップ
@@ -86,30 +86,30 @@ public:
 
       // １．前処理
         // 1.1. 書式
-        if (!(dat_cnt == 3 || dat_cnt == 4)){ResChkErr(sp); return;}
+        if (!(dat_cnt == 3 || dat_cnt == 4)){_ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック
-        long plCnt, swCnt;
-        if (!strHex2long(dat[1], plCnt, 1, 16) ||
-            !strHex2long(dat[2], swCnt, 1,  4) ){ResChkErr(sp); return;}
+        int plCnt, swCnt;
+        if (!_Str2Int(dat[1], plCnt, 1, 16) ||
+            !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(sp); return;}
 
         // 1.3. 単項目チェック：クライアント指定（任意）
-        long ID;
+        int ID;
         if (dat_cnt == 3) {
           ID = ctx.clientID;
         } else {
-          long id;
-          if (!strHex2long(dat[3], id, 0, (long)ctx.clientID_max))
-          {ResChkErr(sp); return;}
+          int id;
+          if (!_Str2Int(dat[3], id, 0, ctx.clientID_max))
+          {_ResChkErr(sp); return;}
           ID = id;
         }
 
       // ２．処理
-      g_ana[ID].PlayerCnt = (int)plCnt;
-      g_ana[ID].SwitchCnt = (int)swCnt;
+      g_ana[ID].PlayerCnt = plCnt;
+      g_ana[ID].SwitchCnt = swCnt;
 
       // ３．応答
-      ResOK(sp);
+      _ResOK(sp);
     }
 
     // ───────────────────────────────
@@ -123,15 +123,15 @@ public:
 
       // １．前処理：
         // 1.1. 書式
-        if (!(dat_cnt == 1 || dat_cnt == 2)){ResChkErr(sp); return;}
+        if (!(dat_cnt == 1 || dat_cnt == 2)){_ResChkErr(sp); return;}
 
         // 1.3. 単項目チェック：クライアント指定（任意）
-        long ID;
+        int ID;
         if (dat_cnt == 1) {
           ID = ctx.clientID;
         } else {
-          if (!strHex2long(dat[1], ID, 0, (long)ctx.clientID_max))
-          {ResChkErr(sp); return;}
+          if (!_Str2Int(dat[1], ID, 0, ctx.clientID_max))
+          {_ResChkErr(sp); return;}
         }
 
       // ２．処理
@@ -153,7 +153,7 @@ public:
       }
 
       // ３．後処理：
-      ResOK(sp);
+      _ResOK(sp);
       return;
     }
 
@@ -170,39 +170,39 @@ public:
 
       // １．前処理
         // 1.1. 書式（第3引数は任意）
-        if (!(dat_cnt == 3 || dat_cnt == 4)){ResChkErr(sp); return;}
+        if (!(dat_cnt == 3 || dat_cnt == 4)){_ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック：クライアント指定（任意）
-        long ID;
+        int ID;
         if (dat_cnt == 3) {
           ID = ctx.clientID;
         } else {
-          if (!strHex2long(dat[3], ID, 0, (long)ctx.clientID_max))
-          {ResChkErr(sp); return;}
+          if (!_Str2Int(dat[3], ID, 0, ctx.clientID_max))
+          {_ResChkErr(sp); return;}
         }
 
         // 1.3. 単項目チェック
-        long pl, sw;
-        if (!strHex2long(dat[1], pl, 0, long(g_ana[ID].PlayerCnt - 1) ) ||
-            !strHex2long(dat[2], sw, 0, long(g_ana[ID].SwitchCnt - 1) ) )
-            {ResChkErr(sp); return;}
+        int pl, sw;
+        if (!_Str2Int(dat[1], pl, 0, g_ana[ID].PlayerCnt - 1) ||
+            !_Str2Int(dat[2], sw, 0, g_ana[ID].SwitchCnt - 1) )
+            {_ResChkErr(sp); return;}
 
         // 1.4.機能チェック
-        if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt){ResChkErr(sp); return;}
+        if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt){_ResChkErr(sp); return;}
 
       // ２．処理
-      const int idx = (int)pl * 4 + (int)sw;        // 値のデータ位置
-      int16_t res = (int16_t)g_ana[ID].Values[idx];
+      const int idx = pl * 4 + sw;        // 値のデータ位置
+      int res = g_ana[ID].Values[idx];
 
       // ３．後処理：
-      ResHex4(sp, res);
+      _ResValue(sp, res);
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  ResNotCmd(sp);
+  _ResNotCmd(sp);
   return;
   }
 };

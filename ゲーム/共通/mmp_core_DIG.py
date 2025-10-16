@@ -9,7 +9,7 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_com import _DECtoHEX2, _HEX4toDEC
+from mmp_com import _getValue
 
 class _Digital:
 #━━━━━━━━━━━━━━━
@@ -26,16 +26,16 @@ class _Digital:
     # 信号入力
     #─────────────
     def INPUT(self, gpio:int) -> int:
-        cmd = "DIGITAL/INPUT"
-        res = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpio)}!", self.TimeOut)
-        ok, v = _HEX4toDEC(res); 
-        return v if ok else 0
+        cmd = f"DIGITAL/INPUT:{gpio}!"
+        res = self._p._send_command(cmd, self.TimeOut)
+        ok, v = _getValue(res)
+        return v if ok else -1
+
 
     #─────────────
     # 信号出力
     #─────────────
     def OUTPUT(self, gpio:int, val:int) -> bool:
-        cmd = "DIGITAL/OUTPUT"
-        bit = '1' if (val & 1) else '0'
-        res = self._p._send_command(f"{cmd}:{_DECtoHEX2(gpio)}:{bit}!", self.TimeOut)
+        cmd = f"DIGITAL/OUTPUT:{gpio}:{'1' if (val & 1) else '0'}!"
+        res = self._p._send_command(cmd, self.TimeOut)
         return res == "!!!!!"

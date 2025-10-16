@@ -1,6 +1,6 @@
 # MMP ライブラリ API マニュアル
 最終更新日：2025年09月08日(001:C#でシグネチャ整理中)
-> 対応プラットフォーム：**.NET(C# / COM / Excel VBA) / Arduino / CPython / MicroPython / CircuitPython**  
+> 対応プラットフォーム：**.NET(DLL,COM) / Arduino / Python(C,Micro,Circuit)**  
 
 本書はMMP APIについて解説します。
 
@@ -15,7 +15,7 @@
 3章 [規定値の設定](_DOC/03_規定値の設定.md)
 
 4章 ＡＰＩリファレンス
-- [Info：機器情報参照](_DOC/Info.md)
+- [Info：システム情報参照](_DOC/Info.md)
 - [Analog：アナログ入力](_DOC/Analog.md)
 - [Digital：デジタル入出力](_DOC/Digital.md)
 - [PWM：PWM出力](_DOC/PWM.md)

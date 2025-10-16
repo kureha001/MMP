@@ -93,9 +93,7 @@ class Perser {
     }
 
     // 該当コマンドなしの場合はエラーでリターン
-    char resp[6] = "!!!?!";
-    strncpy(resp, dat[0], 3);
-    MMP_SERIAL(ctx).print(resp);
+    MMP_SERIAL(ctx).print("#CMD!");
   }
 
 public:

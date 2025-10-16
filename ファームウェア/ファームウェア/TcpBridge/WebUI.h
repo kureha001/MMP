@@ -1,9 +1,8 @@
-// webui.hpp
+// WebUI.h
 #pragma once
 #include <Arduino.h>
 
 // ===================== Web UI ヘッダ =====================
-
 /**
  * @brief Web サーバを開始し、ルーティング（/, /config, /upload, /status）を登録する
  */
@@ -17,4 +16,4 @@ void webui_handle();
 /**
  * @brief /status とシリアルで共用する起動情報テキストを生成する
  */
-String buildStartupStatusText();
+String StatusText();

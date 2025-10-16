@@ -9,7 +9,7 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_com import  _DECtoHEX2, _HEX4toDEC
+from mmp_com import _getValue
 
 class _Analog:
 #━━━━━━━━━━━━━━━
@@ -29,19 +29,16 @@ class _Analog:
         chs   :int,   # チャンネル数
         devs  :int,   # デバイス数
     ) -> bool:
-        cmd = "ANALOG/SETUP"
-        res = self._p._send_command(
-            f"{cmd}:{_DECtoHEX2(chs)}:{_DECtoHEX2(devs)}!",
-            self.TimeOut
-            )
+        cmd = f"ANALOG/SETUP:{chs}:{devs}!"
+        res = self._p._send_command(cmd, self.TimeOut)
         return res == "!!!!!"
 
     #─────────────
     # 信号入力(バッファ格納)
     #─────────────
     def INPUT(self) -> bool:
-        cmd = "ANALOG/INPUT"
-        res = self._p._send_command(f"{cmd}!", self.TimeOut)
+        cmd = "ANALOG/INPUT!"
+        res = self._p._send_command(cmd, self.TimeOut)
         return res == "!!!!!"
 
     #─────────────
@@ -51,12 +48,9 @@ class _Analog:
         ch  :int,   # ① チャンネルID
         dev :int,   # ② デバイスID
     ) -> int:       # 戻値：アナログ値
-        cmd = "ANALOG/READ"
-        res = self._p._send_command(
-            f"{cmd}:{_DECtoHEX2(ch)}:{_DECtoHEX2(dev)}!",
-            self.TimeOut
-            )
-        ok, v = _HEX4toDEC(res); 
+        cmd = f"ANALOG/READ:{ch}:{dev}!"
+        res = self._p._send_command(cmd, self.TimeOut)
+        ok, v = _getValue(res)
         return v if ok else -1
 
     #─────────────

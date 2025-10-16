@@ -1,8 +1,8 @@
-// bridge.hpp
+// bridge.h
 #pragma once
 #include <Arduino.h>
 #include <WiFi.h>
-#include "config.hpp"
+#include "config.h"
 
 // ===================== ブリッジ（UART<->TCP）ヘッダ =====================
 

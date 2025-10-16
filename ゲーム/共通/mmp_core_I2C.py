@@ -9,7 +9,7 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-from mmp_com import _DECtoHEX2, _HEX4toDEC
+from mmp_com import _getValue
 
 class _I2C:
 #━━━━━━━━━━━━━━━
@@ -32,7 +32,7 @@ class _I2C:
     ) -> bool:
         cmd = "I2C/WRITE"
         res = self._p._send_command(
-            f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}:{_DECtoHEX2(val)}!",
+            f"{cmd}:{addr}:{reg}:{val}!",
             self.TimeOut
             )
         return res == "!!!!!"
@@ -46,9 +46,9 @@ class _I2C:
     ) -> int:       # 戻値：レジスタ値
         cmd = "I2C/READ"
         res = self._p._send_command(
-            f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}!",
+            f"{cmd}:{addr}:{reg}!",
             self.TimeOut
             )
-        ok, v = _HEX4toDEC(res); 
+        ok, v = _getValue(res); 
         return v if ok else 0
 

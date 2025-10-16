@@ -2,8 +2,8 @@
 //========================================================
 // モジュール：デジタル入出力
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.00 (2025/10/13)
-// - WEB-API書式対応
+// 変更履歴: Ver0.5.01 (2025/10/16)
+// - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -32,7 +32,7 @@ public:
     //━━━━━━━━━━━━━━━━━
     Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
-    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
+    const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
     // 機能 : 信号入力
@@ -41,22 +41,22 @@ public:
     // 戻り : ・正常 [X!!!!]
     //        ・異常 [POR!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"INPUT") == 0){
+    if (strcmp(Cmd,"INPUT") == 0){
 
       // １．前処理：
         // 1.1.書式チェック
-      if (dat_cnt != 2){ResChkErr(sp); return;}
+      if (dat_cnt != 2){_ResChkErr(sp); return;}
 
         // 1.2.単項目チェック
-      long port, val;
-      if (!strHex2long(dat[1], port, 0, 0xFF)){ResChkErr(sp); return;}
+      int port, val;
+      if (!_Str2Int(dat[1], port, 0, 39)){_ResChkErr(sp); return;}
 
       // ２．デジタル入力：
-      pinMode( (int)port, INPUT_PULLUP );
-      int16_t res = (int16_t)digitalRead(port);
+      pinMode(port, INPUT_PULLUP );
+      int res = digitalRead(port);
 
       // ３．後処理：
-      ResHex4(sp, res);
+      _ResValue(sp, res);
       return;
     }
 
@@ -68,30 +68,30 @@ public:
     // 戻り : ・正常 [!!!!!]
     //        ・異常 [POW!!]
     // ───────────────────────────────
-    if (strcmp(dat[0],"OUTPUT") == 0){
+    if (strcmp(Cmd,"OUTPUT") == 0){
 
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt != 3){ResChkErr(sp); return;}
+        if (dat_cnt != 3){_ResChkErr(sp); return;}
 
         // 1.2.単項目チェック
-      long port, val;
-      if  ( !strHex2long(dat[1], port, 0, 0xFF) ||
-            !strHex2long(dat[2], val,  0, 1   ) ){ResChkErr(sp); return;}
+      int port, val;
+      if  ( !_Str2Int(dat[1], port, 0, 39) ||
+            !_Str2Int(dat[2], val,  0, 1 ) ){_ResChkErr(sp); return;}
 
       // ２．デジタル出力：
-      pinMode((int)port, OUTPUT);
-      digitalWrite((int)port, (int)val);
+      pinMode(port, OUTPUT);
+      digitalWrite(port, val);
 
       // ３．後処理：
-      ResOK(sp);
+      _ResOK(sp);
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  ResNotCmd(sp);
+  _ResNotCmd(sp);
   return;
   }
 };

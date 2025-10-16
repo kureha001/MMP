@@ -23,7 +23,7 @@
 // ========== ボーレート候補（UART 自動接続で使用）=============
 #ifndef MMP_BAUD_CANDIDATES_DEFINED
   static const uint32_t MMP_BAUD_CANDIDATES[] = {
-  921600,57600,38400,19200,9600,4800,2400,300
+    921600,57600,38400,19200,9600,4800,2400,300
   };
   static const size_t   MMP_BAUD_CANDIDATES_LEN =
       sizeof(MMP_BAUD_CANDIDATES)/sizeof(MMP_BAUD_CANDIDATES[0]);
@@ -38,6 +38,3 @@
     #define MMP_ENABLE_TCP 0
   #endif
 #endif
-
-// ここでは WiFi.h をインクルードしません（依存を最小化）
-// 実際の Wi-Fi 接続・切断は MMP.cpp 側で __has_include(<WiFi.h>) を見て処理します。

@@ -2,8 +2,8 @@
 //========================================================
 // モジュール：ＭＰ３
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.00 (2025/10/13)
-// - WEB-API書式対応
+// 変更履歴: Ver0.5.01 (2025/10/16)
+// - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -12,8 +12,8 @@
 //━━━━━━━━━━━━━━━━━
 // デバイス情報
 //━━━━━━━━━━━━━━━━━
-  DFRobotDFPlayerMini g_mp3[2];           // コンテナ
-  bool g_mp3status[2] = { false, false }; // 接続状況
+  DFRobotDFPlayerMini g_MP3[2];           // コンテナ
+  bool g_MP3STATUS[2] = { false, false }; // 接続状況
 
 //━━━━━━━━━━━━━━━━━
 // 初期化処理
@@ -22,12 +22,12 @@ static void InitMP3(){
 
   Serial2.begin(9600); delay(50); // UART通信を開始
 
-  if (g_mp3[0].begin(Serial2)) {  // 接続済み設定
-    g_mp3[0].volume(20);          // プロパティ：音量の規定値
-    g_mp3status[0] = true;        // Global変数：状況を接続済
+  if (g_MP3[0].begin(Serial2)) {  // 接続済み設定
+    g_MP3[0].volume(20);          // プロパティ：音量の規定値
+    g_MP3STATUS[0] = true;        // Global変数：状況を接続済
   }
 
-  g_mp3status[1]   = false;       // Global変数：未使用分は未接続
+  g_MP3STATUS[1]   = false;       // Global変数：未使用分は未接続
 }
 
 //━━━━━━━━━━━━━━━━━
@@ -54,7 +54,7 @@ public:
     //━━━━━━━━━━━━━━━━━
     Stream&     sp = MMP_SERIAL(ctx);     // クライアントのストリーム
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
-    const char* Cmd = getCommand(dat[0]); // コマンド名を補正
+    const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
   //━━━━━━━━━━━━━━━━━
   // 対象トラックの制御
@@ -67,19 +67,19 @@ public:
     if (strcmp(Cmd,"TRACK/PLAY") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<4) {ResChkErr(sp); return;}
+        if (dat_cnt < 4) {_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
         // 1.2. 単項目チェック
-        long folder, track;
-        if (!strHex2long(dat[2], folder, 0, 0xFFFF) ||
-            !strHex2long(dat[3], track,  0, 0xFFFF) ){ResChkErr(sp); return;}
+        int folder, track;
+        if (!_Str2Int(dat[2], folder, 0, 255) ||
+            !_Str2Int(dat[3], track,  0, 255) ){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      g_mp3[idx].playFolder((int)folder,(int)track);
+      g_MP3[idx].playFolder(folder,track);
 
       // ３．後処理：
       reTrackkState(sp,idx);
@@ -94,18 +94,18 @@ public:
     if (strcmp(Cmd,"TRACK/LOOP") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt < 3){ResChkErr(sp); return;}
+        if (dat_cnt < 3){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        long loop; if (!strHex2long(dat[2], loop, 0, 1)){ResChkErr(sp); return;}
+        int loop; if (!_Str2Int(dat[2], loop, 0, 1)){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      if (loop==1)  g_mp3[idx].enableLoop();
-      else          g_mp3[idx].disableLoop();
+      if (loop==1)  g_MP3[idx].enableLoop();
+      else          g_MP3[idx].disableLoop();
 
       // ３．後処理：
       reTrackkState(sp,idx);
@@ -120,14 +120,14 @@ public:
     if (strcmp(Cmd,"TRACK/STOP") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<2){ResChkErr(sp); return;}
+        if (dat_cnt<2){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
       // ２．コマンド実行
-      g_mp3[idx].stop();
+      g_MP3[idx].stop();
             
       // ３．後処理：
       reTrackkState(sp,idx);
@@ -142,14 +142,14 @@ public:
     if (strcmp(Cmd,"TRACK/PAUSE") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt < 2){ResChkErr(sp); return;}
+        if (dat_cnt < 2){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
       // ２．コマンド実行
-      g_mp3[idx].pause();
+      g_MP3[idx].pause();
       
       // ３．後処理：
       reTrackkState(sp,idx);
@@ -164,14 +164,14 @@ public:
     if (strcmp(Cmd,"TRACK/START") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<2){ResChkErr(sp); return;}
+        if (dat_cnt<2){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
       // ２．コマンド実行
-      g_mp3[idx].start();
+      g_MP3[idx].start();
 
       // ３．後処理：
       reTrackkState(sp,idx);
@@ -189,20 +189,20 @@ public:
     if (strcmp(Cmd,"SET/VOLUME") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<3){ResChkErr(sp); return;}
+        if (dat_cnt<3){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        long v; if (!strHex2long(dat[2], v, 0, 30)){ResChkErr(sp); return;}
+        int v; if (!_Str2Int(dat[2], v, 0, 30)){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      g_mp3[idx].volume((int)v);
+      g_MP3[idx].volume(v);
 
       // ３．後処理：
-      ResOK(sp);
+      _ResOK(sp);
       return;
     }
     
@@ -215,20 +215,20 @@ public:
     if (strcmp(Cmd,"SET/EQ") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<3){ResChkErr(sp); return;}
+        if (dat_cnt<3){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        long mode; if (!strHex2long(dat[2], mode, 0, 5)){ResChkErr(sp); return;}
+        int mode; if (!_Str2Int(dat[2], mode, 0, 5)){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      g_mp3[idx].EQ((int)mode);
+      g_MP3[idx].EQ(mode);
 
       // ３．後処理：
-      ResOK(sp);
+      _ResOK(sp);
       return;
     }
     
@@ -243,24 +243,24 @@ public:
     if (strcmp(Cmd,"INFO/CONNECT") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt != 2){ResChkErr(sp); return;}
+        if (dat_cnt != 2){_ResChkErr(sp); return;}
 
         // 1.2. 単項目チェック
-        long dev;
-        if (!strHex2long(dat[1], dev, 1, 2)){ResChkErr(sp); return;}
+        int dev;
+        if (!_Str2Int(dat[1], dev, 1, 2)){_ResChkErr(sp); return;}
 
         // 1.3. 相関チェック
-        int idx = (int)dev - 1;
-        if (idx < 0 || idx >= 2){ResChkErr(sp); return;}
+        int idx = dev - 1;
+        if (idx < 0 || idx >= 2){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
-        if (!g_mp3status[idx]){ResChkErr(sp); return;}
+        if (!g_MP3STATUS[idx]){_ResChkErr(sp); return;}
 
       // ２．コマンド実行
-      int16_t res = g_mp3status[idx];
+      int res = g_MP3STATUS[idx];
 
       // ３．後処理：
-      ResHex4(sp, res);
+      _ResValue(sp, res);
       return;
     }
 
@@ -270,60 +270,37 @@ public:
     // 戻値：
     // ───────────────────────────────
     if (
-      strcmp(Cmd,"INFO/TRACK"  ) == 0 ||
-      strcmp(Cmd,"INFO/VOLUME" ) == 0 ||
-      strcmp(Cmd,"INFO/EQ"     ) == 0 ||
-      strcmp(Cmd,"INFO/FILEID" ) == 0 ||
-      strcmp(Cmd,"INFO/FILES"  ) == 0 )
+      strcmp(Cmd,"INFO/TRACK" ) == 0 ||
+      strcmp(Cmd,"INFO/VOLUME") == 0 ||
+      strcmp(Cmd,"INFO/EQ"    ) == 0 ||
+      strcmp(Cmd,"INFO/FILEID") == 0 ||
+      strcmp(Cmd,"INFO/FILES" ) == 0 )
     {
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt != 2){ResChkErr(sp); return;}
+        if (dat_cnt != 2){_ResChkErr(sp); return;}
 
         // 1.2. 対象外チェック
         int idx;
         if (!checkDev(sp, dat[1], idx)) return;
 
-        // 1.3. 単項目チェック
-        long sel; if (!strHex2long(dat[2], sel, 1, 5)){ResChkErr(sp); return;}
-
-      // ２．コマンド実行
-      int res = -1;
-        // 再生状況
-        if (strcmp(Cmd,"INFO/TRACK") == 0){
-          reTrackkState(sp,idx);
-          return;
-        }
-        // 音量
-        if (strcmp(Cmd,"INFO/VOLUME") == 0){
-          res = g_mp3[idx].readVolume();
-          res = g_mp3[idx].readVolume();
-        }
-        // イコライザーのモード
-        if (strcmp(Cmd,"INFO/EQ") == 0){
-          res = g_mp3[idx].readEQ();
-          res = g_mp3[idx].readEQ();
-        }
-        // ファイル番号
-        if (strcmp(Cmd,"INFO/FILEID") == 0){
-          res = g_mp3[idx].readFileCounts();
-          res = g_mp3[idx].readFileCounts();
-        }
-        // ファイル総数
-        if (strcmp(Cmd,"INFO/FILES") == 0){
-          res = g_mp3[idx].readCurrentFileNumber();
-          res = g_mp3[idx].readCurrentFileNumber();
-        }
-
+        // ２．コマンド実行
+        int res = -1;
+        if      (strcmp(Cmd,"INFO/TRACK" ) == 0) res = g_MP3[idx].readState(); 
+        else if (strcmp(Cmd,"INFO/VOLUME") == 0) res = g_MP3[idx].readVolume();
+        else if (strcmp(Cmd,"INFO/EQ"    ) == 0) res = g_MP3[idx].readEQ();
+        else if (strcmp(Cmd,"INFO/FILES" ) == 0) res = g_MP3[idx].readCurrentFileNumber();
+        else if (strcmp(Cmd,"INFO/FILEID") == 0) res = g_MP3[idx].readFileCounts();
+   
         // ３．後処理：
-        ResHex4(sp, (int16_t)res);
+        _ResValue(sp, res);
         return;
       }    
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  ResNotCmd(sp);
+  _ResNotCmd(sp);
   return;
   }
 
@@ -335,12 +312,12 @@ public:
   // ───────────────
   bool checkDev(Stream& sp, const char* s, int idx){
     // 単項目チェック
-    long dev;
-    if (!strHex2long(s, dev, 1, 2)){ResChkErr(sp); return false;}
+    int dev;
+    if (!_Str2Int(s, dev, 1, 2)){_ResChkErr(sp); return false;}
 
     // 対象外チェック
-    idx = (int)dev - 1;
-    if (!g_mp3status[idx]){ResDevErr(sp); return false;}
+    idx = dev - 1;
+    if (!g_MP3STATUS[idx]){_ResDevErr(sp); return false;}
 
     // 後処理
     return true;
@@ -350,8 +327,7 @@ public:
   // ───────────────
   void reTrackkState(Stream& sp, int idx){
       int res;
-      res = g_mp3[idx].readState();
-      res = g_mp3[idx].readState();
-      ResHex4(sp, (int16_t)res);
+      res = g_MP3[idx].readState();
+      _ResValue(sp, res);
   }
 };

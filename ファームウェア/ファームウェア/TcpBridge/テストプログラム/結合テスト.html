@@ -120,7 +120,7 @@
 
     // Configure(2,4) 相当（パラメータ名の差異を吸収するため両方送る）
     {
-      const r = await apiGet(`/ANALOG/SETUP:2:4:2:4`);
+      const r = await apiGet(`/ANALOG/SETUP:2:4`);
       logStd("　・アクセス範囲指定 → [2,4]  : " + ((r.json&&r.json.ok) ? "True":"False"));
       if (!(r.json&&r.json.ok)){ logStd("　 <<中断>>\n"); return; }
     }

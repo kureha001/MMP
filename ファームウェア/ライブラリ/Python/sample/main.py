@@ -98,6 +98,7 @@ def tf(b):
 def RunAnalog():
 
     print("１.アナログ入力（ HC4067：JoyPad1,2 ）")
+
     命令 = MMP.接続.ANALOG
 
     ok = 命令.SETUP(2, 4)
@@ -114,9 +115,9 @@ def RunAnalog():
 
     print("　・バッファを参照")
     for x in range(0, 2):
-        print("　　JoyPad[{}]".format(x + 1))
+        print(f"　　JoyPad[{x + 1}]")
         for y in range(0, 4):
-            print("　　　[{}] = {}".format(y, 命令.READ(x, y)))
+            print(f"　　　[{y}] = {命令.READ(x, y)}")
 
     print("　・丸め処理")
     print(f"　　　中間：{命令.ROUND (0, 0, 5, 10)}")
@@ -132,17 +133,17 @@ def RunAnalog():
 def RunDigital():
 
     print("２.デジタル入出力（ GPIO ）")
+
     命令 = MMP.接続.DIGITAL
 
     print("　・入力")
-    print("　　←[2] = {}".format("ON" if 命令.INPUT(2) == 0 else "OFF"))
-    print("　　←[6] = {}".format("ON" if 命令.INPUT(6) == 0 else "OFF"))
-    print("　　←[7] = {}".format("ON" if 命令.INPUT(7) == 0 else "OFF"))
+    for pin in (2, 6, 7):
+        print(f"　　[{pin}] {'ON' if 命令.INPUT(pin)==0 else 'OFF'}")
 
     print("　・出力[3]")
     for _ in range(3):
-        print("　　→ HIGH : {}".format(tf(命令.OUTPUT(3, 1)))); time.sleep(0.5)
-        print("　　→ LOW  : {}".format(tf(命令.OUTPUT(3, 0)))); time.sleep(0.5)
+        print(f"　　・[HIGH] {tf(命令.OUTPUT(3, 1))}"); time.sleep(0.5)
+        print(f"　　・[LOW ] {tf(命令.OUTPUT(3, 0))}"); time.sleep(0.5)
     print("　[終了]\n")
 
 
@@ -152,6 +153,7 @@ def RunDigital():
 def RunMp3Playlist():
 
     print("３.ＭＰ３再生（ DFPlayer ）")
+
     命令0 = MMP.接続.MP3.SET
     命令1 = MMP.接続.MP3.TRACK
 
@@ -180,6 +182,7 @@ def RunMp3Playlist():
 def RunMp3Control():
 
     print("４.ＭＰ３制御（ DFPlayer ）")
+
     命令0 = MMP.接続.MP3.SET
     命令1 = MMP.接続.MP3.TRACK
     命令2 = MMP.接続.MP3.INFO
@@ -302,6 +305,7 @@ def RunPwmSweep(命令, ch, start, end, step, delay):
 def RunPwm_Angle():
 
     print("６.ＰＷＭ（ 角度指定：180度型サーボ ）")
+
     命令 = MMP.接続.PWM.ANGLE
 
     CH              = CH_180    # サーボを接続するGPIO番号 
@@ -349,6 +353,7 @@ def RunPwm_Angle():
 def RunPwm_Rotate():
 
     print("７.ＰＷＭ（ 連続回転型サーボ ）")
+
     命令 = MMP.接続.PWM.ROTATE
 
     CH              = CH_360    # サーボを接続するGPIO番号 
@@ -357,7 +362,7 @@ def RunPwm_Rotate():
     RATE            = 30        # 出力率
 
     print("　・初期化")
-    MMP.接続.PWM.ROTATE.SETUP(
+    命令.SETUP(
         CH_360  ,   # サーボを接続するGPIO番号
         -1      ,   # 単一のGPIO番号
         PWM_MIN ,   # ＰＷＭ値(右周り最大)

@@ -41,10 +41,10 @@ class _MP3:
         #─────────────
         def VOLUME(self,
             dev     :int,   # ① デバイスID
-            volume  :int,   # ② 音量
-        ) -> bool:
+            vol     :int,   # ② 音量
+        ) -> bool   :       #
             cmd = "MP3/SET/VOLUME"
-            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(volume)}!"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}:{_DECtoHEX2(vol)}!"
             res = self._p._send_command(cmd, self.TimeOut) 
             return res == "!!!!!"
 
@@ -148,15 +148,15 @@ class _MP3:
         #─────────────
         # デバイス接続状況
         #─────────────
-        def CONNECT(self, deb:int) -> int:
+        def CONNECT(self, dev:int) -> int:
             cmd = "MP3/INFO/CONNECT"
-            cmd = f"{cmd}:{_DECtoHEX2(deb)}!"
+            cmd = f"{cmd}:{_DECtoHEX2(dev)}!"
             res = self._p._send_command(cmd, self.TimeOut) 
             ok, v = _HEX4toDEC(res); 
             return v if ok else -1
 
         #─────────────
-        # 再生状況
+        # トラック
         # 音量
         # イコライザ
         # 現在のファイル番号

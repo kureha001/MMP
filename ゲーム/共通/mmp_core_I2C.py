@@ -26,9 +26,9 @@ class _I2C:
     # 書き込み
     #─────────────
     def WRITE(self,
-        addr:int,   # アドレス
-        reg :int,   # レジスタ
-        val :int,   # 値
+        addr:int,   # ① アドレス
+        reg :int,   # ② レジスタ
+        val :int,   # ③ 値
     ) -> bool:
         cmd = "I2C/WRITE"
         res = self._p._send_command(
@@ -41,9 +41,9 @@ class _I2C:
     # 読み出し
     #─────────────
     def READ(self,
-        addr:int,   # アドレス
-        reg :int,   # レジスタ
-    ) -> int:
+        addr:int,   # ① アドレス
+        reg :int,   # ② レジスタ
+    ) -> int:       # 戻値：レジスタ値
         cmd = "I2C/READ"
         res = self._p._send_command(
             f"{cmd}:{_DECtoHEX2(addr)}:{_DECtoHEX2(reg)}!",

@@ -4,9 +4,9 @@
 //============================================================
 #include "MmpClient.h"
 
-//------------------------------------------------------------
-// ★TCP通信が必要な場合の条件付き実装
-//------------------------------------------------------------
+//━━━━━━━━━━━━━━━
+// ＴＣＰ通信が必要な場合
+//━━━━━━━━━━━━━━━
 #if defined(MMP_ENABLE_TCP)
   #include <WiFi.h>
   // この翻訳単位内で完結する TCP ハンドル（メンバ不要）
@@ -14,17 +14,18 @@
 #endif
 
 
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+//━━━━━━━━━━━━━━━
+// ネームスペース
+//━━━━━━━━━━━━━━━
 using namespace Mmp::Core;
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-//============================================================
+//━━━━━━━━━━━━━━━
 // 低レイヤ コマンド：シリアル用
-//============================================================
+//━━━━━━━━━━━━━━━
 //【内部利用】
-    //-------------------
+    //─────────────
     // 接続：条件指定（UART）
-    //-------------------
+    //─────────────
     bool MmpClient::Open(
         uint32_t baud,
         int32_t /*timeoutIo*/
@@ -50,20 +51,19 @@ using namespace Mmp::Core;
         return true;
 }
 
-    //-------------------
+    //─────────────
     // バージョンチェック
-    //-------------------
+    //─────────────
     bool MmpClient::Verify(
         int32_t timeoutVerify
     ){
-        // VER! に対し 5 文字（末尾 '!'）が返れば接続 OK とみなす（内容は数値前提にしない）
-        String s = GetVersion(timeoutVerify);
+        String s = INFO_VERSION();
         return (s.length() == 5 && s[4] == '!');
     }
 
-    //-------------------
+    //─────────────
     // ＭＭＰシリアル通信
-    //-------------------
+    //─────────────
     String MmpClient::SendCommand(
         const String& command,
         int32_t timeoutMs
@@ -105,19 +105,18 @@ using namespace Mmp::Core;
             delay(1);
         }
 
-        // 接続情報を更新する。
+        // 接続情報を更新
         _lastError = "Timeout or invalid 5-char reply";
-
         return "";           // 戻り値 → [失敗]
     }
 
-//============================================================
+//━━━━━━━━━━━━━━━
 // 低レイヤ コマンド：ＴＣＰ用
-//============================================================
+//━━━━━━━━━━━━━━━
 #if defined(MMP_ENABLE_TCP)
-    //-------------------
+    //─────────────
     // 接続：条件指定（TCP）
-    //-------------------
+    //─────────────
     bool MmpClient::OpenTcp(
         const char* host,
         uint16_t    port,
@@ -141,7 +140,7 @@ using namespace Mmp::Core;
         // 入力バッファを消去する。
         ClearInput();
 
-        // 接続情報を更新する。
+        // 接続情報を更新
         _isOpen           = true;
         _connected_port   = String("tcp://") + host + ":" + String(port);
         _connected_baud   = 0; // TCP なので実意味なし（記録のみ）
@@ -149,9 +148,9 @@ using namespace Mmp::Core;
         return true;
     }
 
-    //-------------------
+    //─────────────
     // 接続：TCP + Verify
-    //-------------------
+    //─────────────
     bool MmpClient::ConnectTcp(
         const char* host,
         uint16_t    port,
@@ -180,11 +179,10 @@ using namespace Mmp::Core;
     }
 #endif
 
-
 //【外部公開】
-    //-------------------
+    //─────────────
     // 接続：自動（UART）
-    //-------------------
+    //─────────────
     bool MmpClient::ConnectAutoBaud(
         const uint32_t* cand,   // ①通信速度一覧
         size_t n                // ②
@@ -213,13 +211,12 @@ using namespace Mmp::Core;
     
         // 接続情報を更新する。
         _lastError = "No baud matched.";
-
         return false;               // 戻り値 → [失敗]
     }
 
-    //-------------------
+    //─────────────
     // 接続：条件指定（UART）
-    //-------------------
+    //─────────────
     bool MmpClient::ConnectWithBaud(
         uint32_t baud           ,   // ① 通信速度
         int32_t timeoutIo       ,   // ② 一般用タイムアウト(単位；ミリ秒)
@@ -262,9 +259,9 @@ using namespace Mmp::Core;
         return true;            // 戻り値 → [成功]
     }
 
-    //-------------------
+    //─────────────
     // 切断（UART/TCP共通）
-    //-------------------
+    //─────────────
     void MmpClient::Close(){
         // ポートが開いていたら閉じる。
         if (_isOpen) {
@@ -288,456 +285,89 @@ using namespace Mmp::Core;
         }
     }
 
-//============================================================
-//【内部利用】フラットＡＰＩの実装
-//============================================================
+//━━━━━━━━━━━━━━━
+// モジュール：システム情報
+//━━━━━━━━━━━━━━━
+    //─────────────
+    // バージョン
+    //─────────────
+    String MmpClient::INFO_VERSION(){
+        return SendCommand("INFO/VERSION!", Settings.TimeoutGeneral);
+    }
 
-    //===========================
-    // << 情報モジュール >>
-    //===========================
-        //----------------------
-        // １．バージョン
-        //----------------------
-        String MmpClient::GetVersion(
-            int32_t timeoutMs
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutGeneral);
-            return SendCommand("VER!", t);
+//━━━━━━━━━━━━━━━
+// モジュール：汎用
+//━━━━━━━━━━━━━━━
+    //─────────────
+    // 数値取得型
+    //─────────────
+    int MmpClient::RunGetVal(
+        int32_t argTime,        //
+        const   String& path,   // 例: F("MP3/INFO")
+        const   String& cmd ,   // 例: F("TRACK")
+        int     arg1 /*-1000*/,
+        int     arg2 /*-1000*/,
+        int     arg3 /*-1000*/,
+        int     arg4 /*-1000*/
+    ){
+        // リクエスト(URI)を作成する
+        String uri;
+        uri.reserve(32);
+        uri += path; uri += '/'; uri += cmd;
+        const int args[4] = {arg1, arg2, arg3, arg4};
+        for (int i = 0; i < 4; ++i) {
+        if (args[i] != -1000) { uri += ':'; uri += args[i]; }
         }
+        uri += '!';
 
-        //----------------------
-        // 2-1.ＰＷＭデバイス
-        //----------------------
-        uint16_t MmpClient::GetPwx(
-            int32_t devId0to15,
-            int32_t timeoutMs
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            String resp = SendCommand("PWX:" + Hex2(devId0to15) + "!", t);
-            uint16_t v = 0;
-            if (!TryParseHex4Bang(resp, v)) {
-                _lastError = "PWX bad response.";
-                return 0;
-        }
+        // 作成したURIでMMPにリクエストし、レスポンスを受け取る
+        String resp = SendCommand(uri, argTime);
+
+        // レスポンスから値を抽出する
+        // （数値：true／エラー：false＋-9000番台コード）
+        int v; bool ok = TryParseDecBang5(resp, v);
+
+        // 抽出結果が異常の場合、エラーメッセージを残す
+        if (!ok){_lastError = "[" + resp + "] " + uri;}
+
+        // 正常・異常に関わらず、値を返す
         return v;
+    }
+
+    //─────────────
+    // 合否型
+    //─────────────
+    bool MmpClient::RunGetOK(
+        int32_t argTime,        //
+        const   String& path,   // 例: F("MP3/INFO")
+        const   String& cmd ,   // 例: F("TRACK")
+        int     arg1 /*-1000*/,
+        int     arg2 /*-1000*/,
+        int     arg3 /*-1000*/,
+        int     arg4 /*-1000*/,
+        int     arg5 /*-1000*/,
+        int     arg6 /*-1000*/,
+        int     arg7 /*-1000*/,
+        int     arg8 /*-1000*/
+    ){
+        // リクエスト(URI)を作成する
+        String uri;
+        uri.reserve(32);
+        uri += path; uri += '/'; uri += cmd;
+        const int args[8] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
+        for (int i = 0; i < 8; ++i) {
+        if (args[i] != -1000) { uri += ':'; uri += args[i]; }
         }
+        uri += '!';
 
-        //----------------------
-        // 2-2.音声デバイス
-        //----------------------
-        uint16_t MmpClient::GetDpx(
-            int32_t devId1to4,
-            int32_t timeoutMs
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-            String resp = SendCommand("DPX:" + Hex2(devId1to4) + "!", t);
-            uint16_t v = 0;
+        // 作成したURIでMMPにリクエストし、レスポンスを受け取る
+        String resp = SendCommand(uri, argTime);
 
-            if (!TryParseHex4Bang(resp, v)) {
-                _lastError = "DPX bad response.";
-                return 0;
-            }
-            return v;
-        }
+        // 正常値を返す
+        if (resp == "!!!!!") return true;
 
-    //===========================
-    // << アナログ モジュール >>
-    //===========================
-        //-----------------------------------------
-        // １．使用範囲設定
-        //-----------------------------------------
-        bool MmpClient::AnalogConfigure(
-            int32_t hc4067chTtl,
-            int32_t hc4067devTtl,
-            int32_t timeoutMs
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            if (hc4067chTtl  < 1 || hc4067chTtl  > 16) { _lastError = "AnalogConfigure: hc4067chTtl out of range." ; return false; }
-            if (hc4067devTtl < 1 || hc4067devTtl > 4 ) { _lastError = "AnalogConfigure: hc4067devTtl out of range."; return false; }
-
-            String resp = SendCommand("ANS:" + Hex2(hc4067chTtl) + ":" + Hex2(hc4067devTtl) + "!", t);
-            return (resp == "!!!!!");
-        }
-
-        //-----------------------------------------
-        // ２．測定値バッファ更新
-        //-----------------------------------------
-        bool MmpClient::AnalogUpdate(
-            int32_t timeoutMs
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            String resp = SendCommand("ANU!", t);
-            return (resp == "!!!!!");
-        }
-
-        //-----------------------------------------
-        // ３．測定値バッファ読取（丸めなし）
-        // ４．測定値バッファ読取（中央値基準の丸め）
-        // ５．測定値バッファ読取（切り上げ丸め）
-        // ６．測定値バッファ読取（切り捨て丸め）
-        //-----------------------------------------
-        int32_t MmpClient::AnalogRead(
-            int32_t hc4067ch0to15,  //
-            int32_t hc4067dev0to3,  //
-            int32_t timeoutMs       //
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutAnalog);
-            if (hc4067ch0to15 < 0 || hc4067ch0to15 > 15) { _lastError = "AnalogRead: hc4067ch0to15 out of range."; return -1; }
-            if (hc4067dev0to3 < 0 || hc4067dev0to3 > 3 ) { _lastError = "AnalogRead: hc4067dev0to3 out of range."; return -1; }
-
-            String resp = SendCommand("ANR:" + Hex2(hc4067ch0to15) + ":" + Hex2(hc4067dev0to3) + "!", t);
-            uint16_t v = 0;
-            if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-            _lastError = "AnalogRead: bad response.";
-            return -1;
-        }
-
-
-    //===========================
-    // << デジタル モジュール >>
-    //===========================
-        //---------------------
-        // １．入力
-        //---------------------
-        int32_t MmpClient::DigitalIn(
-            int32_t gpioId  ,   //
-            int32_t timeoutMs   //
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutDigital);
-            String resp = SendCommand("POR:" + Hex2(gpioId) + "!", t);
-            uint16_t v = 0;
-            if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-            _lastError = "DigitalIn: bad response.";
-            return 0;
-        }
-
-        //---------------------
-        // ２．出力
-        //---------------------
-        bool MmpClient::DigitalOut(
-            int32_t gpioId  ,   //
-            int32_t val0or1 ,   //
-            int32_t timeoutMs   //
-        ){
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutDigital);
-            String resp = SendCommand("POW:" + Hex2(gpioId) + ":" + ((val0or1 & 1) ? "1" : "0") + "!", t);
-            return (resp == "!!!!!");
-        }
-
-
-    //===========================
-    // << ＰＷＭモジュール >>
-    //===========================
-        //---------------------
-        // １．デバイス情報
-        //---------------------
-
-        //---------------------
-        // ２．出力
-        //---------------------
-        bool MmpClient::PwmValue(
-            int32_t chId0to255, //
-            int32_t val0to4095, //
-            int32_t timeoutMs   //
-        ){                      //
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            String resp = SendCommand("PWM:" + Hex2(chId0to255) + ":" + Hex4(val0to4095) + "!", t);
-            return (resp == "!!!!!");
-        }
-
-        //---------------------
-        // ３．角度設定
-        //---------------------
-        bool MmpClient::PwmInit(
-            int32_t angleMin,   //
-            int32_t angleMax,   //
-            int32_t pwmMin  ,   //
-            int32_t pwmMax  ,   //
-            int32_t timeoutMs   //
-        ){                      //
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            String resp = SendCommand("PWI:" + Hex3(angleMin) + ":" + Hex3(angleMax) + ":" + Hex4(pwmMin) + ":" + Hex4(pwmMax) + "!", t);
-            return (resp == "!!!!!");
-        }
-
-        //---------------------
-        // ４．角度指定
-        //---------------------
-        bool MmpClient::PwmAngle(
-            int32_t chId0to255  ,   //
-            int32_t angle0to180 ,   //
-            int32_t timeoutMs       //
-        ){                          //
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutPwm);
-            String resp = SendCommand("PWA:" + Hex2(chId0to255) + ":" + Hex3(angle0to180) + "!", t);
-            return (resp == "!!!!!");
-        }
-
-
-    //===========================
-    // << 音声モジュール >>
-    //===========================
-        //----------------------
-        // １. 単独コマンド
-        //----------------------
-            //----------------------
-            // 1-1. デバイス情報
-            //----------------------
-
-            //----------------------
-            // 1-2. 音量設定
-            //----------------------
-            bool MmpClient::DfVolume(
-                int32_t devId1to4   ,   //
-                int32_t vol0to30    ,   // 
-                int32_t timeoutMs       //
-            ){                          //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "VOL:" + Hex2(devId1to4)
-                    + ":" + Hex2(vol0to30)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-            //----------------------
-            // 1-3.イコライザ設定
-            //----------------------
-            bool MmpClient::DfSetEq(
-                int32_t devId1to4   ,   //
-                int32_t mode0to5    ,   //
-                int32_t timeoutMs       //
-            ){                          //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DEF:" + Hex2(devId1to4)
-                    + ":" + Hex2(mode0to5)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-        //------------------------
-        // ２. 再生サブモジュール
-        //------------------------
-            //----------------------
-            // 2-1. 再生（Start）
-            //----------------------
-            bool MmpClient::DfStart(
-                int32_t devId1to4   ,   //
-                int32_t dir1to255   ,   //
-                int32_t file1to255  ,   //
-                int32_t timeoutMs       //
-            ){                          //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DIR:" + Hex2(devId1to4)
-                    + ":" + Hex2(dir1to255)
-                    + ":" + Hex2(file1to255) 
-                    + "!", t
-                );
-            return (resp == "!!!!!");
-            }
-
-            //----------------------
-            // 2-2. ループ再生指定
-            //----------------------
-            bool MmpClient::DfSetLoop(
-                int32_t devId1to4   ,   //
-                int32_t on0or1      ,   //
-                int32_t timeoutMs       //
-            ){                          //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DLP:"+ Hex2(devId1to4)
-                    + ":" + Hex2(on0or1 ? 1 : 0)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-            //----------------------
-            // 2-3. 停止
-            //----------------------
-            bool MmpClient::DfStop(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DSP:" + Hex2(devId1to4)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-            //----------------------
-            // 2-4. 一時停止
-            //----------------------
-            bool MmpClient::DfPause(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DPA:" + Hex2(devId1to4)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-            //----------------------
-            // 2-5. 再開
-            //----------------------
-            bool MmpClient::DfResume(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DPR:" + Hex2(devId1to4)
-                    + "!", t
-                );
-                return (resp == "!!!!!");
-            }
-
-        //------------------------
-        // ３. 参照サブモジュール
-        //------------------------
-            //----------------------
-            // 3-1. 再生状況
-            //----------------------
-            int32_t MmpClient::DfReadState(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DST:" + Hex2(devId1to4)
-                    + ":" + Hex2(1) + "!", t
-                );
-                uint16_t v = 0;
-                if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-                _lastError = "DfReadState: bad response.";
-                return -1;
-            }
-
-            //----------------------
-            // 3-2. ボリューム
-            //----------------------
-            int32_t MmpClient::DfReadVolume(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DST:" + Hex2(devId1to4)
-                    + ":" + Hex2(2)
-                    + "!", t
-                );
-                uint16_t v = 0;
-                if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-                _lastError = "DfReadVolume: bad response.";
-                return -1;
-            }
-
-            //----------------------
-            // 3-3. イコライザのモード
-            //----------------------
-            int32_t MmpClient::DfReadEq(
-                int32_t devId1to4,  //
-                int32_t timeoutMs   //
-            ){                      //
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DST:" + Hex2(devId1to4)
-                    + ":" + Hex2(3)
-                    + "!", t
-                );
-                uint16_t v = 0;
-                if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-                _lastError = "DfReadEq: bad response.";
-                return -1;
-            }
-
-            //----------------------
-            // 3-4. 総ファイル総数
-            //----------------------
-            int32_t MmpClient::DfReadFileCounts(
-                int32_t devId1to4,
-                int32_t timeoutMs
-            ){
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DST:" + Hex2(devId1to4)
-                    + ":" + Hex2(4)
-                    + "!", t
-                );
-                uint16_t v = 0;
-                if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-                _lastError = "DfReadFileCounts: bad response.";
-                return -1;
-            }
-
-            //----------------------
-            // 3-5. 現在のファイル番号
-            //----------------------
-            int32_t MmpClient::DfReadFileNumber(
-                int32_t devId1to4,
-                int32_t timeoutMs
-            ){
-                const int32_t t = Resolve(timeoutMs, Settings.TimeoutAudio);
-                String resp = SendCommand(
-                    "DST:" + Hex2(devId1to4)
-                    + ":" + Hex2(5)
-                    + "!", t
-                );
-                uint16_t v = 0;
-                if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-                _lastError = "DfReadFileNumber: bad response.";
-                return -1;
-            }
-
-
-//===========================
-// << Ｉ２Ｃモジュール >>
-//===========================
-        //----------------------
-        // １．書き込み
-        //----------------------
-        bool MmpClient::I2cWrite(
-            int32_t addr,       //
-            int32_t reg ,       //
-            int32_t val ,       //
-            int32_t timeoutMs   //
-        ){                      //
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutI2c);
-            String resp = SendCommand(
-                "I2W:" + Hex2(addr)
-                + ":" + Hex2(reg)
-                + ":" + Hex2(val)
-                + "!", t
-            );
-            return (resp == "!!!!!");
-        }
-
-        //----------------------
-        // ２．読み出し
-        //----------------------
-        int32_t MmpClient::I2cRead (
-            int32_t addr    ,   //
-            int32_t reg     ,   //
-            int32_t timeoutMs   //
-        ){                      //
-            const int32_t t = Resolve(timeoutMs, Settings.TimeoutI2c);
-            String resp = SendCommand(
-                "I2R:" + Hex2(addr)
-                + ":" + Hex2(reg)
-                + "!", t
-            );
-            uint16_t v = 0;
-            if (TryParseHex4Bang(resp, v)) return (int32_t)v;
-            _lastError = "I2cRead: bad response.";
-            return 0;
-        }
+        // 抽出結果が異常の場合、エラーメッセージを残す
+        // 異常値を返す
+        _lastError = "[" + resp + "] " + uri;
+        return false;
+    }

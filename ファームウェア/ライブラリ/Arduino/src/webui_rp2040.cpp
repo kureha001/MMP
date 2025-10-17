@@ -1,11 +1,14 @@
-// webui.cpp
+// webui_rp2040.cpp
 //=======================================
-// Web UI 実装
+// Web UI 実装（RP2040 / Earle Philhower core）
 //=======================================
+#if defined(ARDUINO_ARCH_RP2040)
+
+#include "webui.hpp"
 #include "config.hpp"
 #include <LittleFS.h>
-#include <WebServer.h>
 #include <WiFi.h>
+#include <WebServer.h>
 
 extern String g_wifi_mode;  // "STA" もしくは "AP"
 extern String g_wifi_ssid;  // 接続中の SSID / AP の SSID
@@ -15,7 +18,7 @@ static WebServer http(80);  // HTTPサーバ(ポート)
 // 起動情報テキストを生成
 //--------------------------------------
 String buildStartupStatusText(){
-  String s; s.reserve(256);
+  String s; s.reserve(128);
   s += "Mode="; s += g_wifi_mode; s += "  SSID="; s += g_wifi_ssid; s += "\n";
   s += "IP="; s += (g_wifi_mode=="STA" ? WiFi.localIP().toString() : WiFi.softAPIP().toString()); s += "\n";
   return s;
@@ -39,13 +42,11 @@ static void handleRoot(){
 // ない場合は 404
 //--------------------------------------
 static void handleViewConfig(){
-    
-  if (!LittleFS.begin(true)) { http.send(500,"text/plain","LittleFS error"); return; }
+  if (!LittleFS.begin()) { http.send(500,"text/plain","LittleFS mount error"); return; }
   if (!LittleFS.exists("/config.json")) { http.send(404,"text/plain","/config.json not found"); return; }
-
   File f = LittleFS.open("/config.json","r");
+  if (!f) { http.send(500,"text/plain","open failed"); return; }
   http.streamFile(f, "application/json");
-  
   f.close();
 }
 
@@ -54,26 +55,19 @@ static void handleViewConfig(){
 // PC側のファイル名に関係なく /config.json で保存する
 //----------------------------------------------------
 static void handleUpload(){
-
   HTTPUpload& up = http.upload();   // アップロード状態
   static File uf;                   // アップロード中のファイル
 
-  // ★アップロード状態に応じた処理：
-  // (開始) -> ファイルオープン
   if (up.status == UPLOAD_FILE_START){
-    if (!LittleFS.begin(true)) { http.send(500,"text/plain","LittleFS error"); return; }
+    if (!LittleFS.begin()) { http.send(500,"text/plain","LittleFS mount error"); return; }
     uf = LittleFS.open("/config.json","w"); // ★ 常に /config.json に保存
-
-  // (書き込み中) -> 書き込み
   } else if (up.status == UPLOAD_FILE_WRITE){
     if (uf) uf.write(up.buf, up.currentSize);
-
-  // (完了) -> クローズして再起動
   } else if (up.status == UPLOAD_FILE_END){
     if (uf) uf.close();
     http.send(200,"text/plain","Uploaded. Rebooting...");
     delay(500);
-    ESP.restart();
+    rp2040.reboot();
   }
 }
 
@@ -93,7 +87,7 @@ void webui_begin(){
   http.on("/upload", HTTP_POST, [](){}, handleUpload);
   http.on("/status", HTTP_GET, handleStatus);
   http.begin();
-  Serial.println("HTTP ready: /  /config  /upload  /status");
+  Serial.println("HTTP ready (RP2040): /  /config  /upload  /status");
 }
 
 //--------------------------------------
@@ -102,3 +96,5 @@ void webui_begin(){
 void webui_handle(){
   http.handleClient();
 }
+
+#endif // ARDUINO_ARCH_RP2040

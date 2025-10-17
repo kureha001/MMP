@@ -41,10 +41,8 @@ using Mmp::Core::MmpClient;
 
 
 //▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+// 無名名前空間：ヘルパ類のみ（接続処理本体は namespace MMP 内で定義）
 namespace {
-
-  bool tryConnectOne(const WifiCand& c);    // Wi-Fi候補1つを試行
-  void startAPFallback();                   // APフォールバック起動
 
   // "a=1&b=2" から key の値を取得（無ければ defVal）
   static String get_qparam(const String& qs, const char* key, const char* defVal) {
@@ -184,11 +182,11 @@ namespace {
     return false;
   }
 
-} // namespace
+} // namespace（無名）
 //▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-  String g_wifi_mode;                       // "STA" もしくは "AP"
-  String g_wifi_ssid;                       // 接続中の SSID / AP の SSID
+String g_wifi_mode;                       // "STA" もしくは "AP"
+String g_wifi_ssid;                       // 接続中の SSID / AP の SSID
 
 //▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 namespace MMP {
@@ -380,7 +378,11 @@ bool tryConnectOne(const WifiCand& c){
 
   // (失敗) -> 切断して false
   } else {
-    WiFi.disconnect(true, true);
+    #if defined(ARDUINO_ARCH_ESP32)
+      WiFi.disconnect(true, true);
+    #else
+      WiFi.disconnect(true);     // RP2040(Earle core) は引数1つ
+    #endif
     delay(200);
     return false;
   }
@@ -391,8 +393,10 @@ bool tryConnectOne(const WifiCand& c){
 //-----------------------
 void startAPFallback(){
   if (!WIFI.apfb.enabled) return;
+#if MMP_HAS_WIFI
   WiFi.mode(WIFI_AP);
   WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
+#endif
   g_wifi_mode = "AP";
   g_wifi_ssid = WIFI.apfb.ssid;
 }
@@ -460,11 +464,11 @@ bool 通信接続(
   }
 #endif
 
-  conln(log, String(F("通信ポート      : "  )) + cli.ConnectedPort());
-  conln(log, String(F("接続速度        : "  )) + String(cli.ConnectedBaud()) + F("bps"));
-  conln(log, String(F("MMP firmware    : "  )) + cli.Info.Version());
-  conln(log, String(F("PCA9685  [0]    : 0x")) + String(cli.Info.Dev.Pwm(0),   HEX));
-  conln(log, String(F("DFPlayer [1]    : 0x")) + String(cli.Info.Dev.Audio(1), HEX));
+  conln(log, String(F("通信ポート      : ")) + cli.ConnectedPort()                );
+  conln(log, String(F("接続速度        : ")) + String(cli.ConnectedBaud()) + "bps");
+  conln(log, String(F("MMP firmware    : ")) + String(cli.INFO.VERSION())         );
+  conln(log, String(F("PCA9685  [0]    : ")) + String(cli.PWM.INFO.CONNECT(0))    );
+  conln(log, String(F("DFPlayer [1]    : ")) + String(cli.MP3.INFO.CONNECT(1))    );
 
   return true;
 }

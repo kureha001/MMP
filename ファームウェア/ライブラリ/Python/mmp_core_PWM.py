@@ -29,10 +29,10 @@ class _Pwm:
     # ＰＷＭ値出力
     #─────────────
     def OUTPUT(self,
-        chId      :int          , # チャンネルID
-        pwmVal    :int          , # ＰＷＭ値
-    ) -> bool:
-        cmd = f"PWM/OUTPUT:{chId}:{pwmVal}!"
+        ch  :int,   # チャンネルID
+        val :int,   # ＰＷＭ値
+    ) -> bool:      #
+        cmd = f"PWM/OUTPUT:{ch}:{val}!"
         res = self._p._send_command(cmd, self.TimeOut)
         return res == "!!!!!"
 
@@ -41,7 +41,7 @@ class _Pwm:
     #─────────────
     class _Info:
         #─────────────
-        # インストラクタ
+        # コンストラクタ
         #─────────────
         def __init__(self, p, argTimeOut):
             self._p = p
@@ -71,15 +71,15 @@ class _Pwm:
         # 初期化
         #─────────────
         def SETUP(self,
-            chIDfrom    :int        , # チャンネルID(開始)
-            chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
+            chFrom    :int        , # チャンネルID(開始)
+            chTo      :int = -1   , # チャンネルID(終了) ※-1：単一
             degTo       :int = 180  , # 角度(最大)
             pwmFrom     :int = 300  , # ＰＷＭ値(0度)
             pwmTo       :int = 600  , # ＰＷＭ値(最大角度)
             pwmMiddle   :int = -1   , # ＰＷＭ値(中間) ※-1：自動
         ) -> bool:
             cmd = ("PWM/ANGLE/SETUP:"
-                f"{chIDfrom}:{chIDto}:"
+                f"{chFrom}:{chTo}:"
                 f"{degTo}:"
                 f"{pwmFrom}:{pwmTo}:{pwmMiddle}!"
             )
@@ -90,10 +90,10 @@ class _Pwm:
         # 設定削除
         #─────────────
         def DELETE(self,
-            chIDfrom:int        , # チャンネルID(開始)
-            chIDto  :int = -1   , # チャンネルID(終了) ※-1：単一
+            chFrom:int        , # チャンネルID(開始)
+            chTo  :int = -1   , # チャンネルID(終了) ※-1：単一
         ) -> bool:
-            cmd = f"PWM/ANGLE/DELETE:{chIDfrom}:{chIDto}!"
+            cmd = f"PWM/ANGLE/DELETE:{chFrom}:{chTo}!"
             res = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"
 
@@ -135,14 +135,14 @@ class _Pwm:
         # プリセット登録
         #─────────────
         def SETUP(self,
-            chIDfrom    :int        , # チャンネルID(開始)
-            chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
+            chFrom    :int        , # チャンネルID(開始)
+            chTo      :int = -1   , # チャンネルID(終了) ※-1：単一
             pwmLow      :int = 300  , # ＰＷＭ値(左周り最大)
             pwmHigh     :int = 600  , # ＰＷＭ値(右周り最大)
             pwmMiddle   :int = -1   , # ＰＷＭ値(停止) ※-1：自動
         ) -> bool:
             cmd = ("PWM/ROTATE/SETUP:"
-                f"{chIDfrom}:{chIDto}:"
+                f"{chFrom}:{chTo}:"
                 f"{pwmLow}:{pwmHigh}:{pwmMiddle}!"
             )
             res    = self._p._send_command(cmd, self.TimeOut)
@@ -152,11 +152,11 @@ class _Pwm:
         # プリセット削除
         #─────────────
         def DELETE(self,
-            chIDfrom    :int        , # チャンネルID(開始)
-            chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
+            chFrom    :int        , # チャンネルID(開始)
+            chTo      :int = -1   , # チャンネルID(終了) ※-1：単一
         ) -> bool:
             cmd = "PWM/ROTATE/DELETE"
-            cmd = f"{cmd}:{chIDfrom}:{chIDto}!"
+            cmd = f"{cmd}:{chFrom}:{chTo}!"
             res = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"
 

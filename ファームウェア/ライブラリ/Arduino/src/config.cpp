@@ -14,11 +14,17 @@ WifiCfg  WIFI; // hostname は JSON から設定
 //-----------------------
 bool loadConfig() {
 
-  if (!LittleFS.begin(true)) return false;
+  // ★RP2040/Earle core は begin() に引数を取らない
+  #if defined(ARDUINO_ARCH_RP2040)
+    if (!LittleFS.begin()) return false;
+  #else
+    if (!LittleFS.begin(true)) return false;
+  #endif
 
   // (初回) -> /config.json が無い場合は自動生成
   if (!LittleFS.exists("/config.json")) {
-    StaticJsonDocument<512> doc;
+//    StaticJsonDocument<512> doc;
+    JsonDocument doc;
     doc["wifi"]["hostname"] = "wifi_sta"; // ★ 初期ホスト名
 
     // candidates は空のまま（APフォールバックで設定投入）
@@ -28,11 +34,16 @@ bool loadConfig() {
   }
 
   // 読み込み
-  File f = LittleFS.open("/config.json","r"); if (!f) return false;
-  StaticJsonDocument<2048> doc;
-  DeserializationError err = deserializeJson(doc,f);
-  f.close();                // ファイルクローズ
-  if (err) return false;    // JSONエラー
+  File f = LittleFS.open("/config.json", "r"); if (!f) return false;
+  size_t fs = f.size();
+  size_t cap = fs + 1024;         // ファイルサイズ + 余裕
+  DynamicJsonDocument doc(cap);   // ← 静的 2048 から変更
+  DeserializationError err = deserializeJson(doc, f);
+  f.close();
+  if (err) {
+    // 失敗時の一時ログ（必要なら）: Serial.println(String("JSON err: ") + err.c_str());
+    return false;
+  }
 
   // ホスト名
   WIFI.hostname = doc["wifi"]["hostname"] | "wifi-sta";

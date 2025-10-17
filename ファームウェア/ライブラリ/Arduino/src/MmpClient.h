@@ -5,23 +5,26 @@
 #pragma once
 #include <Arduino.h>
 #include <Stream.h>
-#include "MmpHardware.h"
+#include "hardware.h"
 
-//------------------------------------------------------------
-// ★TCP通信が必要な場合の条件付き実装
-//------------------------------------------------------------
+//━━━━━━━━━━━━━━━
+// ＴＣＰ通信が必要な場合
+//━━━━━━━━━━━━━━━
 #if defined(MMP_ENABLE_TCP)
 #include <WiFi.h>
 #endif
 
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+//━━━━━━━━━━━━━━━
+// ネームスペース
+//━━━━━━━━━━━━━━━
 namespace Mmp { namespace Core{
 class MmpClient{
 
-//========================
+//━━━━━━━━━━━━━━━
 // プロパティ
-//========================
+//━━━━━━━━━━━━━━━
 private:
+
     // I/Oハンドラ（UART/TCPを共通化）
     Stream*         _handle         = nullptr;
 
@@ -33,24 +36,24 @@ private:
         WiFiClient      _tcp;
     #endif
 
+    // 接続状況
     bool    _isOpen             = false;
     String  _connected_port     = "";
     int32_t _connected_baud     = 0;
     String  _lastError          = "";
 
-
 public:
-    //----------------
+    //─────────────
     // 接続情報
-    //----------------
+    //─────────────
     bool    IsOpen()         const { return _isOpen;          }
     String  ConnectedPort()  const { return _connected_port;  }
     int32_t ConnectedBaud()  const { return _connected_baud;  }
     String  LastError()      const { return _lastError;       }
 
-    //----------------
+    //─────────────
     // 規定値
-    //----------------
+    //─────────────
     struct MmpSettings {
         String  PortName       = "";
         int32_t BaudRate       = 921600;
@@ -67,12 +70,12 @@ public:
     MmpSettings Settings;
 
 
-//========================
+//━━━━━━━━━━━━━━━
 // 低レイヤ コマンド
-//========================
+//━━━━━━━━━━━━━━━
 //【内部利用】
-
 private:
+
     bool   Open       (uint32_t baud,         int32_t timeoutIo);
     bool   Verify     (int32_t timeoutVerify                   );
     String SendCommand(const String& command, int32_t timeoutMs);
@@ -82,602 +85,530 @@ private:
     }
 
     // 追加：TCPオープン（ser2net等）
-    bool   OpenTcp    (const char* host, uint16_t port, uint32_t timeoutIoMs);
+    bool OpenTcp(
+        const char* host        ,
+        uint16_t    port        ,
+        uint32_t    timeoutIoMs );
 
 
 //【外部公開】
 public:
-    //----------------
-    // TCP接続＋Verify
-    //----------------
-    bool   ConnectTcp (const char* host, uint16_t port,
-                       uint32_t ioTimeoutMs     = 300,
-                       uint32_t verifyTimeoutMs = 600);
+    //─────────────
+    // 接続：TCP + Verify
+    //─────────────
+    bool ConnectTcp (
+        const char* host                    ,
+        uint16_t    port                    ,
+        uint32_t    ioTimeoutMs     = 300   ,
+        uint32_t    verifyTimeoutMs = 600   );
 
-    //----------------
-    // 接続：自動
-    //----------------
+    //─────────────
+    // 接続：自動（UART）
+    //─────────────
     bool ConnectAutoBaud(
         const uint32_t* cand = MMP_BAUD_CANDIDATES      ,
-        size_t n             = MMP_BAUD_CANDIDATES_LEN
-    );
+        size_t          n    = MMP_BAUD_CANDIDATES_LEN  );
 
-    //----------------
-    // 接続：条件指定
-    //----------------
+    //─────────────
+    // 接続：条件指定（UART）
+    //─────────────
     bool ConnectWithBaud(
-        uint32_t baud               ,
-        int32_t  timeoutIo       = 0,
-        int32_t  verifyTimeoutMs = 0
-    );
-    //----------------
-    // 切断
-    //----------------
+        uint32_t baud                   ,
+        int32_t  timeoutIo       = 0    ,
+        int32_t  verifyTimeoutMs = 0    );
+
+    //─────────────
+    // 切断（UART/TCP共通）
+    //─────────────
     void Close();
 
 
-//===========================
+//━━━━━━━━━━━━━━━
 // モジュール コマンド
-//===========================
+//━━━━━━━━━━━━━━━
 //【外部公開】階層ＡＰＩ
 public:
-    MmpClient(): Info(this), Analog(this), Digital(this), Pwm(this), Audio(this), I2c(this) {}
+    MmpClient():INFO(this), ANALOG(this), DIGITAL(this), PWM(this), MP3(this), I2C(this) {}
 
+private:
+    int RunGetVal(
+        int32_t argTime,
+        const   String& path,   // 例: F("MP3/INFO")
+        const   String& cmd,    // 例: F("TRACK")
+        int     arg1 = -1000,
+        int     arg2 = -1000,
+        int     arg3 = -1000,
+        int     arg4 = -1000
+        );
 
-//===========================
-// << 情報モジュール >>
-//===========================
+    bool RunGetOK(
+        int32_t argTime,
+        const   String& path,   // 例: F("MP3/INFO")
+        const   String& cmd,    // 例: F("TRACK")
+        int     arg1 = -1000,
+        int     arg2 = -1000,
+        int     arg3 = -1000,
+        int     arg4 = -1000,
+        int     arg5 = -1000,
+        int     arg6 = -1000,
+        int     arg7 = -1000,
+        int     arg8 = -1000
+        );
+
+//━━━━━━━━━━━━━━━
+// モジュール：システム情報
+//━━━━━━━━━━━━━━━
 //【内部利用】フラットＡＰＩ
 private:
-    String   GetVersion(int32_t timeoutMs);
-    uint16_t GetPwx    (int32_t devId0to15, int32_t timeoutMs);
-    uint16_t GetDpx    (int32_t devId1to4,  int32_t timeoutMs);
+    String   INFO_VERSION();
 
 //【外部公開】階層ＡＰＩ
 public:
-    class InfoModule {
+
+    class mod_Info {
     MmpClient* _p;
     public:
-        explicit InfoModule(MmpClient* p): _p(p), Dev(p) {}
+        explicit mod_Info(MmpClient* p): _p(p) {}
 
-        //----------------------
-        // １．バージョン
-        //----------------------
-        String Version(
-            int32_t timeoutMs = 0
-        ) { return _p->GetVersion(timeoutMs); }
-
-        //----------------------
-        // ２．デバイス情報
-        //----------------------
-        class DevModule {
-            MmpClient* _p;
-            public:
-                explicit DevModule(MmpClient* p): _p(p) {}
-
-                //----------------------
-                // 2-1.ＰＷＭデバイス
-                //----------------------
-                uint16_t Pwm(
-                    int32_t devId0to15,
-                    int32_t timeoutMs = 0
-                ) { return _p->GetPwx(devId0to15, timeoutMs); }
-
-                //----------------------
-                // 2-2.音声デバイス
-                //----------------------
-                uint16_t Audio(
-                    int32_t devId1to4, 
-                    int32_t timeoutMs = 0
-                ) { return _p->GetDpx(devId1to4, timeoutMs); }
-        } Dev;
-    } Info;
+        //─────────────
+        // バージョン
+        //─────────────
+        String VERSION() { return _p->INFO_VERSION(); }
+    } INFO;
 
 
-//===========================
-// << アナログ モジュール >>
-//===========================
-//【内部利用】フラットＡＰＩ
-private:
-    bool     AnalogConfigure(int32_t hc4067chTtl,   int32_t hc4067devTtl,  int32_t timeoutMs);
-    bool     AnalogUpdate   (                                              int32_t timeoutMs);
-    int32_t  AnalogRead     (int32_t hc4067ch0to15, int32_t hc4067dev0to3, int32_t timeoutMs);
-
-//【外部公開】階層ＡＰＩ
+//━━━━━━━━━━━━━━━
+// モジュール：アナログ入力
+//━━━━━━━━━━━━━━━
 public:
-    class AnalogModule {
+    class mod_Analog {
     MmpClient* _p;
     public:
-        explicit AnalogModule(MmpClient* p): _p(p) {}
+        explicit mod_Analog(MmpClient* p): _p(p) {}
+        int32_t t = _p->Settings.TimeoutAnalog;
 
-        //-----------------------------------------
-        // １．使用範囲設定
-        //-----------------------------------------
-        bool Configure(
-            int32_t hc4067chTtl     ,
-            int32_t hc4067devTtl    ,
-            int32_t timeoutMs = 0
-        ) { return _p->AnalogConfigure(hc4067chTtl, hc4067devTtl, timeoutMs); }
+        //─────────────
+        // 使用範囲設定
+        //─────────────
+        bool SETUP(
+            int chs,    //
+            int devs    //
+        ){return _p->RunGetOK(t, "ANALOG","SETUP", chs, devs);}
 
-        //-----------------------------------------
-        // ２．測定値バッファ更新
-        //-----------------------------------------
-        bool Update(
-            int32_t timeoutMs = 0
-        ) { return _p->AnalogUpdate(timeoutMs); }
+        //─────────────
+        // 信号入力(バッファ格納)
+        //─────────────
+        bool INPUT(){return _p->RunGetOK(t, "ANALOG","INPUT");}
 
-        //-----------------------------------------
-        // ３．測定値バッファ読取（丸めなし）
-        //-----------------------------------------
-        int32_t Read(
-            int32_t hc4067ch0to15   ,
-            int32_t hc4067dev0to3   ,
-            int32_t timeoutMs = 0
-        ) { return _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs); }
+        //─────────────
+        // バッファ読取：丸めなし
+        //─────────────
+        int READ(
+            int ch, //
+            int dev //
+        ){return _p->RunGetVal(t, "ANALOG","READ", ch, dev);}
 
-        //-----------------------------------------
-        // ４．測定値バッファ読取（中央値基準の丸め）
-        //-----------------------------------------
-        int32_t ReadRound(
-            int32_t hc4067ch0to15   ,
-            int32_t hc4067dev0to3   ,
-            int32_t step            ,
-            int32_t bits        = 0 ,
-            int32_t timeoutMs   = 0
+        //─────────────
+        // バッファ読取：中央基準
+        //─────────────
+        int ROUND(
+            int ch,         //
+            int dev,        //
+            int step,       //
+            int bits = 0    //
         ) {
-            int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
-            return _roundNearest(raw, step, bits, _p->Settings.AnalogBits);
-        }
-
-        //-----------------------------------------
-        // ５．測定値バッファ読取（切り上げ丸め）
-        //-----------------------------------------
-        int32_t ReadRoundUp(
-            int32_t hc4067ch0to15   ,
-            int32_t hc4067dev0to3   ,
-            int32_t step            ,
-            int32_t bits        = 0 ,
-            int32_t timeoutMs   = 0
-        ) {
-            int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
-            return _roundUp(raw, step, bits, _p->Settings.AnalogBits);
-        }
-
-        //-----------------------------------------
-        // ６．測定値バッファ読取（切り捨て丸め）
-        //-----------------------------------------
-        int32_t ReadRoundDown(
-            int32_t hc4067ch0to15   ,
-            int32_t hc4067dev0to3   ,
-            int32_t step            ,
-            int32_t bits        = 0 ,
-            int32_t timeoutMs   = 0
-        ) {
-            int32_t raw = _p->AnalogRead(hc4067ch0to15, hc4067dev0to3, timeoutMs);
+            int raw = _p->RunGetVal(t, "ANALOG","READ", ch, dev);
             return _roundDown(raw, step, bits, _p->Settings.AnalogBits);
         }
-    } Analog;
-
-//===========================
-// << デジタル モジュール >>
-//===========================
-//【内部利用】フラットＡＰＩ
-private:
-    int32_t  DigitalIn (int32_t gpioId,                  int32_t timeoutMs);
-    bool     DigitalOut(int32_t gpioId, int32_t val0or1, int32_t timeoutMs);
-
-//【外部公開】階層ＡＰＩ
-public:
-    class DigitalModule {
-    MmpClient* _p;
-    public:
-        explicit DigitalModule(MmpClient* p): _p(p) {}
-
-        //---------------------
-        // １．入力
-        //---------------------
-        int32_t In(
-            int32_t gpioId      ,
-            int32_t timeoutMs = 0
-        ) { return _p->DigitalIn(gpioId, timeoutMs); }
-
-        //---------------------
-        // ２．出力
-        //---------------------
-        bool Out(
-            int32_t gpioId,
-            int32_t val0or1,
-            int32_t timeoutMs = 0
-        ) { return _p->DigitalOut(gpioId, val0or1, timeoutMs); }
-    } Digital;
-
-//===========================
-// << ＰＷＭモジュール >>
-//===========================
-//【内部利用】フラットＡＰＩ
-private:
-    bool PwmValue(int32_t chId0to255, int32_t val0to4095,                             int32_t timeoutMs);
-    bool PwmInit (int32_t angleMin, int32_t angleMax, int32_t pwmMin, int32_t pwmMax, int32_t timeoutMs);
-    bool PwmAngle(int32_t chId0to255, int32_t angle0to180,                            int32_t timeoutMs);
-
-//【外部公開】階層ＡＰＩ
-public:
-    class PwmModule {
-    MmpClient* _p;
-    public:
-        explicit PwmModule(MmpClient* p): _p(p) {}
-
-        //---------------------
-        // １．デバイス情報
-        //---------------------
-        uint16_t Info(
-            int32_t devId0to15  ,
-            int32_t timeoutMs = 0
-        ) { return _p->GetPwx  (devId0to15, timeoutMs); }
-
-        //---------------------
-        // ２．出力
-        //---------------------
-        bool Out(
-            int32_t chId0to255  ,
-            int32_t val0to4095  , 
-            int32_t timeoutMs = 0
-        ) { return _p->PwmValue(chId0to255, val0to4095, timeoutMs); }
-
-        //---------------------
-        // ３．角度設定
-        //---------------------
-        bool AngleInit(
-            int32_t angleMin    ,
-            int32_t angleMax    ,
-            int32_t pwmMin      ,
-            int32_t pwmMax      ,
-            int32_t timeoutMs = 0
-        ) { return _p->PwmInit (angleMin, angleMax, pwmMin, pwmMax, timeoutMs); }
-
-        //---------------------
-        // ４．角度指定
-        //---------------------
-        bool AngleOut(
-            int32_t chId0to255  ,
-            int32_t angle0to180 ,
-            int32_t timeoutMs = 0
-        ) { return _p->PwmAngle(chId0to255, angle0to180, timeoutMs); }
-    } Pwm;
-
-//===========================
-// << 音声モジュール >>
-//===========================
-//【内部利用】フラットＡＰＩ
-private:
-    //----------------------
-    // １. 単独コマンド
-    //----------------------
-    bool     DfVolume        (int32_t devId1to4, int32_t vol0to30,                      int32_t timeoutMs);
-    bool     DfSetEq         (int32_t devId1to4, int32_t mode0to5,                      int32_t timeoutMs);
-    //------------------------
-    // ２. 再生サブモジュール
-    //------------------------
-    bool     DfStart         (int32_t devId1to4, int32_t dir1to255, int32_t file1to255, int32_t timeoutMs);
-    bool     DfSetLoop       (int32_t devId1to4, int32_t on0or1,                        int32_t timeoutMs);
-    bool     DfStop          (int32_t devId1to4,                                        int32_t timeoutMs);
-    bool     DfPause         (int32_t devId1to4,                                        int32_t timeoutMs);
-    bool     DfResume        (int32_t devId1to4,                                        int32_t timeoutMs);
-    //------------------------
-    // ３. 参照サブモジュール
-    //------------------------
-    int32_t  DfReadState     (int32_t devId1to4,                                        int32_t timeoutMs);
-    int32_t  DfReadVolume    (int32_t devId1to4,                                        int32_t timeoutMs);
-    int32_t  DfReadEq        (int32_t devId1to4,                                        int32_t timeoutMs);
-    int32_t  DfReadFileCounts(int32_t devId1to4,                                        int32_t timeoutMs);
-    int32_t  DfReadFileNumber(int32_t devId1to4,                                        int32_t timeoutMs);
-
-//【外部公開】階層ＡＰＩ
-public:
-    class AudioModule {
-    MmpClient* _p;
-    public:
-        explicit AudioModule(MmpClient* p): _p(p), Play(p), Read(p) {}
-
-        //----------------------
-        // １. 単独コマンド
-        //----------------------
-        // 1-1. デバイス情報
-        //----------------------
-        uint16_t Info(
-            int32_t devId1to4   ,
-            int32_t timeoutMs = 0
-        ) { return _p->GetDpx  (devId1to4, timeoutMs); }
-
-        //----------------------
-        // 1-2. 音量設定
-        //----------------------
-        bool Volume(
-            int32_t devId1to4   ,
-            int32_t vol0to30    ,
-            int32_t timeoutMs = 0
-        ) { return _p->DfVolume(devId1to4, vol0to30, timeoutMs); }
-
-        //----------------------
-        // 1-3.イコライザ設定
-        //----------------------
-        bool SetEq(
-            int32_t devId1to4   ,
-            int32_t mode0to5    ,
-            int32_t timeoutMs = 0
-        ) { return _p->DfSetEq (devId1to4, mode0to5, timeoutMs); }
-
-        //------------------------
-        // ２. 再生サブモジュール
-        //------------------------
-        class PlayModule {
-            MmpClient* _p;
-            public:
-                explicit PlayModule(MmpClient* p): _p(p) {}
-
-                //----------------------
-                // 2-1. 再生（Start）
-                //----------------------
-                bool Start(
-                    int32_t devId1to4   ,
-                    int32_t dir1to255   ,
-                    int32_t file1to255  ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfStart  (devId1to4, dir1to255, file1to255, timeoutMs); }
-
-                //----------------------
-                // 2-2. ループ再生指定
-                //----------------------
-                bool SetLoop(
-                    int32_t devId1to4   ,
-                    bool enable         ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfSetLoop(devId1to4, enable ? 1 : 0, timeoutMs); }
-
-                //----------------------
-                // 2-3. 停止
-                //----------------------
-                bool Stop(
-                    int32_t devId1to4,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfStop   (devId1to4, timeoutMs); }
-
-                //----------------------
-                // 2-4. 一時停止
-                //----------------------
-                bool Pause(
-                    int32_t devId1to4,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfPause  (devId1to4, timeoutMs); }
-
-                //----------------------
-                // 2-5. 再開
-                //----------------------
-                bool Resume(
-                    int32_t devId1to4,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfResume (devId1to4, timeoutMs); }
-        } Play;
-
-        //------------------------
-        // ３. 参照サブモジュール
-        //------------------------
-        class ReadModule {
-            MmpClient* _p;
-            public:
-                explicit ReadModule(MmpClient* p): _p(p) {}
-
-                //----------------------
-                // 3-1. 再生状況
-                //----------------------
-                int32_t State(
-                    int32_t devId1to4   ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfReadState(devId1to4, timeoutMs ); }
-
-                //----------------------
-                // 3-2. ボリューム
-                //----------------------
-                int32_t Volume(
-                    int32_t devId1to4   ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfReadVolume(devId1to4, timeoutMs ); }
-
-                //----------------------
-                // 3-3. イコライザのモード
-                //----------------------
-                int32_t Eq(
-                    int32_t devId1to4   ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfReadEq(devId1to4, timeoutMs ); }
-
-                //----------------------
-                // 3-4. 総ファイル総数
-                //----------------------
-                int32_t FileCounts(
-                    int32_t devId1to4   ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfReadFileCounts(devId1to4, timeoutMs ); }
-
-                //----------------------
-                // 3-5. 現在のファイル番号
-                //----------------------
-                int32_t FileNumber(
-                    int32_t devId1to4   ,
-                    int32_t timeoutMs = 0
-                ) { return _p->DfReadFileNumber(devId1to4, timeoutMs ); }
-        } Read;
-    } Audio;
-
-
-//===========================
-// << Ｉ２Ｃモジュール >>
-//===========================
-//【内部利用】フラットＡＰＩ
-private:
-    bool     I2cWrite(int32_t addr, int32_t reg, int32_t val, int32_t timeoutMs);
-    int32_t  I2cRead (int32_t addr, int32_t reg,              int32_t timeoutMs);
-
-//【外部公開】階層ＡＰＩ
-public:
-    class I2cModule {
-    MmpClient* _p;
-    public:
-        explicit I2cModule(MmpClient* p): _p(p) {}
-
-        //----------------------
-        // １．書き込み
-        //----------------------
-        bool Write(
-            int32_t addr        ,
-            int32_t reg         ,
-            int32_t val         ,
-            int32_t timeoutMs = 0
-        ) { return _p->I2cWrite(addr, reg, val, timeoutMs); }
-
-        //----------------------
-        // ２．読み出し
-        //----------------------
-        int32_t Read(
-            int32_t addr        ,
-            int32_t reg         ,
-            int32_t timeoutMs = 0
-        ) { return _p->I2cRead (addr, reg, timeoutMs); }
-    } I2c;
-
-
-
-//======================================================
-//【内部利用】
-//======================================================
-
-//=============================
-// 送受信データ用ヘルパ
-//=============================
-private:
-    //---------------------------
-    // 
-    //---------------------------
-    static inline int32_t Resolve(int32_t v, int32_t fb) { return (v > 0) ? v : fb; }
-
-    //---------------------------
-    // 
-    //---------------------------
-    static inline int     HexDigit(char c) {
-        if (c >= '0' && c <= '9') return c - '0';
-        if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
-        if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
-        return -1;
-    }
-
-    //---------------------------
-    // "!!!!!"判定
-    //---------------------------
-    static inline bool TryParseHex4Bang(const String& s, uint16_t& value) {
-        if (s.length() != 5 || s[4] != '!') return false;
-        uint16_t v = 0;
-        for (int i = 0; i < 4; ++i) {
-        int d = HexDigit(s[i]);
-        if (d < 0) return false;
-        v = (uint16_t)((v << 4) | (uint16_t)d);
+        //─────────────
+        // バッファ読取：切り上げ
+        //─────────────
+        int ROUNDU(
+            int ch,         //
+            int dev,        //
+            int step,       //
+            int bits = 0    //
+        ) {
+            int raw = _p->RunGetVal(t, "ANALOG","READ", ch, dev);
+            return _roundUp(raw, step, bits, _p->Settings.AnalogBits);
         }
-        value = v; return true;
-    }
-    //---------------------------
-    // HEX値変換(個別桁)
-    //---------------------------
-    static inline String Hex2(int v) { char b[2+1]; snprintf(b, sizeof(b), "%02X", (unsigned)(v & 0xFF));   return String(b); }
-    static inline String Hex3(int v) { char b[3+1]; snprintf(b, sizeof(b), "%03X", (unsigned)(v & 0x3FF));  return String(b); }
-    static inline String Hex4(int v) { char b[4+1]; snprintf(b, sizeof(b), "%04X", (unsigned)(v & 0xFFFF)); return String(b); }
+        //─────────────
+        // バッファ読取：切り下げ
+        //─────────────
+        int ROUNDD(
+            int ch,         //
+            int dev,        //
+            int step,       //
+            int bits = 0    //
+        ) {
+            int raw = _p->RunGetVal(t, "ANALOG","READ", ch, dev);
+            return _roundNearest(raw, step, bits, _p->Settings.AnalogBits);
+        }
+    } ANALOG;
+
+//━━━━━━━━━━━━━━━
+// モジュール：デジタル入出力
+//━━━━━━━━━━━━━━━
+public:
+    class mod_Digital {
+    MmpClient* _p;
+    public:
+        explicit mod_Digital(MmpClient* p): _p(p) {}
+        int32_t t = _p->Settings.TimeoutDigital;
+
+        //─────────────
+        // 信号入力
+        //─────────────
+        int INPUT(
+            int gpioId
+        ){return _p->RunGetVal(t, "DIGITAL","INPUT" , gpioId);}
+
+        //─────────────
+        // 信号出力
+        //─────────────
+        bool OUTPUT(
+            int gpioId,
+            int val
+        ){return _p->RunGetOK(t, "ANALOG","SETUP", gpioId, ((val & 1) ? 1 : 0));}
+    } DIGITAL;
+
+//━━━━━━━━━━━━━━━
+// モジュール：ＰＷＭ出力
+//━━━━━━━━━━━━━━━
+public:
+    class mod_PWM {
+    MmpClient* _p;
+    public:
+        explicit mod_PWM(MmpClient* p): _p(p), INFO(p), ANGLE(p) {}
+        int32_t t = _p->Settings.TimeoutPwm;
+
+        //─────────────
+        // ＰＷＭ値出力
+        //─────────────
+        bool OUTPUT(
+            int ch  ,
+            int val
+            ){return _p->RunGetOK(t, "PWM/ANGLE","DELETE", ch, val);}
+
+        //─────────────
+        // サブ：インフォメーション
+        //─────────────
+        class sub_Info {
+            MmpClient* _p;
+            public:
+                explicit sub_Info(MmpClient* p): _p(p) {}
+                int32_t t = _p->Settings.TimeoutPwm;
+            //─────────────
+            // デバイス接続状況
+            //─────────────
+            int CONNECT(
+                int dev
+            ){return _p->RunGetVal(t, "PWM/INFO","CONNECT" , dev);}
+        } INFO;
+
+        //─────────────
+        // サブ：角度指定
+        //─────────────
+        class sub_Angle {
+
+            MmpClient* _p;
+            public:
+                explicit sub_Angle(MmpClient* p): _p(p) {}
+                int32_t t = _p->Settings.TimeoutPwm;
+            //─────────────
+            // プリセット登録
+            //─────────────
+            bool SETUP(
+                int chFrom,     //
+                int chTo,       //
+                int degTo,      //
+                int pwmFrom,    //
+                int pwmTo,      //
+                int pwmMiddle   //
+            ){return _p->RunGetOK(t, "PWM/ANGLE","SETUP", chFrom, chTo, degTo, pwmFrom, pwmTo, pwmMiddle);}
+
+            //─────────────
+            // プリセット削除
+            //─────────────
+            bool DELETE(
+                int chFrom, //
+                int chTo    //
+            ){return _p->RunGetOK(t, "PWM/ANGLE","DELETE", chFrom, chTo);}
+
+            //─────────────
+            // ＰＷＭ出力：通常
+            //─────────────
+            int OUTPUT(
+                int ch,
+                int angle
+            ){return _p->RunGetVal(t, "PWM/ANGLE","OUTPUT" , ch, angle);}
+
+            //─────────────
+            // ＰＷＭ出力：中間
+            //─────────────
+            int CENTER(
+                int ch
+            ){return _p->RunGetVal(t, "PWM/ANGLE","CENTER" , ch);}
+        } ANGLE;
+
+        //─────────────
+        // サブ：回転型サーボ
+        //─────────────
+            //─────────────
+            // プリセット登録
+            // プリセット削除
+            // ＰＷＭ出力：通常
+            // ＰＷＭ出力：停止
+            //─────────────
+    } PWM;
+
+//━━━━━━━━━━━━━━━
+// モジュール：ＭＰ３プレイヤー
+//━━━━━━━━━━━━━━━
+public:
+
+    class mod_MP3 {
+    MmpClient* _p;
+    public:
+        explicit mod_MP3(MmpClient* p): _p(p), SET(p), TRACK(p), INFO(p) {}
+
+        //─────────────
+        // サブ：デバイス設定
+        //─────────────
+        class sub_Set {
+            MmpClient* _p;
+            public:
+                explicit sub_Set(MmpClient* p): _p(p) {}
+                int32_t t = _p->Settings.TimeoutAudio;
+            //─────────────
+            // 音量
+            //─────────────
+            bool VOLUME(
+                int dev,
+                int vol
+            ){return _p->RunGetOK(t, "MP3/SET","VOLUME", dev, vol);}
+
+            //─────────────
+            // イコライザ
+            //─────────────
+            bool EQ(
+                int dev,
+                int mode
+            ){return _p->RunGetOK(t, "MP3/SET","EQ", dev, mode);}
+        } SET;
+
+        //─────────────
+        // サブ：トラック
+        //─────────────
+        class sub_Track {
+            MmpClient* _p;
+            public:
+                explicit sub_Track(MmpClient* p): _p(p) {}
+                int32_t t = _p->Settings.TimeoutAudio;
+                //─────────────
+                // トラック再生
+                //─────────────
+                int PLAY(
+                    int dev,
+                    int dir,
+                    int file
+                ){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev, dir, file);}
+
+                //─────────────
+                // ループ再生有無
+                //─────────────
+                int LOOP(
+                    int  dev,
+                    bool mode
+                ){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev, mode ? 1 : 0);}
+
+                //─────────────
+                // 停止,一時停止,再開
+                //─────────────
+                int STOP (int dev){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev);}
+                int PAUSE(int dev){return _p->RunGetVal(t, "MP3/TRACK","PAUSE", dev);}
+                int START(int dev){return _p->RunGetVal(t, "MP3/TRACK","START", dev);}
+        } TRACK;
+
+        //─────────────
+        // サブ：インフォメーション
+        //─────────────
+        class sub_Info {
+            MmpClient* _p;
+            public:
+                explicit sub_Info(MmpClient* p): _p(p) {}
+                //─────────────
+                // デバイス接続状況
+                // トラック
+                // 音量
+                // イコライザ
+                // 現在のファイル番号
+                // 総ファイル総数
+                //─────────────
+                int32_t t = _p->Settings.TimeoutAudio;
+                int CONNECT (int dev){return _p->RunGetVal(t, "MP3/INFO","CONNECT", dev);}
+                int TRACK   (int dev){return _p->RunGetVal(t, "MP3/INFO","TRACK"  , dev);}
+                int VOLUME  (int dev){return _p->RunGetVal(t, "MP3/INFO","VOLUME" , dev);}
+                int EQ      (int dev){return _p->RunGetVal(t, "MP3/INFO","EQ"     , dev);}
+                int FILEID  (int dev){return _p->RunGetVal(t, "MP3/INFO","FILEID" , dev);}
+                int FILEIDES(int dev){return _p->RunGetVal(t, "MP3/INFO","FILES"  , dev);}
+        } INFO;
+    } MP3;
+
+//━━━━━━━━━━━━━━━
+// モジュール：Ｉ２Ｃ通信
+//━━━━━━━━━━━━━━━
+public:
+    class mod_I2C {
+    MmpClient* _p;
+    public:
+        explicit mod_I2C(MmpClient* p): _p(p) {}
+        int32_t t = _p->Settings.TimeoutI2c;
+        //─────────────
+        // 書き込み
+        //─────────────
+        bool WRITE(
+            int addr,
+            int reg,
+            int val
+        ){return _p->RunGetOK(t, "I2C","WRITE", addr, reg, val);}
+
+        //─────────────
+        // 読み出し
+        //─────────────
+        int READ(
+            int addr,
+            int reg
+        ){return _p->RunGetVal(t, "I2C","READ", addr, reg);}
+    } I2C;
 
 
-//=============================
-// アナログ入力用ヘルパ
-//=============================
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//【内部利用】
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 private:
-    //--------------------
+    //─────────────
+    // "-999!"～"9999!"判定
+    //─────────────
+    static inline bool TryParseDecBang5(const String& s, int& val) {
+
+        // データ書式違反
+        val = -9999;
+        if (s.length() != 5 || s[4] != '!') return false;
+
+        // データ型違反
+        if (s[0]=='!' && s[1]=='!' && s[2]=='!' && s[3]=='!'){val = -9990; return false;}
+
+        // エラー応答）
+        if (s[0] == '#') {
+            char a = s[1], b = s[2], c = s[3];
+            if (a=='C' && b=='M' && c=='D'){val = -9901; return false;} // コマンド不明
+            if (a=='C' && b=='H' && c=='K'){val = -9902; return false;} // 引数チェックエラー
+            if (a=='F' && b=='L' && c=='W'){val = -9910; return false;} // データオーバーフロー
+            if (a=='I' && b=='N' && c=='I'){val = -9911; return false;} // データ未初期化
+            if (a=='C' && b=='H' && c=='N'){val = -9920; return false;} // チャンネル違反
+            if (a=='D' && b=='E' && c=='V'){val = -9921; return false;} // デバイス違反
+            val = -9900;
+            return false;
+        }
+
+        // 移行に異常があれば、データ書式違反(-9999)になる
+
+        // 数値応答
+        auto isd = [](char ch){ return (unsigned)(ch - '0') <= 9; };
+        char c0 = s[0], c1 = s[1], c2 = s[2], c3 = s[3];
+
+        if (c0 == '-') {
+            if (!(isd(c1) && isd(c2) && isd(c3))) return false;
+            val = -((c1 - '0') * 100 + (c2 - '0') * 10 + (c3 - '0'));  // -999～0
+            return true;
+        } else {
+            if (!(isd(c0) && isd(c1) && isd(c2) && isd(c3))) return false;
+            val = (c0 - '0') * 1000 + (c1 - '0') * 100 + (c2 - '0') * 10 + (c3 - '0'); // 0～9999
+            return true;
+        }
+    }
+
+//━━━━━━━━━━━━━━━
+// アナログ入力用ヘルパ
+//━━━━━━━━━━━━━━━
+private:
+    //─────────────
     // Analogビット数 
-    //--------------------
-    static inline int32_t _clampBits(
-        int32_t v           ,
-        int32_t bits        ,
-        int32_t defaultBits
+    //─────────────
+    static inline int _clampBits(
+        int v           ,
+        int bits        ,
+        int defaultBits
     )
     {
-        int32_t useBits =
+        int useBits =
         (bits >= 1 && bits <= 30) ? bits :
         (defaultBits >= 1 && defaultBits <= 30 ? defaultBits : 10); // 最終セーフガードとして 10
-        const int32_t maxv = (1 << useBits) - 1;
+        const int maxv = (1 << useBits) - 1;
         if (v < 0) return v;
         if (v > maxv) return maxv;
         return v;
     }
-
-    //--------------------
+    //─────────────
     // Analog丸め 
-    //--------------------
-    static inline int32_t _roundNearest(
-        int32_t raw         ,
-        int32_t step        ,
-        int32_t bits        ,
-        int32_t defaultBits
-    )
-    {
+    //─────────────
+    static inline int _roundNearest(
+        int raw         ,
+        int step        ,
+        int bits        ,
+        int defaultBits
+    ){
         if (raw < 0) return raw;
         if (step <= 0) return _clampBits(raw, bits, defaultBits);
-        int32_t useBits =
+        int useBits =
         (bits >= 1 && bits <= 30) ? bits :
         (defaultBits >= 1 && defaultBits <= 30 ? defaultBits : 10);
-        const int32_t maxv = (1 << useBits) - 1;
+        const int maxv = (1 << useBits) - 1;
         if (raw > maxv) raw = maxv;
-        int32_t base = (raw / step) * step;
-        int32_t delta = raw - base;
-        int32_t thresholdUp = (step % 2 == 0) ? (step / 2) : (step / 2 + 1);
-        int32_t r = (delta >= thresholdUp) ? base + step : base;
+        int base = (raw / step) * step;
+        int delta = raw - base;
+        int thresholdUp = (step % 2 == 0) ? (step / 2) : (step / 2 + 1);
+        int r = (delta >= thresholdUp) ? base + step : base;
         if (r > maxv) r = maxv;
         return r;
     }
-
-    //--------------------
+    //─────────────
     // Analog丸め(切り上げ) 
-    //--------------------
-    static inline int32_t _roundUp(
-        int32_t raw         ,
-        int32_t step        ,
-        int32_t bits        ,
-        int32_t defaultBits
-    )
-    {
+    //─────────────
+    static inline int _roundUp(
+        int raw         ,
+        int step        ,
+        int bits        ,
+        int defaultBits
+    ){
         if (raw < 0) return raw;
         if (step <= 0) return _clampBits(raw, bits, defaultBits);
-        int32_t useBits =
+        int useBits =
         (bits >= 1 && bits <= 30) ? bits :
         (defaultBits >= 1 && defaultBits <= 30 ? defaultBits : 10);
-        const int32_t maxv = (1 << useBits) - 1;
-        int32_t r = ((raw + step - 1) / step) * step;
+        const int maxv = (1 << useBits) - 1;
+        int r = ((raw + step - 1) / step) * step;
         if (r > maxv) r = maxv;
         return r;
     }
-
-    //--------------------
+    //─────────────
     // Analog丸め(切り下げ) 
-    //--------------------
-    static inline int32_t _roundDown(
-        int32_t raw         ,
-        int32_t step        ,
-        int32_t bits        ,
-        int32_t defaultBits
-    )
-    {
+    //─────────────
+    static inline int _roundDown(
+        int raw         ,
+        int step        ,
+        int bits        ,
+        int defaultBits
+    ){
         if (raw < 0) return raw;
         if (step <= 0) return _clampBits(raw, bits, defaultBits);
-        int32_t useBits =
+        int useBits =
         (bits >= 1 && bits <= 30) ? bits :
         (defaultBits >= 1 && defaultBits <= 30 ? defaultBits : 10);
-        int32_t r = (raw / step) * step;
+        int r = (raw / step) * step;
         if (r < 0) r = 0;
         return r;
     }
 };
 }} // namespace Mmp
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲

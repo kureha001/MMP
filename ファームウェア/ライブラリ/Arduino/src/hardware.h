@@ -1,4 +1,4 @@
-// MmpHardware.h
+// hardware.h
 #pragma once
 #include <Arduino.h>
 
@@ -8,14 +8,17 @@
 // ------------------------------------------------------------
 
 // ========== UART ハードの選択 =================================
-// Pico (Philhower core) で GPIO UART を使うなら Serial1 が一般的。
+// Pico (Philhower core / Earle core) で GPIO UART を使うなら Serial1 が一般的。
 // USB CDC を使う場合は Serial。既存の MmpClient.cpp は MMP_UART を参照します。
 #ifndef MMP_UART
   #if defined(ARDUINO_ARCH_RP2040)
-    // 既定：GPIO UART（TX=GPIO4, RX=GPIO5 など、スケッチ側でピン機能は設定してください）
+    // Earle core では Serial1 がハードUART (GPIO4=TX, GPIO5=RX が多い)
+    #define MMP_UART Serial1
+  #elif defined(ESP_PLATFORM)
+    // ESP32 系の既定
     #define MMP_UART Serial1
   #else
-    // 他環境の既定
+    // その他環境の既定
     #define MMP_UART Serial1
   #endif
 #endif

@@ -54,7 +54,7 @@ class _Analog:
         return v if ok else -1
 
     #─────────────
-    # バッファ読取：四捨五入
+    # バッファ読取：中央基準
     #─────────────
     def ROUND(self,
         ch  :int,   # ① チャンネルID

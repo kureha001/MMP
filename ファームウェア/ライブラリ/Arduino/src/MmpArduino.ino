@@ -109,23 +109,21 @@ void RunMp3Playlist() {
     Serial.println("３.ＭＰ３再生（ DFPlayer ）");
 
     Serial.println("　・音量   [20]  " + bool2str(mmp.MP3.SET.VOLUME(1, 20) ) );
-    Serial.println("　・ループ [OFF] " + bool2str(mmp.MP3.TRACK.LOOP(1,0)   ) );
+    Serial.println("　・ループ [OFF] " + String  (mmp.MP3.TRACK.LOOP(1,0)   ) );
 
     Serial.println("　・再生");
     for (int track = 1; track <= 3; ++track) {
-        Serial.print("　　[F=1,T=" + String(track) + "] "
-                                    + bool2str(mmp.MP3.TRACK.PLAY(1, 1, track) ) );
-        Serial.println(" : 状況 = " + String(mmp.MP3.INFO.TRACK(1)             ) );
+        Serial.println("　　[F=1,T=" + String(track) + "]    "
+                                             + String(mmp.MP3.TRACK.PLAY(1, 1, track) ) );
         delay(3000);
     }
 
-    Serial.print  ("　・停止 : " + bool2str(mmp.MP3.TRACK.STOP(1) ) );
-
-    Serial.println("　・再生   [F=2,T=102] " + bool2str(mmp.MP3.TRACK.PLAY(1, 2, 102) ) );
-    Serial.println("　・ループ [ON]        " + bool2str(mmp.MP3.TRACK.LOOP(1, 1)    ) );
+    Serial.println("　・一時停止           " + String(mmp.MP3.TRACK.STOP(1)           ) );
+    Serial.println("　・再生   [F=2,T=102] " + String(mmp.MP3.TRACK.PLAY(1, 2, 102)   ) );
+    Serial.println("　・ループ [ON]        " + String(mmp.MP3.TRACK.LOOP(1, 1)        ) );
     delay(10000);
 
-    Serial.print  ("　・停止 : " + bool2str(mmp.MP3.TRACK.STOP(1) ) );
+    Serial.print  ("　・停止 : " + String(mmp.MP3.TRACK.STOP(1) ) );
 
     Serial.println("　[終了]\n");
 }
@@ -137,21 +135,21 @@ void RunMp3Control() {
 
     Serial.println("４.ＭＰ３制御（ DFPlayer ）");
     
-    Serial.println("　・音量 → 20 : "      + bool2str(mmp.MP3.SET.VOLUME(1, 20)   ) );
-    Serial.println("　・再生 → F=4,T=1 : " + bool2str(mmp.MP3.TRACK.PLAY(1, 4, 1) ) );
-    Serial.println("　・ループ → OFF : "   + bool2str(mmp.MP3.TRACK.LOOP(1, 0)  ) );
+    Serial.println("　・音量 → 20      : " + bool2str(mmp.MP3.SET.VOLUME(1, 20)   ) );
+    Serial.println("　・再生 → F=4,T=1 : " + String  (mmp.MP3.TRACK.PLAY(1, 4, 1) ) );
+    Serial.println("　・ループ → OFF   : " + String  (mmp.MP3.TRACK.LOOP(1, 0)    ) );
     
     Serial.println("　・参照");
-    Serial.println("　　・トラック状況 = " + String(mmp.MP3.INFO.TRACK(1)     ) );
-    Serial.println("　　・音量         = " + String(mmp.MP3.INFO.VOLUME(1)    ) );
-    Serial.println("　　・イコライザ   = " + String(mmp.MP3.INFO.EQ(1)        ) );
-    Serial.println("　　・総ファイル数 = " + String(mmp.MP3.INFO.FILEIDES(1)  ) );
-    Serial.println("　　・現在ファイル = " + String(mmp.MP3.INFO.FILEID(1)    ) );
+    Serial.println("　　・トラック状況  : " + String(mmp.MP3.INFO.TRACK(1)     ) );
+    Serial.println("　　・音量          : " + String(mmp.MP3.INFO.VOLUME(1)    ) );
+    Serial.println("　　・イコライザ    : " + String(mmp.MP3.INFO.EQ(1)        ) );
+    Serial.println("　　・総ファイル数  : " + String(mmp.MP3.INFO.FILEIDES(1)  ) );
+    Serial.println("　　・現在ファイル  : " + String(mmp.MP3.INFO.FILEID(1)    ) );
 
-    Serial.println("　・一時停止 : " + bool2str(mmp.MP3.TRACK.PAUSE(1) ) );
+    Serial.println("　・一時停止        : " + String(mmp.MP3.TRACK.PAUSE(1) ) );
     delay(2000);
     
-    Serial.println("　・再開 : " + bool2str(mmp.MP3.TRACK.START(1) ) );
+    Serial.println("　・再開            : " + String(mmp.MP3.TRACK.START(1) ) );
 
     // イコライザのモードを順次切り替える
     Serial.println("　・イコライザー");
@@ -166,7 +164,7 @@ void RunMp3Control() {
         delay(1000);
     }
 
-    Serial.println("　・停止 : " + bool2str(mmp.MP3.TRACK.STOP(1) ) );
+    Serial.println("　・停止 : " + String(mmp.MP3.TRACK.STOP(1) ) );
 
     Serial.println("　[終了]\n");
 }
@@ -285,17 +283,92 @@ static String 引数取得(){
 }
 
 //============================================================
+// 互換シム利用し、接続を開始
+//============================================================
+static bool 接続開始(int mode){
+    //──────────
+    // 0) 一括：アプリ設定
+    //──────────
+    if (mode == 0){
+        if (!USE_TCP){return false;}
+        if (!MMP::通信接続(
+                引数取得()  ,   // 互換シムを利用
+                mmp         ,   // クライアント
+                WIFI_SSID   ,   // このファイルで定義
+                WIFI_PASS   ,   // このファイルで定義
+                &Serial     )   // ログ用シリアル
+            ){return false;}
+//        webui_begin();  
+        return true;
+    }
+    //──────────
+    // 1) 個別：アプリ設定
+    //──────────
+    if (mode == 1){
+        if (!USE_TCP){return false;}
+        // wifi接続
+        if (!MMP::通信接続_WiFi(
+                WIFI_SSID   ,   // SSID(このファイルで定義)
+                WIFI_PASS   ,   // wifiパスワード(このファイルで定義)
+                &Serial     )   // ログ用シリアル
+            ){return false;}
+
+        // TCPブリッジ
+        if (!MMP::通信接続_Tcp(
+                引数取得()  ,   // 互換シムを利用
+                mmp         ,   // クライアント
+                &Serial     )   // ログ用シリアル
+            ){return false;}
+//        webui_begin();  
+        return true;
+    }
+    //──────────
+    // 2) 一括：JSON設定
+    //──────────
+    if (mode == 2){
+        return
+            MMP::通信接続(
+                引数取得()  ,   // 互換シムを利用
+                mmp         ,   // クライアント
+                nullptr     ,   // SSID(JSONを使わせる)
+                nullptr     ,   // wifiパスワード(JSONを使わせる)
+                &Serial         // ログ用シリアル
+                );
+    }
+    //──────────
+    // 3) 個別：JSON設定
+    //──────────
+    if (mode == 3){
+        // Wifi接続(外部取込)
+        if (!MMP::通信接続_WiFi_外部(&Serial)){return false;}
+
+        // TCPブリッジ
+        return
+            MMP::通信接続_Tcp(
+                引数取得()  ,   // 互換シムを利用
+                mmp         ,   // クライアント
+                &Serial         // ログ用シリアル
+                );
+    }
+    //──────────
+    // モード：不明
+    //──────────
+    return false;
+}
+
+//============================================================
 // メイン
 //============================================================
 void setup() {
 
     Serial.begin(115200);
 
-    //if (!MMP::通信接続_WiFi(WIFI_SSID, WIFI_PASS, &Serial)){ return; }  // 個別1-1：Wifi接続(規定値)
-    if (!MMP::通信接続_WiFi_外部(nullptr, &Serial)){return; }           // 個別1-2：Wifi接続(外部取込)
-    if (!MMP::通信接続_Tcp(引数取得(), mmp, &Serial)){ return; }        // 個別2：TCPスタック
-    //if (!MMP::通信接続(引数取得(), mmp, WIFI_SSID, WIFI_PASS, &Serial )){ return; } // 統一入口
-    //if (!MMP::通信接続(引数取得(), mmp, WIFI_SSID, nullptr,   &nullptr)){ return; } // 統一入口(外部取込)
+    // 接続を開始する
+    // 0 : アプリ設定(一括)
+    // 1 : アプリ設定(個別)
+    // 2 : JSON設定(一括)
+    // 3 : JSON設定(個別)
+    if (!接続開始(0)){return;};
 
     Serial.println("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
     // 実施するテストだけコメントを外してください（複数可）

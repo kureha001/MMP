@@ -17,9 +17,11 @@ static WebServer http(80);  // HTTPサーバ(ポート)
 // 起動情報テキストを生成
 //━━━━━━━━━━━━━━━
 String buildStartupStatusText(){
-  String s; s.reserve(128);
-  s += "Mode="; s += g_wifi_mode; s += "  SSID="; s += g_wifi_ssid; s += "\n";
-  s += "IP="; s += (g_wifi_mode=="STA" ? WiFi.localIP().toString() : WiFi.softAPIP().toString()); s += "\n";
+  String s;
+  s.reserve(128);
+  s += "\nWEB UI Start...\n";
+  s += " Mode:"+ String(g_wifi_mode) + "\n";
+  s += " SSID:"+ String(g_wifi_ssid) + "\n";
   return s;
 }
 
@@ -127,7 +129,6 @@ void webui_begin(){
   http.on("/upload", HTTP_POST, [](){}, handleUpload);
   http.on("/status", HTTP_GET, handleStatus);
   http.begin();
-  Serial.println("HTTP ready: /  /config  /upload  /status");
 }
 
 //━━━━━━━━━━━━━━━

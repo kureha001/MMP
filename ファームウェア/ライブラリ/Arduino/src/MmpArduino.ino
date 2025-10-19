@@ -7,10 +7,10 @@
 #include "webui.hpp"
 #include "MmpClient.h"
 
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 using Mmp::Core::MmpClient;
 MmpClient mmp;
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 //============================================================
 // Wifi設定情報（各自の環境に合わせる）
@@ -299,12 +299,12 @@ void setup() {
 
     Serial.println("\n＝＝＝ ＭＭＰ ＡＰＩテスト［開始］＝＝＝\n");
     // 実施するテストだけコメントを外してください（複数可）
-    //RunAnalog()       ; // アナログ入力
-    //RunDigital()      ; // デジタル入出力
-    //RunMp3Playlist()  ; // MP3プレイヤー(基本)
-    //RunMp3Control()   ; // MP3プレイヤー(制御)
+    RunAnalog()       ; // アナログ入力
+    RunDigital()      ; // デジタル入出力
+    RunMp3Playlist()  ; // MP3プレイヤー(基本)
+    RunMp3Control()   ; // MP3プレイヤー(制御)
     RunPwm(true)      ; // PWM出力
-    //RunPwm(false)     ; // I2C→PCA9685 直接制御
+    RunPwm(false)     ; // I2C→PCA9685 直接制御
     Serial.println("＝＝＝ ＭＭＰ ＡＰＩテスト［終了］＝＝＝");
 
     mmp.Close();

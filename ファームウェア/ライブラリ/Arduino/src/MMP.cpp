@@ -1,20 +1,20 @@
-// MMP.cpp
-//=================================================================
-// MMP.cpp — Arduino版 MMP 入口（Python版と責務を揃える）
-//=================================================================
+// filename : MMP.cpp
+//============================================================
+// アプリ接続
+// バージョン：0.5
+//============================================================
 #include "MMP.h"
 #include "MmpClient.h"
 #include "config.hpp"   // TCPブリッジサーバより流用
 #include "webui.hpp"    // TCPブリッジサーバより流用
 
-
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 using Mmp::Core::MmpClient;
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-//------------------------------------------------------------
-// ★Wi-Fiが利用可能であるかを判定
-//------------------------------------------------------------
+//─────────────
+// Wi-Fi可否を判定
+//─────────────
 #if __has_include(<WiFi.h>)
   #include <WiFi.h>
   #define MMP_HAS_WIFI 1  // Wifi機能：あり
@@ -22,9 +22,9 @@ using Mmp::Core::MmpClient;
   #define MMP_HAS_WIFI 0  // Wifi機能：なし
 #endif
 
-//------------------------------------------------------------
-// ファイルシステム（LittleFS/SD：あれば使用）
-//------------------------------------------------------------
+//─────────────
+// ファイルシステム可否を判定
+//─────────────
 #if __has_include(<LittleFS.h>)
   #include <LittleFS.h>
   #define MMP_HAS_LFS 1
@@ -32,6 +32,9 @@ using Mmp::Core::MmpClient;
   #define MMP_HAS_LFS 0
 #endif
 
+//─────────────
+// SDカード可否を判定
+//─────────────
 #if __has_include(<SD.h>)
   #include <SD.h>
   #define MMP_HAS_SD 1
@@ -40,11 +43,14 @@ using Mmp::Core::MmpClient;
 #endif
 
 
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-// 無名名前空間：ヘルパ類のみ（接続処理本体は namespace MMP 内で定義）
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 無名名前空間：ヘルパ類のみ(接続処理本体はnamespace MMP内で定義)
 namespace {
 
-  // "a=1&b=2" から key の値を取得（無ければ defVal）
+  //─────────────
+  // "a=1&b=2"からkeyの値を取得
+  // （無ければ defVal）
+  //─────────────
   static String get_qparam(const String& qs, const char* key, const char* defVal) {
     int p = 0, n = qs.length();
     while (p < n) {
@@ -59,20 +65,26 @@ namespace {
     }
     return String(defVal ? defVal : "");
   }
-
-  // 文字列→uint32（ms）／妥当でなければ defMs
+  //─────────────
+  // 文字列→uint32（ms）
+  // 妥当でなければ defMs
+  //─────────────
   static uint32_t to_u32_ms(const String& s, uint32_t defMs) {
     if (s.length() == 0) return defMs;
     long v = s.toInt();
     if (v < 0) return defMs;
     return (uint32_t)v;
   }
-
+  //─────────────
   // tcp://host:port?...
-  static bool parse_tcp_conn(const char* connCstr,
-                             String& host, uint16_t& port,
-                             uint32_t& ioTimeoutMs, uint32_t& verifyTimeoutMs)
-  {
+  //─────────────
+  static bool parse_tcp_conn(
+    const char* connCstr,
+    String&     host,
+    uint16_t&   port,
+    uint32_t&   ioTimeoutMs,
+    uint32_t&   verifyTimeoutMs
+  ){
     host = ""; port = 0; ioTimeoutMs = 1000; verifyTimeoutMs = 2000;
 
     String s(connCstr ? connCstr : "");
@@ -95,45 +107,58 @@ namespace {
     return true;
   }
 
+  //─────────────
+  //
+  //─────────────
   static void conln(Stream* log, const String& s) { if (log) log->println(s); }
+
+  //─────────────
+  //
+  //─────────────
   static void con  (Stream* log, const String& s) { if (log) log->print  (s); }
 
   // ---------- 外部ファイル読込（共通） ----------
-  // 内容を String で返す（成功: true）
+  //─────────────
+  // 内容をStringで返す
+  // (成功:true)
+  //─────────────
   static bool read_file_to_string(const char* path, String& out, Stream* log) {
+
     out = "";
 
-#if MMP_HAS_LFS
-    if (LittleFS.begin()) {
-      if (LittleFS.exists(path)) {
-        File f = LittleFS.open(path, "r");
-        if (f) {
-          while (f.available()) out += (char)f.read();
-          f.close();
-          return true;
+    #if MMP_HAS_LFS
+        if (LittleFS.begin()) {
+          if (LittleFS.exists(path)) {
+            File f = LittleFS.open(path, "r");
+            if (f) {
+              while (f.available()) out += (char)f.read();
+              f.close();
+              return true;
+            }
+          }
         }
-      }
-    }
-#endif
+    #endif
 
-#if MMP_HAS_SD
-    if (SD.begin()) {
-      if (SD.exists(path)) {
-        File f = SD.open(path, FILE_READ);
-        if (f) {
-          while (f.available()) out += (char)f.read();
-          f.close();
-          return true;
+    #if MMP_HAS_SD
+        if (SD.begin()) {
+          if (SD.exists(path)) {
+            File f = SD.open(path, FILE_READ);
+            if (f) {
+              while (f.available()) out += (char)f.read();
+              f.close();
+              return true;
+            }
+          }
         }
-      }
-    }
-#endif
+    #endif
 
     (void)log;
     return false;
   }
 
+  //─────────────
   // 前後の空白/改行を除去
+  //─────────────
   static String trim_ws(const String& s) {
     int i = 0, j = s.length();
     while (i < j && isspace((unsigned char)s[i])) ++i;
@@ -141,8 +166,11 @@ namespace {
     return s.substring(i, j);
   }
 
-  // "key":"value" / key=value / key: value など素朴に抽出
+  //─────────────
+  // "key":"value"を抽出
+  //─────────────
   static bool extract_key(const String& src, const char* key, String& val) {
+
     // 1) JSON風："key":"value"
     String pat = String("\"") + key + "\"";
     int p = src.indexOf(pat);
@@ -157,6 +185,7 @@ namespace {
         }
       }
     }
+
     // 2) INI風： key = value / key: value
     int start = 0;
     while (start < (int)src.length()) {
@@ -183,38 +212,37 @@ namespace {
   }
 
 } // namespace（無名）
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-String g_wifi_mode;                       // "STA" もしくは "AP"
-String g_wifi_ssid;                       // 接続中の SSID / AP の SSID
 
-//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+String g_wifi_mode; // "STA" もしくは "AP"
+String g_wifi_ssid; // 接続中の SSID / AP の SSID
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 namespace MMP {
 
   bool tryConnectOne(const WifiCand& c);    // Wi-Fi候補1つを試行
   void startAPFallback();                   // APフォールバック起動
 
-//============================================================
+//─────────────
 // 終了（クローズ/切断）
-//============================================================
-void 終了(MmpClient& cli, bool wifiOff, Stream* log)
-{
+//─────────────
+void 終了(MmpClient& cli, bool wifiOff, Stream* log){
   cli.Close();
 
-#if MMP_HAS_WIFI
-  if (wifiOff) {
-    WiFi.disconnect(true);
-    WiFi.mode(WIFI_OFF);
-  }
-#else
-  (void)wifiOff;
-#endif
+  #if MMP_HAS_WIFI
+    if (wifiOff) {
+      WiFi.disconnect(true);
+      WiFi.mode(WIFI_OFF);
+    }
+  #else
+    (void)wifiOff;
+  #endif
 
   conln(log, F("<< 接続を終了しました >>"));
 }
 
-//============================================================
-//============================================================
+//─────────────
+//─────────────
 void シリアル待ち(Stream* log){
   if (log == &Serial) {
     unsigned long deadline = millis() + 15000;
@@ -223,51 +251,46 @@ void シリアル待ち(Stream* log){
   }
 }
 
-//============================================================
+//─────────────
 // Wi-Fi 接続のみ
-//============================================================
-bool 通信接続_WiFi(const char* ssid, const char* pass, Stream* log)
-{
+//─────────────
+bool 通信接続_WiFi(const char* ssid, const char* pass, Stream* log){
   シリアル待ち(log);
-#if !MMP_HAS_WIFI
-  conln(log, F("[ERROR] このボード/ビルドには Wi-Fi がありません。"));
-  return false;
-#else
-  if (!ssid || !*ssid) { conln(log, F("[ERROR] SSID が空です。")); return false; }
+  #if !MMP_HAS_WIFI
+    conln(log, F("[ERROR] このボード/ビルドには Wi-Fi がありません。"));
+    return false;
+  #else
+    if (!ssid || !*ssid) { conln(log, F("[ERROR] SSID が空です。")); return false; }
 
-  con  (log, F("Wi-Fi 接続中"));
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
-  unsigned long t0 = millis();
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(200);
-    con(log, ".");
-    if (millis() - t0 > 20000UL) {
-      conln(log, F("\n[ERROR] Wi-Fi 接続タイムアウト。"));
-      return false;
+    con  (log, F("Wi-Fi 接続中"));
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, pass);
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(200);
+      con(log, ".");
+      if (millis() - t0 > 20000UL) {
+        conln(log, F("\n[ERROR] Wi-Fi 接続タイムアウト。"));
+        return false;
+      }
     }
-  }
-  conln(log, "");
-  conln(log, String(F("IP: ")) + WiFi.localIP().toString());
-  return true;
-#endif
+    conln(log, "");
+    conln(log, String(F("IP: ")) + WiFi.localIP().toString());
+    return true;
+  #endif
 }
 
-
-//============================================================
+//─────────────
 // Wi-Fi 接続のみ
-//============================================================
-bool 通信接続_WiFi(const String& ssid, const String& pass, Stream* log)
-{
+//─────────────
+bool 通信接続_WiFi(const String& ssid, const String& pass, Stream* log){
   return 通信接続_WiFi(ssid.c_str(), pass.c_str(), log);
 }
 
-
-//============================================================
+//─────────────
 // TCP 接続のみ
-//============================================================
-bool 通信接続_Tcp(const char* conn, MmpClient& cli, Stream* log)
-{
+//─────────────
+bool 通信接続_Tcp(const char* conn, MmpClient& cli, Stream* log){
   シリアル待ち(log);
   String host; uint16_t port; uint32_t ioMs; uint32_t verMs;
   if (!parse_tcp_conn(conn, host, port, ioMs, verMs)) {
@@ -285,26 +308,22 @@ bool 通信接続_Tcp(const char* conn, MmpClient& cli, Stream* log)
   return true;
 }
 
-
-//============================================================
+//─────────────
 // TCP 接続のみ
-//============================================================
-bool 通信接続_Tcp(const String& conn, MmpClient& cli, Stream* log)
-{
+//─────────────
+bool 通信接続_Tcp(const String& conn, MmpClient& cli, Stream* log){
   return 通信接続_Tcp(conn.c_str(), cli, log);
 }
 
-
-//============================================================
-// 外部ファイルから Wi-Fi 設定を読み込んで接続
-//============================================================
-bool 通信接続_WiFi_外部(const char* path, Stream* log)
-{
+//─────────────
+// Wi-Fi設定を読込んで接続
+//─────────────
+bool 通信接続_WiFi_外部(const char* path, Stream* log){
   シリアル待ち(log);
-#if !MMP_HAS_WIFI
-  conln(log, F("[ERROR] このボード/ビルドには Wi-Fi がありません。"));
-  return false;
-#endif
+  #if !MMP_HAS_WIFI
+    conln(log, F("[ERROR] このボード/ビルドには Wi-Fi がありません。"));
+    return false;
+  #endif
 
   // 設定読み込み 
   if (!loadConfig()) {
@@ -349,10 +368,9 @@ bool 通信接続_WiFi_外部(const char* path, Stream* log)
   return true;
 }
 
-
-//-----------------------
+//─────────────
 // Wi-Fi候補1つを試行
-//-----------------------
+//─────────────
 bool tryConnectOne(const WifiCand& c){
 
   // SSIDが空なら失敗
@@ -388,29 +406,30 @@ bool tryConnectOne(const WifiCand& c){
   }
 }
 
-//-----------------------
+//─────────────
 // APフォールバック起動
-//-----------------------
+//─────────────
 void startAPFallback(){
   if (!WIFI.apfb.enabled) return;
-#if MMP_HAS_WIFI
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
-#endif
+  #if MMP_HAS_WIFI
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
+  #endif
   g_wifi_mode = "AP";
   g_wifi_ssid = WIFI.apfb.ssid;
 }
 
-//============================================================
-// 複合：Wi-Fi（必要なら）+ TCP / UART auto
-//============================================================
+//─────────────
+// 複合：Wi-Fi（必要なら）
+// + TCP / UART auto
+//─────────────
 bool 通信接続(
     const char* conn,
     MmpClient&  cli,
     const char* wifiSsid,
     const char* wifiPass,
-    Stream*     log)
-{
+    Stream*     log
+){
   シリアル待ち(log);
   conln(log, F("<< ＭＭＰライブラリ for Arduino >>"));
 
@@ -425,62 +444,64 @@ bool 通信接続(
       return false;
     }
     conln(log, F("成功"));
-  }
-  else if (strncmp(conn, "tcp://", 6) == 0) {
 
-#if MMP_HAS_WIFI
-    bool netReady = (WiFi.status() == WL_CONNECTED);
-    if (!netReady) {
-      if (wifiSsid && *wifiSsid) {
-        if (!通信接続_WiFi(wifiSsid, wifiPass, log)) {
-          終了(cli, true, log);
-          return false;
+  } else if (strncmp(conn, "tcp://", 6) == 0) {
+
+    #if MMP_HAS_WIFI
+        bool netReady = (WiFi.status() == WL_CONNECTED);
+        if (!netReady) {
+          if (wifiSsid && *wifiSsid) {
+            if (!通信接続_WiFi(wifiSsid, wifiPass, log)) {
+              終了(cli, true, log);
+              return false;
+            }
+            netReady = true;
+          } else {
+            if (!通信接続_WiFi_外部(nullptr, log)) {
+              終了(cli, true, log);
+              return false;
+            }
+            netReady = true;
+          }
         }
-        netReady = true;
-      } else {
-        if (!通信接続_WiFi_外部(nullptr, log)) {
-          終了(cli, true, log);
-          return false;
-        }
-        netReady = true;
-      }
-    }
-    (void)netReady;
-#endif
+        (void)netReady;
+    #endif
+
     if (!通信接続_Tcp(conn, cli, log)) {
       終了(cli, true, log);
       return false;
     }
-  }
-  else {
+
+  } else {
     conln(log, String(F("[ERROR] 未対応の接続指定: ")) + conn);
     終了(cli, false, log);
     return false;
   }
 
-#if MMP_HAS_WIFI
-  if (WiFi.status() == WL_CONNECTED) {
-    conln(log, String(F("IP address(WiFi): ")) + WiFi.localIP().toString());
-  }
-#endif
+  #if MMP_HAS_WIFI
+    if (WiFi.status() == WL_CONNECTED) {
+      conln(log, String(F("IP address(WiFi): ")) + WiFi.localIP().toString());
+    }
+  #endif
 
-  conln(log, String(F("通信ポート      : ")) + cli.ConnectedPort()                );
-  conln(log, String(F("接続速度        : ")) + String(cli.ConnectedBaud()) + "bps");
-  conln(log, String(F("MMP firmware    : ")) + String(cli.INFO.VERSION())         );
-  conln(log, String(F("PCA9685  [0]    : ")) + String(cli.PWM.INFO.CONNECT(0))    );
-  conln(log, String(F("DFPlayer [1]    : ")) + String(cli.MP3.INFO.CONNECT(1))    );
+  conln(log, String(F("通信ポート  : ")) + cli.ConnectedPort()                );
+  conln(log, String(F("接続速度    : ")) + String(cli.ConnectedBaud()) + "bps");
+  conln(log, String(F("MMP firmware: ")) + String(cli.INFO.VERSION())         );
+  conln(log, String(F("PCA9685  [0]: ")) + String(cli.PWM.INFO.CONNECT(0))    );
+  conln(log, String(F("DFPlayer [1]: ")) + String(cli.MP3.INFO.CONNECT(1))    );
 
   return true;
 }
 
+//─────────────
+//─────────────
 bool 通信接続(const String& conn,
     MmpClient&    cli,
     const char*   wifiSsid,
     const char*   wifiPass,
-    Stream*       log)
-{
+    Stream*       log){
   return 通信接続(conn.c_str(), cli, wifiSsid, wifiPass, log);
 }
 
 } // namespace MMP
-//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

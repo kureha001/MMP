@@ -1,6 +1,10 @@
-// MmpClient.h
+// filename : MmpClient.h
 //============================================================
-// ＭＭＰクライアント（コア機能／ヘッダ）
+// ＭＭＰコマンド
+// バージョン：0.5
+//------------------------------------------------------------
+// ボード依存の薄い定義（MmpClient.* が参照）
+// できるだけ最小に保ち、各プロジェクトで必要なら上書き可
 //============================================================
 #pragma once
 #include <Arduino.h>
@@ -164,12 +168,10 @@ private:
 
 //【外部公開】階層ＡＰＩ
 public:
-
     class mod_Info {
     MmpClient* _p;
     public:
         explicit mod_Info(MmpClient* p): _p(p) {}
-
         //─────────────
         // バージョン
         //─────────────
@@ -186,7 +188,6 @@ public:
     public:
         explicit mod_Analog(MmpClient* p): _p(p) {}
         int32_t t = _p->Settings.TimeoutAnalog;
-
         //─────────────
         // 使用範囲設定
         //─────────────
@@ -194,12 +195,10 @@ public:
             int chs,    //
             int devs    //
         ){return _p->RunGetOK(t, "ANALOG","SETUP", chs, devs);}
-
         //─────────────
         // 信号入力(バッファ格納)
         //─────────────
         bool INPUT(){return _p->RunGetOK(t, "ANALOG","INPUT");}
-
         //─────────────
         // バッファ読取：丸めなし
         //─────────────
@@ -207,7 +206,6 @@ public:
             int ch, //
             int dev //
         ){return _p->RunGetVal(t, "ANALOG","READ", ch, dev);}
-
         //─────────────
         // バッファ読取：中央基準
         //─────────────
@@ -255,21 +253,19 @@ public:
     public:
         explicit mod_Digital(MmpClient* p): _p(p) {}
         int32_t t = _p->Settings.TimeoutDigital;
-
         //─────────────
         // 信号入力
         //─────────────
         int INPUT(
-            int gpioId
+            int gpioId      // GPIOピンID
         ){return _p->RunGetVal(t, "DIGITAL","INPUT" , gpioId);}
-
         //─────────────
         // 信号出力
         //─────────────
         bool OUTPUT(
-            int gpioId,
-            int val
-        ){return _p->RunGetOK(t, "ANALOG","SETUP", gpioId, ((val & 1) ? 1 : 0));}
+            int gpioId,     // GPIOピンID
+            int val         // 出力する値(0:LOW or 1:HIGH)
+        ){return _p->RunGetOK(t, "DIGITAL","OUTPUT", gpioId, ((val & 1) ? 1 : 0));}
     } DIGITAL;
 
 //━━━━━━━━━━━━━━━
@@ -281,15 +277,13 @@ public:
     public:
         explicit mod_PWM(MmpClient* p): _p(p), INFO(p), ANGLE(p) {}
         int32_t t = _p->Settings.TimeoutPwm;
-
         //─────────────
         // ＰＷＭ値出力
         //─────────────
         bool OUTPUT(
             int ch  ,
             int val
-            ){return _p->RunGetOK(t, "PWM/ANGLE","DELETE", ch, val);}
-
+            ){return _p->RunGetOK(t, "PWM","OUTPUT", ch, val);}
         //─────────────
         // サブ：インフォメーション
         //─────────────
@@ -305,12 +299,10 @@ public:
                 int dev
             ){return _p->RunGetVal(t, "PWM/INFO","CONNECT" , dev);}
         } INFO;
-
         //─────────────
         // サブ：角度指定
         //─────────────
         class sub_Angle {
-
             MmpClient* _p;
             public:
                 explicit sub_Angle(MmpClient* p): _p(p) {}
@@ -326,7 +318,6 @@ public:
                 int pwmTo,      //
                 int pwmMiddle   //
             ){return _p->RunGetOK(t, "PWM/ANGLE","SETUP", chFrom, chTo, degTo, pwmFrom, pwmTo, pwmMiddle);}
-
             //─────────────
             // プリセット削除
             //─────────────
@@ -334,7 +325,6 @@ public:
                 int chFrom, //
                 int chTo    //
             ){return _p->RunGetOK(t, "PWM/ANGLE","DELETE", chFrom, chTo);}
-
             //─────────────
             // ＰＷＭ出力：通常
             //─────────────
@@ -342,7 +332,6 @@ public:
                 int ch,
                 int angle
             ){return _p->RunGetVal(t, "PWM/ANGLE","OUTPUT" , ch, angle);}
-
             //─────────────
             // ＰＷＭ出力：中間
             //─────────────
@@ -350,7 +339,6 @@ public:
                 int ch
             ){return _p->RunGetVal(t, "PWM/ANGLE","CENTER" , ch);}
         } ANGLE;
-
         //─────────────
         // サブ：回転型サーボ
         //─────────────
@@ -366,12 +354,10 @@ public:
 // モジュール：ＭＰ３プレイヤー
 //━━━━━━━━━━━━━━━
 public:
-
     class mod_MP3 {
     MmpClient* _p;
     public:
         explicit mod_MP3(MmpClient* p): _p(p), SET(p), TRACK(p), INFO(p) {}
-
         //─────────────
         // サブ：デバイス設定
         //─────────────
@@ -387,7 +373,6 @@ public:
                 int dev,
                 int vol
             ){return _p->RunGetOK(t, "MP3/SET","VOLUME", dev, vol);}
-
             //─────────────
             // イコライザ
             //─────────────
@@ -396,7 +381,6 @@ public:
                 int mode
             ){return _p->RunGetOK(t, "MP3/SET","EQ", dev, mode);}
         } SET;
-
         //─────────────
         // サブ：トラック
         //─────────────
@@ -405,31 +389,28 @@ public:
             public:
                 explicit sub_Track(MmpClient* p): _p(p) {}
                 int32_t t = _p->Settings.TimeoutAudio;
-                //─────────────
-                // トラック再生
-                //─────────────
-                int PLAY(
-                    int dev,
-                    int dir,
-                    int file
-                ){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev, dir, file);}
-
-                //─────────────
-                // ループ再生有無
-                //─────────────
-                int LOOP(
-                    int  dev,
-                    bool mode
-                ){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev, mode ? 1 : 0);}
-
-                //─────────────
-                // 停止,一時停止,再開
-                //─────────────
-                int STOP (int dev){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev);}
-                int PAUSE(int dev){return _p->RunGetVal(t, "MP3/TRACK","PAUSE", dev);}
-                int START(int dev){return _p->RunGetVal(t, "MP3/TRACK","START", dev);}
+            //─────────────
+            // トラック再生
+            //─────────────
+            int PLAY(
+                int dev,
+                int dir,
+                int file
+            ){return _p->RunGetVal(t, "MP3/TRACK","PLAY" , dev, dir, file);}
+            //─────────────
+            // ループ再生有無
+            //─────────────
+            int LOOP(
+                int  dev,
+                bool mode
+            ){return _p->RunGetVal(t, "MP3/TRACK","LOOP" , dev, mode ? 1 : 0);}
+            //─────────────
+            // 停止,一時停止,再開
+            //─────────────
+            int STOP (int dev){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev);}
+            int PAUSE(int dev){return _p->RunGetVal(t, "MP3/TRACK","PAUSE", dev);}
+            int START(int dev){return _p->RunGetVal(t, "MP3/TRACK","START", dev);}
         } TRACK;
-
         //─────────────
         // サブ：インフォメーション
         //─────────────
@@ -472,7 +453,6 @@ public:
             int reg,
             int val
         ){return _p->RunGetOK(t, "I2C","WRITE", addr, reg, val);}
-
         //─────────────
         // 読み出し
         //─────────────

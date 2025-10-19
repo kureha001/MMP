@@ -1,6 +1,10 @@
-// MmpClient.cpp
+// filename : MmpClient.cpp
 //============================================================
-// ＭＭＰクライアント（コア機能／実態）
+// ＭＭＰコマンド
+// バージョン：0.5
+//------------------------------------------------------------
+// ボード依存の薄い定義（MmpClient.* が参照）
+// できるだけ最小に保ち、各プロジェクトで必要なら上書き可
 //============================================================
 #include "MmpClient.h"
 
@@ -312,7 +316,7 @@ using namespace Mmp::Core;
     ){
         // リクエスト(URI)を作成する
         String uri;
-        uri.reserve(32);
+        uri.reserve(100);
         uri += path; uri += '/'; uri += cmd;
         const int args[4] = {arg1, arg2, arg3, arg4};
         for (int i = 0; i < 4; ++i) {
@@ -339,8 +343,8 @@ using namespace Mmp::Core;
     //─────────────
     bool MmpClient::RunGetOK(
         int32_t argTime,        //
-        const   String& path,   // 例: F("MP3/INFO")
-        const   String& cmd ,   // 例: F("TRACK")
+        const   String& path,   // 
+        const   String& cmd ,   // 
         int     arg1 /*-1000*/,
         int     arg2 /*-1000*/,
         int     arg3 /*-1000*/,
@@ -352,7 +356,7 @@ using namespace Mmp::Core;
     ){
         // リクエスト(URI)を作成する
         String uri;
-        uri.reserve(32);
+        uri.reserve(100);
         uri += path; uri += '/'; uri += cmd;
         const int args[8] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         for (int i = 0; i < 8; ++i) {

@@ -132,7 +132,7 @@ public:
 //━━━━━━━━━━━━━━━
 //【外部公開】階層ＡＰＩ
 public:
-    MmpClient():INFO(this), ANALOG(this), DIGITAL(this), PWM(this), MP3(this), I2C(this) {}
+    MmpClient():info(this), analog(this), digital(this), pwm(this), mp3(this), i2c(this) {}
 
 private:
     int RunGetVal(
@@ -175,8 +175,8 @@ public:
         //─────────────
         // バージョン
         //─────────────
-        String VERSION() { return _p->INFO_VERSION(); }
-    } INFO;
+        String version() { return _p->INFO_VERSION(); }
+    } info;
 
 
 //━━━━━━━━━━━━━━━
@@ -191,25 +191,25 @@ public:
         //─────────────
         // 使用範囲設定
         //─────────────
-        bool SETUP(
+        bool setup(
             int chs,    //
             int devs    //
         ){return _p->RunGetOK(t, "ANALOG","SETUP", chs, devs);}
         //─────────────
         // 信号入力(バッファ格納)
         //─────────────
-        bool INPUT(){return _p->RunGetOK(t, "ANALOG","INPUT");}
+        bool input(){return _p->RunGetOK(t, "ANALOG","INPUT");}
         //─────────────
         // バッファ読取：丸めなし
         //─────────────
-        int READ(
+        int read(
             int ch, //
             int dev //
         ){return _p->RunGetVal(t, "ANALOG","READ", ch, dev);}
         //─────────────
         // バッファ読取：中央基準
         //─────────────
-        int ROUND(
+        int round(
             int ch,         //
             int dev,        //
             int step,       //
@@ -221,7 +221,7 @@ public:
         //─────────────
         // バッファ読取：切り上げ
         //─────────────
-        int ROUNDU(
+        int roundU(
             int ch,         //
             int dev,        //
             int step,       //
@@ -233,7 +233,7 @@ public:
         //─────────────
         // バッファ読取：切り下げ
         //─────────────
-        int ROUNDD(
+        int roundD(
             int ch,         //
             int dev,        //
             int step,       //
@@ -242,7 +242,7 @@ public:
             int raw = _p->RunGetVal(t, "ANALOG","READ", ch, dev);
             return _roundNearest(raw, step, bits, _p->Settings.AnalogBits);
         }
-    } ANALOG;
+    } analog;
 
 //━━━━━━━━━━━━━━━
 // モジュール：デジタル入出力
@@ -256,17 +256,17 @@ public:
         //─────────────
         // 信号入力
         //─────────────
-        int INPUT(
+        int input(
             int gpioId      // GPIOピンID
         ){return _p->RunGetVal(t, "DIGITAL","INPUT" , gpioId);}
         //─────────────
         // 信号出力
         //─────────────
-        bool OUTPUT(
+        bool output(
             int gpioId,     // GPIOピンID
             int val         // 出力する値(0:LOW or 1:HIGH)
         ){return _p->RunGetOK(t, "DIGITAL","OUTPUT", gpioId, ((val & 1) ? 1 : 0));}
-    } DIGITAL;
+    } digital;
 
 //━━━━━━━━━━━━━━━
 // モジュール：ＰＷＭ出力
@@ -275,12 +275,12 @@ public:
     class mod_PWM {
     MmpClient* _p;
     public:
-        explicit mod_PWM(MmpClient* p): _p(p), INFO(p), ANGLE(p) {}
+        explicit mod_PWM(MmpClient* p): _p(p), info(p), ANGLE(p) {}
         int32_t t = _p->Settings.TimeoutPwm;
         //─────────────
         // ＰＷＭ値出力
         //─────────────
-        bool OUTPUT(
+        bool output(
             int ch  ,
             int val
             ){return _p->RunGetOK(t, "PWM","OUTPUT", ch, val);}
@@ -295,10 +295,10 @@ public:
             //─────────────
             // デバイス接続状況
             //─────────────
-            int CONNECT(
+            int connect(
                 int dev
             ){return _p->RunGetVal(t, "PWM/INFO","CONNECT" , dev);}
-        } INFO;
+        } info;
         //─────────────
         // サブ：角度指定
         //─────────────
@@ -310,7 +310,7 @@ public:
             //─────────────
             // プリセット登録
             //─────────────
-            bool SETUP(
+            bool setup(
                 int chFrom,     //
                 int chTo,       //
                 int degTo,      //
@@ -321,21 +321,21 @@ public:
             //─────────────
             // プリセット削除
             //─────────────
-            bool DELETE(
+            bool reset(
                 int chFrom, //
                 int chTo    //
-            ){return _p->RunGetOK(t, "PWM/ANGLE","DELETE", chFrom, chTo);}
+            ){return _p->RunGetOK(t, "PWM/ANGLE","RESET", chFrom, chTo);}
             //─────────────
             // ＰＷＭ出力：通常
             //─────────────
-            int OUTPUT(
+            int output(
                 int ch,
                 int angle
             ){return _p->RunGetVal(t, "PWM/ANGLE","OUTPUT" , ch, angle);}
             //─────────────
             // ＰＷＭ出力：中間
             //─────────────
-            int CENTER(
+            int center(
                 int ch
             ){return _p->RunGetVal(t, "PWM/ANGLE","CENTER" , ch);}
         } ANGLE;
@@ -348,7 +348,7 @@ public:
             // ＰＷＭ出力：通常
             // ＰＷＭ出力：停止
             //─────────────
-    } PWM;
+    } pwm;
 
 //━━━━━━━━━━━━━━━
 // モジュール：ＭＰ３プレイヤー
@@ -357,7 +357,7 @@ public:
     class mod_MP3 {
     MmpClient* _p;
     public:
-        explicit mod_MP3(MmpClient* p): _p(p), SET(p), TRACK(p), INFO(p) {}
+        explicit mod_MP3(MmpClient* p): _p(p), set(p), track(p), info(p) {}
         //─────────────
         // サブ：デバイス設定
         //─────────────
@@ -369,18 +369,18 @@ public:
             //─────────────
             // 音量
             //─────────────
-            bool VOLUME(
+            bool volume(
                 int dev,
                 int vol
             ){return _p->RunGetOK(t, "MP3/SET","VOLUME", dev, vol);}
             //─────────────
             // イコライザ
             //─────────────
-            bool EQ(
+            bool eq(
                 int dev,
                 int mode
             ){return _p->RunGetOK(t, "MP3/SET","EQ", dev, mode);}
-        } SET;
+        } set;
         //─────────────
         // サブ：トラック
         //─────────────
@@ -392,7 +392,7 @@ public:
             //─────────────
             // トラック再生
             //─────────────
-            int PLAY(
+            int play(
                 int dev,
                 int dir,
                 int file
@@ -400,17 +400,17 @@ public:
             //─────────────
             // ループ再生有無
             //─────────────
-            int LOOP(
+            int loop(
                 int  dev,
                 bool mode
             ){return _p->RunGetVal(t, "MP3/TRACK","LOOP" , dev, mode ? 1 : 0);}
             //─────────────
             // 停止,一時停止,再開
             //─────────────
-            int STOP (int dev){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev);}
-            int PAUSE(int dev){return _p->RunGetVal(t, "MP3/TRACK","PAUSE", dev);}
-            int START(int dev){return _p->RunGetVal(t, "MP3/TRACK","START", dev);}
-        } TRACK;
+            int stop (int dev){return _p->RunGetVal(t, "MP3/TRACK","STOP" , dev);}
+            int pause(int dev){return _p->RunGetVal(t, "MP3/TRACK","PAUSE", dev);}
+            int start(int dev){return _p->RunGetVal(t, "MP3/TRACK","START", dev);}
+        } track;
         //─────────────
         // サブ：インフォメーション
         //─────────────
@@ -427,14 +427,14 @@ public:
                 // 総ファイル総数
                 //─────────────
                 int32_t t = _p->Settings.TimeoutAudio;
-                int CONNECT (int dev){return _p->RunGetVal(t, "MP3/INFO","CONNECT", dev);}
-                int TRACK   (int dev){return _p->RunGetVal(t, "MP3/INFO","TRACK"  , dev);}
-                int VOLUME  (int dev){return _p->RunGetVal(t, "MP3/INFO","VOLUME" , dev);}
-                int EQ      (int dev){return _p->RunGetVal(t, "MP3/INFO","EQ"     , dev);}
-                int FILEID  (int dev){return _p->RunGetVal(t, "MP3/INFO","FILEID" , dev);}
-                int FILEIDES(int dev){return _p->RunGetVal(t, "MP3/INFO","FILES"  , dev);}
-        } INFO;
-    } MP3;
+                int connect(int dev){return _p->RunGetVal(t, "MP3/INFO","CONNECT", dev);}
+                int track  (int dev){return _p->RunGetVal(t, "MP3/INFO","TRACK"  , dev);}
+                int volume (int dev){return _p->RunGetVal(t, "MP3/INFO","VOLUME" , dev);}
+                int eq     (int dev){return _p->RunGetVal(t, "MP3/INFO","EQ"     , dev);}
+                int fileID (int dev){return _p->RunGetVal(t, "MP3/INFO","FILEID" , dev);}
+                int files  (int dev){return _p->RunGetVal(t, "MP3/INFO","FILES"  , dev);}
+        } info;
+    } mp3;
 
 //━━━━━━━━━━━━━━━
 // モジュール：Ｉ２Ｃ通信
@@ -448,7 +448,7 @@ public:
         //─────────────
         // 書き込み
         //─────────────
-        bool WRITE(
+        bool write(
             int addr,
             int reg,
             int val
@@ -456,11 +456,11 @@ public:
         //─────────────
         // 読み出し
         //─────────────
-        int READ(
+        int read(
             int addr,
             int reg
         ){return _p->RunGetVal(t, "I2C","READ", addr, reg);}
-    } I2C;
+    } i2c;
 
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

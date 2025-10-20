@@ -13,9 +13,9 @@
 
 WifiCfg  WIFI; // hostname は JSON から設定
 
-//-----------------------
+//━━━━━━━━━━━━━
 // 設定読込み
-//-----------------------
+//━━━━━━━━━━━━━
 bool loadConfig() {
 
   // ★RP2040/Earle core は begin() に引数を取らない
@@ -27,9 +27,8 @@ bool loadConfig() {
 
   // (初回) -> /config.json が無い場合は自動生成
   if (!LittleFS.exists("/config.json")) {
-//    StaticJsonDocument<512> doc;
     JsonDocument doc;
-    doc["wifi"]["hostname"] = "wifi_sta"; // ★ 初期ホスト名
+    doc["wifi"]["hostname"] = "mmp-client"; // ★ 初期ホスト名
 
     // candidates は空のまま（APフォールバックで設定投入）
     File nf = LittleFS.open("/config.json","w");
@@ -38,19 +37,15 @@ bool loadConfig() {
   }
 
   // 読み込み
-  File f = LittleFS.open("/config.json", "r"); if (!f) return false;
-  size_t fs = f.size();
-  size_t cap = fs + 1024;         // ファイルサイズ + 余裕
-  DynamicJsonDocument doc(cap);   // ← 静的 2048 から変更
+  File f = LittleFS.open("/config.json", "r");
+  if (!f) return false;
+  JsonDocument doc;
   DeserializationError err = deserializeJson(doc, f);
   f.close();
-  if (err) {
-    // 失敗時の一時ログ（必要なら）: Serial.println(String("JSON err: ") + err.c_str());
-    return false;
-  }
+  if (err) {return false;}
 
   // ホスト名
-  WIFI.hostname = doc["wifi"]["hostname"] | "wifi-sta";
+  WIFI.hostname = doc["wifi"]["hostname"] | "mmp-client";
 
   // Wi-Fi候補（順序で優先度）
   WIFI.candN = 0;
@@ -64,7 +59,7 @@ bool loadConfig() {
 
   // APフォールバック
   WIFI.apfb.enabled = doc["wifi"]["ap_fallback"]["enabled"] | true;
-  WIFI.apfb.ssid    = doc["wifi"]["ap_fallback"]["ssid"]    | "wifi-ap";
+  WIFI.apfb.ssid    = doc["wifi"]["ap_fallback"]["ssid"]    | "mmp-client";
   WIFI.apfb.pass    = doc["wifi"]["ap_fallback"]["pass"]    | "";
   WIFI.apfb.hold_seconds = (uint32_t)(doc["wifi"]["ap_fallback"]["hold_seconds"] | 0);
 

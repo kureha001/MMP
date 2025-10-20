@@ -9,9 +9,9 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-extern String g_wifi_mode;  // "STA" もしくは "AP"
-extern String g_wifi_ssid;  // 接続中の SSID / AP の SSID
-static WebServer http(80);  // HTTPサーバ(ポート)
+extern String g_WIFI_MODE;  // "STA" もしくは "AP"
+extern String g_WIFI_SSID;  // 接続中の SSID / AP の SSID
+static WebServer g_HTTP(80);  // HTTPサーバ(ポート)
 
 //━━━━━━━━━━━━━━━
 // 起動情報テキストを生成
@@ -19,9 +19,10 @@ static WebServer http(80);  // HTTPサーバ(ポート)
 String buildStartupStatusText(){
   String s;
   s.reserve(128);
-  s += "\nWEB UI Start...\n";
-  s += " Mode:"+ String(g_wifi_mode) + "\n";
-  s += " SSID:"+ String(g_wifi_ssid) + "\n";
+  s += "[WEB UI]\n";
+  s += " Mode: " + String(g_WIFI_MODE) + "\n";
+  s += " SSID: " + String(g_WIFI_SSID) + "\n";
+  s += " IP  : " + String(g_WIFI_MODE=="STA" ? WiFi.localIP().toString() : WiFi.softAPIP().toString());
   return s;
 }
 
@@ -29,8 +30,8 @@ String buildStartupStatusText(){
 // ルート: 設定アップロード画面
 //━━━━━━━━━━━━━━━
 static void handleRoot(){
-  http.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  http.send(200, "text/html; charset=utf-8",
+  g_HTTP.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  g_HTTP.send(200, "text/html; charset=utf-8",
     "<!doctype html><meta charset='utf-8'>"
     "<h3>クライアントWifi設定画面</h3>"
     "<form method='POST' action='/upload' enctype='multipart/form-data'>"
@@ -50,21 +51,17 @@ static void handleViewConfig(){
   #else
     if (!LittleFS.begin(true))
   #endif
-  { http.send(500,"text/plain","LittleFS mount error"); return; }
+  { g_HTTP.send(500,"text/plain","LittleFS mount error"); return; }
 
   // ファイル存在を確認
   if (!LittleFS.exists("/config.json"))
-  { http.send(404,"text/plain","/config.json not found"); return; }
+  { g_HTTP.send(404,"text/plain","/config.json not found"); return; }
 
   // ファイルを開く
   File f = LittleFS.open("/config.json","r");
-  if (!f) { http.send(500,"text/plain","open failed"); return; }
-
-  // ファイルを表示
-  http.streamFile(f, "application/json");
-
-  // ファイルを閉じる
-  f.close();
+  if (!f) { g_HTTP.send(500,"text/plain","open failed"); return; }
+  g_HTTP.streamFile(f, "application/json");   // ファイルを表示
+  f.close();                                // ファイルを閉じる
 }
 
 //━━━━━━━━━━━━━━━
@@ -73,7 +70,7 @@ static void handleViewConfig(){
 //━━━━━━━━━━━━━━━
 static void handleUpload(){
 
-  HTTPUpload& up = http.upload();   // アップロード状態
+  HTTPUpload& up = g_HTTP.upload();   // アップロード状態
   static File uf;                   // アップロード中のファイル
 
   // → アップロード開始の場合：
@@ -85,25 +82,23 @@ static void handleUpload(){
     #else
       if (!LittleFS.begin(true))
     #endif
-    { http.send(500,"text/plain","LittleFS mount error"); return; }
+    { g_HTTP.send(500,"text/plain","LittleFS mount error"); return; }
 
     // ファイルを開く
     uf = LittleFS.open("/config.json","w");
 
   // → アップロード中の場合：
   } else if (up.status == UPLOAD_FILE_WRITE){
-
     // ファイルを書き込む
     if (uf) uf.write(up.buf, up.currentSize);
 
   // → アップロード終了の場合：
   } else if (up.status == UPLOAD_FILE_END){
-
     // ファイルを閉じる
     if (uf) uf.close();
 
     // 再起動メッセージをしばらく表示
-    http.send(200,"text/plain","Uploaded. Rebooting...");
+    g_HTTP.send(200,"text/plain","Uploaded. Rebooting...");
     delay(500);
 
     // 再起動する
@@ -118,20 +113,20 @@ static void handleUpload(){
 //━━━━━━━━━━━━━━━
 // 起動情報を text/plain で返す
 //━━━━━━━━━━━━━━━
-static void handleStatus(){http.send(200,"text/plain", buildStartupStatusText());}
+static void handleStatus(){g_HTTP.send(200,"text/plain", buildStartupStatusText());}
 
 //━━━━━━━━━━━━━━━
 // Webサーバ開始＆ルーティング登録
 //━━━━━━━━━━━━━━━
 void webui_begin(){
-  http.on("/", HTTP_GET, handleRoot);
-  http.on("/config", HTTP_GET, handleViewConfig);
-  http.on("/upload", HTTP_POST, [](){}, handleUpload);
-  http.on("/status", HTTP_GET, handleStatus);
-  http.begin();
+  g_HTTP.on("/", HTTP_GET, handleRoot);
+  g_HTTP.on("/config", HTTP_GET, handleViewConfig);
+  g_HTTP.on("/upload", HTTP_POST, [](){}, handleUpload);
+  g_HTTP.on("/status", HTTP_GET, handleStatus);
+  g_HTTP.begin();
 }
 
 //━━━━━━━━━━━━━━━
 // ループ内でHTTP処理を回す
 //━━━━━━━━━━━━━━━
-void webui_handle(){http.handleClient();}
+void webui_handle(){g_HTTP.handleClient();}

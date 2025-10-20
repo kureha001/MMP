@@ -5,7 +5,7 @@
 #include <WiFi.h>
 
 // ---- UART 側（bridge で初期化済み） ----
-#include "config.hpp"  // UARTS[0] を使う
+#include "config.h"  // UARTS[0] を使う
 
 namespace {
 
@@ -312,7 +312,8 @@ void begin(WebServer& server) {
 
   // 起動ログ
   IPAddress ip = (WiFi.getMode()==WIFI_AP) ? WiFi.softAPIP() : WiFi.localIP();
-  Serial.printf("[WebApi] ready on %s (unified handler, decimal VALUE)\n", ip.toString().c_str());
+  Serial.println("[WEB API]");
+  Serial.printf (" IP : %s\n", ip.toString().c_str());
 }
 
 void handle(WebServer& server) {

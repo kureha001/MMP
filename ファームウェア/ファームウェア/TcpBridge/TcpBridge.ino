@@ -4,20 +4,14 @@
 // バージョン：0.5
 //------------------------------------------------------------
 // M5Stamp S3 : 2x UART
+// ボード設定：Flash Size 4MB(32Mb)
 // - UART1 -> TCP:5331  (RX=G3,  TX=G1)
 // - UART2 -> TCP:5332  (RX=G10, TX=G9)
 //------------------------------------------------------------
 // ラズパイPico: 2x UART
-// - UART1 -> TCP:5331  (RX=, TX=)
-// - UART2 -> TCP:5332  (RX=, TX=)
-//------------------------------------------------------------
-// LittleFS： config.json (Wi-Fi candidates, UART, server)
-//------------------------------------------------------------
-// 内部API：Web UI  
-// ‐(upload)：設定ファイル選択
-// ‐upload  ：設定ファイル登録
-// ‐config  ：状態参照表示
-// ‐status  ：設定ファイル表示
+// ボード設定：Flash Size 4MB(FS:64KB)
+// - UART1 -> TCP:5331  (RX=0, TX=1)
+// - UART2 -> TCP:5332  (RX=4, TX=5)
 // =============================================================
 #include <WiFi.h>
 #include <WebServer.h>
@@ -27,59 +21,66 @@
 #include "WebApiCore.h"
 
 // ---- Wi-Fi ランタイム状態（/status とシリアル表示で使用） ----
-String g_WIFI_MODE;   // "STA" もしくは "AP"
-String g_WIFI_SSID;   // 接続中の SSID / AP の SSID
+bool    g_STARTED_WEBUI = false; // WebUIを既に起動したか
+String  g_WIFI_MODE;   // "STA" もしくは "AP"
+String  g_WIFI_SSID;   // 接続中の SSID / AP の SSID
 
 WebServer g_WEB_API(8080);
 
 //==============================================================
 // Wi-Fi 補助関数（宣言）
 //==============================================================
-
-/**
- * @brief 単一候補（SSID/パスワード/タイムアウト）で STA 接続を試行する
- * @param c 接続候補（ssid, pass, timeout_ms）
- * @return true: 接続成功 / false: 失敗（タイムアウト・認証エラーなど）
- *
- * 処理の流れ:
- * - WIFI_STA に設定し、WiFi.begin() を呼ぶ
- * - 指定の timeout_ms の間 WL_CONNECTED を待つ
- * - 成功→グローバル g_WIFI_MODE/g_WIFI_SSID を更新
- * - 失敗→WiFi.disconnect(true,true) で状態をクリア
- */
+//─────────────
+// Wi-Fi候補1つを試行
+//─────────────
 bool tryConnectOne(const WifiCand& c);
 
-/**
- * @brief すべての候補に失敗した場合の AP フォールバック開始
- *
- * 処理の流れ:
- * - WIFI_AP に切替、softAP(ssid, pass) を起動
- * - g_WIFI_MODE/g_WIFI_SSID を AP 情報で更新
- */
-void startAPFallback();
+//─────────────
+// WEB UI起動(STA)
+//─────────────
+void startSTA(){
+  g_STARTED_WEBUI = true; 
+  g_WIFI_MODE     = "STA";
+  webui_begin();
+  Serial.println(buildStartupStatusText());
+}
 
-//==============================================================
-// Arduino 標準エントリ
-//==============================================================
+//─────────────
+// WEB UI起動(AP)
+//─────────────
+void startAP(){
 
-/**
- * @brief 初期化手順
- * - 設定ロード（/config.json：無ければ最小構成を自動生成）
- * - UART 設定の適用
- * - Wi-Fi 候補を順に試行→全滅なら AP フォールバック
- * - Web サーバ起動
- * - UART<->TCP ブリッジの起動
- * - 起動ステータスをシリアル出力
- */
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
+
+  g_STARTED_WEBUI = true; 
+  g_WIFI_MODE     = "AP";
+  g_WIFI_SSID     = WIFI.apfb.ssid;
+
+  webui_begin();
+  Serial.println(buildStartupStatusText());
+  Serial.println("\n");
+}
+
+
+//━━━━━━━━━━━━━━━
+// 初期化処理
+//━━━━━━━━━━━━━━━
 void setup(){
+
   Serial.begin(115200);
 
+  // USB CDC の列挙待ち（最大2秒）
+  unsigned long dl = millis() + 2000;
+  while (!Serial && millis() < dl) delay(10);
+
+  // 設定読み込み 
   if (!loadConfig()) {
-    Serial.println("Config load failed (LittleFS?). Continuing with defaults.");
+    Serial.println("設定内容が読み込めず、規定値で接続します。");
   }
   applyUartConfig();
 
-  // ---- Wi-Fi: 候補を順に試行 ----
+  // Wi-Fi: 候補を順に試行：
   bool ok = false;
   for (int i=0; i<WIFI.candN && !ok; i++){
     Serial.printf("WiFi try %d/%d: SSID=%s timeout=%lums\n",
@@ -87,53 +88,49 @@ void setup(){
     ok = tryConnectOne(WIFI.cand[i]);
   }
 
+  Serial.println("=======================");
+
+  // (すべて失敗) -> AP フォールバック
   if (!ok){
-    Serial.println("WiFi all candidates failed.");
-    if (WIFI.apfb.enabled){
-      startAPFallback();
-      Serial.printf("AP mode: SSID=%s  IP=%s\n",
-        g_WIFI_SSID.c_str(), WiFi.softAPIP().toString().c_str());
-    } else {
-      // ★ APフォールバック無効の場合：STAのままIP無しで継続
-      g_WIFI_MODE = "STA"; g_WIFI_SSID = "(disconnected)";
-    }
+    // WebUI(APモード)起動
+    Serial.println("[ERROR] 設定内容の接続に失敗");
+    startAP();
   } else {
-    Serial.printf("WiFi connected: SSID=%s  IP=%s\n",
-      g_WIFI_SSID.c_str(), WiFi.localIP().toString().c_str());
+    // WebUI(STAモード)起動
+    startSTA();
   }
 
-  // Web UI 起動
-  webui_begin();
-
-  // WebAPI 起動
+  // WebAPIサーバーを起動
+  Serial.println("-----------------------");
   WebApiCore::begin(g_WEB_API);
   g_WEB_API.begin();
 
-  // UART<->TCP ブリッジ開始
-  for (int i=0;i<NUM_UARTS;i++){
+  // TCPブリッジ サーバーを起動
+  Serial.println("-----------------------");
+  Serial.println("[TCP<->UART Bridge]");
+  for (int i=0;i<MMP_NUM_UARTS;i++){
     ctxs[i] = new PortCtx(UARTS[i].tcpPort, SRV.maxClients);
     ctxs[i]->server.begin();
     ctxs[i]->server.setNoDelay(true);
     ctxs[i]->tcp2uart.init(4096);
     ctxs[i]->uart2tcp.init(8192);
-    Serial.printf("UART%d -> TCP:%u (TX=G%d RX=G%d, %lubps)\n",
-      (UARTS[i].port==&Serial1)?1:2, UARTS[i].tcpPort,
-      UARTS[i].tx, UARTS[i].rx, (unsigned long)UARTS[i].baud);
+    Serial.println(" - - - - - - - - - - -");
+    Serial.printf (" TCP PORT  : %u\n"    , UARTS[i].tcpPort                );
+    Serial.printf ("  UART     : %d\n"    , UARTS[i].port == &Serial1 ?1 : 2);
+    Serial.printf ("  GPIO(Tx) : %d\n"    , UARTS[i].tx                     );
+    Serial.printf ("      (Rx) : %d\n"    , UARTS[i].rx                     );
+    Serial.printf ("  Baud Rate: %lubps\n", (unsigned long)UARTS[i].baud    );
   }
-
-  // 起動ステータス（/status と同じテキスト）
-  Serial.println(StatusText());
+  Serial.println("=======================");
 }
 
-/**
- * @brief メインループ
- * - Web サーバのリクエスト処理
- * - 各ポートでのクライアント管理／データ中継／ロック期限監視
- */
+//━━━━━━━━━━━━━━━
+// ルーティング
+//━━━━━━━━━━━━━━━
 void loop(){
   webui_handle();           // WEB-UI
   g_WEB_API.handleClient();   // WEB-API
-  for (int i=0;i<NUM_UARTS;i++){
+  for (int i=0;i<MMP_NUM_UARTS;i++){
     acceptClients(ctxs[i]);                 // 新規接続受入／切断掃除／ロック期限解放
     pumpTCPtoRing(ctxs[i]);                 // TCP→リング
     pumpUARTtoRing(ctxs[i], UARTS[i].port); // UART→リング
@@ -142,12 +139,18 @@ void loop(){
   }
 }
 
-//==============================================================
-// Wi-Fi 補助関数（実装）
-//==============================================================
-
+//━━━━━━━━━━━━━━━
+// 接続系ヘルパー
+//━━━━━━━━━━━━━━━
+//─────────────
+// Wi-Fi候補1つを試行
+//─────────────
 bool tryConnectOne(const WifiCand& c){
+
+  // SSIDが空なら失敗
   if (c.ssid.isEmpty()) return false;
+
+  // Wi-Fi接続
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(WIFI.hostname.c_str());
   WiFi.begin(c.ssid.c_str(), c.pass.c_str());
@@ -158,23 +161,19 @@ bool tryConnectOne(const WifiCand& c){
     delay(200);
   }
 
+  // (成功) -> 状態更新
   if (WiFi.status() == WL_CONNECTED) {
-    // ★ 成功：状態更新
-    g_WIFI_MODE = "STA";
     g_WIFI_SSID = c.ssid;
     return true;
   }
 
-  // ★ 失敗：クリーンに切断して次候補
-  WiFi.disconnect(true, true);
+  // (失敗) -> 切断して false
+  #if defined(ARDUINO_ARCH_RP2040)
+    WiFi.disconnect(true);
+  #else
+    WiFi.disconnect(true, true);
+  #endif
+ 
   delay(200);
   return false;
-}
-
-void startAPFallback(){
-  if (!WIFI.apfb.enabled) return;
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(WIFI.apfb.ssid.c_str(), WIFI.apfb.pass.length() ? WIFI.apfb.pass.c_str() : nullptr);
-  g_WIFI_MODE = "AP";
-  g_WIFI_SSID = WIFI.apfb.ssid;
 }

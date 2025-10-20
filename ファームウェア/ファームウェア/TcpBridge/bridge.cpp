@@ -43,14 +43,14 @@ void acceptClients(PortCtx* c){
       if (!c->clients[i] || !c->clients[i].connected()){
         // 空きスロットに収容（古いソケットは明示的に stop）
         if (c->clients[i]) c->clients[i].stop();
-        c->clients[i] = c->server.available();
+        c->clients[i] = c->server.accept();
         c->clients[i].setNoDelay(true);
         if(lockExpired(c)) releaseLock(c);  // ★ 期限切れロックを解放
         return; // 1接続ずつ処理
       }
     }
     // ★ 満員 → 新規要求は捨てる
-    WiFiClient dump = c->server.available(); dump.stop();
+    WiFiClient dump = c->server.accept(); dump.stop();
   }
 
   // ★ 切断済みクライアントの掃除

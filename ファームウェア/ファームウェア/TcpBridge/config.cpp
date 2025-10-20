@@ -1,84 +1,96 @@
-// config.cpp
+// filename : config.cpp
+//============================================================
+// 設定関連
+// バージョン：0.5
+//============================================================
 #include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-// ===================== 設定関連 実装 =====================
-
-// ---- 既定値（最小動作用） ----
 WifiCfg  WIFI; // hostname は JSON から設定
-UartCfg  UARTS[2] = {
-  { &Serial1, 3, 1, 921600, 5331 },   // UART1: RX=G3,  TX=G1
-  { &Serial2, 10, 9, 921600, 5332 }   // UART2: RX=G10, TX=G9
-};
-int      NUM_UARTS = 2;
-ServerCfg SRV      = { 4, false, 30000 };
 
-/**
- * @brief /config.json を読み込む（無ければ最小構成で自動生成）
- * @details
- *  - 初回は hostname=m5-bridge・UART/Serverのみを書いたJSONを自動生成
- *  - wifi.candidates は空 → すべて失敗時は AP フォールバックで設定投入
- */
+#if defined(ARDUINO_ARCH_RP2040)
+  UartCfg  UARTS[2] = {
+    { &Serial1, 1, 0, 921600, 5331 },  // UART1: RX=G1, TX=G0
+    { &Serial2, 5, 4, 921600, 5332 }   // UART2: RX=G5, TX=G4
+  };
+  int MMP_NUM_UARTS = 2;
+#else
+  UartCfg  UARTS[2] = {
+    { &Serial1, 3,  1, 921600, 5331 },  // UART1: RX=G3,  TX=G1
+    { &Serial2, 10, 9, 921600, 5332 }   // UART2: RX=G10, TX=G9
+  };
+  int MMP_NUM_UARTS = 2;
+#endif
+
+ServerCfg SRV     = { 4, false, 30000 };
+
+//━━━━━━━━━━━━━
+// 設定読込み
+//━━━━━━━━━━━━━
 bool loadConfig() {
-  if (!LittleFS.begin(true)) return false;
 
-  // ---- 初回：/config.json が無い場合は自動生成 ----
+  // ★RP2040/Earle core は begin() に引数を取らない
+  #if defined(ARDUINO_ARCH_RP2040)
+    if (!LittleFS.begin())     return false;
+  #else
+    if (!LittleFS.begin(true)) return false;
+  #endif
+
+  // (初回) -> /config.json が無い場合は自動生成
   if (!LittleFS.exists("/config.json")) {
-    StaticJsonDocument<512> doc;
-    doc["wifi"]["hostname"] = "m5-bridge"; // ★ 初期ホスト名（必要ならここを変更）
-    // candidates は空のまま（APフォールバックで設定投入）
 
-    // UART 既定値
-    JsonArray ua = doc.createNestedArray("uart");
-    for (int i=0;i<NUM_UARTS;i++){
-      JsonObject u = ua.createNestedObject();
-      u["rx"]=UARTS[i].rx; u["tx"]=UARTS[i].tx; u["baud"]=UARTS[i].baud; u["tcp_port"]=UARTS[i].tcpPort;
+    JsonDocument doc;
+
+    // HOST名
+    doc["wifi"]["hostname"] = "mmp-bridge";
+
+    // UART既定
+    JsonArray ua = doc["uart"].to<JsonArray>();
+    for (int i=0;i<MMP_NUM_UARTS;i++){
+      JsonObject u = ua.add<JsonObject>();
+      u["rx"      ] = UARTS[i].rx;      // GPIO Rx
+      u["tx"      ] = UARTS[i].tx;      // GPIO Tx
+      u["baud"    ] = UARTS[i].baud;    // ボーレート
+      u["tcp_port"] = UARTS[i].tcpPort; // ポート番号
     }
-    // Server 既定値
-    doc["server"]["max_clients"] = SRV.maxClients;
-    doc["server"]["write_lock"]  = SRV.writeLock;
-    doc["server"]["write_lock_ms"] = SRV.writeLockMs;
+    // Server既定
+    doc["server"]["max_clients"  ] = SRV.maxClients;  // 同時接続数
+    doc["server"]["write_lock"   ] = SRV.writeLock;   // 書込ロック有無
+    doc["server"]["write_lock_ms"] = SRV.writeLockMs; // 書込ロック時間
 
+    // jsonファイルを保存
     File nf = LittleFS.open("/config.json","w");
     if (!nf) return false;
-    serializeJsonPretty(doc,nf); nf.close();
+    serializeJsonPretty(doc,nf);
+    nf.close();
   }
 
-  // ---- 読み込み ----
-  File f = LittleFS.open("/config.json","r"); if (!f) return false;
-  StaticJsonDocument<2048> doc;
-  DeserializationError err = deserializeJson(doc,f);
+  // jsonファイルを読み込み
+  File f = LittleFS.open("/config.json", "r");
+  if (!f) return false;
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, f);
   f.close();
-  if (err) return false;
+  if (err) {return false;}
 
   // ホスト名
-  WIFI.hostname = doc["wifi"]["hostname"] | "m5-bridge";
+  WIFI.hostname = doc["wifi"]["hostname"] | "mmp-bridge";
 
   // Wi-Fi候補（順序で優先度）
   WIFI.candN = 0;
-  if (doc["wifi"]["candidates"].is<JsonArray>()){
-    for (JsonObject c : doc["wifi"]["candidates"].as<JsonArray>()){
-      if (WIFI.candN >= 6) break;                   // ★ 上限保護
-      WIFI.cand[WIFI.candN].ssid = String((const char*)(c["ssid"] | ""));
-      WIFI.cand[WIFI.candN].pass = String((const char*)(c["pass"] | ""));
-      WIFI.cand[WIFI.candN].timeout_ms = (uint32_t)(c["timeout_ms"] | 8000);
-      if (WIFI.cand[WIFI.candN].ssid.length()) WIFI.candN++;  // ★ 空は無視
-    }
-  } else {
-    // 後方互換：旧形式（ssid/pass の単一指定）
-    String ssid = doc["wifi"]["ssid"] | "";
-    String pass = doc["wifi"]["pass"] | "";
-    if (ssid.length()){
-      WIFI.cand[0] = { ssid, pass, 8000 };
-      WIFI.candN = 1;
-    }
+  for (JsonObject c : doc["wifi"]["candidates"].as<JsonArray>()){
+    if (WIFI.candN >= 6) break;                   // ★ 上限保護
+    WIFI.cand[WIFI.candN].ssid = String((const char*)(c["ssid"] | ""));
+    WIFI.cand[WIFI.candN].pass = String((const char*)(c["pass"] | ""));
+    WIFI.cand[WIFI.candN].timeout_ms = (uint32_t)(c["timeout_ms"] | 8000);
+    if (WIFI.cand[WIFI.candN].ssid.length()) WIFI.candN++;  // ★ 空は無視
   }
 
   // APフォールバック
   WIFI.apfb.enabled = doc["wifi"]["ap_fallback"]["enabled"] | true;
-  WIFI.apfb.ssid    = doc["wifi"]["ap_fallback"]["ssid"]    | "m5-bridge-setup";
+  WIFI.apfb.ssid    = doc["wifi"]["ap_fallback"]["ssid"]    | "mmp-bridge-ap";
   WIFI.apfb.pass    = doc["wifi"]["ap_fallback"]["pass"]    | "";
   WIFI.apfb.hold_seconds = (uint32_t)(doc["wifi"]["ap_fallback"]["hold_seconds"] | 0);
 
@@ -86,19 +98,21 @@ bool loadConfig() {
   if (doc["uart"].is<JsonArray>()){
     int i=0;
     for (JsonObject u : doc["uart"].as<JsonArray>()){
-      if (i>=NUM_UARTS) break; // ★ 範囲保護
-      UARTS[i].rx = u["rx"] | UARTS[i].rx;
-      UARTS[i].tx = u["tx"] | UARTS[i].tx;
-      UARTS[i].baud = u["baud"] | UARTS[i].baud;
-      UARTS[i].tcpPort = u["tcp_port"] | UARTS[i].tcpPort;
+      if (i>=MMP_NUM_UARTS) break; // ★ 範囲保護
+      UARTS[i].rx       = u["rx"      ] | UARTS[i].rx;
+      UARTS[i].tx       = u["tx"      ] | UARTS[i].tx;
+      UARTS[i].baud     = u["baud"    ] | UARTS[i].baud;
+      UARTS[i].tcpPort  = u["tcp_port"] | UARTS[i].tcpPort;
       i++;
     }
   }
 
   // Server
-  SRV.maxClients  = doc["server"]["max_clients"]   | SRV.maxClients;
-  SRV.writeLock   = doc["server"]["write_lock"]    | SRV.writeLock;
-  SRV.writeLockMs = doc["server"]["write_lock_ms"] | SRV.writeLockMs;
+  SRV.maxClients  = doc["server"]["max_clients"   ] | SRV.maxClients;
+  SRV.writeLock   = doc["server"]["write_lock"    ] | SRV.writeLock;
+  SRV.writeLockMs = doc["server"]["write_lock_ms" ] | SRV.writeLockMs;
+
+  // 読み込み成功
   return true;
 }
 
@@ -108,11 +122,28 @@ bool loadConfig() {
  * - 各 UARTポートの begin()
  */
 void applyUartConfig(){
-  if(WIFI.hostname.length()) {
-    WiFi.setHostname(WIFI.hostname.c_str());
-  }
-  for (int i=0;i<NUM_UARTS;i++){
+
+  if(WIFI.hostname.length()){WiFi.setHostname(WIFI.hostname.c_str());}
+
+  for (int i=0;i<MMP_NUM_UARTS;i++){
+
+    // USB CDC (Serial) を対象にしない
+    if (UARTS[i].port == &Serial) continue;
+
     UARTS[i].port->end();
-    UARTS[i].port->begin(UARTS[i].baud, SERIAL_8N1, UARTS[i].rx, UARTS[i].tx);
+
+    #if defined(ARDUINO_ARCH_RP2040)
+      if (i==0){
+        Serial1.setRX(UARTS[i].rx);
+        Serial1.setTX(UARTS[i].tx);
+      }
+      if (i==1){
+        Serial2.setRX(UARTS[i].rx);
+        Serial2.setTX(UARTS[i].tx);
+      }
+      UARTS[i].port->begin(UARTS[i].baud);
+    #else
+      UARTS[i].port->begin(UARTS[i].baud, SERIAL_8N1, UARTS[i].rx, UARTS[i].tx);
+    #endif
   }
 }

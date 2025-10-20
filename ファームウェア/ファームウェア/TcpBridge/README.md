@@ -50,14 +50,22 @@ PCやRaspberry Pi上で動作する `ser2net` を代替するシリアル⇄TCP�
 
 ## 5. セットアップ詳細
 - **配線**:  
-  - UART1 = G3 (RX), G1 (TX)  
-  - UART2 = G10 (RX), G9 (TX)  
-- **IDE設定**:  
-  - ボード: `ESP32S3 Dev Module`  
-  - Upload Speed: 115200 または 921600  
-  - Flash Size: 4MB  
-  - Partition Scheme: Default 4MB with spiffs  
-  - USB CDC On Boot: Enabled  
+  - RRi Pico W/2W
+    - UART1 = G1 (RX), G0 (TX)  
+    - UART2 = G5 (RX), G4 (TX)  
+  - M5stampS3
+    - UART1 = G3 (RX), G1 (TX)  
+    - UART2 = G10 (RX), G9 (TX)  
+- **IDE設定**:
+  - ボード情報: `Raspberry Pi Pico/RP2040/RP2350 by Earle F. Philhower`  
+    - ボード: `Raspberry Pi Pico 2W`  
+    - Flash Size: FS 64KB  
+    - USB Stack: Pico SDK  
+  - ボード情報: `ESP32 by Espressif System`  
+    - ボード: `M5stampS3`  
+    - Flash Size: 4MB(32Mb)
+    - Partition Scheme: Default 4MB with spiffs  
+    - USB CDC On Boot: Enabled  
 
 ---
 

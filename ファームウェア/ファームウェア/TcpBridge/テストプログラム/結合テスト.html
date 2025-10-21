@@ -145,25 +145,36 @@
   }
 
   async function RunDigital(){
+
+    let pin1, pin2;
+    if (false){
+        pin1 = [2,6,7];  
+        pin2 = 3;
+    } else {
+        pin1 = [18, 13, 14];  
+        pin2 = 17;
+    }
+
     stopFlag = false;
     logStd("２.デジタル入出力（ GPIO ）");
     logStd("　・入力");
-    for (let pin of [2,6,7]){
+    for (let pin of pin1){
       const r = await apiGet(`/DIGITAL/INPUT:${pin}`);
       const val = (r.json && typeof r.json.value!=="undefined") ? r.json.value : 1;
       logStd(`　　←[${pin}] = ${val==0 ? "ON":"OFF"}`);
       if (stopFlag) return;
     }
 
-    logStd("　・出力[3]");
-    for (let i=0; i<6; i++){
-      const r1 = await apiGet(`/DIGITAL/OUTPUT:3:1`);
-      logStd(`　　→ HIGH : ${r1.json&&r1.json.ok ? "True":"False"}`); if (stopFlag) return;
-      await sleep(500); if (stopFlag) return;
+    // 変数でピン番号を指定
+    logStd(`　・出力[${pin2}]`);
+    for (let i = 0; i < 6; i++) {
+    const r1 = await apiGet(`/DIGITAL/OUTPUT:${pin2}:1`);
+    logStd(`　　→ HIGH : ${r1.json && r1.json.ok ? "True" : "False"}`); if (stopFlag) return;
+    await sleep(500); if (stopFlag) return;
 
-      const r0 = await apiGet(`/DIGITAL/OUTPUT:3:0`);
-      logStd(`　　→ LOW  : ${r0.json&&r0.json.ok ? "True":"False"}`); if (stopFlag) return;
-      await sleep(500); if (stopFlag) return;
+    const r0 = await apiGet(`/DIGITAL/OUTPUT:${pin2}:0`);
+    logStd(`　　→ LOW  : ${r0.json && r0.json.ok ? "True" : "False"}`); if (stopFlag) return;
+    await sleep(500); if (stopFlag) return;
     }
     logStd("　[終了]\n");
   }
@@ -172,32 +183,32 @@
     stopFlag = false;
     logStd("３.ＭＰ３再生（ DFPlayer ）");
 
-    let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
+    sleep(100); let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
     logStd("　・音量 → 20 : " + (r.json&&r.json.ok ? "True":"False"));
 
-    r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
     logStd(`　・ループ → OFF : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・再生");
     for (let track=1; track<=3; track++){
-      const r = await apiGet(`/MP3/TRACK/PLAY:1:1:${track}`);
+      sleep(100); const r = await apiGet(`/MP3/TRACK/PLAY:1:1:${track}`);
       logStd(`　　→ F=1,T=${track} : ${r.json?r.json.value:"NaN"}`);
       if (stopFlag) return;
       await sleep(3000); if (stopFlag) return;
     }
 
-    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
     logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/MP3/TRACK/PLAY:1:2:102`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/PLAY:1:2:102`);
     logStd(`　・再生 → F=2,T=102 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/MP3/TRACK/LOOP:1:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:1`);
     logStd(`　・ループ → ON : ${r.json?r.json.value:"NaN"}`);
     if (stopFlag) return;
     await sleep(10000); if (stopFlag) return;
 
-    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
     logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　[終了]\n");
@@ -207,38 +218,39 @@
     stopFlag = false;
     logStd("４.ＭＰ３制御（ DFPlayer ）");
 
-    let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
-    logStd("　・音量 20 : " + (r.json&&r.json.ok ? "True":"False"));
+    sleep(100); let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
+    logStd("　・音量 20　　　: " + (r.json&&r.json.ok ? "True":"False"));
 
-    r = await apiGet(`/MP3/TRACK/PLAY:1:4:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/PLAY:1:4:1`);
     logStd(`　・再生 F=4,T=1 : ${r.json?r.json.value:"NaN"}`);
 
-    r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
-    logStd(`　・ループ OFF :  ${r.json?r.json.value:"NaN"}`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    logStd(`　・ループ OFF　 : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・参照");
-    let st = await apiGet(`/MP3/INFO/TRACK:1`);
-    let vv = await apiGet(`/MP3/INFO/VOLUME:1`);
-    let eq = await apiGet(`/MP3/INFO/EQ:1`);
-    let fc = await apiGet(`/MP3/INFO/FILES:1`);
-    let fn = await apiGet(`/MP3/INFO/FILEID:1`);
+    sleep(100); let st = await apiGet(`/MP3/INFO/TRACK:1`   ); 
+    sleep(100); let vv = await apiGet(`/MP3/INFO/VOLUME:1`  );
+    sleep(100); let eq = await apiGet(`/MP3/INFO/EQ:1`      );
+    sleep(100); let fc = await apiGet(`/MP3/INFO/FILES:1`   );
+    sleep(100); let fn = await apiGet(`/MP3/INFO/FILEID:1`  );
     logStd(`　　・トラック状況 = ${st.json?st.json.value:"NaN"}`);
-    logStd(`　　・音量         = ${vv.json?vv.json.value:"NaN"}`);
-    logStd(`　　・イコライザ   = ${eq.json?eq.json.value:"NaN"}`);
+    logStd(`　　・音量　　　　 = ${vv.json?vv.json.value:"NaN"}`);
+    logStd(`　　・イコライザ　 = ${eq.json?eq.json.value:"NaN"}`);
     logStd(`　　・総ファイル数 = ${fc.json?fc.json.value:"NaN"}`);
     logStd(`　　・現在ファイル = ${fn.json?fn.json.value:"NaN"}`);
 
-    r = await apiGet(`/MP3/TRACK/PAUSE:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/PAUSE:1`);
     logStd(`　・一時停止 : ${r.json?r.json.value:"NaN"}`);
+
     if (stopFlag) return;
     await sleep(2000); if (stopFlag) return;
 
-    r = await apiGet(`/MP3/TRACK/START:1`);
-    logStd(`　・再開 : ${r.json?r.json.value:"NaN"}`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/START:1`);
+    logStd(`　・再開　　 : ${r.json?r.json.value:"NaN"}`);
 
     logStd("　・イコライザー");
     for (let m=0; m<=5; m++){
-      r = await apiGet(`/MP3/SET/EQ:1:${m}`);
+      sleep(100); r = await apiGet(`/MP3/SET/EQ:1:${m}`);
       logStd(`　　[${m}] ${(r.json&&r.json.ok)?"True":"False"}`);
       if (stopFlag) return;
       await sleep(3000); if (stopFlag) return;
@@ -246,13 +258,13 @@
 
     logStd("　・音量");
     for (let v=0; v<=30; v+=5){
-      r = await apiGet(`/MP3/SET/VOLUME:1:${v}`);
+      sleep(100); r = await apiGet(`/MP3/SET/VOLUME:1:${v}`);
       logStd(`　　[${v}] ${(r.json&&r.json.ok)?"True":"False"}`);
       if (stopFlag) return;
       await sleep(1000); if (stopFlag) return;
     }
 
-    r = await apiGet(`/MP3/TRACK/STOP:1`);
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
     logStd(`　・停止 :  ${r.json?r.json.value:"NaN"}`);
     logStd("　[終了]\n");
   }

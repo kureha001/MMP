@@ -196,8 +196,8 @@ def RunMp3Control():
     print(f"　　・状況　　　　: {命令2.TRACK (1)}")
     print(f"　　・音量　　　　: {命令2.VOLUME(1)}")
     print(f"　　・イコライザ　: {命令2.EQ    (1)}")
-    print(f"　　・現在ファイル: {命令2.FILEID(1)}")
     print(f"　　・総ファイル数: {命令2.FILES (1)}")
+    print(f"　　・現在ファイル: {命令2.FILEID(1)}")
 
     print("【基本】")
     print(f"　　・一時停止　　: {命令1.PAUSE(1)}")
@@ -323,7 +323,7 @@ def RunPwm_Angle():
                         # 省略：中間を自動設定
     )
 
-    print("　・角度：０")
+    print("　・角度：０ : PWM=", end="")
     print(命令.OUTPUT(CH, 0))
     time.sleep(PAUSE_S)
 
@@ -335,12 +335,12 @@ def RunPwm_Angle():
     RunPwmSweep(命令, CH, ANGLE_MAX, 0, STEP, STEP_DELAY_S)
     time.sleep(PAUSE_S)
 
-    print("　・中心位置")
+    print("　・中心位置 : PWM=", end="")
     print(命令.CENTER(CH))
     time.sleep(PAUSE_S)
 
     print("　・設定削除")
-    res = 命令.DELETE(
+    res = 命令.RESET(
         CH  ,   # サーボを接続するGPIO番号
         -1  ,   # 単一
     )
@@ -394,7 +394,7 @@ def RunPwm_Rotate():
     命令.STOP(CH)
 
     print("　・設定削除")
-    res = 命令.DELETE(
+    res = 命令.RESET(
         CH  ,   # サーボを接続するGPIO番号
         -1  ,   # 単一
     )

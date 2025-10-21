@@ -2,8 +2,12 @@
 //========================================================
 // モジュール：ＭＰ３
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.01 (2025/10/16)
-// - 10進数統一
+// Ver0.5.02 (2025/10/21)
+//   - ESP32-S3-tiny対応：シリアル起動を区別
+//   - INFO/CONNECTのバグを修正
+//   - 値取得系コマンドのリトライを強化
+// Ver0.5.01 (2025/10/16)
+//   - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -20,14 +24,19 @@
 //━━━━━━━━━━━━━━━━━
 static void InitMP3(){
 
-  Serial2.begin(9600); delay(50); // UART通信を開始
+  #if defined(ARDUINO_ARCH_RP2040)
+    Serial2.begin(9600);
+  #else
+    Serial2.begin(9600, SERIAL_8N1, 11, 12);
+  #endif
 
-  if (g_MP3[0].begin(Serial2)) {  // 接続済み設定
-    g_MP3[0].volume(20);          // プロパティ：音量の規定値
-    g_MP3STATUS[0] = true;        // Global変数：状況を接続済
+  delay(50);
+
+  if (g_MP3[0].begin(Serial2)){ // 接続済み設定
+    g_MP3[0].volume(20);        // プロパティ：音量の規定値
+    g_MP3STATUS[0] = true;      // Global変数：状況を接続済
   }
-
-  g_MP3STATUS[1]   = false;       // Global変数：未使用分は未接続
+  g_MP3STATUS[1]   = false;     // Global変数：未使用分は未接続
 }
 
 //━━━━━━━━━━━━━━━━━
@@ -249,15 +258,8 @@ public:
         int dev;
         if (!_Str2Int(dat[1], dev, 1, 2)){_ResChkErr(sp); return;}
 
-        // 1.3. 相関チェック
-        int idx = dev - 1;
-        if (idx < 0 || idx >= 2){_ResChkErr(sp); return;}
-
-        // 1.2. 対象外チェック
-        if (!g_MP3STATUS[idx]){_ResChkErr(sp); return;}
-
       // ２．コマンド実行
-      int res = g_MP3STATUS[idx];
+      int res = g_MP3STATUS[dev - 1];
 
       // ３．後処理：
       _ResValue(sp, res);
@@ -280,18 +282,21 @@ public:
         // 1.1.書式チェック
         if (dat_cnt != 2){_ResChkErr(sp); return;}
 
-        // 1.2. 対象外チェック
-        int idx;
+        // 1.3. 対象外チェック
+        int idx = 0;
         if (!checkDev(sp, dat[1], idx)) return;
 
-        // ２．コマンド実行
+        // ２．コマンド実行 ※エラーならリトライ
         int res = -1;
-        if      (strcmp(Cmd,"INFO/TRACK" ) == 0) res = g_MP3[idx].readState(); 
-        else if (strcmp(Cmd,"INFO/VOLUME") == 0) res = g_MP3[idx].readVolume();
-        else if (strcmp(Cmd,"INFO/EQ"    ) == 0) res = g_MP3[idx].readEQ();
-        else if (strcmp(Cmd,"INFO/FILES" ) == 0) res = g_MP3[idx].readCurrentFileNumber();
-        else if (strcmp(Cmd,"INFO/FILEID") == 0) res = g_MP3[idx].readFileCounts();
-   
+        for (int tries = 0; tries < 50 && res == -1; ++tries) {
+          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = g_MP3[idx].readState();res = g_MP3[idx].readState();} 
+          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = g_MP3[idx].readVolume();res = g_MP3[idx].readVolume();}
+          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = g_MP3[idx].readEQ();res = g_MP3[idx].readEQ();}
+          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
+          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = g_MP3[idx].readFileCounts();res = g_MP3[idx].readFileCounts();}
+          if (res != -1) break;
+        }
+
         // ３．後処理：
         _ResValue(sp, res);
         return;
@@ -326,8 +331,13 @@ public:
   // 対象トラック状況
   // ───────────────
   void reTrackkState(Stream& sp, int idx){
-      int res;
+    // ※エラーならリトライ
+    int res = -1;
+    for (int tries = 0; tries < 50 && res == -1; ++tries) {
       res = g_MP3[idx].readState();
-      _ResValue(sp, res);
+      res = g_MP3[idx].readState();
+      if (res != -1) break;          // 成功したら即終了
+    }
+    _ResValue(sp, res);
   }
 };

@@ -2,8 +2,11 @@
 //========================================================
 // モジュール：ＰＷＭ出力
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.01 (2025/10/16)
-// - 10進数統一
+// Ver0.5.02 (2025/10/21)
+//   - ESP32-S3-tiny対応：I2CのGPIOを区別
+//   - PWMのDELETEをRESETに変更
+// Ver0.5.01 (2025/10/16)
+//   - 10進数統一
 //========================================================
 #pragma once
 #include "module.h"
@@ -95,7 +98,15 @@ static void InitAngle(int argFrom, int argTo){
 //------------------------
 static void InitPWM(){
 
-  Wire.begin(); delay(50);  // ｉ２ｃ通信を開始
+  // ｉ２ｃ通信を開始
+  #if defined(ARDUINO_ARCH_RP2040)
+      Wire.begin();
+  #else
+      Wire.begin(16, 15);
+  #endif
+
+  // ちょっと待つ
+  delay(50);
 
   // I2Cアドレス0x40から接続走査
   int count = 0;
@@ -449,7 +460,7 @@ public:
   // 共通コマンド
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // ───────────────────────────────
-    // 名称 : DELETE 
+    // 名称 : RESET 
     // 機能 : チャンネル別プリセット削除
     // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
@@ -460,7 +471,7 @@ public:
     // ───────────────────────────────
     // 制限 : ・引数①②の大小関係
     // ───────────────────────────────
-    if (strcmp(Cmd,"ANGLE/DELETE") == 0 || strcmp(Cmd,"ROTATE/DELETE") == 0){
+    if (strcmp(Cmd,"ANGLE/RESET") == 0 || strcmp(Cmd,"ROTATE/RESET") == 0){
       // １．前処理：
         // 1.1.書式チェック
         if(dat_cnt != 3){_ResChkErr(sp); return;}
@@ -477,8 +488,8 @@ public:
         if(from > to){_ResChkErr(sp); return;}
       
       // ２．プリセット削除：
-      if(strcmp(Cmd,"ANGLE/DELETE") == 0) InitAngle (from, to);
-      else                                InitRotate(from, to);
+      if(strcmp(Cmd,"ANGLE/RESET") == 0) InitAngle (from, to);
+      else                               InitRotate(from, to);
 
       // ３．後処理：
       _ResOK(sp);

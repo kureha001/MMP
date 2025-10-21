@@ -2,7 +2,7 @@
 # filename : mmp_core_PWM.py
 #============================================================
 # ＭＭＰコマンド：ＰＷＭ出力
-# バージョン：0.5
+# バージョン：0.5.02 (2025/10/21) DELETEをRESETに変更
 #------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -89,11 +89,11 @@ class _Pwm:
         #─────────────
         # 設定削除
         #─────────────
-        def DELETE(self,
+        def RESET(self,
             chIDfrom:int        , # チャンネルID(開始)
             chIDto  :int = -1   , # チャンネルID(終了) ※-1：単一
         ) -> bool:
-            cmd = f"PWM/ANGLE/DELETE:{chIDfrom}:{chIDto}!"
+            cmd = f"PWM/ANGLE/RESET:{chIDfrom}:{chIDto}!"
             res = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"
 
@@ -151,11 +151,11 @@ class _Pwm:
         #─────────────
         # プリセット削除
         #─────────────
-        def DELETE(self,
+        def RESET(self,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
         ) -> bool:
-            cmd = "PWM/ROTATE/DELETE"
+            cmd = "PWM/ROTATE/RESET"
             cmd = f"{cmd}:{chIDfrom}:{chIDto}!"
             res = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"

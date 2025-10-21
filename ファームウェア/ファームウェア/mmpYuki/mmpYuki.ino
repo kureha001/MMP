@@ -1,14 +1,29 @@
 // filename : mmpYuki.ino
-const char* g_version = "0501!";  // コンテクストのメンバ
+const char* g_version = "0502!";  // コンテクストのメンバ
 //========================================================
 //  MMP Firmware : Code Name -- Dete -- 
 //-------------------------------------------------------- 
-// ボード情報：Waveshare RP2040 Zero
-// ボード情報：Waveshare RP2350 Zero
+// ボード情報
+// Waveshare RP2xx0 ZERO用
+//   - Waveshare RP2040 Zero
+//   - Waveshare RP2350 Zero
+// Waveshare ESP32-S3-tiny用
+//   - ESP32S3 Dev Module 
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.01 (2025/10/16)
-// module、m***
-// - 10進数統一
+// Ver0.5.02 (2025/10/21)
+//  port.h
+//   - ESP32-S3-tiny対応：ボーレートGPIOを区別
+//   - ESP32-S3-tiny対応：シリアル起動を区別
+//  ｍPWM.h
+//   - ESP32-S3-tiny対応：シリアル起動を区別
+//   - INFO/CONNECTのバグを修正
+//   - 値取得系コマンドのリトライを強化
+//  ｍMP3.h
+//   - ESP32-S3-tiny対応：シリアル起動を区別
+//   - INFO/CONNECTのバグを修正
+// Ver0.5.01 (2025/10/16)
+//   module、m***
+//     - 10進数統一
 //========================================================
 #include <Arduino.h>
 #include <Wire.h>

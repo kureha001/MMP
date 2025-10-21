@@ -27,47 +27,47 @@ struct CmdSpec {
 // ★頻出コマンドを先頭に（総当たり O(N)）
 static const CmdSpec kSpecs[] = {
   // PWM（頻出想定）
-  { "PWM/OUTPUT",        RK_RESULT },
-  { "PWM/INFO/CONNECT",  RK_VALUE  },
-  { "PWM/ANGLE/SETUP",   RK_RESULT },
-  { "PWM/ANGLE/DELETE",  RK_RESULT },
-  { "PWM/ANGLE/OUTPUT",  RK_VALUE  },
-  { "PWM/ANGLE/CENTER",  RK_VALUE  },
-  { "PWM/ROTATE/SETUP",  RK_RESULT },
-  { "PWM/ROTATE/DELETE", RK_RESULT },
-  { "PWM/ROTATE/OUTPUT", RK_VALUE  },
-  { "PWM/ROTATE/STOP",   RK_RESULT },
+  { "PWM/OUTPUT"        , RK_RESULT },
+  { "PWM/INFO/CONNECT"  , RK_VALUE  },
+  { "PWM/ANGLE/SETUP"   , RK_RESULT },
+  { "PWM/ANGLE/RESET"   , RK_RESULT },
+  { "PWM/ANGLE/OUTPUT"  , RK_VALUE  },
+  { "PWM/ANGLE/CENTER"  , RK_VALUE  },
+  { "PWM/ROTATE/SETUP"  , RK_RESULT },
+  { "PWM/ROTATE/RESET"  , RK_RESULT },
+  { "PWM/ROTATE/OUTPUT" , RK_VALUE  },
+  { "PWM/ROTATE/STOP"   , RK_RESULT },
 
   // INFO
-  { "INFO/VERSION",      RK_STRING },
+  { "INFO/VERSION"       ,RK_STRING },
 
   // ANALOG
-  { "ANALOG/SETUP",      RK_RESULT },
-  { "ANALOG/INPUT",      RK_RESULT },
-  { "ANALOG/READ",       RK_VALUE  },
+  { "ANALOG/SETUP"      , RK_RESULT },
+  { "ANALOG/INPUT"      , RK_RESULT },
+  { "ANALOG/READ"       , RK_VALUE  },
 
   // DIGITAL
-  { "DIGITAL/INPUT",     RK_VALUE  },
-  { "DIGITAL/OUTPUT",    RK_RESULT },
+  { "DIGITAL/INPUT"     , RK_VALUE  },
+  { "DIGITAL/OUTPUT"    , RK_RESULT },
 
   // I2C
-  { "I2C/WRITE",         RK_RESULT },
-  { "I2C/READ",          RK_VALUE  },
+  { "I2C/WRITE"         , RK_RESULT },
+  { "I2C/READ"          , RK_VALUE  },
 
   // MP3
-  { "MP3/SET/VOLUME",    RK_RESULT },
-  { "MP3/SET/EQ",        RK_RESULT },
-  { "MP3/TRACK/PLAY",    RK_VALUE  },
-  { "MP3/TRACK/LOOP",    RK_VALUE  },
-  { "MP3/TRACK/STOP",    RK_VALUE  },
-  { "MP3/TRACK/PAUSE",   RK_VALUE  },
-  { "MP3/TRACK/START",   RK_VALUE  },
-  { "MP3/INFO/CONNECT",  RK_VALUE  },
-  { "MP3/INFO/TRACK",    RK_VALUE  },
-  { "MP3/INFO/VOLUME",   RK_VALUE  },
-  { "MP3/INFO/EQ",       RK_VALUE  },
-  { "MP3/INFO/FILEID",   RK_VALUE  },
-  { "MP3/INFO/FILES",    RK_VALUE  },
+  { "MP3/SET/VOLUME"    , RK_RESULT },
+  { "MP3/SET/EQ"        , RK_RESULT },
+  { "MP3/TRACK/PLAY"    , RK_VALUE  },
+  { "MP3/TRACK/LOOP"    , RK_VALUE  },
+  { "MP3/TRACK/STOP"    , RK_VALUE  },
+  { "MP3/TRACK/PAUSE"   , RK_VALUE  },
+  { "MP3/TRACK/START"   , RK_VALUE  },
+  { "MP3/INFO/CONNECT"  , RK_VALUE  },
+  { "MP3/INFO/TRACK"    , RK_VALUE  },
+  { "MP3/INFO/VOLUME"   , RK_VALUE  },
+  { "MP3/INFO/EQ"       , RK_VALUE  },
+  { "MP3/INFO/FILEID"   , RK_VALUE  },
+  { "MP3/INFO/FILES"    , RK_VALUE  },
 };
 
 static WebServer* g_srv = nullptr;

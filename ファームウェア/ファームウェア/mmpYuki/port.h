@@ -2,13 +2,19 @@
 //========================================================
 // シリアルポートを開く
 //-------------------------------------------------------- 
-// 変更履歴: Ver0.5.00 (2025/10/13)
-// - Ver0.4から変更なし 
+// Ver0.5.02 (2025/10/21)
+//   - ESP32-S3-tiny対応：ボーレートGPIOを区別
+//   - ESP32-S3-tiny対応：シリアル起動を区別
 //========================================================
 #include <Adafruit_NeoPixel.h>
 
-// コンテクストのメンバ
-Adafruit_NeoPixel g_pixels(1, 16, NEO_GRB + NEO_KHZ800);
+// NwoPixel(個数=1) コンテクストのメンバ
+#if defined(ARDUINO_ARCH_RP2040)
+  #define NEOPIXEL_PIN 16   // Waveshare RP2040 ZERO: WS2812 DIN=GPIO16
+#else
+  #define NEOPIXEL_PIN 38   // Waveshare ESP32-S3-Tiny: WS2812 DIN=GPIO38
+#endif
+Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 //━━━━━━━━━━━━━━━━━
 // 通信速度の定義・設定
@@ -23,9 +29,16 @@ Adafruit_NeoPixel g_pixels(1, 16, NEO_GRB + NEO_KHZ800);
   //─────────────────
   // ボーレート変更スイッチのGPIO
   //─────────────────
-  #define SW_PIN_A 2  // bit-0 (LSB)
-  #define SW_PIN_B 6  // bit-1
-  #define SW_PIN_C 7  // bit-2
+  #if defined(ARDUINO_ARCH_RP2040)
+    #define SW_PIN_A 2  // bit-0
+    #define SW_PIN_B 6  // bit-1
+    #define SW_PIN_C 7  // bit-2
+  #else
+    // RP2040のレイアウトに合わせる
+    #define SW_PIN_A 18 // bit-0
+    #define SW_PIN_B 14 // bit-1
+    #define SW_PIN_C 13 // bit-2
+  #endif
 
   //─────────────────
   // ボーレート別のRGB-LED点灯色
@@ -72,11 +85,17 @@ void InitPort(){
   g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
   g_pixels.show();
 
-  // シリアル通信を開始
-  Serial1.setTX(0);                 // GPIO用
-  Serial1.setRX(1);
-  Serial1.begin(BAUD_PRESETS[id]);
-  Serial.begin(BAUD_PRESETS[id]);   // USB用
+  // シリアル通信を開始：USB(CDC)用
+  Serial.begin(BAUD_PRESETS[id]);
+
+  // シリアル通信を開始：GPIO用
+  #if defined(ARDUINO_ARCH_RP2040)
+    Serial1.setTX(0);
+    Serial1.setRX(1);
+    Serial1.begin(BAUD_PRESETS[id]);
+  #else
+    Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);
+  #endif
 }
 
 

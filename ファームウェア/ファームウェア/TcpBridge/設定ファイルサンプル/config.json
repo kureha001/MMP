@@ -2,9 +2,9 @@
   "wifi": {
     "hostname": "m5-bridge",
     "candidates": [
-      { "ssid":"Buffalo-G-C0F0", "pass":"6shkfa53dk8ks", "timeout_ms": 8000 },
-      { "ssid":"kureha"        , "pass":"09017390454"  , "timeout_ms": 8000 },
-      { "ssid":"Kureha-wimax"  , "pass":"09017390454"  , "timeout_ms": 8000 }
+      { "ssid":"Buffalo-G-C0F0", "pass":"6shkfa53dk8ks", "timeout_ms": 20000 },
+      { "ssid":"kureha"        , "pass":"09017390454"  , "timeout_ms": 20000 },
+      { "ssid":"Kureha-wimax"  , "pass":"09017390454"  , "timeout_ms": 20000 }
     ],
     "ap_fallback": { "enabled": true, "ssid": "m5-bridge-setup", "pass": "", "hold_seconds": 0 }
   },

@@ -48,7 +48,8 @@ void InitAnalog(const MmpContext& ctx) {
     g_ana[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
 
-  Serial.println(String("HC4067バッファを初期化済み"));
+  Serial.println(String(" Device  ID : 0 ～ 3 "));
+  Serial.println(String(" Channel ID : 0 ～ 16"));
 }
 
 //━━━━━━━━━━━━━━━━━

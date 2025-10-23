@@ -148,13 +148,13 @@ bool InitNet(){
 
   // 設定読み込み
   if (!InitWifi()) {
-    Serial.println(String("設定内容が読み込めず、規定値で接続します。"));
+    Serial.println(String(" (設定内容の読込み失敗)"));
   }
 
   // Wi-Fi: 候補を順に試行（仮実装：isDefault優先は後で統合時に実装）
   bool ok = false;
   for (int i=0; i<g_WIFI.candNum && !ok; i++){
-    Serial.println(String("Connect SSID=") + g_WIFI.candList[i].ssid.c_str());
+    Serial.println(String(" Try SSID=") + g_WIFI.candList[i].ssid.c_str());
     ok = tryConnectOne(g_WIFI.candList[i]);
   }
 
@@ -162,9 +162,9 @@ bool InitNet(){
   if (ok){
   // → 接続成功
     // メッセージ表示
-    Serial.println(String("Wifi = STA mode"));
-    Serial.println(String("SSID = ") + WiFi.SSID().c_str());
-    Serial.println(String("IP   = ") + WiFi.localIP().toString().c_str());
+    Serial.println(String(" Wifi = STA mode"));
+    Serial.println(String("  SSID : ") + WiFi.SSID().c_str());
+    Serial.println(String("  IP   : ") + WiFi.localIP().toString().c_str());
 
   // → 接続失敗
   } else {
@@ -178,13 +178,13 @@ bool InitNet(){
     if (WiFi.softAP(apSsid.c_str())) {
     // → 接続成功
       // メッセージ表示
-      Serial.println(String("Wifi = AP mode"));
-      Serial.println(String("SSID = ") + apSsid.c_str());
-      Serial.println(String("IP   = ") + WiFi.softAPIP().toString().c_str());
+      Serial.println(String(" Wifi = AP mode"));
+      Serial.println(String("  SSID : ") + apSsid.c_str());
+      Serial.println(String("  IP   : ") + WiFi.softAPIP().toString().c_str());
     } else {
     // → 接続失敗
       // メッセージ表示
-      Serial.println(String("Wifi = failed !"));
+      Serial.println(String(" Wifi = failed !"));
       return false;
     }
   }
@@ -194,12 +194,11 @@ bool InitNet(){
 
     // HTTP(WEB API)
     srcPort = 8080; if (!srvHttp::start(srcPort)) return false;
-    Serial.println(String("HTTP = ") + String(srcPort));
+    Serial.println(String(" HTTP port : ") + String(srcPort));
 
     // TCP
     srcPort = 8081; if (!srvTcp::begin (srcPort)) return false;
-    Serial.println(String("TCP  = ") + String(srcPort));
+    Serial.println(String(" TCP  port : ") + String(srcPort));
 
-  Serial.println(String("Wifiを初期化済み\n"));
- return true;
+  return true;
 }

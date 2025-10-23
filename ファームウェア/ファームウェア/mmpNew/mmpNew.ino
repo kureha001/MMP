@@ -56,9 +56,9 @@ void setup(){
   InitPWM();
   InitMP3();
 
-  Serial.println(String("==================================="));
-  Serial.println(String("MMP Firmware version : ") + String(g_version));
-  Serial.println(String("==================================="));
+  Serial.println(String("==========================="));
+  Serial.println(String(" MMP Running."                 ));
+  Serial.println(String("==========================="));
 }
 
 //━━━━━━━━━━━━━━━━━
@@ -68,15 +68,12 @@ void loop(){
 
   // クライアント(シリアル)のハンドル
   if (g_CONNECTED_SERIAL) {
-    g_router.pollAll();
-    delay(1);
+    delay(1); g_router.pollAll();
   }
 
   // クライアント(ネット)のハンドル
   if (g_CONNECTED_NET) {
-    srvHttp::handle(); // WebAPI
-    delay(1);
-    srvTcp::handle();  // TCP
-    delay(1);
+    delay(1); srvHttp::handle();  // WebAPI
+    delay(1); srvTcp::handle();   // TCP
   }
 }

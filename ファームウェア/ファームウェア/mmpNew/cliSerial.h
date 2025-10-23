@@ -47,9 +47,6 @@ Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 //━━━━━━━━━━━━━━━━━
 bool InitSerial(){
 
-  Serial.println(String("---------------------------"));
-  Serial.println(String("シリアルポートを初期化中..."));
-
   pinMode(SW_PIN_A, INPUT_PULLUP);
   pinMode(SW_PIN_B, INPUT_PULLUP);
   pinMode(SW_PIN_C, INPUT_PULLUP);
@@ -77,13 +74,20 @@ bool InitSerial(){
 
   // クライアントのハンドルを作成
   Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
+  unsigned long d1 = millis() + 8000;
+  while (!Serial && millis() < d1) delay(10); 
+
   Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);  // GPIO Serial
- 
-  // USB CDC の列挙待ち（最大2秒）
-  Serial.begin(115200);
-  unsigned long dl = millis() + 2000;
-  while (!Serial && millis() < dl) delay(10);
- 
-   Serial.println(String("シリアルポートを初期化済み\n"));
+  unsigned long d2 = millis() + 8000;
+  while (!Serial && millis() < d2) delay(10); 
+
+  Serial.println(String("==========================="));
+  Serial.println(String("Welcome to MMP srtver."));
+  Serial.println(String(" version : ") + String(g_version));
+  Serial.println(String("==========================="));
+  Serial.println(String("シリアルポートを初期化中..."));
+  Serial.println(String(" USB (CDC)      : OK"));
+  Serial.println(String(" UART(GPIO 0,1) : OK"));
+
  return true;
 }

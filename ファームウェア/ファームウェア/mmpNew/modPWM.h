@@ -121,14 +121,19 @@ static void InitPWM(){
   }
 
   // 最大IDを求める
-  g_MaxDevID  = count - 1;       // デバイスID
+  g_MaxDevID = count - 1;       // デバイスID
   g_MaxLogCh = count * 16 - 1;  // チャンネルID
 
   // プリセットを初期化
   InitRotate(0, g_MaxLogCh);    // 回転サーボ用
   InitAngle (0, g_MaxLogCh);    // 角度指定用
 
-  Serial.println(String("PCA9685を初期化済み\n"));
+  if (g_MaxDevID < 0) Serial.println(String(" Device  ID : Not Found"));
+  else                Serial.println(String(" Device  ID : 0 ～ ") + String(g_MaxDevID));
+
+  if (g_MaxLogCh < 0) Serial.println(String(" Channel ID : Not Found"));
+  else                Serial.println(String(" Channel ID : 0 ～ ") + String(g_MaxLogCh));
+
 }
 
 

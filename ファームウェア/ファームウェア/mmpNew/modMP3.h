@@ -21,19 +21,20 @@
 static void InitMP3(){
 
   Serial.println(String("---------------------------"));
-  Serial.println(String("PCA9685を初期化中..."));
+  Serial.println(String("MP3プレイヤーを初期化中..."));
+
+  g_MP3STATUS[0]   = false;
+  g_MP3STATUS[1]   = false;
 
   Serial2.begin(9600, SERIAL_8N1, 11, 12);
-
   delay(50);
 
   if (g_MP3[0].begin(Serial2)){ // 接続済み設定
     g_MP3[0].volume(20);        // プロパティ：音量の規定値
     g_MP3STATUS[0] = true;      // Global変数：状況を接続済
   }
-  g_MP3STATUS[1]   = false;     // Global変数：未使用分は未接続
 
-  Serial.println(String("PCA9685を初期化済み\n"));
+  Serial.println(String(" デバイスID : 1"));
 }
 
 //━━━━━━━━━━━━━━━━━

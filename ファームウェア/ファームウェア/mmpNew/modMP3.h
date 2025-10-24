@@ -2,7 +2,7 @@
 //========================================================
 // モジュール：ＭＰ３
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 // 未着手：DFPlayer→Serial MP3 Playerへの置換
 //========================================================
 #pragma once
@@ -20,11 +20,11 @@
 //━━━━━━━━━━━━━━━━━
 static void InitMP3(){
 
-  Serial.println(String("---------------------------"));
-  Serial.println(String("MP3プレイヤーを初期化中..."));
+  Serial.println("---------------------------");
+  Serial.println("[DFPlayer mini initialize]");
 
-  g_MP3STATUS[0]   = false;
-  g_MP3STATUS[1]   = false;
+  g_MP3STATUS[0] = false;
+  g_MP3STATUS[1] = false;
 
   Serial2.begin(9600, SERIAL_8N1, 11, 12);
   delay(50);
@@ -34,13 +34,13 @@ static void InitMP3(){
     g_MP3STATUS[0] = true;      // Global変数：状況を接続済
   }
 
-  Serial.println(String(" デバイスID : 1"));
+  Serial.println(String("　Device ID : 1"));
 }
 
 //━━━━━━━━━━━━━━━━━
 // メイン処理
 //━━━━━━━━━━━━━━━━━
-class ModuleDF : public ModuleBase {
+class ModuleMP3 : public ModuleBase {
 public:
   using ModuleBase::ModuleBase;
 
@@ -290,8 +290,8 @@ public:
           if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = g_MP3[idx].readState();res = g_MP3[idx].readState();} 
           else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = g_MP3[idx].readVolume();res = g_MP3[idx].readVolume();}
           else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = g_MP3[idx].readEQ();res = g_MP3[idx].readEQ();}
-          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
-          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = g_MP3[idx].readFileCounts();res = g_MP3[idx].readFileCounts();}
+          else if (strcmp(Cmd,"INFO/FILEID" ) == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
+          else if (strcmp(Cmd,"INFO/FILES") == 0){res = g_MP3[idx].readFileCounts();res = g_MP3[idx].readFileCounts();}
           if (res != -1) break;
         }
 

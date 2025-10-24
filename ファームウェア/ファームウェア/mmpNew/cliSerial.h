@@ -2,7 +2,7 @@
 //========================================================
 // クライアント：シリアル通信
 //-------------------------------------------------------- 
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #include <Adafruit_NeoPixel.h>
 
@@ -72,22 +72,19 @@ bool InitSerial(){
   g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
   g_pixels.show();
 
-  // クライアントのハンドルを作成
+  // シリアルポートを起動
   Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
-  unsigned long d1 = millis() + 8000;
-  while (!Serial && millis() < d1) delay(10); 
-
+  Serial.setDebugOutput(false);                         // SDKデバッグ出力を抑止
   Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);  // GPIO Serial
-  unsigned long d2 = millis() + 8000;
-  while (!Serial && millis() < d2) delay(10); 
-
-  Serial.println(String("==========================="));
-  Serial.println(String("Welcome to MMP srtver."));
-  Serial.println(String(" version : ") + String(g_version));
-  Serial.println(String("==========================="));
-  Serial.println(String("シリアルポートを初期化中..."));
-  Serial.println(String(" USB (CDC)      : OK"));
-  Serial.println(String(" UART(GPIO 0,1) : OK"));
+  delay(100);
+  Serial.flush();
+  Serial1.flush();
+  delay(100);
+  
+  // 起動メッセージを表示
+  Serial.println("[Serial initialize]"         );
+  Serial.println("　USB (CDC)      : OK"       );
+  Serial.println("　UART(GPIO 0,1) : OK"       );
 
  return true;
 }

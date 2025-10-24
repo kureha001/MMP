@@ -12,8 +12,8 @@
 from mmp_adapter_base import MmpAdapterBase
 
 # 対応バージョン
-VER_MAJOR = 0   # ベータ
-VER_MINOR = 5   # コマンド名をWEB-API形式
+VER_MAJOR = "0"   # ベータ
+VER_MINOR = "6"   # コマンド名をWEB-API形式
 
 # ボーレート一覧
 BAUD_CANDIDATES = (921600,57600,38400,19200,9600,4800,2400,300)
@@ -181,11 +181,10 @@ class MmpClient:
         resp = self._send_command("INFO/VERSION!", t)
 
         # レスポンスをチェック
-        if len(resp)    != RES_LENGTH: return
-        if not resp.endswith('!')    : return
-        if int(resp[0]) != VER_MAJOR : return
-        if int(resp[1]) != VER_MINOR : return
-
+        if len(resp)    != RES_LENGTH   : return
+        if resp[4]      != "!"          : return
+        if resp[1]      != VER_MAJOR    : return
+        if resp[2]      != VER_MINOR    : return
         return True
 
     #─────────────

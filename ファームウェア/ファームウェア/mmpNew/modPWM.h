@@ -2,23 +2,23 @@
 //========================================================
 // モジュール：ＰＷＭ出力
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #pragma once
 #include "mod.h"
 #include <Wire.h>       // デバイスはi2c制御
 #include <PCA9685.h>    // デバイス固有
 
-//━━━━━━━━━━━━━━━━━
-// デバイス情報
-//━━━━━━━━━━━━━━━━━
-  // コンテナ
+//━━━━━━━━━━━━━━━
+// グローバル変数
+//━━━━━━━━━━━━━━━
+  // デバイスのコンテナ
   constexpr uint8_t PWM_COUNT = 8;  // 走査デバイス数
   PCA9685 g_PWM[PWM_COUNT];         // コンテナ
 
   // 最大ID
-  int g_MaxDevID = 0; // デバイスID
-  int g_MaxLogCh = 0; // チャンネルID(デバイスID * 16)
+  int g_MAX_DECICE_ID  = 0; // デバイスID
+  int g_MAX_CHANNEL_ID = 0; // チャンネルID(デバイスID * 16)
 
 //━━━━━━━━━━━━━━━━━
 // プリセット情報
@@ -63,39 +63,49 @@
   typePresetAngle g_TBL_ANGLE[ PWM_COUNT * 16]; // 角度指定用
   typePresetPwm   g_TBL_ROTATE[PWM_COUNT * 16]; // 回転サーボ用
 
+
+//━━━━━━━━━━━━━━━━━
+// ユーティリティ
+//━━━━━━━━━━━━━━━━━
+  //────────────────
+  // 初期化：通常サーボ
+  //────────────────
+  static void InitAngle(int argFrom, int argTo){
+    for (int idx = argFrom; idx <= argTo; idx++){
+      typePresetAngle &T = g_TBL_ANGLE[idx];
+      T.enable           = 0;
+      T.pwm.value.start  = 0;
+      T.pwm.value.end    = 0;
+      T.pwm.value.middle = 0;
+      T.pwm.width.front  = 0;
+      T.pwm.width.rear   = 0;
+      T.pwm.width.middle = 0;
+    }
+  }
+  //────────────────
+  // 初期化：回転サーボ
+  //────────────────
+  static void InitRotate(int argFrom, int argTo){
+    for (int idx = argFrom; idx <= argTo; idx++){
+      typePresetPwm &T   = g_TBL_ROTATE[idx];
+      T.enable           = 0;
+      T.pwm.value.start  = 0;
+      T.pwm.value.end    = 0;
+      T.pwm.value.middle = 0;
+      T.pwm.width.front  = 0;
+      T.pwm.width.rear   = 0;
+      T.pwm.width.middle = 0;
+    }
+  }
+
+
 //━━━━━━━━━━━━━━━━━
 // 初期化処理
 //━━━━━━━━━━━━━━━━━
-static void InitRotate(int argFrom, int argTo){
-  for (int idx = argFrom; idx <= argTo; idx++){
-    typePresetPwm &T   = g_TBL_ROTATE[idx];
-    T.enable           = 0;
-    T.pwm.value.start  = 0;
-    T.pwm.value.end    = 0;
-    T.pwm.value.middle = 0;
-    T.pwm.width.front  = 0;
-    T.pwm.width.rear   = 0;
-    T.pwm.width.middle = 0;
-  }
-}
-//------------------------
-static void InitAngle(int argFrom, int argTo){
-  for (int idx = argFrom; idx <= argTo; idx++){
-    typePresetAngle &T = g_TBL_ANGLE[idx];
-    T.enable           = 0;
-    T.pwm.value.start  = 0;
-    T.pwm.value.end    = 0;
-    T.pwm.value.middle = 0;
-    T.pwm.width.front  = 0;
-    T.pwm.width.rear   = 0;
-    T.pwm.width.middle = 0;
-  }
-}
-//------------------------
 static void InitPWM(){
 
-  Serial.println(String("---------------------------"));
-  Serial.println(String("PCA9685を初期化中..."));
+  Serial.println("---------------------------");
+  Serial.println("[PCA9685 initialize]");
 
   // ｉ２ｃ通信を開始
   Wire.begin(16, 15);
@@ -121,18 +131,18 @@ static void InitPWM(){
   }
 
   // 最大IDを求める
-  g_MaxDevID = count - 1;       // デバイスID
-  g_MaxLogCh = count * 16 - 1;  // チャンネルID
+  g_MAX_DECICE_ID  = count - 1;       // デバイスID
+  g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
 
   // プリセットを初期化
-  InitRotate(0, g_MaxLogCh);    // 回転サーボ用
-  InitAngle (0, g_MaxLogCh);    // 角度指定用
+  InitRotate(0, g_MAX_CHANNEL_ID);    // 回転サーボ用
+  InitAngle (0, g_MAX_CHANNEL_ID);    // 角度指定用
 
-  if (g_MaxDevID < 0) Serial.println(String(" Device  ID : Not Found"));
-  else                Serial.println(String(" Device  ID : 0 ～ ") + String(g_MaxDevID));
+  if (g_MAX_DECICE_ID < 0) Serial.println(String("　Device  ID : Not Found"));
+  else                     Serial.println(String("　Device  ID : 0 ～ ") + String(g_MAX_DECICE_ID));
 
-  if (g_MaxLogCh < 0) Serial.println(String(" Channel ID : Not Found"));
-  else                Serial.println(String(" Channel ID : 0 ～ ") + String(g_MaxLogCh));
+  if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　Channel ID : Not Found"));
+  else                      Serial.println(String("　Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
 
 }
 
@@ -167,9 +177,7 @@ public:
     // 機能 ：機器の状態
     // 書式 : PWX 
     // 機能 : モジュールの接続確認
-    // ───────────────────────────────
     // 引数 : なし
-    // ───────────────────────────────
     // 戻値 : ・接続数 [XXXXX!]
     // ───────────────────────────────
     if (strcmp(Cmd,"INFO/CONNECT") == 0){
@@ -179,7 +187,7 @@ public:
         if(dat_cnt != 1){_ResChkErr(sp); return;}
   
       // ２．値取得：
-      int res = g_MaxDevID;
+      int res = g_MAX_DECICE_ID;
 
       // ３．後処理：
       _ResValue(sp, res);
@@ -189,10 +197,8 @@ public:
     // ───────────────────────────────
     // 名称 : OUTPUT 
     // 機能 : ＰＷＭ値を出力する
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
     // 　　　 ② ＰＷＭ出力値　　　；0～4095
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PWM!!]
     // ───────────────────────────────
@@ -221,17 +227,14 @@ public:
     // ───────────────────────────────
     // 名称 : PAI 
     // 機能 : チャンネル別プリセット登録
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
     //        ② チャンネルID(終了)；0～127,-1(単一チャンネル)
     //        ③ 角度(最大)    ；0～360度
     //        ④ ＰＷＭ値(最小)；0～4095
     //        ⑤ ＰＷＭ値(最大)；0～4095
     //        ⑥ ＰＷＭ値(中間)；0～4095,-1(自動)
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PAI!!]
-    // ───────────────────────────────
     // 制限 : ・引数①②の大小関係
     //        ・引数④⑤の大小関係
     //        ・引数④⑤⑥の大小関係
@@ -292,12 +295,9 @@ public:
     // ───────────────────────────────
     // 名称 : PAO 
     // 機能 : ＰＷＭ出力（角度指定）
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PAO!!]
-    // ───────────────────────────────
     // 制限 : とくになし
     // ───────────────────────────────
     if (strcmp(Cmd,"ANGLE/OUTPUT") == 0){
@@ -349,16 +349,13 @@ public:
     // ───────────────────────────────
     // 名称 : PRI 
     // 機能 : チャンネル別プリセット登録
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
     //        ② チャンネルID(終了)；0～127,-1(単一チャンネル)
     //        ③ ＰＷＭ値(逆転最大)；0～4095
     //        ④ ＰＷＭ値(正転最大)；0～4095
     //        ⑤ ＰＷＭ値(中間)　　；0～4095,-1(自動)
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PRI!!]
-    // ───────────────────────────────
     // 制限 : ・引数①②の大小関係
     //        ・引数③④の大小関係
     //        ・引数③④⑤の大小関係
@@ -411,13 +408,10 @@ public:
     // ───────────────────────────────
     // 名称 : PRO 
     // 機能 : ＰＷＭ出力（回転率％指定）
-    // ───────────────────────────────
     // 引数 : ① チャンネルID；0～127 PCA9685x8個
     //        ② 回転率　　　；-100～+100%
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PRO!!]
-    // ───────────────────────────────
     // 制限 : とくになし
     // ───────────────────────────────
     if (strcmp(Cmd,"ROTATE/OUTPUT") == 0){
@@ -464,13 +458,10 @@ public:
     // ───────────────────────────────
     // 名称 : RESET 
     // 機能 : チャンネル別プリセット削除
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
     //        ② チャンネルID(終了)；0～127,-1(単一チャンネル)
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [PAD!!] または [PRD!!]
-    // ───────────────────────────────
     // 制限 : ・引数①②の大小関係
     // ───────────────────────────────
     if (strcmp(Cmd,"ANGLE/RESET") == 0 || strcmp(Cmd,"ROTATE/RESET") == 0){
@@ -501,12 +492,9 @@ public:
     // ───────────────────────────────
     // 名称 : RRN,PAN 
     // 機能 : ニュートラル（中央位置）
-    // ───────────────────────────────
     // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
-    // ───────────────────────────────
     // 戻値 : ・正常 [!!!!!]
     //        ・異常 [RRN!!] または [PAN!!]
-    // ───────────────────────────────
     // 制限 : なし
     // ───────────────────────────────
     if (strcmp(Cmd,"ANGLE/CENTER") == 0 || strcmp(Cmd,"ROTATE/STOP") == 0){
@@ -545,12 +533,11 @@ public:
     return;
   }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//━━━━━━━━━━━━━━━
 // 内部ヘルパー
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ───────────────────────────────
+//━━━━━━━━━━━━━━━
+  // ──────────────────────────────
   // 機能 : ＰＷＭ出力
-  // ───────────────────────────────
   // 引数 : ① チャンネルID；0～127 PCA9685x8個
   //        ② 指定値 　　 ；角度 または パーセンテージ
   //        ③ 中間基準値　；指定値と比較する中点
@@ -559,11 +546,9 @@ public:
   //        ⑥ PWM幅(後半) ；中間～終了までの幅
   //        ⑦ PWM値(前半) ；開始のＰＷＭ値
   //        ⑧ PWM値(中間) ；中間のＰＷＭ値
-  // ───────────────────────────────
   // 戻値 : 出力したＰＷＭ値
-  // ───────────────────────────────
   // 制限 : なし
-  // ───────────────────────────────
+  // ──────────────────────────────
   int comOutPWM(
     int argCh        ,  // チャンネルID
     int argArrow     ,  // 指定値
@@ -585,16 +570,12 @@ public:
     // ３．後処理：
     return val;
   }
-
-  // ───────────────────────────────
+  // ──────────────────────────────
   // 機能 : チャンネル番号チェッカー
-  // ───────────────────────────────
   // 引数 : ① チャンネルID(開始)；0～127 PCA9685x8個
   //        ② 結果代入 　     　；変換値の格納先
   //        ③ 単一チャンネル許可；true=有効／false=無効
-  // ───────────────────────────────
   // 戻値 : 合否；true=正常／false=違反
-  // ───────────────────────────────
   // 制限 : 最大チャンネル番号以内 または 単一チャンネル(-1)
   // ───────────────────────────────
   int comChannel(
@@ -604,18 +585,14 @@ public:
   ){
     int min = 0;
     if(argZero) min = -1;
-    return _Str2Int(argVal, argOut, min, g_MaxLogCh);
+    return _Str2Int(argVal, argOut, min, g_MAX_CHANNEL_ID);
   }
-
   // ───────────────────────────────
   // 機能 : ＰＷＭ値チェッカー
-  // ───────────────────────────────
   // 引数 : ① ＰＷＭ値      　；出力PWM値(引数値)
   //        ② 結果代入      　；変換値の格納先
   //        ③ 中間自動計算許可；true=有効／false=無効
-  // ───────────────────────────────
   // 戻値 : 合否；true=正常／false=違反
-  // ───────────────────────────────
   // 制限 : 最大チャンネル番号以内 または 中間自動計算(-1)
   // ───────────────────────────────
   int comPWM_val(

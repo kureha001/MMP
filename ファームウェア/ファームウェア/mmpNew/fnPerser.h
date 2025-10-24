@@ -2,7 +2,7 @@
 //========================================================
 // コマンド パーサーのフロント・対象資源の登録
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #pragma once
 #include <vector>
@@ -16,6 +16,7 @@
 #include "modPWM.h"
 #include "modI2C.h"
 #include "modMP3.h"
+#include "modNET.h"
 
 //========================================================
 // 外部参照（本体側で定義）
@@ -107,7 +108,8 @@ public:
     mods.push_back(new ModuleDigital(ctxRef, RGB_DIGITAL));
     mods.push_back(new ModulePwm    (ctxRef, RGB_PWM    ));
     mods.push_back(new ModuleI2C    (ctxRef, RGB_I2C    ));
-    mods.push_back(new ModuleDF     (ctxRef, RGB_MP3    ));
+    mods.push_back(new ModuleMP3    (ctxRef, RGB_MP3    ));
+    mods.push_back(new ModuleNetConf(ctxRef, RGB_INFO   ));
 
     // クライアント：USB(CDC) / GPIO(UART0)
     addSource(&Serial , "USB"  , 0);

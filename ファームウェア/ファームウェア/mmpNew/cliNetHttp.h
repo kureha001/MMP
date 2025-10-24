@@ -2,13 +2,13 @@
 //========================================================
 // クライアント：ネット(HTTP WEB API)
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #pragma once
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
-#include "modWIFI.h"
+#include "modNET.h"
 
 // 本体プログラム側で実装：wire("CMD[:a:b:c]!") を投げて "!!!!!"/"dddd!"/"#xxx!" を返す
 // 統一入口（経路番号方式）
@@ -37,11 +37,13 @@ inline void send_204(WebServer& srv) { add_cors(srv); srv.send(204); }
 
 // ---- エラーマップ（#xxx! 用）----
 static const char* map_error(const String& resp){
-  if (resp == "#CMD!") return "Error:コマンド名不正";
-  if (resp == "#CHK!") return "Error:引数チェック違反";
-  if (resp == "#INI!") return "Error:未初期化データ";
-  if (resp == "#DEV!") return "Error:使用不可デバイス";
-  return "unknown error";
+  if (resp == "#CMD!") return "Error:コマンド名が不正"      ;
+  if (resp == "#CHK!") return "Error:引数チェックで違反"    ;
+  if (resp == "#INI!") return "Error:データが未初期化"      ;
+  if (resp == "#DEV!") return "Error:使用不可のデバイス"    ;
+  if (resp == "#FIL!") return "Error:ファイル操作が異常終了";
+  if (resp == "#NOD!") return "Error:データ項目名が不正"    ;
+  return "その他のエラー";
 }
 
 // ---- 符号付き4桁の十進判定／変換 ----
@@ -64,17 +66,24 @@ static int parseDec4Signed(const String& body){
 // ハンドラ本体（サーバ参照を引数で受ける汎用形）
 // -----------------------------
 void h_any_path_impl(WebServer& srv) {
-  String  error  = "";
-  bool    result = false;
-  int     value  = -1;
-  String  text   = "";
+  //bool  ok     = true     // MMPにまで届いたか  {OK:true | NG:false}
+  bool    result = false;   // MMPの処理結果      {OK:true | NG:false}
+  String  error  = "";      // エラーメッセージ   {正常の場合は空}
+  int     value  = -1000;   // 戻値が数値の場合   {-999～9999、対象外は-1000 }
+  String  text   = "";      // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
 
   // 受信URI
   String uri = srv.uri();
 
   // ルート "/" は固定レスポンス
   if (uri.isEmpty() || uri == "/") {
-    send_json(srv, F("{\"ok\":true,\"error\":\"\",\"result\":true,\"value\":-1,\"text\":\"\"}"));
+    send_json(srv, F("{"
+        "\"ok\":true,"
+        "\"result\":true,"  
+        "\"error\":\"\","
+        "\"value\":-1,"     
+        "\"text\":\"\""
+        "}"));
     return;
   }
 
@@ -83,51 +92,63 @@ void h_any_path_impl(WebServer& srv) {
   if (path.length() && path[0] == '/') path.remove(0, 1);
   if (!path.endsWith("!")) path += '!';
 
-  // ★ＭＭＰファームウェアにリクエスト（HTTP=3）
+  // コマンドパーサーへリクエスト（HTTP=3）
   String resp = MMP_REQUEST(path, kClientIdHttp);
 
-  // ★返答の「形」で判定
+  //◇コマンドパーサーの戻り値に応じてレスポンス
   if (resp.length() < 1 || resp[resp.length()-1] != '!') {
-    error  = "timeout or bad reply";
+  // → 文字欠け
     result = false;
+    error  = "MMPからの戻値が異常";
+
   } else if (resp == "!!!!!") {
-    // OK
-    error  = "";
+  // → 実行結果OK
     result = true;
+    error  = "";
+
   } else if (resp.length() == 5 && resp[0] == '#') {
-    // #xxx! エラー
-    error  = map_error(resp);
+  // → #xxx! エラー
     result = false;
+    error  = map_error(resp);
+
   } else {
-    // 本文（末尾 '!' を除く）
+  // → 本文（末尾 '!' を除く）
     String body = resp.substring(0, resp.length()-1);
     if (isDec4Signed(body)) {
-      // 4文字の符号付き十進 → 数値
+    // → 4文字の符号付き十進 → 数値
+      result = true;
+      error  = "";
       value  = parseDec4Signed(body);
-      error  = "";
-      result = true;
+
+    // → それ以外：文字列
     } else {
-      // それ以外は文字列
-      text   = body;
-      error  = "";
       result = true;
+      error  = "";
+      text   = body;
     }
   }
 
-  // JSON 組み立て（既存仕様を踏襲：ok は固定 true）
+  // JSON 組み立て
   String js;
   js.reserve(160);
-  js += F("{\"ok\":true");
-  js += F(",\"error\":\""); js += error; js += '"';
-  js += F(",\"result\":");   js += (result ? "true" : "false");
-  js += F(",\"value\":");    js += String(value);
-  js += F(",\"text\":\"");   js += text;  js += "\"}";
+  js += F("{\"ok\":true"  );
+  js += F(",\"result\":"  ); js += (result ? "true" : "false");
+  js += F(",\"error\":\"" ); js += error; js += '"'           ;
+  js += F(",\"value\":"   ); js += String(value)              ;
+  js += F(",\"text\":\""  ); js += text                       ;
+  js += "\"}"              ;
   send_json(srv, js);
 }
 
 // ルート（簡易疎通）
 void h_root_impl(WebServer& srv){
-  send_json(srv, F("{\"ok\":true,\"service\":\"MMP-WebAPI\",\"note\":\"GET-only\"}"));
+  send_json(srv, F("{"
+    "\"ok\":true,"
+    "\"result\":true,"
+    "\"error\":\"\","
+    "\"value\":-1,"
+    "\"text\":\"MMP WEB API\""
+    "}"));
 }
 
 // OPTIONS helper
@@ -160,17 +181,11 @@ bool start(uint16_t port) {
   s_http->begin();
   return true;
 }
-void handle() {
-  if (s_http) s_http->handleClient();
-}
+void handle() {if (s_http) s_http->handleClient();}
 
 //================ 既存API（互換） ==================
-void begin(WebServer& server) {
-  install_routes(server);
-}
-void handle(WebServer& server) {
-  server.handleClient();
-}
+void begin (WebServer& server) {install_routes(server);}
+void handle(WebServer& server) {server.handleClient();}
 
 } // namespace srvHttp
 //========================================================

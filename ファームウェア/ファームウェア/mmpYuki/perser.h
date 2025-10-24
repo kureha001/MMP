@@ -106,7 +106,6 @@ public:
   // 対象資源の登録
   //━━━━━━━━━━━━━━━━━
     void Init(){
-      // 監視対象のモジュールを登録
       modules.push_back(new ModuleInfo   (ctx, RGB_INFO    ));
       modules.push_back(new ModuleAnalog (ctx, RGB_ANALOG  ));
       modules.push_back(new ModuleDigital(ctx, RGB_DIGITAL ));

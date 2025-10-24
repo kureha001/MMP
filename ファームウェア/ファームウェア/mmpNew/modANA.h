@@ -2,14 +2,14 @@
 //========================================================
 // モジュール：アナログ入力
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #pragma once
 #include "mod.h"
 
-//━━━━━━━━━━━━━━━━━
-// デバイス情報
-//━━━━━━━━━━━━━━━━━
+//━━━━━━━━━━━━━━━
+// グローバル変数
+//━━━━━━━━━━━━━━━
 const int g_addressBusGPIOs[4]  = {10, 9, 8, 7}; // アドレス・バス
 const int g_dateGPIOs[4]        = { 4, 3, 2, 1}; // データ・バス
 
@@ -29,13 +29,14 @@ const int g_dateGPIOs[4]        = { 4, 3, 2, 1}; // データ・バス
   //─────────────────
   static AnaClientData* g_ana = nullptr;
 
+
 //━━━━━━━━━━━━━━━━━
 // 初期化処理
 //━━━━━━━━━━━━━━━━━
 void InitAnalog(const MmpContext& ctx) {
 
-  Serial.println(String("---------------------------"));
-  Serial.println(String("HC4067バッファを初期化中..."));
+  Serial.println("---------------------------");
+  Serial.println("[HC4067 buffer initialize]");
 
   const int count = ctx.clientID_max + 1;         // 要素数＝最大インデックス＋1
   void* p = calloc(count, sizeof(AnaClientData)); // 全要素0で初期化して確保
@@ -48,9 +49,10 @@ void InitAnalog(const MmpContext& ctx) {
     g_ana[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
 
-  Serial.println(String(" Device  ID : 0 ～ 3 "));
-  Serial.println(String(" Channel ID : 0 ～ 16"));
+  Serial.println(String("　Device  ID : 0 ～ 3 "));
+  Serial.println(String("　Channel ID : 0 ～ 16"));
 }
+
 
 //━━━━━━━━━━━━━━━━━
 // メイン処理
@@ -210,4 +212,9 @@ public:
   _ResNotCmd(sp);
   return;
   }
+
+//━━━━━━━━━━━━━━━━━
+// 内部ヘルパー
+//━━━━━━━━━━━━━━━━━
+// なし
 };

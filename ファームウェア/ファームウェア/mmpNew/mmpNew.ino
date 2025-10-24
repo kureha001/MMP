@@ -1,12 +1,12 @@
 // filename : mmpNew.ino
-const char* g_version = "V600!";  // コンテクストのメンバ
+const char* g_version = "V060!";  // コンテクストのメンバ
 //========================================================
 //  MMP Firmware : Code Name -- Yuki2 -- 
 //--------------------------------------------------------
 // ボード情報：Waveshare ESP32-S3-tiny用
 //   - ESP32S3 Dev Module 
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #include <Arduino.h>
 #include <Wire.h>
@@ -56,9 +56,10 @@ void setup(){
   InitPWM();
   InitMP3();
 
-  Serial.println(String("==========================="));
-  Serial.println(String(" MMP Running."                 ));
-  Serial.println(String("==========================="));
+  Serial.println("---------------------------");
+  Serial.print  ("Running... MMP Ver");
+  Serial.println(String(g_version));
+  Serial.println("---------------------------");
 }
 
 //━━━━━━━━━━━━━━━━━
@@ -68,12 +69,12 @@ void loop(){
 
   // クライアント(シリアル)のハンドル
   if (g_CONNECTED_SERIAL) {
-    delay(1); g_router.pollAll();
+    g_router.pollAll();
   }
 
   // クライアント(ネット)のハンドル
   if (g_CONNECTED_NET) {
-    delay(1); srvHttp::handle();  // WebAPI
-    delay(1); srvTcp::handle();   // TCP
+    srvHttp::handle();  // WebAPI
+    srvTcp::handle();   // TCP
   }
 }

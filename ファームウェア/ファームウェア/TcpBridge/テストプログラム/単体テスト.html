@@ -22,7 +22,7 @@
 <hr>
 <div class="row">
   <label class="inline">ホスト/IP:
-    <input id="host" placeholder="例: 192.168.2.124">
+    <input id="host" placeholder="例: 192.168.2.254">
   </label>
   <label class="inline">ポート:
     <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
@@ -133,7 +133,7 @@
   const hostEl=$('#host'), portEl=$('#port');
   const preReq=$('#req'), preHdrs=$('#hdrs'), preRaw=$('#raw'), preJson=$('#json');
 
-  hostEl.value = location.hostname || '192.168.2.124';
+  hostEl.value = location.hostname || '192.168.2.254';
 
   function clearLogs(){ preReq.textContent=preHdrs.textContent=preRaw.textContent=preJson.textContent=''; }
   function url(path){

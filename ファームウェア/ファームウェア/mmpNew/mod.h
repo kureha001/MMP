@@ -2,7 +2,7 @@
 //========================================================
 // 各モジュールの共通機能・抽象基底クラス
 //--------------------------------------------------------
-// Ver0.6.00 (2025/xx/xx)
+// Ver 0.6.0 (2025/xx/xx)
 //========================================================
 #pragma once
 #include <Arduino.h>
@@ -89,12 +89,24 @@ public:
   // 文字列→10進数パース
   // ───────────────────────
   inline bool _Str2Int(const char* s, int& out, int minv, int maxv){
-    if (!s || !*s)                return false; // 文字列チェック
+    if (!s || !*s)                return false; // 空チェック
     char* end = nullptr;
     out = int(strtol(s, &end, 10));
     if (*end != '\0'             ) return false; // 終端チェック
     if (minv > maxv              ) return false; // 大小チェック
     if (out  < minv || out > maxv) return false; // 範囲チェック
+    return true;
+  }
+
+  // ───────────────────────
+  // 文字列→論理値パース
+  // ───────────────────────
+  inline bool _Str2bool(const char* s, bool& out){
+    if (!s || !*s) return false;          // 空チェック
+    char* end = nullptr;
+    int num   = int(strtol(s, &end, 10)); // 数値変換
+    out       = (num > 0) ? true : false; // 数値変換
+    if (*end != '\0') return false;       // 終端チェック
     return true;
   }
 
@@ -126,10 +138,13 @@ public:
   }
   
   //━━━━━━━━━━━━━━━━━
-  // レスポンス
+  // クライアントへレスポンス
   //━━━━━━━━━━━━━━━━━
   inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
-  inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名違反
-  inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // チェック違反
-  inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // 初期化違反
-  inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // デバイス違反
+  inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名が不正
+  inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // 引数チェックで不正
+  inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // データが未初期化
+  inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // 使用不可のデバイス
+  inline void _ResFilErr(Stream& sp){sp.print("#FIL!");} // ファイル操作が異常終了
+  inline void _ResNoDErr(Stream& sp){sp.print("#NOD!");} // データ項目名が不正
+  

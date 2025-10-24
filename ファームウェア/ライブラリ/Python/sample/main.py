@@ -18,10 +18,10 @@ import MMP
 
 #(2) TCPブリッジ：ser2net
 NET_TIMEOUT_S   = 0.2   # ネットワーク品質に応じて調整
-NET_HOST_PC     = "192.168.2.124"   # LANの場合
+NET_HOST_PC     = "192.168.2.254"   # LANの場合
 #NET_HOST_PC     = "203.141.144.142" #WANの場合
-TCP_PORT_PC     = 5331
 WEB_PORT_PC     = 8080
+TCP_PORT_PC     = 8081
 
 #(3) TCPブリッジ：usb4a(Pydroid)
 USB4A_INDEX     = 0
@@ -52,7 +52,9 @@ def main():
     while True:
         print("")
         print("---------- ＭＭＰ ＡＰＩテスト -----------")
-        print(f"【通信方法】[S]erial [T]cp [W]eb [A]ndroid")
+        if 状態 is None:
+            print(f"【通信方法】[S]erial [T]cp [W]eb [A]ndroid")
+
         文字 = f"READY [{状態}]" if 状態 else "-- NG --"
         print(f"【接続状況】{文字}")
 

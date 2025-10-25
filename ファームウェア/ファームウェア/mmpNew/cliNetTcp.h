@@ -7,57 +7,81 @@
 #pragma once
 #include <Arduino.h>
 
-// 本体が実装：wire("CMD[:a:b:c]!") → "!!!!!"/"dddd!"/"#xxx!"
-// 統一入口（経路番号方式）
+// 統一入口(fnPerser.h)
 extern String MMP_REQUEST(const String& wire, int clientID);
 
+//========================================================
+// ルーティング内処理
+//========================================================
 namespace {
 
-  constexpr int kClientIdTcp   = 2;      // 経路番号: TCP
-  WiFiServer    g_server(0);
-  bool          g_started = false;
+  constexpr int g_ID_TCP  = 2       ; // 経路番号: TCP
+  WiFiServer    g_server(0)         ; // サーバ
+  bool          g_STARTED = false   ; // 起動有無 
 
   struct Slot {
-    WiFiClient cli;                 //
-    String     rx;                  // 受信バッファ（! まで貯める）
-    uint32_t   lastActive = 0;      //
-    bool       used       = false;  //
+    WiFiClient cli                  ; // Wifi接続
+    String     rx                   ; // 受信バッファ     ※ !まで貯める）
+    uint32_t   lastActive = 0       ; // 最終更新時刻(ms) ※ タイムアウトで使用
+    bool       used       = false   ; // 使用状況
   };
 
-  Slot*   g_slots     = nullptr;
-  int     g_maxSlots  = 0;
-  const   uint32_t kIdleMs   = 30000;    // 無通信切断
-  const   size_t   kMaxFrame = 256;      // 1フレーム上限
+  Slot*   g_slots     = nullptr     ; // 接続スロット
+  int     g_MAX_SLOTS = 0           ; // 最大接続数 
+  const   uint32_t kIdleMs   = 30000; // 無通信切断
+  const   size_t   kMaxFrame = 256  ; // 1フレーム上限
 
-  int findFree() {
-    for (int i=0;i<g_maxSlots;i++)
-      if (!g_slots[i].used || !g_slots[i].cli.connected()) return i;
+//━━━━━━━━━━━━━━━━━
+// ヘルパー：接続スロット制御
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 指定の接続スロットをリセット
+  //─────────────────
+  void dropSlot(int idx){
+    if ( idx < 0 || idx >= g_MAX_SLOTS ) return;
+    if ( g_slots[idx].cli ) g_slots[idx].cli.stop();
+    g_slots[idx].rx         = ""    ; //
+    g_slots[idx].used       = false ; //
+    g_slots[idx].lastActive = 0     ; //
+  } // dropSlot()
+  //─────────────────
+  // 空き接続スロットのIDを照会
+  //─────────────────
+  int getFeeSlotID() {
+    for (int idx = 0 ; idx < g_MAX_SLOTS ; idx++)
+      if ( !g_slots[idx].used || !g_slots[idx].cli.connected() ) return idx;
     return -1;
-  }
-  void drop(int i){
-    if (i<0 || i>=g_maxSlots) return;
-    if (g_slots[i].cli) g_slots[i].cli.stop();
-    g_slots[i].rx = "";
-    g_slots[i].used = false;
-    g_slots[i].lastActive = 0;
-  }
-
-  void acceptLoop(){
+  } // getFeeSlotID()
+  //─────────────────
+  // 接続スロットの情報を更新
+  //─────────────────
+  void updateSlot(){
+    // 接続スロットが空いたら情報を更新
     while (true) {
+      // Wifiの有効性を取得：→ 無効であれば中断
       WiFiClient c = g_server.available();
       if (!c) break;
-      int idx = findFree();
-      if (idx < 0) { c.stop(); continue; }
-      g_slots[idx].cli = c;               // move
-      g_slots[idx].cli.setNoDelay(true);
-      g_slots[idx].rx.reserve(64);
-      g_slots[idx].rx = "";
-      g_slots[idx].used = true;
-      g_slots[idx].lastActive = millis();
-    }
-  }
 
+      // 空き接続スロットのIDを取得：→ 無効であればスキップ
+      int idx = getFeeSlotID();
+      if (idx < 0) { c.stop(); continue; }
+
+      // 接続スロットの情報を更新
+      g_slots[idx].cli        = c       ; // move
+      g_slots[idx].cli.setNoDelay(true) ;
+      g_slots[idx].rx.reserve(64)       ;
+      g_slots[idx].rx         = ""      ;
+      g_slots[idx].used       = true    ;
+      g_slots[idx].lastActive = millis();
+    } // while
+  } // updateSlot()
+
+//━━━━━━━━━━━━━━━━━
+// ヘルパー：ＭＭＰコマンド編集
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
   // ‘!’までを切り出し（無ければ空）
+  //─────────────────
   String takeFrame(String& buf){
     int p = buf.indexOf('!');
     if (p < 0) return String();
@@ -66,10 +90,17 @@ namespace {
     return s;
   }
 
-  void handleOne(int i){
+//━━━━━━━━━━━━━━━━━
+// ルート別処理
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // ＭＭＰコマンド
+  //─────────────────
+  void routeMMP(int i){
+
     auto& s = g_slots[i];
     auto& c = s.cli;
-    if (!c.connected()) { drop(i); return; }
+    if (!c.connected()) { dropSlot(i); return; }
 
     // 受信
     while (c.available()) {
@@ -85,64 +116,86 @@ namespace {
 
     // フレーム処理（! 区切りで複数可）
     while (true) {
+
       String wire = takeFrame(s.rx);
+
       if (wire.isEmpty()) break;
 
       // 最低限の sanity
-      if (wire.length() < 2) { c.print("#CMD!"); s.lastActive=millis(); continue; }
+      if (wire.length() < 2) {
+        c.print("#CMD!");
+        s.lastActive = millis();
+        continue;
+      }
 
-      // 本体へ同期呼び出し（TCP=2）
-      String five = MMP_REQUEST(wire, kClientIdTcp);
+    // 2) コマンドパーサーへリクエスト
+      String five = MMP_REQUEST(wire, g_ID_TCP);
       if (five.length()==0) five = "!!!!!";  // 空なら成功扱いでも可
 
-      // 同じクライアントにそのまま返す
+      // 3) レスポンスを編集
+      // (該当処理なし)
+
+      // 4) 通信経路にレスポンスする
       c.print(five);
       s.lastActive = millis();
     }
 
     // アイドル切断
-    if (millis() - s.lastActive > kIdleMs) drop(i);
+    if (millis() - s.lastActive > kIdleMs) dropSlot(i);
   }
-} // namespace
+} // namespace (No Name)
+
+
+//━━━━━━━━━━━━━━━━━
+// ルーティング登録
+//━━━━━━━━━━━━━━━━━
+// (該当処理なし)
+
+
 //========================================================
-
-
+// ハンドラ関連処理
 //========================================================
 namespace srvTcp {
+  //━━━━━━━━━━━━━━━━━
+  // 初期化処理
+  // - cliNet.hから実行
+  //━━━━━━━━━━━━━━━━━
+  bool start(uint16_t port){
 
-  bool begin(uint16_t port){
+    // 1) 前処理
+      // 二重起動チェック： → 起動済みの場合は中断
+      if (g_STARTED) return true;
 
-    if (g_started) return true;
+      // 接続スロットの情報を確保
+      g_slots     = new Slot[g_SRV.maxClients]; // 最大接続数で確保
+      g_MAX_SLOTS  = g_SRV.maxClients         ; // 最大接続数
 
-    g_slots = new Slot[g_SRV.maxClients];
-    g_maxSlots = g_SRV.maxClients;
+    // 2) サーバを起動
+    g_server      = WiFiServer(port)          ; // サーバ登録
+    g_server.begin()                          ; // サーバ起動
+    g_server.setNoDelay(true)                 ;
+    g_STARTED     = true                      ;
 
-    g_server = WiFiServer(port);
-    g_server.begin();
-    g_server.setNoDelay(true);
-    g_started = true;
-
+    // 3) 正常終了
     return true;
-  }
+  } // start
 
+  //━━━━━━━━━━━━━━━━━
+  // ハンドラ入口
+  // - スケッチのloop()から実行
+  // - 実処理はrouteMMP()
+  //━━━━━━━━━━━━━━━━━
   void handle(){
-    if (!g_started) return;
-    acceptLoop();
-    for (int i=0;i<g_maxSlots;i++)
-      if (g_slots[i].used) handleOne(i);
-  }
 
-  int clientCount(){
-    int n=0;
-    for (int i=0;i<g_maxSlots;i++)
-      if (g_slots[i].used && g_slots[i].cli.connected()) n++;
-    return n;
-  }
+    // 1) 起動チェック
+    if (!g_STARTED) return;
 
-  void closeAll(){
-    if (!g_started) return;
-    for (int i=0;i<g_maxSlots;i++) drop(i);
-  }
+    // 2) 接続スロットの情報を更新
+    updateSlot();
+
+    // 3) すべての接続スロットを処理
+    for (int idx = 0; idx < g_MAX_SLOTS ; idx++)
+      if (g_slots[idx].used) routeMMP(idx);
+  } // handle()
 
 } // namespace srvTcp
-//========================================================

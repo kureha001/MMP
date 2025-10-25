@@ -42,49 +42,72 @@ Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
     /*7:赤*/ {10, 0, 0}
   };
 
+
+//========================================================
+// ルーティング内処理
+//========================================================
 //━━━━━━━━━━━━━━━━━
-// 初期化処理
+// ルート別処理
 //━━━━━━━━━━━━━━━━━
-bool InitSerial(){
+  //─────────────────
+  // ＭＭＰコマンド
+  //─────────────────
+  // (該当処理なし) ※fnPerser.hのhandle()に実装している
 
-  pinMode(SW_PIN_A, INPUT_PULLUP);
-  pinMode(SW_PIN_B, INPUT_PULLUP);
-  pinMode(SW_PIN_C, INPUT_PULLUP);
-  delay(10);
+//========================================================
+// ハンドラ関連処理
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // 初期化処理
+  // - スケッチのsetup()から実行
+  //━━━━━━━━━━━━━━━━━
+  bool InitSerial(){
 
-  int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
-  int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
-  int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
+    pinMode(SW_PIN_A, INPUT_PULLUP);
+    pinMode(SW_PIN_B, INPUT_PULLUP);
+    pinMode(SW_PIN_C, INPUT_PULLUP);
+    delay(10);
 
-  int id = 7;
-  if      (A==0 && B==0 && C==0) id = 0;
-  else if (A==1 && B==0 && C==0) id = 1;
-  else if (A==0 && B==1 && C==0) id = 2;
-  else if (A==0 && B==0 && C==1) id = 3;
-  else if (A==1 && B==1 && C==0) id = 4;
-  else if (A==0 && B==1 && C==1) id = 5;
-  else if (A==1 && B==0 && C==1) id = 6;
+    int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
+    int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
+    int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
 
-  // ボーレートに応じてRGB-LEDを点灯
-  RGB c = BAUD_COLORS[id]; // 色パターンを取得
-  g_pixels.begin();        // RGB-LEDを点灯
-  g_pixels.clear();
-  g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
-  g_pixels.show();
+    int id = 7;
+    if      (A==0 && B==0 && C==0) id = 0;
+    else if (A==1 && B==0 && C==0) id = 1;
+    else if (A==0 && B==1 && C==0) id = 2;
+    else if (A==0 && B==0 && C==1) id = 3;
+    else if (A==1 && B==1 && C==0) id = 4;
+    else if (A==0 && B==1 && C==1) id = 5;
+    else if (A==1 && B==0 && C==1) id = 6;
 
-  // シリアルポートを起動
-  Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
-  Serial.setDebugOutput(false);                         // SDKデバッグ出力を抑止
-  Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);  // GPIO Serial
-  delay(100);
-  Serial.flush();
-  Serial1.flush();
-  delay(100);
-  
-  // 起動メッセージを表示
-  Serial.println("[Serial initialize]"         );
-  Serial.println("　USB (CDC)      : OK"       );
-  Serial.println("　UART(GPIO 0,1) : OK"       );
+    // ボーレートに応じてRGB-LEDを点灯
+    RGB c = BAUD_COLORS[id]; // 色パターンを取得
+    g_pixels.begin();        // RGB-LEDを点灯
+    g_pixels.clear();
+    g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
+    g_pixels.show();
 
- return true;
-}
+    // シリアルポートを起動
+    Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
+    Serial.setDebugOutput(false);                         // SDKデバッグ出力を抑止
+    Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);  // GPIO Serial
+    delay(100);
+    Serial.flush();
+    Serial1.flush();
+    delay(100);
+    
+    // 起動メッセージを表示
+    Serial.println("[Serial initialize]"         );
+    Serial.println("　USB (CDC)      : OK"       );
+    Serial.println("　UART(GPIO 0,1) : OK"       );
+
+  return true;
+  }
+
+  //━━━━━━━━━━━━━━━━━
+  // ハンドラ入口
+  // - スケッチのloop()から実行
+  // - 実処理はxxx()
+  //━━━━━━━━━━━━━━━━━
+  // (該当処理なし) ※fnPerser.hのhandle()に実装している

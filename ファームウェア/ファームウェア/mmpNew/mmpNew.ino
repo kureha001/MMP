@@ -36,8 +36,8 @@ MmpContext ctx = {
 };
 
 // パーサー本体（依存性注入）と、その外部公開ポインタ
-Perser  g_router(ctx);
-Perser* g_perser = &g_router;
+Perser  g_ROUTER(ctx);
+Perser* g_perser = &g_ROUTER;
 
 //━━━━━━━━━━━━━━━━━
 // セットアップ
@@ -49,13 +49,14 @@ void setup(){
   g_CONNECTED_NET    = InitNet();     // ネット
 
   // パーサーを初期化（DIGのみ登録：fnPerser.h参照）
-  g_router.Init();
+  g_ROUTER.Init();
 
-  // まだ未同梱のモジュール初期化はビルドエラー回避のためコメントアウト
+  // 機能モジュールの初期化
   InitAnalog(ctx);
   InitPWM();
   InitMP3();
 
+  // 開始メッセージ出力
   Serial.println("---------------------------");
   Serial.print  ("Running... MMP Ver");
   Serial.println(String(g_version));
@@ -69,7 +70,7 @@ void loop(){
 
   // クライアント(シリアル)のハンドル
   if (g_CONNECTED_SERIAL) {
-    g_router.pollAll();
+    g_ROUTER.handle();
   }
 
   // クライアント(ネット)のハンドル

@@ -73,7 +73,7 @@ public:
     // 依存性注入
     MmpContext& ctx;  // コンテクスト
   public:
-    //───── コンストラクタ(点灯) ─────
+    //─────コンストラクタ(点灯)─────
     LedScope(MmpContext& c, LedColor col) : ctx(c){
       ctx.pixels->setPixelColor(0, ctx.pixels->Color(col.g, col.r, col.b));
       ctx.pixels->show();
@@ -83,6 +83,7 @@ public:
       ctx.pixels->clear();
       ctx.pixels->show();
     }
+    //─────────────────
   };
 
   // ───────────────────────

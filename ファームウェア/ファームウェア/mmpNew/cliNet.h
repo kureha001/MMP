@@ -319,7 +319,7 @@
     Serial.println(String("　HTTP port : ") + String(srcPort));
 
     // TCP
-    srcPort = 8081; if (!srvTcp::begin (srcPort)) return false;
+    srcPort = 8081; if (!srvTcp::start(srcPort)) return false;
     Serial.println(String("　TCP  port : ") + String(srcPort));
 
     // 正常でリターン
@@ -327,20 +327,21 @@
   }
   //─────────────────
   // 初期化処理のメイン
+  // - スケッチのsetup()から実行
   //─────────────────
   bool InitNet(){
 
-  Serial.println("---------------------------");
-  Serial.println("[Network initialize]");
+    Serial.println("---------------------------");
+    Serial.println("[Network initialize]");
 
     Serial.println("１．設定ファイルの読込");
-    if (!InitNet_Json1())  return false;
+    if (!InitNet_Json1()  ) return false;
 
     Serial.println("２．Wifiの設定");
-    if (!InitNet_Wifi())  return false;
+    if (!InitNet_Wifi()   ) return false;
 
     Serial.println("３．サービスの起動");
-    if (!InitNet_Service())  return false;
+    if (!InitNet_Service()) return false;
 
     return true;
   }

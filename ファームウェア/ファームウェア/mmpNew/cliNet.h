@@ -343,5 +343,6 @@
     Serial.println("３．サービスの起動");
     if (!InitNet_Service()) return false;
 
+    // 正常終了
     return true;
   }

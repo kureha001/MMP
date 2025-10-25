@@ -70,7 +70,7 @@ void loop(){
 
   // クライアント(シリアル)のハンドル
   if (g_CONNECTED_SERIAL) {
-    g_ROUTER.handle();
+    srvSerial::handle();
   }
 
   // クライアント(ネット)のハンドル

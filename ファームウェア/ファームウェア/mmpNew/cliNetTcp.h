@@ -10,8 +10,9 @@
 // 統一入口(fnPerser.h)
 extern String MMP_REQUEST(const String& wire, int clientID);
 
+
 //========================================================
-// ルーティング内処理
+// 受信バッファリング → コマンド実行 → レスポンス送信
 //========================================================
 namespace {
 
@@ -98,21 +99,26 @@ namespace {
   //─────────────────
   void routeMMP(int i){
 
+    // 0) 前処理
     auto& s = g_slots[i];
     auto& c = s.cli;
     if (!c.connected()) { dropSlot(i); return; }
 
-    // 受信
+    // 1) 受信バッファリング
     while (c.available()) {
+
       char ch = (char)c.read();
-      if (s.rx.length() < (int)kMaxFrame) s.rx += ch;
-      else {
+      if (s.rx.length() < (int)kMaxFrame) {
+        s.rx += ch;
+      } else {
         // 長すぎ → エラー返信してリセット
         c.print("#CHK!");
         s.rx = "";
-      }
+      } // if
+
       s.lastActive = millis();
-    }
+
+    } // while
 
     // フレーム処理（! 区切りで複数可）
     while (true) {
@@ -126,7 +132,7 @@ namespace {
         c.print("#CMD!");
         s.lastActive = millis();
         continue;
-      }
+      } // if
 
     // 2) コマンドパーサーへリクエスト
       String five = MMP_REQUEST(wire, g_ID_TCP);
@@ -142,14 +148,14 @@ namespace {
 
     // アイドル切断
     if (millis() - s.lastActive > kIdleMs) dropSlot(i);
-  }
-} // namespace (No Name)
-
+  } // while
 
 //━━━━━━━━━━━━━━━━━
 // ルーティング登録
 //━━━━━━━━━━━━━━━━━
 // (該当処理なし)
+
+} // namespace (No Name)
 
 
 //========================================================
@@ -178,10 +184,10 @@ namespace srvTcp {
 
     // 3) 正常終了
     return true;
-  } // start
+  } // start()
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口
+  // ハンドラ入口（ポーリング入口）
   // - スケッチのloop()から実行
   // - 実処理はrouteMMP()
   //━━━━━━━━━━━━━━━━━

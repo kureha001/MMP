@@ -16,8 +16,9 @@ extern String MMP_REQUEST(const String& wire, int clientID);
 // 内部で WebServer を保持
 static WebServer* g_SERVER = nullptr;
 
+
 //========================================================
-// ルーティング内処理
+// 受信バッファリング → コマンド実行 → レスポンス送信
 //========================================================
 namespace {
 
@@ -81,12 +82,13 @@ namespace {
   //─────────────────
   void routeMMP(WebServer& srv) {
 
+    // 0) 前処理
     bool    result = false;   // MMPの処理結果      {OK:true | NG:false}
     String  error  = "";      // エラーメッセージ   {正常の場合は空}
     int     value  = -1000;   // 戻値が数値の場合   {-999～9999、対象外は-1000 }
     String  text   = "";      // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
 
-    // 1) ＭＭＰコマンド文字列を作成
+    // 1) 受信バッファリング
       // 受信URIを取得
       String uri = srv.uri();
 
@@ -223,10 +225,10 @@ namespace srvHttp {
 
     // 3) 正常終了
     return true;
-  } // start
+  } // start()
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口
+  // ハンドラ入口（ポーリング入口）
   // - スケッチのloop()から実行
   // - 実処理はrouteMMP()
   //━━━━━━━━━━━━━━━━━

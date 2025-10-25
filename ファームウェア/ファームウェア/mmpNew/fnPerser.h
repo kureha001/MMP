@@ -60,6 +60,7 @@ public:
   //─────────────────
 };
 
+
 //========================================================
 // パーサー
 //========================================================
@@ -67,7 +68,6 @@ class Perser {
 
   // ストリーム(クライアント)定義
   struct Source {
-    Stream*     s;                      // ストリーム オブジェクト
     const char* name;                   // 名称
     int         clientIndex;            // 0=USB, 1=UART0, 2=TCP, 3=HTTP...
     char        buf[ REQUEST_LENGTH ];  // リクエスト受信バッファ
@@ -115,22 +115,20 @@ public:
     mods.push_back(new ModuleNetConf(ctxRef, RGB_INFO   ));
 
     // 通信経路の登録：0=USB, 1=UART0, 2=TCP, 3=HTTP...
-    addSource(&Serial , "USB"  , 0);
-    addSource(&Serial1, "UART0", 1);
-    addSource(nullptr , "TCP"  , 2);
-    addSource(nullptr , "HTTP" , 3);
+    addSource("USB"  , 0);
+    addSource("UART0", 1);
+    addSource("TCP"  , 2);
+    addSource("HTTP" , 3);
   } // Init()
 
   //━━━━━━━━━━━━━━━━━
   // 通信経路の追加
   //━━━━━━━━━━━━━━━━━
   void addSource(
-    Stream*     s,
     const char* name,         // 識別名は自由にユニークで
     int         clientIndex   // 0=USB, 1=UART0, 2=TCP, 3=HTTP
   ){
     Source src;
-    src.s           = s;
     src.name        = name;
     src.clientIndex = clientIndex;
     src.buf[0]      = 0;
@@ -191,48 +189,8 @@ public:
     return "#CMD!";
   }
 
-  //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口
-  // - スケッチのloop()から実行
-  // - 実処理はrouteMMP
-  //━━━━━━━━━━━━━━━━━
-  void handle(){
-
-    for (auto& src : sources){
-
-      // 1文字ずつ受信
-      while (src.s && src.s->available()){
-
-        // 1文字だけ受信
-        char c = (char)src.s->read();
-
-        // 文字数カウンタをインクリメント
-        if (src.len < (int)sizeof(src.buf)-1) src.buf[src.len++] = c;
-
-        // MMPコマンドの実行
-        if (c=='!'){
-        // → コマンドの末端に到達した場合：
-          // 経路番号指定で統一入口へ
-          src.buf[src.len-1] = '\0'                     ; // 末尾置換
-          MMP_REQUEST(String(src.buf), src.clientIndex) ; // コマンドをリクエスト
-          src.len = 0                                   ; // 文字数カウンタをリセット
-        } // if
-      } // while
-    } // for
-  } // handle()
-
 }; // class Perser
 
-//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 経路別ラッパ関数群
-//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-inline String viaSerial(const String& wire, Stream& port){
-  String res = g_perser->ExecuteString(wire);
-  port.print(res);
-  return res;
-} // viaSerial
-inline String viaTcp (const String& wire){ return g_perser->ExecuteString(wire); }
-inline String viaHttp(const String& wire){ return g_perser->ExecuteString(wire); }
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 統一呼び出し
@@ -246,11 +204,11 @@ inline String MMP_REQUEST(const String& wire, int clientID){
 
   // 通信経路別にコマンド・パース処理
   switch (clientID){
-    case 0  : return viaSerial(wire, Serial ) ; // シリアル通信(USB CDC)
-    case 1  : return viaSerial(wire, Serial1) ; // シリアル通信(GPIO UART)
-    case 2  : return viaTcp   (wire)          ; // TCP(送信は呼び元)
-    case 3  : return viaHttp  (wire)          ; // HTTP(送信/JSON化は呼び元)
-    default : return "#DEV!"                  ; // 未定義の経路ID
+  case 0  : return g_perser->ExecuteString(wire); // シリアル通信(USB CDC)
+  case 1  : return g_perser->ExecuteString(wire); // シリアル通信(GPIO UART)
+  case 2  : return g_perser->ExecuteString(wire); // TCP(送信は呼び元)
+  case 3  : return g_perser->ExecuteString(wire); // HTTP(送信/JSON化は呼び元)
+  default : return "#DEV!"                  ; // 未定義の経路ID
   } // switch
 
 } // MMP_REQUEST()

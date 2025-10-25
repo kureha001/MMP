@@ -139,13 +139,13 @@ def RunDigital():
     命令 = MMP.接続.DIGITAL
 
     print("　・入力")
-    for pin in (2, 6, 7):
+    for pin in (18, 14, 13):
         print(f"　　[{pin}] {'ON' if 命令.INPUT(pin)==0 else 'OFF'}")
 
-    print("　・出力[3]")
+    print("　・出力[17]")
     for _ in range(3):
-        print(f"　　・[HIGH] {tf(命令.OUTPUT(3, 1))}"); time.sleep(0.5)
-        print(f"　　・[LOW ] {tf(命令.OUTPUT(3, 0))}"); time.sleep(0.5)
+        print(f"　　・[HIGH] {tf(命令.OUTPUT(17, 1))}"); time.sleep(0.5)
+        print(f"　　・[LOW ] {tf(命令.OUTPUT(17, 0))}"); time.sleep(0.5)
     print("　[終了]\n")
 
 

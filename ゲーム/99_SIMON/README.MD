@@ -1,6 +1,6 @@
 # 🧠 ネットSIMONゲームSYSTEM
 
-## 🔷 ヱ要
+## 🔷 概要
 **タナカツヱンヂニヤリング**製の`SIMONボード`をネットワーク対応しました。<br>
 マイコンをESP32S3に交換し、`WebAPI`を搭載しています。  <br>
 
@@ -89,7 +89,7 @@
 
 ---
 ## ③ /begin  [POST] ゲーム開始通知
-**目的** : 出題と制限を送信して競技開始  
+**目的** : 出題と制限を送信して競技を開始  
 **Request** :
 ```json
 {
@@ -134,7 +134,7 @@
 
 ---
 ## 🌀 状態管理
-このゲームシステムは`状態ID`を中心に、ゲームの進行を管理します。
+このゲームシステムは`状態ID`を中心に、ゲームの進行を管理します。<br>
 `状態ID`は`SIMONクライアント`が保持しており、値に応じた**処理シーケンスを制御**します。
 
 | 状態ID | 概要 | 画面制御 |
@@ -167,3 +167,90 @@
 |全問正解した|`finish`に更新|
 |時間切れになった|`finish`に更新|
 |ミス回数の上限を超えた|`finish`に更新|
+
+---
+## 🔷 シーケンス図
+主催者・SIMONボード・各レイヤは、メッセージを交換し合いながら、シーケンスを実行します。
+
+```mermaid
+sequenceDiagram
+
+    participant U as ダッシュボード
+    participant HW as プレイヤー
+    participant B as B層
+    participant N as N層
+    participant F as F層
+    participant P as P層
+    participant D as D層
+
+    activate HW
+    HW->>B: 電源投入
+    B->>P: 消音,LED消灯,OLED消去
+    B->>N: 設定ファイル読込開始
+    N-->>B: Wifi接続情報を受信
+    B->>N: Wifi接続開始
+    N-->>B: 実行結果を受信
+    B->>D: ネット情報を更新
+    B->>F: WebAPIサーバー起動
+    F-->>B: 実行結果を受信
+    B->>D: 状態を"idle"に更新
+
+    loop 状態=="idle"
+        HW->>B: 画面操作
+        B->>P: 【参加待ち画面】を表示
+        U-->>F: /info GET 実行可能
+    end
+
+    U->>F: /assign POST
+    F->>D: [背番号]を登録
+    F->>P: 【開始待ち画面】を表示
+    B->>D: 状態を"standby"に更新
+
+    U->>F: /begin POST
+    F->>D: [問題][制限時間][ミス上限][ペナルティ]を登録
+    F->>P: 出題を演出
+    B->>D: 状態を"playing"に更新
+
+    loop 状態=="playing"
+
+        U-->>F: /status GET 実行可能
+
+        alt 時間切れになった場合
+            B->>P: 【終了(時間切れ)画面】を表示
+            B->>D: 状態を"finish"に更新
+        end
+
+        alt 正解した場合
+            P->>B: 押下ボタン
+            B->>D: ステップ数加算
+            alt 全問正解
+                B->>P: 【終了(クリア)画面】を表示
+                B->>D: 状態を"finish"に更新
+            else
+                B->>P: 【標準画面】を表示
+            end
+        else ミスした場合
+            B->>D: ミス回数を加算
+            alt ミス回数が上限未満の場合
+                B->>P: 【ミス画面】を表示
+            else
+                B->>P: 【終了(ミス超過)画面】を表示
+                B->>D: 状態を"finish"に更新
+            end
+        end
+    end
+
+    loop 状態=="finish"
+        U-->>F: /result POST 実行可能
+        F->>D: 結果順位・参加数更新
+        F->>P: 【結果画面】を表示
+        B->>D: 状態: ending
+    end
+
+    loop 状態=="ebding"
+        U-->>F: /begin POST 実行可能
+    end
+
+
+    deactivate HW
+```

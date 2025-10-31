@@ -7,8 +7,8 @@
 主催者は`ダッシュボード`(WEBブラウザ)を操作して試合を進行します。  
 参加者は主催者の指示に従い、`SIMONボード`で競技をおこないます。  
 
-> SIMONのnote記事１ [リンク→](https://note.com/mech_tanakatsu/n/nfa5881d394a3)
-> SIMONのnote記事２ [リンク→](https://note.com/livspect/n/ne4cd328fd4ef?utm_source=chatgpt.com)
+> SIMONのnote記事１ [リンク→](https://note.com/mech_tanakatsu/n/nfa5881d394a3)  
+> SIMONのnote記事２ [リンク→](https://note.com/livspect/n/ne4cd328fd4ef?utm_source=chatgpt.com)  
 
 ---
 ## 🧩 システム構成

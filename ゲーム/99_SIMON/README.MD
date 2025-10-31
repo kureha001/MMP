@@ -254,79 +254,89 @@ sequenceDiagram
   participant S as SIMONボード
   participant B as B層 ビジネス
   participant N as N層 ネットワーク
-  participant F as F層 WebAPIサーバ
-  participant P as P層 表示/音/LED
-  participant D as D層 データ
+  participant F as F層 ファンクション
+  participant P as P層 プレゼンテーション
+  participant D as D層 データベース
 
   activate S
 
-    loop WebAPI ポーリング
-        alt 待機中
+    loop WebAPI ポーリング・シーケンス
+        alt 状態='待機中'
 
-        else 受付中
+        else 状態='受付中'
             U->>F: /reception [GET] 受付
-                D->>F: [基本.名前]
-            F->>U: {"name":"[基本.名前]"}
-            F->>P: [申請中]画面の表示を指示
-            F->>D: [基本.状態]='申請中'
+                D-->>F: [基本.名前]
+            F-->>U: {"name":"[基本.名前]"}
+            F->>P: [申請中]画面の表示
+                P-->>S: OLEDに表示
+            F-->>D: [基本.状態]＝'申請中'
 
-        else 申請中
+        else 状態='申請中'
             U->>F: /accepted [POST] 受理
-                F->>D: [基本.背番号]=リクエスト値
-            F->>U: {"ok":true}
-            F->>P: [開始まち]画面の表示を指示
-            F->>D: [基本.状態]='開始まち'
+                F-->>D: [基本.背番号]＝リクエスト値
+            F-->>U: {"ok":true}
+            F->>P: [開始まち]画面の表示
+                D-->>P: [基本.背番号]
+                P-->>S: OLEDに表示
+            F-->>D: [基本.状態]＝'開始まち'
 
-        else 開始まち
+        else 状態='開始まち'
             U->>F: /questions  [POST] 出題
-                F->>D: [出題.*]=リクエスト値
-            F->>U: {"ok":true}
-            F->>P: [プレイ中]画面の表示を指示
-            F->>P: 問題(シーケンス)周知を指示
-                D->>P: [出題.問題]
-            F->>D: [ゲーム.開始時間]=now
-            F->>D: [基本.状態]='プレイ中'
+                F-->>D: [ゲーム.出題]＝リクエスト値
+            F-->>U: {"ok":true}
+            F->>P: [プレイ中]画面の表示
+                D-->>P: [ゲーム.出題]
+                P-->>S: OLEDに表示
+            F->>P: 問題(シーケンス)周知
+                D-->>P: [ゲーム.出題]
+                P-->>S: LED＋サウンダで演出
+            F-->>D: [ゲーム.開始時間]＝現在時刻
+            F-->>D: [基本.状態]＝'プレイ中'
 
-        else プレイ中
+        else 状態='プレイ中'
             alt
                 U->>F: /status [GET] 状況
-                    D->>F: [状況.*]
-                    D->>F: [基本.状態]
-                F->>U: {[基本.状態],[状況.*]}
+                    D-->>F: [状況]
+                    D-->>F: [基本.状態]
+                F-->>U: {[基本.状態],[状況.*]}
             else
                 U->>F: /break [GET] 中断
-                F->>U: {"ok":true}
-                F->>P: [ゲーム終了]画面の表示を指示
-                F->>D: [基本.状態]='ゲーム終了'
+                F-->>U: {"ok":true}
+                F->>P: [ゲーム終了]画面の表示
+                    D-->>P: [ゲーム.状況]
+                    P-->>S: OLEDに表示
+                F-->>D: [基本.状態]＝'ゲーム終了'
             end
 
-        else ゲーム終了
-            U-->>F: /game_end [POST] 終了
-                F->>D: [ゲーム.結果.*]=リクエスト値
-            F->>U: {"ok":true}
-            F->>P: [結果発表]画面の表示を指示
-                D->>P: [ゲーム.結果.*]
-            F->>D: [基本.状態]='結果発表'
+        else 状態='ゲーム終了'
+            U->>F: /game_end [POST] 終了
+                F-->>D: [ゲーム.結果]＝リクエスト値
+            F-->>U: {"ok":true}
+            F->>P: [結果発表]画面の表示
+                D-->>P: [ゲーム.結果]
+                P-->>S: OLEDに表示
+            F-->>D: [基本.状態]='結果発表'
 
-        else 結果発表
+        else 状態='結果発表'
             alt
                 U->>F: /next_game [GET] 次回
-                F->>U: {"ok":true}
-                F->>D: [基本.状態]='開始まち'
+                F-->>U: {"ok":true}
+                F-->>D: [基本.状態]＝'開始まち'
             else
                 U->>F: /much_end [POST] 表彰
-                    F->>D: [試合.結果.*]=リクエスト値
-                F->>U: {"ok":true}
-                F->>D: [基本.状態]='成績表彰'
-                F->>P: [成績表彰]画面の表示を指示
-                    D->>P: [試合.結果.*]
-                F->>D: [基本.状態]='成績表彰'
+                    F-->>D: [試合.結果.*]＝リクエスト値
+                F-->>U: {"ok":true}
+                F-->>D: [基本.状態]＝'成績表彰'
+                F->>P: [成績表彰]画面の表示
+                    D-->>P: [試合.結果]
+                    P-->>S: OLEDに表示
+                F-->>D: [基本.状態]＝'成績表彰'
             end
 
-        else 成績表彰
+        else 状態='成績表彰'
             U->>F: /close_much [GET] 閉会
-            F->>U: {"ok":true}
-            F->>D: [基本.状態]='待機中'
+            F-->>U: {"ok":true}
+            F-->>D: [基本.状態]＝'待機中'
         end
     end
 
@@ -344,56 +354,71 @@ sequenceDiagram
   participant S as SIMONボード
   participant B as B層 ビジネス
   participant N as N層 ネットワーク
-  participant F as F層 WebAPIサーバ
-  participant P as P層 表示/音/LED
-  participant D as D層 データ
+  participant F as F層 ファンクション
+  participant P as P層 プレゼンテーション
+  participant D as D層 データベース
 
   activate S
 
-    loop 参加者操作
-        alt 待機中
-            S-->>B: IPアドレス確認 
-            D->>B: [画面編集.*]
+    loop Ｂ層 ロジック・シーケンス
+        alt 状態='待機中'
+            S->>B: IPアドレス確認の操作
+            D-->>B: [画面編集.*]
             alt 右ボタン押下 かつ 末尾を超えない
-                B->>D: [画面編集.現在位置]+=1
+                B-->>D: [画面編集.現在位置]＝インクリメント
             else 左ボタン押下 かつ 先頭を超えない
-                B->>D: [画面編集.現在位置]-=1
+                B-->>D: [画面編集.現在位置]＝デクリメント
             end
             alt 現在位置に変更あり
-                B->>P: IPアドレス表示を指示 
+                B->>P: IPアドレス表示 
+                    D-->>P: [画面編集]
+                    P-->>S: OLEDに表示
             end
 
-        else プレイ中
+        else 状態='プレイ中'
             alt 時間超過チェック
-                D->>B: [ゲーム.状況.開始時刻] 
-                D->>B: [ゲーム.出題.制限時間] 
-                B->>D: [ゲーム.状況.経過時間] 
+                D-->>B: [ゲーム.状況.開始時刻] 
+                D-->>B: [ゲーム.出題.制限時間] 
+                B-->>D: [ゲーム.状況.経過時間] 
                 alt 時間制限を超過
+                    B->>P: [ゲーム終了]画面を表示
+                        D-->>P: [ゲーム.状況] 
+                        P-->>S: OLEDに表示
                     B->>D: [基本.状態]='ゲーム終了'
                 end
 
             else 回答チェック
-                S-->>B: 問題回答
-                D->>B: [ゲーム.出題.問題] 
-                D->>B: [ゲーム.出題.ミス上限] 
-                B->>P: 色ボタン押下の色ID取得を依頼
-                alt 正解
-                    D->>F: [ゲーム.状況.正解数]+=1
+                S->>B: 問題回答の操作
+                D-->>B: [ゲーム.出題.問題] 
+                D-->>B: [ゲーム.出題.ミス上限] 
+                B->>P: 色ボタン押下チェックを依頼
+                    S-->>P: [ボタン押下状況]
+                P-->>B: 色ID
+                alt 正解(色IDが問題の色IDと一致)
+                    F-->>D: [ゲーム.状況.正解数]+=1
                     alt 全問正解
-                        B->>D: [基本.状態]='ゲーム終了'
+                        B->>P: [ゲーム終了]画面を表示
+                            D-->>P: [ゲーム.状況] 
+                            P-->>S: OLEDに表示
+                        B-->>D: [基本.状態]='ゲーム終了'
                     else 残り問題がある
-                        B->>P: [プレイ中]画面表示を依頼
-                            D->>P: [ゲーム.状況] 
-                            D->>P: [ゲーム.出題] 
+                        B->>P: [プレイ中]画面を表示
+                            D-->>P: [ゲーム.状況] 
+                            D-->>P: [ゲーム.出題] 
+                            P-->>S: OLEDに表示
                     end
                 else 不正解
-                    D->>F: [ゲーム.状況.ミス数]+=1
+                    F-->>D: [ゲーム.状況.ミス数]+=1
                     alt ミス数が上限超
-                        B->>D: [基本.状態]='ゲーム終了'
+                        B->>P: [ゲーム終了]画面を表示
+                            D-->>P: [ゲーム.状況] 
+                            P-->>S: OLEDに表示
+                        B-->>D: [基本.状態]='ゲーム終了'
                     else ミス数が上限以下
-                        B->>P: [プレイ中]画面表示を依頼
-                            D->>P: [ゲーム.状況] 
-                            D->>P: [ゲーム.出題] 
+                        B->>P: [プレイ中]画面を表示
+                            D-->>P: [ゲーム.状況] 
+                            D-->>P: [ゲーム.出題] 
+                            P-->>S: OLEDに表示
                     end
                 end
             end
@@ -415,23 +440,34 @@ F層はWebAPI機能を提供するため、HTTPサーバーをスレッドで起
 
 ```mermaid
 sequenceDiagram
-  participant U as 主催者 オーガナイザ
-  participant S as ESP32S3 本体
+  participant U as ダッシュボード
+  participant S as SIMONボード
   participant B as B層 ビジネス
   participant N as N層 ネットワーク
-  participant F as F層 WebAPIサーバ
-  participant P as P層 表示/音/LED
-  participant D as D層 データ
+  participant F as F層 ファンクション
+  participant P as P層 プレゼンテーション
+  participant D as D層 データベース
 
-  U->>S: 電源投入
   activate S
   S->>B: main開始
-  B->>P: led消灯, oled消去
+
+  B->>P: デバイスの初期化
   B->>N: 設定ファイル読込開始
-  N-->>B: cfg情報受信
-  B->>N: 接続開始
-  N-->>B: ifconfig情報受信
-  B->>D: データ更新(ネットワーク)
-  B->>F: サーバー起動
-  F-->>U: サーバー準備完了
+  N-->>B: 接続情報を返す
+
+  loop 接続できるまで繰り返す
+    B->>N: 接続開始
+    N-->>D: 接続情報を保存 ネット項目
+    N-->>B: 実行結果を返す
+    alt 実行結果がNG
+      loop ボタン押下まで繰り返す
+        B->>P: スタートボタン押下のチェックを依頼
+      end
+    else 実行結果がOK
+      Note over B,N: 条件成立→次周回に入らずループ終了
+    end
+  end
+
+  B->>F: WebAPIポーリングスレッドの起動
+  B->>D: 画面編集全項目を初期化
 ```

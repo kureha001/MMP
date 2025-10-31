@@ -1,39 +1,47 @@
 # 🧠 ネットSIMONゲームSYSTEM
 
 ## 🔷 概要
-**タナカツヱンヂニヤリング**製の`SIMONボード`をネットワーク対応しました。  
-マイコンをESP32S3に交換し、`WebAPI`を搭載しています。  
-`主催者`はWEBブラウザで作られた`ダッシュボード`を用て進行します。  
-各`プレイヤー`は主催者の指示に従い、`SIMONボード`でプレイします。  
+
+**タナカツヱンヂニヤリング**(たなかつ さん)製の`SIMONボード`をネットワーク対応しました。  
+マイコンをESP32S3に変更し、Wifi経由の`WebAPI`サーバーを搭載しました。  
+主催者は`ダッシュボード`(WEBブラウザ)を操作して試合を進行します。  
+参加者は主催者の指示に従い、`SIMONボード`で競技をおこないます。  
+
+> SIMONのnote記事１ [リンク→](https://note.com/mech_tanakatsu/n/nfa5881d394a3)
+> SIMONのnote記事２ [リンク→](https://note.com/livspect/n/ne4cd328fd4ef?utm_source=chatgpt.com)
 
 ---
 ## 🧩 システム構成
-|層  |名称              |役割                |📁ファイル|
-|--- |------------------|--------------------|-----------|
-|Ｂ層|ビジネスロジック  |ゲーム進行の中枢    |main.py    |
-|Ｄ層|データベース      |共有データベース    |Data.py    |
-|Ｎ層|ネットワーク      |Wi-Fi接続管理       |Network.py |
-|Ｆ層|ファンクション    |WebAPIサーバ (HTTP) |Function.py|
-|Ｐ層|プレゼンテーション|画面・音・LED制御   |Presen.py  |
+|層  |名称                |役割                |📁ファイル|
+|--- |--------------------|--------------------|-----------|
+|Ｂ層|ビジネスロジック層  |ゲーム進行の中枢    |main.py    |
+|Ｄ層|データベース層      |共有データベース    |Data.py    |
+|Ｎ層|ネットワーク層      |Wi-Fi接続管理       |Network.py |
+|Ｆ層|ファンクション層    |WebAPIサーバ (HTTP) |Function.py|
+|Ｐ層|プレゼンテーション層|画面・音・LED制御   |Presen.py  |
 
 - **B層（Business Logic）**  
   状態遷移を統括する中核ロジック。  
-  状況ID（`partake` / `ready` / `play` / `finish` / `end`）に応じて  
-  処理と画面更新を制御します。
+  ユーザー画面の操作ロジックも含みます。  
+  状況IDに応じて処理と画面更新を制御します。
 
-- **D層（Data）**  
-  グローバル変数群。  
+- **D層（DataBase）**  
+  グローバル変数を用いたデータベース。  
   ネットワーク情報・出題・進捗・結果を保持。  
   全レイヤーから共通アクセス可能なデータベース的役割。
 
 - **N層（Network）**  
   Wi-Fi設定ファイル（`wifi.json`）を読み込み、  
-  ネットワーク初期化を担当。接続状況をOLEDに表示します。
+  ネットワーク初期化を担当。
 
 - **F層（Function）**  
-  内蔵Webサーバを起動し、HTTP GET/POSTのリクエストに応答。  
-  `/info`, `/assign`, `/begin`, `/status`, `/result` の5APIを提供。  
-  各APIは D層を更新し、状態遷移をトリガーします。
+  内蔵Webサーバをスレッド起動し、HTTP GET/POSTのリクエストに応答。  
+  機能単位にWebAPIを提供し、まとまった処理をこなします。  
+  - リクエスト・データの内容をD層に反映
+  - D層のデータをレスポンス・データとして返送
+  - SIMONボードの演出効果
+  - 遷移先状態の初期画面表示
+  - 状態遷移をトリガー
 
 - **P層（Presentation）**  
   OLED表示、LED制御、サウンド出力、ボタン入力を一括管理。  
@@ -188,8 +196,11 @@
 **リクエスト** :
 ```
 {
-  "rank": <int>,   // 順位：0=失格、1～=順位
-  "nums": <int>    // 参加人数
+  "rank"    : <int>,    // 順位：0=失格、1～=順位
+  "nums"    : <int>,    // 参加人数
+  "point"   : <int>,    // 順位ポイント
+  "pointTTL": <int>,    // 順位ポイント合計
+  "timeTTL" : <int>     // 所要時間合計[単位:ms]
 }
 ```
 **レスポンス** : `{"ok": true}`  
@@ -198,7 +209,7 @@
 **状態変更** : **結果発表**  
 
 ---
-## /do_next [GET] 次回
+## /next_game [GET] 次回
 **目的** : 次ゲームに進行する準備を指示する  
 **リクエスト** : なし  
 **レスポンス** : `{"ok": true}`  
@@ -222,10 +233,176 @@
 **状態変更** : **成績表彰**  
 
 ---
-## /close [GET] 閉会
+## /close_much [GET] 閉会
 **目的** : 試合閉会の際、次試合の準備を指示する  
 **リクエスト** : なし  
 **レスポンス** : `{"ok": true}`    
 **ＤＢ変更** : なし  
 **伴う処理** : なし  
 **状態変更** : **待機中**  
+
+---
+## 🌀 シーケンス図(Ｆ層：WebAPI)
+WebAPIはスレッドにより、ポーリングしています。  
+各APIは状態による実行制限があります。  
+
+```mermaid
+sequenceDiagram
+  participant U as ダッシュボード
+  participant S as SIMONボード
+  participant B as B層 ビジネス
+  participant N as N層 ネットワーク
+  participant F as F層 WebAPIサーバ
+  participant P as P層 表示/音/LED
+  participant D as D層 データ
+
+  activate S
+
+    loop WebAPI ポーリング
+        alt 待機中
+
+        else 受付中
+            U->>F: /reception [GET] 受付
+                D->>F: [基本.名前]
+            F->>U: {"name":"[基本.名前]"}
+            F->>P: [申請中]画面の表示を指示
+            F->>D: [基本.状態]='申請中'
+
+        else 申請中
+            U->>F: /accepted [POST] 受理
+                F->>D: [基本.背番号]=リクエスト値
+            F->>U: {"ok":true}
+            F->>P: [開始まち]画面の表示を指示
+            F->>D: [基本.状態]='開始まち'
+
+        else 開始まち
+            U->>F: /questions  [POST] 出題
+                F->>D: [出題.*]=リクエスト値
+            F->>U: {"ok":true}
+            F->>P: [プレイ中]画面の表示を指示
+            F->>P: 問題(シーケンス)周知を指示
+                D->>P: [出題.問題]
+            F->>D: [ゲーム.開始時間]=now
+            F->>D: [基本.状態]='プレイ中'
+
+        else プレイ中
+            alt
+                U->>F: /status [GET] 状況
+                    D->>F: [状況.*]
+                    D->>F: [基本.状態]
+                F->>U: {[基本.状態],[状況.*]}
+            else
+                U->>F: /break [GET] 中断
+                F->>U: {"ok":true}
+                F->>P: [ゲーム終了]画面の表示を指示
+                F->>D: [基本.状態]='ゲーム終了'
+            end
+
+        else ゲーム終了
+            U-->>F: /game_end [POST] 終了
+                F->>D: [ゲーム.結果.*]=リクエスト値
+            F->>U: {"ok":true}
+            F->>P: [結果発表]画面の表示を指示
+                D->>P: [ゲーム.結果.*]
+            F->>D: [基本.状態]='結果発表'
+
+        else 結果発表
+            alt
+                U->>F: /next_game [GET] 次回
+                F->>U: {"ok":true}
+                F->>D: [基本.状態]='開始まち'
+            else
+                U->>F: /much_end [POST] 表彰
+                    F->>D: [試合.結果.*]=リクエスト値
+                F->>U: {"ok":true}
+                F->>D: [基本.状態]='成績表彰'
+                F->>P: [成績表彰]画面の表示を指示
+                    D->>P: [試合.結果.*]
+                F->>D: [基本.状態]='成績表彰'
+            end
+
+        else 成績表彰
+            U->>F: /close_much [GET] 閉会
+            F->>U: {"ok":true}
+            F->>D: [基本.状態]='待機中'
+        end
+    end
+
+  deactivate S
+```
+
+---
+## 🌀 シーケンス図(Ｆ層：WebAPI)
+WebAPIはスレッドにより、ポーリングしています。  
+各APIは状態による実行制限があります。  
+
+```mermaid
+sequenceDiagram
+  participant U as ダッシュボード
+  participant S as SIMONボード
+  participant B as B層 ビジネス
+  participant N as N層 ネットワーク
+  participant F as F層 WebAPIサーバ
+  participant P as P層 表示/音/LED
+  participant D as D層 データ
+
+  activate S
+
+    loop WebAPI ポーリング
+        alt 待機中
+            U->>F: /reception [GET] 受付
+                D->>F: [基本.名前]
+            F->>U: {"name":"[基本.名前]"}
+            F->>P: [申請中]画面の表示を指示
+            F->>D: [基本.状態]='申請中'
+
+        else プレイ中
+            U->>F: /status [GET] 状況
+                D->>F: [状況.*]
+                D->>F: [基本.状態]
+            F->>U: {[基本.状態],[状況.*]}
+
+            U->>F: /break [GET] 中断
+            F->>U: {"ok":true}
+            F->>P: [ゲーム終了]画面の表示を指示
+            F->>D: [基本.状態]='ゲーム終了'
+        end
+    end
+
+  deactivate S
+```
+
+
+---
+## 🌀 シーケンス図(セットアップ)
+N層とF層を起動します。  
+
+N層はWifiによるTCP通信を確保します。  
+Wifiの設定はJSONファイルに格納されています。  
+
+F層はWebAPIによる機能提供をするので、HTTPサーバーをスレッド起動します。
+スレッド処理ではループ処理により、ポーリングをおこないます。
+
+
+```mermaid
+sequenceDiagram
+  participant U as 主催者 オーガナイザ
+  participant S as ESP32S3 本体
+  participant B as B層 ビジネス
+  participant N as N層 ネットワーク
+  participant F as F層 WebAPIサーバ
+  participant P as P層 表示/音/LED
+  participant D as D層 データ
+
+  U->>S: 電源投入
+  activate S
+  S->>B: main開始
+  B->>P: led消灯, oled消去
+  B->>N: 設定ファイル読込開始
+  N-->>B: cfg情報受信
+  B->>N: 接続開始
+  N-->>B: ifconfig情報受信
+  B->>D: データ更新(ネットワーク)
+  B->>F: サーバー起動
+  F-->>U: サーバー準備完了
+```

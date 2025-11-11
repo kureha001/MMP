@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="UTF-8">
+<title>MMP 結合テスト</title>
+<style>
+  :root{--b:#e5e7eb;--bg:#f8fafc}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;height:100vh;display:flex;flex-direction:column}
+  header{padding:10px 14px;border-bottom:1px solid var(--b);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input,button{font-size:14px;padding:6px 10px}
+  input[type="number"]{width:6rem}
+  main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:0}
+  section{display:flex;flex-direction:column;min-height:0}
+  h3{margin:10px}
+  .panel{border-right:1px solid var(--b)}
+  .bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px;border-bottom:1px solid var(--b);background:#fff;position:sticky;top:0;z-index:1}
+  .log{flex:1;padding:10px;background:var(--bg);overflow:auto;white-space:pre-wrap;font-family:ui-monospace,Consolas,Menlo,monospace}
+  .muted{color:#6b7280}
+  .btn{background:#111827;color:#fff;border:0;border-radius:8px}
+  .btn:disabled{opacity:.5}
+  .btn.sec{background:#374151}
+  .btn.warn{background:#b91c1c}
+  .group{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  small{color:#6b7280}
+</style>
+
+<header>
+  <strong>MMP 結合テスト</strong>
+  <label>HOST/IP <input id="host" placeholder="例: 192.168.2.124"></label>
+  <label>PORT <input id="port" type="number" value="8080" min="1" max="65535"></label>
+</header>
+
+<main>
+  <!-- 左：従来ログ（Pythonのprint相当） -->
+  <section class="panel">
+    <div class="bar">
+      <div class="group">
+        <button class="btn" id="btnAnalog" >１.アナログ入力</button>
+        <button class="btn" id="btnDigital">２.デジタル入出力</button>
+        <button class="btn" id="btnMp3List">３.ＭＰ３再生</button>
+        <button class="btn" id="btnMp3Ctrl">４.ＭＰ３制御</button>
+        <button class="btn" id="btnPwm"    >５.ＰＷＭ</button>
+        <button class="btn" id="btnPwmI2C" >６.Ｉ２Ｃ</button>
+      </div>
+      <div class="group">
+        <button class="btn warn" id="btnStop">停止</button>
+        <button class="btn sec" id="btnClearStd">ログ消去</button>
+      </div>
+    </div>
+    <div class="log" id="std"></div>
+  </section>
+
+  <!-- 右：詳細ログ（URL＋レスポンス、生JSON追記） -->
+  <section>
+    <div class="bar">
+      <div class="group">
+        <button class="btn sec" id="btnInfo">ＭＭＰバージョン</button>
+      </div>
+      <div class="group">
+        <button class="btn sec" id="btnClearDtl">ログ消去</button>
+      </div>
+    </div>
+    <div class="log" id="detail"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  const $ = sel => document.querySelector(sel);
+  const hostEl = $('#host'), portEl = $('#port');
+  const stdEl = $('#std'), detailEl = $('#detail');
+  hostEl.value = location.hostname || '192.168.2.254';
+
+  let stopFlag = false;
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  function logStd(line=""){ stdEl.textContent += (line + "\n"); stdEl.scrollTop = stdEl.scrollHeight; }
+  function logDtl(block=""){ detailEl.textContent += (block + "\n"); detailEl.scrollTop = detailEl.scrollHeight; }
+
+  async function fetchWithTimeout(url, ms=10000){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    try{
+      const res = await fetch(url, {signal: ctrl.signal, cache:'no-store'});
+      clearTimeout(t);
+      return res;
+    }catch(e){
+      clearTimeout(t);
+      throw e;
+    }
+  }
+
+  async function apiGet(path){
+    const host = hostEl.value.trim();
+    const port = (portEl.value || '8080').trim();
+    const url  = `http://${host}:${port}${path}`;
+    let text='', status=0, ok=false, json=null, err=null;
+    try{
+      const res = await fetchWithTimeout(url);
+      status = res.status; text = await res.text();
+      try{ json = JSON.parse(text); }catch(_){}
+      ok = res.ok;
+    }catch(e){ err = e?.message || String(e); }
+    // 右ログ：URL + レスポンス（JSON整形 or 生テキスト or エラー）＋ 空行
+    let block = `GET ${url}\n`;
+    if (err){
+      block += `ERROR: ${err}\n`;
+    }else{
+      block += `HTTP ${status}\n`;
+      block += json ? JSON.stringify(json, null, 2) : (text || '(空)');
+    }
+    logDtl(block + "\n");
+    return {ok, status, text, json, err};
+  }
+
+  // ===== Pythonロジック移植 =====
+
+  async function RunAnalog(){
+    stopFlag = false;
+    logStd("１.アナログ入力（ HC4067：JoyPad1,2 ）");
+
+    // Configure(2,4) 相当（パラメータ名の差異を吸収するため両方送る）
+    {
+      const r = await apiGet(`/ANALOG/SETUP:2:4`);
+      logStd("　・アクセス範囲指定 → [2,4]  : " + ((r.json&&r.json.ok) ? "True":"False"));
+      if (!(r.json&&r.json.ok)){ logStd("　 <<中断>>\n"); return; }
+    }
+
+    {
+      const r = await apiGet(`/ANALOG/INPUT`);
+      logStd("　・アナログ値をバッファに格納 : " + ((r.json&&r.json.ok) ? "True":"False"));
+      if (!(r.json&&r.json.ok)){ logStd("　 <<中断>>\n"); return; }
+    }
+
+    logStd("　・バッファを参照");
+    for (let x=0; x<=1; x++){
+      logStd(`　　JoyPad[${x+1}]`);
+      for (let y=0; y<=3; y++){
+        const r = await apiGet(`/ANALOG/READ:${x}:${y}`);
+        const v = (r.json&&typeof r.json.value!=="undefined") ? r.json.value : "NaN";
+        logStd(`　　　← [${y}] = ${v}`);
+        if (stopFlag) return;
+      }
+    }
+    logStd("　[終了]\n");
+  }
+
+  async function RunDigital(){
+
+    let pin1, pin2;
+    if (false){
+        pin1 = [2,6,7];  
+        pin2 = 3;
+    } else {
+        pin1 = [18, 14, 13];  
+        pin2 = 17;
+    }
+
+    stopFlag = false;
+    logStd("２.デジタル入出力（ GPIO ）");
+    logStd("　・入力");
+    for (let pin of pin1){
+      const r = await apiGet(`/DIGITAL/INPUT:${pin}`);
+      const val = (r.json && typeof r.json.value!=="undefined") ? r.json.value : 1;
+      logStd(`　　←[${pin}] = ${val==0 ? "ON":"OFF"}`);
+      if (stopFlag) return;
+    }
+
+    // 変数でピン番号を指定
+    logStd(`　・出力[${pin2}]`);
+    for (let i = 0; i < 6; i++) {
+    const r1 = await apiGet(`/DIGITAL/OUTPUT:${pin2}:1`);
+    logStd(`　　→ HIGH : ${r1.json && r1.json.ok ? "True" : "False"}`); if (stopFlag) return;
+    await sleep(500); if (stopFlag) return;
+
+    const r0 = await apiGet(`/DIGITAL/OUTPUT:${pin2}:0`);
+    logStd(`　　→ LOW  : ${r0.json && r0.json.ok ? "True" : "False"}`); if (stopFlag) return;
+    await sleep(500); if (stopFlag) return;
+    }
+    logStd("　[終了]\n");
+  }
+
+  async function RunMp3Playlist(){
+    stopFlag = false;
+    logStd("３.ＭＰ３再生（ DFPlayer ）");
+
+    sleep(100); let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
+    logStd("　・音量 → 20 : " + (r.json&&r.json.ok ? "True":"False"));
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    logStd(`　・ループ → OFF : ${r.json?r.json.value:"NaN"}`);
+
+    logStd("　・再生");
+    for (let track=1; track<=3; track++){
+      sleep(100); const r = await apiGet(`/MP3/TRACK/PLAY:1:1:${track}`);
+      logStd(`　　→ F=1,T=${track} : ${r.json?r.json.value:"NaN"}`);
+      if (stopFlag) return;
+      await sleep(3000); if (stopFlag) return;
+    }
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/PLAY:1:2:102`);
+    logStd(`　・再生 → F=2,T=102 : ${r.json?r.json.value:"NaN"}`);
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:1`);
+    logStd(`　・ループ → ON : ${r.json?r.json.value:"NaN"}`);
+    if (stopFlag) return;
+    await sleep(10000); if (stopFlag) return;
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 : ${r.json?r.json.value:"NaN"}`);
+
+    logStd("　[終了]\n");
+  }
+
+  async function RunMp3Control(){
+    stopFlag = false;
+    logStd("４.ＭＰ３制御（ DFPlayer ）");
+
+    sleep(100); let r = await apiGet(`/MP3/SET/VOLUME:1:20`);
+    logStd("　・音量 20　　　: " + (r.json&&r.json.ok ? "True":"False"));
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/PLAY:1:4:1`);
+    logStd(`　・再生 F=4,T=1 : ${r.json?r.json.value:"NaN"}`);
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/LOOP:1:0`);
+    logStd(`　・ループ OFF　 : ${r.json?r.json.value:"NaN"}`);
+
+    logStd("　・参照");
+    sleep(100); let st = await apiGet(`/MP3/INFO/TRACK:1`   ); 
+    sleep(100); let vv = await apiGet(`/MP3/INFO/VOLUME:1`  );
+    sleep(100); let eq = await apiGet(`/MP3/INFO/EQ:1`      );
+    sleep(100); let fc = await apiGet(`/MP3/INFO/FILES:1`   );
+    sleep(100); let fn = await apiGet(`/MP3/INFO/FILEID:1`  );
+    logStd(`　　・トラック状況 = ${st.json?st.json.value:"NaN"}`);
+    logStd(`　　・音量　　　　 = ${vv.json?vv.json.value:"NaN"}`);
+    logStd(`　　・イコライザ　 = ${eq.json?eq.json.value:"NaN"}`);
+    logStd(`　　・総ファイル数 = ${fc.json?fc.json.value:"NaN"}`);
+    logStd(`　　・現在ファイル = ${fn.json?fn.json.value:"NaN"}`);
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/PAUSE:1`);
+    logStd(`　・一時停止 : ${r.json?r.json.value:"NaN"}`);
+
+    if (stopFlag) return;
+    await sleep(2000); if (stopFlag) return;
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/START:1`);
+    logStd(`　・再開　　 : ${r.json?r.json.value:"NaN"}`);
+
+    logStd("　・イコライザー");
+    for (let m=0; m<=5; m++){
+      sleep(100); r = await apiGet(`/MP3/SET/EQ:1:${m}`);
+      logStd(`　　[${m}] ${(r.json&&r.json.ok)?"True":"False"}`);
+      if (stopFlag) return;
+      await sleep(3000); if (stopFlag) return;
+    }
+
+    logStd("　・音量");
+    for (let v=0; v<=30; v+=5){
+      sleep(100); r = await apiGet(`/MP3/SET/VOLUME:1:${v}`);
+      logStd(`　　[${v}] ${(r.json&&r.json.ok)?"True":"False"}`);
+      if (stopFlag) return;
+      await sleep(1000); if (stopFlag) return;
+    }
+
+    sleep(100); r = await apiGet(`/MP3/TRACK/STOP:1`);
+    logStd(`　・停止 :  ${r.json?r.json.value:"NaN"}`);
+    logStd("　[終了]\n");
+  }
+
+  async function RunPwm(modeTrue){
+    stopFlag = false;
+    const title = modeTrue ? "５.ＰＷＭ" : "６.Ｉ２Ｃ";
+    logStd(`${title}（ PCA9685：サーボモータ180度型,連続回転型 ）`);
+
+    const SERVO_MIN=150, SERVO_MAX=600, SERVO_MID=(SERVO_MIN+SERVO_MAX)>>1;
+    const OffsetMax360=60, STEPS=80, STEP=8, STEP_DELAY_MS=0;
+    const CH_180=0, CH_360=15, PCA_ADDR_DEC=64; // 0x40=64
+
+    async function I2CWrite(reg, val){
+      return apiGet(`/I2C/WRITE:${PCA_ADDR_DEC}:${reg}:${val}`);
+    }
+    async function RunI2C(ch, ticks){
+      const base = 0x06 + 4*ch;
+      await I2CWrite(base+2, (ticks     ) & 0xFF);
+      await I2CWrite(base+3, (ticks >> 8) & 0x0F);
+    }
+
+    logStd("　・初期位置");
+    if (modeTrue){
+      await apiGet(`/PWM/OUTPUT:${CH_180}:${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_360}:${SERVO_MID}`);
+    }else{
+      await RunI2C(CH_180, SERVO_MID);
+      await RunI2C(CH_360, SERVO_MID);
+    }
+    if (stopFlag) return;
+    await sleep(300);
+
+    logStd("　・正転,加速");
+    for (let i=0;i<=STEPS;i+=STEP){
+      const pwm180 = SERVO_MIN + Math.floor((SERVO_MAX-SERVO_MIN)*i/STEPS);
+      const pwm360 = SERVO_MID + Math.floor(OffsetMax360*i/STEPS);
+      if (modeTrue){
+        await apiGet(`/PWM/OUTPUT:${CH_180}:${pwm180}`);
+        await apiGet(`/PWM/OUTPUT:${CH_360}:${pwm360}`);
+      }else{
+        await RunI2C(CH_180, pwm180);
+        await RunI2C(CH_360, pwm360);
+      }
+      if (stopFlag) return;
+      if (STEP_DELAY_MS) await sleep(STEP_DELAY_MS);
+    }
+
+    logStd("　・逆転,減速");
+    for (let i=STEPS;i>=0;i-=STEP){
+      const pwm180 = SERVO_MIN + Math.floor((SERVO_MAX-SERVO_MIN)*i/STEPS);
+      const pwm360 = SERVO_MID + Math.floor(OffsetMax360*i/STEPS);
+      if (modeTrue){
+        await apiGet(`/PWM/OUTPUT:${CH_180}:${pwm180}`);
+        await apiGet(`/PWM/OUTPUT:${CH_360}:${pwm360}`);
+      }else{
+        await RunI2C(CH_180, pwm180);
+        await RunI2C(CH_360, pwm360);
+      }
+      if (stopFlag) return;
+      if (STEP_DELAY_MS) await sleep(STEP_DELAY_MS);
+    }
+
+    logStd("　・初期位置");
+    if (modeTrue){
+      await apiGet(`/PWM/OUTPUT:${CH_180}:${SERVO_MID}`);
+      await apiGet(`/PWM/OUTPUT:${CH_360}:${SERVO_MID}`);
+    }else{
+      await RunI2C(CH_180, SERVO_MID);
+      await RunI2C(CH_360, SERVO_MID);
+    }
+    logStd("　[終了]\n");
+  }
+
+  // ===== 付属（Info / Conn） =====
+  async function Info(){
+    await apiGet('/INFO/VERSION');
+  }
+
+  // ===== UI Wiring =====
+  $('#btnAnalog' ).onclick = () => RunAnalog();
+  $('#btnDigital').onclick = () => RunDigital();
+  $('#btnMp3List').onclick = () => RunMp3Playlist();
+  $('#btnMp3Ctrl').onclick = () => RunMp3Control();
+  $('#btnPwm'    ).onclick = () => RunPwm(true);
+  $('#btnPwmI2C' ).onclick = () => RunPwm(false);
+
+  $('#btnStop').onclick     = () => { stopFlag = true; };
+  $('#btnClearStd').onclick = () => { stdEl.textContent = ""; };
+  $('#btnClearDtl').onclick = () => { detailEl.textContent = ""; };
+
+  $('#btnInfo').onclick = () => Info();
+
+})();
+</script>
+</html>

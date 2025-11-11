@@ -2,7 +2,7 @@
 //========================================================
 // クライアント：ネット(TCP)
 //--------------------------------------------------------
-// Ver 0.6.0 (2025/xx/xx)
+// Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
 #include <Arduino.h>
@@ -10,6 +10,15 @@
 // 統一入口(fnPerser.h)
 extern String MMP_REQUEST(const String& wire, int clientID);
 
+//─────────────────
+// サーバ情報
+//─────────────────
+struct typeServer {
+  int      maxClients   = 0;
+  bool     writeLock    = false;
+  uint32_t writeLockMs  = 0;
+};
+typeServer  g_SRV;
 
 //========================================================
 // 受信バッファリング → コマンド実行 → レスポンス送信
@@ -174,7 +183,7 @@ namespace srvTcp {
 
       // 接続スロットの情報を確保
       g_slots     = new Slot[g_SRV.maxClients]; // 最大接続数で確保
-      g_MAX_SLOTS  = g_SRV.maxClients         ; // 最大接続数
+      g_MAX_SLOTS = g_SRV.maxClients          ; // 最大接続数
 
     // 2) サーバを起動
     g_server      = WiFiServer(port)          ; // サーバ登録

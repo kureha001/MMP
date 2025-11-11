@@ -2,7 +2,7 @@
 //========================================================
 // モジュール：アナログ入力
 //--------------------------------------------------------
-// Ver 0.6.0 (2025/xx/xx)
+// Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
 #include "mod.h"
@@ -11,7 +11,7 @@
 // グローバル変数
 //━━━━━━━━━━━━━━━
 const int g_addressBusGPIOs[4]  = {10, 9, 8, 7}; // アドレス・バス
-const int g_dateGPIOs[4]        = { 4, 3, 2, 1}; // データ・バス
+const int g_dataGPIOs[4]        = { 4, 3, 2, 1}; // データ・バス
 
 //━━━━━━━━━━━━━━━━━
 // クライアント情報
@@ -154,7 +154,7 @@ public:
 
         // データバスから読取り
         for (int dev = 0; dev < g_ana[ID].SwitchCnt; dev++) {
-          const int pin = g_dateGPIOs[dev];
+          const int pin = g_dataGPIOs[dev];
           g_ana[ID].Values[ch*4 + dev] = analogRead(pin);
         }
       }

@@ -2,7 +2,7 @@
 //========================================================
 // コマンド パーサーのフロント・対象資源の登録
 //--------------------------------------------------------
-// Ver 0.6.0 (2025/xx/xx)
+// Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
 #include <vector>
@@ -16,7 +16,6 @@
 #include "modPWM.h"
 #include "modI2C.h"
 #include "modMP3.h"
-#include "modNET.h"
 
 //========================================================
 // 外部参照(本体側で定義)
@@ -112,7 +111,6 @@ public:
     mods.push_back(new ModulePwm    (ctxRef, RGB_PWM    ));
     mods.push_back(new ModuleI2C    (ctxRef, RGB_I2C    ));
     mods.push_back(new ModuleMP3    (ctxRef, RGB_MP3    ));
-    mods.push_back(new ModuleNetConf(ctxRef, RGB_INFO   ));
 
     // 通信経路の登録：0=USB, 1=UART0, 2=TCP, 3=HTTP...
     addSource("USB"  , 0);
@@ -208,7 +206,7 @@ inline String MMP_REQUEST(const String& wire, int clientID){
   case 1  : return g_perser->ExecuteString(wire); // シリアル通信(GPIO UART)
   case 2  : return g_perser->ExecuteString(wire); // TCP(送信は呼び元)
   case 3  : return g_perser->ExecuteString(wire); // HTTP(送信/JSON化は呼び元)
-  default : return "#DEV!"                  ; // 未定義の経路ID
+  default : return "#DEV!"                      ; // 未定義の経路ID
   } // switch
 
 } // MMP_REQUEST()

@@ -2,7 +2,8 @@
 # filename : MMP.py
 #=================================================================
 # Python共通：アプリ接続
-# バージョン：0.5
+# バージョン：0.6
+# ・エラー出力を改行
 #-----------------------------------------------------------------
 # [インストール方法]
 # ・ＰＣ：[PYTHONPASTH] ※環境変数をセットしておく
@@ -137,7 +138,6 @@ def 通信接続(conn="auto"):
     print("接続中...")
 
     global 接続
-
     try:
         接続 = MmpClient(ファクトリ別接続(conn))
         if 接続.ConnectAutoBaud():
@@ -149,7 +149,8 @@ def 通信接続(conn="auto"):
             return True
 
         else:
-            print("ＭＭＰとの接続に失敗しました...", 接続.LastError)
+            print("ＭＭＰとの接続に失敗しました...")
+            print(接続.LastError)
             接続 = None
             return False
 

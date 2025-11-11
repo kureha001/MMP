@@ -2,13 +2,12 @@
 //========================================================
 // クライアント：ネット(HTTP WEB API)
 //--------------------------------------------------------
-// Ver 0.6.0 (2025/xx/xx)
+// Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
-#include "modNET.h"
 
 // 統一入口(fnPerser.h)
 extern String MMP_REQUEST(const String& wire, int clientID);

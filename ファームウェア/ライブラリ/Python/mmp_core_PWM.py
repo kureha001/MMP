@@ -68,7 +68,7 @@ class _Pwm:
             self.TimeOut = argTimeOut
 
         #─────────────
-        # 初期化
+        # プリセット登録
         #─────────────
         def SETUP(self,
             chIDfrom    :int        , # チャンネルID(開始)
@@ -76,18 +76,17 @@ class _Pwm:
             degTo       :int = 180  , # 角度(最大)
             pwmFrom     :int = 300  , # ＰＷＭ値(0度)
             pwmTo       :int = 600  , # ＰＷＭ値(最大角度)
-            pwmMiddle   :int = -1   , # ＰＷＭ値(中間) ※-1：自動
         ) -> bool:
             cmd = ("PWM/ANGLE/SETUP:"
                 f"{chIDfrom}:{chIDto}:"
                 f"{degTo}:"
-                f"{pwmFrom}:{pwmTo}:{pwmMiddle}!"
+                f"{pwmFrom}:{pwmTo}!"
             )
             res = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"
 
         #─────────────
-        # 設定削除
+        # プリセット削除
         #─────────────
         def RESET(self,
             chIDfrom:int        , # チャンネルID(開始)
@@ -98,24 +97,13 @@ class _Pwm:
             return res == "!!!!!"
 
         #─────────────
-        # ＰＷＭ出力：通常
+        # ＰＷＭ出力
         #─────────────
         def OUTPUT(self,
             chId    :int,   # チャンネルID
             angle   :int,   # 角度（0～degTo）
         ) -> int:           # 戻値：ＰＷＭ値
             cmd = f"PWM/ANGLE/OUTPUT:{int(chId)}:{angle}!"
-            res = self._p._send_command(cmd, self.TimeOut)
-            ok, v = _getValue(res)
-            return v if ok else -1
-
-        #─────────────
-        # ＰＷＭ出力：中間
-        #─────────────
-        def CENTER(self,
-            chId    :int,   # チャンネルID
-        ) -> int:           # 戻値：ＰＷＭ値
-            cmd = f"PWM/ANGLE/CENTER:{chId}!"
             res = self._p._send_command(cmd, self.TimeOut)
             ok, v = _getValue(res)
             return v if ok else -1
@@ -137,13 +125,15 @@ class _Pwm:
         def SETUP(self,
             chIDfrom    :int        , # チャンネルID(開始)
             chIDto      :int = -1   , # チャンネルID(終了) ※-1：単一
-            pwmLow      :int = 300  , # ＰＷＭ値(左周り最大)
-            pwmHigh     :int = 600  , # ＰＷＭ値(右周り最大)
-            pwmMiddle   :int = -1   , # ＰＷＭ値(停止) ※-1：自動
+            rightLow    :int = 397  , # ＰＷＭ値(左周り最大)
+            rightHigh   :int = 430  , # ＰＷＭ値(右周り最大)
+            leftLow     :int = 358  , # ＰＷＭ値(左周り最大)
+            leftHigh    :int = 330  , # ＰＷＭ値(右周り最大)
         ) -> bool:
             cmd = ("PWM/ROTATE/SETUP:"
                 f"{chIDfrom}:{chIDto}:"
-                f"{pwmLow}:{pwmHigh}:{pwmMiddle}!"
+                f"{rightLow}:{rightHigh}:"
+                f"{leftLow}:{leftHigh}!"
             )
             res    = self._p._send_command(cmd, self.TimeOut)
             return res == "!!!!!"
@@ -161,24 +151,14 @@ class _Pwm:
             return res == "!!!!!"
 
         #─────────────
-        # ＰＷＭ出力：通常
+        # ＰＷＭ出力
         #─────────────
         def OUTPUT(self,
-            chId        :int        , # チャンネルID
-            rate        :int        , # 速度（-100～+100）
-        ) -> bool:
+            chId    :int,   # チャンネルID
+            rate    :int,   # 速度（-100～+100）
+        ) -> int:           # 戻値：ＰＷＭ値
             cmd = "PWM/ROTATE/OUTPUT"
             cmd = f"{cmd}:{chId}:{rate}!"
             res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
-
-        #─────────────
-        # ＰＷＭ出力：停止
-        #─────────────
-        def STOP(self,
-            chId    :int    , # チャンネルID
-        ) -> bool:
-            cmd = "PWM/ROTATE/STOP"
-            cmd = f"{cmd}:{chId}!"
-            res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+            ok, v = _getValue(res)
+            return v if ok else -1

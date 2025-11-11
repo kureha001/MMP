@@ -2,15 +2,57 @@
 //========================================================
 // クライアント：ネット(TCP/HTTP WEB API)
 //--------------------------------------------------------
-// Ver 0.6.0 (2025/xx/xx)
+// Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "modNET.h"    // 設定ファイル(新規作成/読込)
 #include "cliNetTcp.h"  // サーバー：TCPブリッジ
 #include "cliNetHttp.h" // サーバー：WEB API
+
+//━━━━━━━━━━━━━━━
+// グローバル
+//━━━━━━━━━━━━━━━
+constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
+constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
+
+//━━━━━━━━━━━━━━━━━
+// 設定ファイル情報
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 型：ホスト（JSON: host[]）
+  //─────────────────
+  struct typeHost {
+    String type;  // "sta" | "ap"
+    String name;  // hostname
+    String ip;    // STA:末尾オクテット or "", AP:フルIP
+  };
+  //─────────────────
+  //  型：Wi-Fi候補（JSON: wifi[]）
+  //─────────────────
+  struct typeRouter {
+    String label;
+    String ssid;
+    String pass;
+    bool   isDefault = false;  // JSONの "default"
+  };
+
+  //─────────────────
+  //  型：接続情報
+  //─────────────────
+  struct typeConnect {
+    typeHost    hostList[g_MAX_ITEM_HOST];
+    typeRouter  candList[g_MAX_ITEM_ROUTER];
+    int         hostNum = 0;
+    int         candNum = 0;
+  };
+
+//━━━━━━━━━━━━━━━
+// グローバル変数
+//━━━━━━━━━━━━━━━
+typeConnect g_WIFI;                       // 規定値なし
+
 
 //━━━━━━━━━━━━━━━━━
 // ヘルパ
@@ -148,7 +190,7 @@
     // ファイルサイズに応じた余裕ある容量で
     size_t sz  = f.size();
     size_t cap = sz + 1024;
-    if (cap < 4096) cap = 4096;
+    if (cap < 4096 ) cap = 4096;
     if (cap > 16384) cap = 16384;
 
     DynamicJsonDocument doc(cap);
@@ -156,15 +198,10 @@
     f.close();
     if (err) { return false; }
 
-    // 情報読取：サーバー（キーが無くても既定が生きる）
-    g_SRV.maxClients  = doc["server"]["max_clients"   ] | g_SRV.maxClients;
-    g_SRV.writeLock   = doc["server"]["write_lock"    ] | g_SRV.writeLock;
-    g_SRV.writeLockMs = doc["server"]["write_lock_ms" ] | g_SRV.writeLockMs;
-
-    // 補正
-    if (g_SRV.maxClients  < 1  ) g_SRV.maxClients = 1;
-    if (g_SRV.maxClients  > 16 ) g_SRV.maxClients = 16;
-    if (g_SRV.writeLockMs < 100) g_SRV.writeLockMs = 100;  // 0.1秒未満は禁止
+    // 情報読取：サーバー
+    g_SRV.maxClients  = doc["server"]["max_clients"   ] | 4;
+    g_SRV.writeLock   = doc["server"]["write_lock"    ] | false;
+    g_SRV.writeLockMs = doc["server"]["write_lock_ms" ] | 30000;
 
     // 情報読取：ホスト
     g_WIFI.hostNum = 0;
@@ -201,9 +238,9 @@
 
         // 代入
         auto& h = g_WIFI.hostList[g_WIFI.hostNum];
-        h.type = type;
-        h.name = name;
-        h.ip   = ip;
+        h.type  = type;
+        h.name  = name;
+        h.ip    = ip;
         g_WIFI.hostNum++;
       }
     }
@@ -238,11 +275,8 @@
 
     // → 設定ファイルが無い場合：
     if (!LittleFS.exists("/config.json")) {
-      if (!jsonCreate()) { 
-        Serial.println("　[Error] 設定ファイルの初期作成に失敗");
-        return false;
-      }
-      Serial.println("　[Notice] 設定ファイルの初期作成が完了");
+      Serial.println("　[Error] 設定ファイルが無い");
+      return false;
     }
 
     // JSONファイルを読み込み

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MMP 単体テスト</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.6;margin:24px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  input,button,select{font-size:16px;padding:8px 10px}
+  input{width:18rem;max-width:100%}
+  fieldset{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0}
+  legend{font-weight:700}
+  pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap}
+  .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
+  small{color:#666}
+  label.inline{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
+</style>
+
+<header>
+  <strong>MMP 単体テスト Ver0.5</strong>
+</header>
+<hr>
+<div class="row">
+  <label class="inline">ホスト/IP:
+    <input id="host" placeholder="例: 192.168.2.254">
+  </label>
+  <label class="inline">ポート:
+    <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
+  </label>>>
+<button id="btnRoot"   >WEB-API             </button>
+<button id="btnInfoVer">バージョン          </button>
+</div>
+
+<fieldset>
+  <legend>デジタル入出力</legend>
+  <div class="row">
+    <label  class="inline">GPIO ID:     <input id="din_id" value="2" style="width:6rem"></label>
+    <button id="btnDigInp">デジタル入力 </button>｜
+    <label  class="inline">GPIO ID:     <input id="dout_id" value="3" style="width:6rem"></label>
+    <label  class="inline">値:          <select id="dout_val">
+                                            <option value="0"         >0 (LOW)  </option>
+                                            <option value="1" selected>1 (HIGH) </option>
+                                        </select></label>
+    <button id="btnDigOut">デジタル出力 </button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>アナログ入力（HC4067）</legend>
+  <div class="row">
+    <label   class="inline"  >チャンネル数: <input id="an_chTtl"  value="16" style="width:6rem"></label>
+    <label   class="inline"  >機器数:       <input id="an_devTtl" value="2"  style="width:6rem"></label>
+    <button id="btnAnalSetup">範囲セット    </button>>>
+    <button id="btnAnalInput">バッファ取込  </button>
+  </div>
+  <div class="row">
+    <label  class="inline"  >チャンネルID:  <input id="an_ch"  value="2" style="width:6rem"></label>
+    <label  class="inline"  >機器ID:        <input id="an_dev" value="1" style="width:6rem"></label>
+    <button id="btnAnalRead">バッファ参照   </button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>ＰＷＭ出力（PCA9685）</legend>
+  <label class="inline">チャンネルID:<input id="pwm_ch"  value="0"   style="width:6rem"></label>>>
+  <hr>
+  <div class="row">
+    <label class="inline">出力値(0-4095):<input id="pwm_val" value="600" style="width:8rem"></label>
+    <button id="btnPwmOutput">ＰＷＭ出力</button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>ＭＰ３（DFPlayer）</legend>
+  <label class="inline">機器ID:<input id="mp3_dev"   value="1"  style="width:6rem"></label>>>
+  <hr>
+  <div class="row">
+    <label  class="inline">再生:</label>
+    <label  class="inline"     >ディレクトリID(1-255):<input id="mp3_dir"  value="1" style="width:6rem"></label>
+    <label  class="inline"     >ファイルID(1-255):    <input id="mp3_file" value="1" style="width:6rem"></label>
+    <button id="btnMP3TrkPlay" >演奏    </button>>>
+    <button id="btnMP3TrkStop" >停止    </button>｜
+    <button id="btnMP3TrkPause">一時停止</button>｜
+    <button id="btnMP3TrkStart">再開    </button>｜
+    <select id="mp3_loop"      >
+        <option value="0">0 (OFF)   </option>
+        <option value="1">1 (ON)    </option>
+    </select>
+    <button id="btnMP3TrkLoop" >ループ再生</button>
+  </div>
+  <div class="row">
+    <label  class="inline">設定:</label>
+    <label  class="inline"   >音量(0-30):       <input id="mp3_value" value="20" style="width:6rem"></label>
+    <button id="btnMP3Volume">セット</button>｜
+    <label  class="inline"   >イコライザー(0-5):<input id="mp3_eq"    value="3"  style="width:6rem"></label>
+    <button id="btnMP3EQ"    >セット</button>
+  </div>
+  <div class="row">
+    <label class="inline">状況:</label>
+    <button id="btnMP3InfTrack" >トラック状況</button>
+    <button id="btnMP3InfVolume">音量        </button>
+    <button id="btnMP3InfEQ"    >イコライザー</button>
+    <button id="btnMP3InfFiles" >ファイル総数</button>
+    <button id="btnMP3InfFileID">ファイルID  </button>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Ｉ２Ｃ通信</legend>
+<label class="inline">アドレス:<input id="i2c_addr" value="64"  style="width:8rem"></label>>>
+<hr>
+  <div class="row">
+    <label class="inline">レジスタ:<input id="i2c_reg"  value="6"   style="width:8rem"></label>
+    <label class="inline">値:      <input id="i2c_val"  value="255" style="width:8rem"></label>
+    <button id="btnI2cWrite">書込</button>｜
+    <label class="inline">レジスタ:<input id="i2c_reg2" value="6"   style="width:8rem"></label>
+    <button id="btnI2cRead">読込 </button>
+  </div>
+</fieldset>
+
+<hr>
+<fieldset>
+  <legend>ログ</legend>
+  <label>リクエスト                  <pre id="req"  class="mono"></pre></label>
+  <label>レスポンス（HTTP行とヘッダ）<pre id="hdrs" class="mono"></pre></label>
+  <label>ボディ（生テキスト）        <pre id="raw"  class="mono"></pre></label>
+  <label>ボディ（JSON整形）          <pre id="json" class="mono"></pre></label>
+</fieldset>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const hostEl=$('#host'), portEl=$('#port');
+  const preReq=$('#req'), preHdrs=$('#hdrs'), preRaw=$('#raw'), preJson=$('#json');
+
+  hostEl.value = location.hostname || '192.168.2.254';
+
+  function clearLogs(){ preReq.textContent=preHdrs.textContent=preRaw.textContent=preJson.textContent=''; }
+  function url(path){
+    const host=hostEl.value.trim(), port=(portEl.value||'8080').trim();
+    if (!path.startsWith('/')) path = '/' + path;
+    return `http://${host}:${port}${path}`;
+  }
+  async function run(path){
+    const u = url(path);
+    clearLogs();
+    preReq.textContent = `GET ${u}`;
+    try{
+      const res = await fetch(u, { method:'GET', cache:'no-store', credentials:'omit' });
+      let hdr = `HTTP ${res.status} ${res.statusText}\n`;
+      for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
+      preHdrs.textContent = hdr;
+      const text = await res.text();
+      preRaw.textContent = text.length ? text : '(空)';
+      try{ preJson.textContent = JSON.stringify(JSON.parse(text), null, 2); }
+      catch{ preJson.textContent='(JSONとして解釈できません)'; }
+    }catch(e){
+      preHdrs.textContent='リクエストに失敗しました。';
+      preRaw.textContent=String(e?.message||e||'UNKNOWN');
+      preJson.textContent='(取得不可)';
+    }
+  }
+
+// 文字列/要素/セレクタ どれでもOKにした短縮ヘルパー
+function encDat(a){
+  let v;
+  if (a && typeof a === 'object' && 'value' in a) {
+    v = a.value;                                      // 例: encDat('#din_id'))
+  } else if (typeof a === 'string' &&
+             (a.startsWith('#') || a.startsWith('.') || a.includes('[') || a.includes(' '))) {
+    const el = (typeof $ === 'function') ? $(a) : document.querySelector(a);
+    v = el ? el.value : '';                           // 例: encDat('#din_id')
+  } else {
+    v = a;                                            // 例: encDat('123') / encDat('#id').value)
+  }
+  return encodeURIComponent(String(v ?? '').trim());
+}
+
+  // 基本
+  $('#btnRoot'   ).onclick = () => run(`/`              );
+  $('#btnInfoVer').onclick = () => run(`/INFO/VERSION`  );
+
+  // デジタル入出力
+  $('#btnDigInp').onclick = () => run(`/DIGITAL/INPUT:${encDat('#din_id')}`);
+  $('#btnDigOut').onclick = () => run(`/DIGITAL/OUTPUT:${encDat('#dout_id')}:${encDat('#dout_val')}`);
+
+  // アナログ入出力
+  $('#btnAnalSetup').onclick = () => run(`/ANALOG/SETUP:${encDat('#an_chTtl')}:${encDat('#an_devTtl')}`);
+  $('#btnAnalInput').onclick = () => run(`/ANALOG/INPUT`);
+  $('#btnAnalRead' ).onclick = () => run(`/ANALOG/READ:${encDat('#an_ch')}:${encDat('#an_dev')}`);
+
+  // ＰＷＭ出力
+  $('#btnPwmOutput').onclick = () => run(`/PWM/OUTPUT:${encDat('#pwm_ch')}:${encDat('#pwm_val')}`);
+
+  // Ｉ２Ｃ通信
+  $('#btnI2cWrite').onclick = () => run(`/I2C/WRITE:${encDat('#i2c_addr')}:${encDat('#i2c_reg')}:${encDat('#i2c_val')}`);
+  $('#btnI2cRead' ).onclick = () => run(`/I2C/READ:${encDat('#i2c_addr')}:${encDat('#i2c_reg2')}`);
+
+  // ＭＰ３プレイヤー
+  $('#btnMP3Volume').onclick = () => run(`/MP3/SET/VOLUME:${encDat('#mp3_dev')}:${encDat('#mp3_value')}`);
+  $('#btnMP3EQ'    ).onclick = () => run(`/MP3/SET/EQ:${encDat('#mp3_dev')}:${encDat('#mp3_eq')}`);
+
+  $('#btnMP3TrkPlay' ).onclick = () => run(`/MP3/TRACK/PLAY:${encDat('#mp3_dev')}:${encDat('#mp3_dir')}:${encDat('#mp3_file')}`);
+  $('#btnMP3TrkLoop' ).onclick = () => run(`/MP3/TRACK/LOOP:${encDat('#mp3_dev')}:${encDat('#mp3_loop')}`);
+  $('#btnMP3TrkStop' ).onclick = () => run(`/MP3/TRACK/STOP:${encDat('#mp3_dev')}`);
+  $('#btnMP3TrkPause').onclick = () => run(`/MP3/TRACK/PAUSE:${encDat('#mp3_dev')}`);
+  $('#btnMP3TrkStart').onclick = () => run(`/MP3/TRACK/START:${encDat('#mp3_dev')}`);
+
+  $('#btnMP3InfTrack' ).onclick = () => run(`/MP3/INFO/TRACK:${encDat('#mp3_dev')}`);
+  $('#btnMP3InfVolume').onclick = () => run(`/MP3/INFO/VOLUME:${encDat('#mp3_dev')}`);
+  $('#btnMP3InfEQ'    ).onclick = () => run(`/MP3/INFO/EQ:${encDat('#mp3_dev')}`);
+  $('#btnMP3InfFileID').onclick = () => run(`/MP3/INFO/FILEID:${encDat('#mp3_dev')}`);
+  $('#btnMP3InfFiles' ).onclick = () => run(`/MP3/INFO/FILES:${encDat('#mp3_dev')}`);
+})();
+</script>
+</html>

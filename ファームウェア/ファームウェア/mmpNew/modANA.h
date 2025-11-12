@@ -27,7 +27,7 @@ const int g_dataGPIOs[4]        = { 4, 3, 2, 1}; // データ・バス
   //─────────────────
   // クライアント情報
   //─────────────────
-  static AnaClientData* g_ana = nullptr;
+  static AnaClientData* g_ANA_DAT = nullptr;
 
 
 //━━━━━━━━━━━━━━━━━
@@ -41,12 +41,12 @@ void InitAnalog(const MmpContext& ctx) {
   const int count = ctx.clientID_max + 1;         // 要素数＝最大インデックス＋1
   void* p = calloc(count, sizeof(AnaClientData)); // 全要素0で初期化して確保
   if (!p) { return; }
-  g_ana = static_cast<AnaClientData*>(p);
+  g_ANA_DAT = static_cast<AnaClientData*>(p);
 
   // 既定設定
   for (int i = 0; i < count; ++i) {
-    g_ana[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
-    g_ana[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
+    g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
+    g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
 
   Serial.println(String("　Device  ID : 0 ～ 3 "));
@@ -86,8 +86,7 @@ public:
     // 引数 : ① プレイヤー数        ※IDより１つ大きい
     // 　　　 ② スイッチ数          ※IDより１つ大きい
     // 　　　 ③ 対象クライアントID  ※未制定はカレント クライアント
-    // 戻り : ・正常 [!!!!!]
-    //        ・異常 [ANS!!]
+    // 戻り : _ResOK
     // ───────────────────────────────
     if (strcmp(Cmd,"SETUP") == 0){
 
@@ -112,8 +111,8 @@ public:
         }
 
       // ２．処理
-      g_ana[ID].PlayerCnt = plCnt;
-      g_ana[ID].SwitchCnt = swCnt;
+      g_ANA_DAT[ID].PlayerCnt = plCnt;
+      g_ANA_DAT[ID].SwitchCnt = swCnt;
 
       // ３．応答
       _ResOK(sp);
@@ -123,8 +122,7 @@ public:
     // 機能 : 信号入力（入力バッファに更新）
     // 書式 : ANALOG/IN
     // 引数 : ① 対象クライアントID ※未制定はカレント クライアント
-    // 戻り : ・正常 [!!!!!]
-    //        ・異常 [ANU!!]
+    // 戻り : _ResOK
     // ───────────────────────────────
     if (strcmp(Cmd,"INPUT") == 0){
 
@@ -142,7 +140,7 @@ public:
         }
 
       // ２．処理
-      for (int ch = 0; ch < g_ana[ID].PlayerCnt; ch++) {
+      for (int ch = 0; ch < g_ANA_DAT[ID].PlayerCnt; ch++) {
 
         // アドレスバスをセット
         for (int i = 0; i < 4; i++) {
@@ -153,9 +151,9 @@ public:
         delayMicroseconds(10); //時間調整
 
         // データバスから読取り
-        for (int dev = 0; dev < g_ana[ID].SwitchCnt; dev++) {
+        for (int dev = 0; dev < g_ANA_DAT[ID].SwitchCnt; dev++) {
           const int pin = g_dataGPIOs[dev];
-          g_ana[ID].Values[ch*4 + dev] = analogRead(pin);
+          g_ANA_DAT[ID].Values[ch*4 + dev] = analogRead(pin);
         }
       }
 
@@ -170,8 +168,7 @@ public:
     // 引数 : ① プレイヤーID
     // 　　　 ② スイッチID
     // 　　　 ③ 対象クライアントID ※未制定はカレント クライアント
-    // 戻り : ・正常 [XXXX!]
-    //        ・異常 [ANR!!]
+    // 戻り : _ResValue
     // ───────────────────────────────
     if (strcmp(Cmd,"READ") == 0){
 
@@ -190,16 +187,16 @@ public:
 
         // 1.3. 単項目チェック
         int pl, sw;
-        if (!_Str2Int(dat[1], pl, 0, g_ana[ID].PlayerCnt - 1) ||
-            !_Str2Int(dat[2], sw, 0, g_ana[ID].SwitchCnt - 1) )
+        if (!_Str2Int(dat[1], pl, 0, g_ANA_DAT[ID].PlayerCnt - 1) ||
+            !_Str2Int(dat[2], sw, 0, g_ANA_DAT[ID].SwitchCnt - 1) )
             {_ResChkErr(sp); return;}
 
         // 1.4.機能チェック
-        if (pl >= g_ana[ID].PlayerCnt || sw >= g_ana[ID].SwitchCnt){_ResChkErr(sp); return;}
+        if (pl >= g_ANA_DAT[ID].PlayerCnt || sw >= g_ANA_DAT[ID].SwitchCnt){_ResChkErr(sp); return;}
 
       // ２．処理
       const int idx = pl * 4 + sw;        // 値のデータ位置
-      int res = g_ana[ID].Values[idx];
+      int res = g_ANA_DAT[ID].Values[idx];
 
       // ３．後処理：
       _ResValue(sp, res);

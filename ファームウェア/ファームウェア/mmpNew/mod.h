@@ -13,12 +13,6 @@
 #define DAT_COUNT       10  // コマンド＋引数の個数
 #define DAT_LENGTH      20  // 上記1個あたりの上限バイト数
 
-// 経路ID（参考：perser.h の MMP_REQUEST と対応）
-static constexpr int MMP_CLIENT_USB   = 0;
-static constexpr int MMP_CLIENT_UART0 = 1;
-static constexpr int MMP_CLIENT_TCP   = 2;
-static constexpr int MMP_CLIENT_HTTP  = 3;
-
 //─────────────────
 // モジュール別のRGB-LED点灯色
 //─────────────────
@@ -32,7 +26,7 @@ static constexpr LedColor RGB_MP3     = {  0, 10,  0};
 
 //━━━━━━━━━━━━━━━━━
 // コンテクスト(共通の疎結合データ)
-//  - clientID : 経路番号（0=USB,1=UART0,2=TCP,3=HTTP,...）
+//  - clientID : 経路番号（0=USB,1=UART0,...）
 //  - reply    : 現在の“返信出力先”Stream（二重ポインタ；RAIIで一時差替）
 //━━━━━━━━━━━━━━━━━
 struct MmpContext {
@@ -42,6 +36,7 @@ struct MmpContext {
   Adafruit_NeoPixel*  pixels        ; // コマンド別のRGB-LED発行用
   const char*         version       ;
 };
+// 返信出力先（経路抽象）
 inline Stream& MMP_REPLY(MmpContext& ctx){ return **ctx.reply; }
 
 //━━━━━━━━━━━━━━━━━
@@ -147,5 +142,4 @@ public:
   inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // データが未初期化
   inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // 使用不可のデバイス
   inline void _ResFilErr(Stream& sp){sp.print("#FIL!");} // ファイル操作が異常終了
-  inline void _ResNoDErr(Stream& sp){sp.print("#NOD!");} // データ項目名が不正
-  
+  inline void _ResNoDErr(Stream& sp){sp.print("#NOD!");} // データ項目名が不正  

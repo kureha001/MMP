@@ -17,6 +17,15 @@
 #include "modI2C.h"
 #include "modMP3.h"
 
+//─────────────────
+// 経路ID
+//─────────────────
+static constexpr int MMP_CLIENT_USB   = 0; // cliSerial.h
+static constexpr int MMP_CLIENT_UART0 = 1; // cliSerial.h
+static constexpr int MMP_CLIENT_TCP   = 2; // cliNetTcp.h
+static constexpr int MMP_CLIENT_HTTP  = 3; // cliNetHttp.h
+
+
 //========================================================
 // 外部参照(本体側で定義)
 //========================================================
@@ -27,7 +36,8 @@ extern  Perser*       g_perser;   // パーサー本体へのポインタ
 //========================================================
 // 前方宣言：統一入口
 //========================================================
-String MMP_REQUEST(const String& wire, int clientID);
+String MMP_REQUEST(const String& path, int clientID);
+
 
 //========================================================
 // 返信先(RAIIガード) : ctx.reply と clientID を一時差替
@@ -57,7 +67,7 @@ public:
     ctxRef.clientID = prevClientID;
   }
   //─────────────────
-};
+}; /* ReplyScope{} */
 
 
 //========================================================
@@ -86,12 +96,12 @@ class Perser {
     String out;
 
     public:
-      size_t write(uint8_t c) override { out += (char)c; return 1; }
-      int    available()      override { return  0; }
-      int    read()           override { return -1; }
-      int    peek()           override { return -1; }
-      void   flush()          override {}
-      String  str()           const    { return out; }
+      size_t  write(uint8_t c) override { out += (char)c; return 1; }
+      int     available()      override { return  0; }
+      int     read()           override { return -1; }
+      int     peek()           override { return -1; }
+      void    flush()          override {}
+      String  str()            const    { return out; }
   }; // class StringStream
 
 public:
@@ -113,10 +123,10 @@ public:
     mods.push_back(new ModuleMP3    (ctxRef, RGB_MP3    ));
 
     // 通信経路の登録：0=USB, 1=UART0, 2=TCP, 3=HTTP...
-    addSource("USB"  , 0);
-    addSource("UART0", 1);
-    addSource("TCP"  , 2);
-    addSource("HTTP" , 3);
+    addSource("USB"  , MMP_CLIENT_USB   );
+    addSource("UART0", MMP_CLIENT_UART0 );
+    addSource("TCP"  , MMP_CLIENT_TCP   );
+    addSource("HTTP" , MMP_CLIENT_HTTP  );
   } // Init()
 
   //━━━━━━━━━━━━━━━━━
@@ -140,14 +150,14 @@ public:
   //━━━━━━━━━━━━━━━━━
   // 追加：任意文字列を直接実行
   //━━━━━━━━━━━━━━━━━
-  String ExecuteString(const String& wire){
+  String ExecuteString(const String& path){
 
     // 1) ワークバッファへ安全コピー
     char buf[ REQUEST_LENGTH ];
     {
-      size_t n = wire.length();
+      size_t n = path.length();
       if (n >= sizeof(buf)) n = sizeof(buf) - 1;
-      memcpy(buf, wire.c_str(), n);
+      memcpy(buf, path.c_str(), n);
       buf[n] = '\0';
     } // --- 1) ---
 
@@ -195,18 +205,78 @@ public:
 // - 全経路はここを通る
 // - ctx.clientID のみで経路識別
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-inline String MMP_REQUEST(const String& wire, int clientID){
+inline String MMP_REQUEST(const String& path, int clientID){
 
   // 通信経路を変更
   ctx.clientID = clientID;
 
   // 通信経路別にコマンド・パース処理
   switch (clientID){
-  case 0  : return g_perser->ExecuteString(wire); // シリアル通信(USB CDC)
-  case 1  : return g_perser->ExecuteString(wire); // シリアル通信(GPIO UART)
-  case 2  : return g_perser->ExecuteString(wire); // TCP(送信は呼び元)
-  case 3  : return g_perser->ExecuteString(wire); // HTTP(送信/JSON化は呼び元)
-  default : return "#DEV!"                      ; // 未定義の経路ID
+  case 0  : return g_perser->ExecuteString(path); // シリアル通信(USB CDC)
+  case 1  : return g_perser->ExecuteString(path); // シリアル通信(GPIO UART)
+  case 2  : return g_perser->ExecuteString(path); // TCP(送信は呼び元)
+  case 3  : return g_perser->ExecuteString(path); // HTTP(送信/JSON化は呼び元)
+  default : return "#SID!"                      ; // 未定義の経路ID
   } // switch
-
 } // MMP_REQUEST()
+
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// セッション管理
+// cliNetTcp.h / cliNetHttp.h で利用
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 経路別情報
+  //─────────────────
+  String g_CLIENT_KEY;  // 現在処理中のクライアント識別子
+  struct ClientKeyScope {
+    String prev;
+    ClientKeyScope(const String& ipKey) : prev(g_CLIENT_KEY) { g_CLIENT_KEY = ipKey; }
+    ~ClientKeyScope(){ g_CLIENT_KEY = prev; }
+  }; /* ClientKeyScope{} */
+  //─────────────────
+  // 経路別情報
+  //─────────────────
+  constexpr int MAX_IP = 10;
+  struct typeIP {
+    uint32_t  ipKey = 0;      // getIP_key()で値を生成
+    bool      inUse = false;
+  };
+  static typeIP g_IP_TCP[MAX_IP];
+  static typeIP g_IP_HTTP[MAX_IP];
+
+  //─────────────────
+  // IPアドレスの配列IDを取得
+  // 戻り値：
+  //　既存：既にある添え字
+  //　新規：新たな添え字
+  //　限界：-1
+  //─────────────────
+  static uint32_t getIP_key(const IPAddress& ip){
+    return  ((uint32_t)ip[0]<<24) |
+            ((uint32_t)ip[1]<<16) |
+            ((uint32_t)ip[2]<< 8) |
+            ((uint32_t)ip[3]    ) ;
+  } /* getIP_key() */
+  //─────────────────
+  static int getIP(typeIP* table, const IPAddress& ip){
+
+    // IPアドレスからキーを生成
+    uint32_t key = getIP_key(ip);
+
+    // 既存スロットを走査：あれば該当する添え字をリターン
+    for (int i=0;i<MAX_IP;i++){
+      if (table[i].inUse && table[i].ipKey == key) return i;
+    }
+
+    // 空きスロットを走査：あれば添え字をリターン
+    for (int i=0;i<MAX_IP;i++){
+      if (!table[i].inUse){
+        table[i].inUse = true;
+        table[i].ipKey = key;
+        return i;
+      }
+    }
+
+    // スロット不足：エラーコードをリターン
+    return -1;
+  } /* getIP_table() */

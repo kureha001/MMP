@@ -51,7 +51,7 @@ constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルータ�
 //━━━━━━━━━━━━━━━
 // グローバル変数
 //━━━━━━━━━━━━━━━
-typeConnect g_WIFI;                       // 規定値なし
+typeConnect g_WIFI;
 
 
 //━━━━━━━━━━━━━━━━━
@@ -199,9 +199,9 @@ typeConnect g_WIFI;                       // 規定値なし
     if (err) { return false; }
 
     // 情報読取：サーバー
-    g_SRV.maxClients  = doc["server"]["max_clients"   ] | 4;
-    g_SRV.writeLock   = doc["server"]["write_lock"    ] | false;
-    g_SRV.writeLockMs = doc["server"]["write_lock_ms" ] | 30000;
+    g_SRV_TCP.maxClients  = doc["server"]["max_clients"   ] | 4;
+    g_SRV_TCP.writeLock   = doc["server"]["write_lock"    ] | false;
+    g_SRV_TCP.writeLockMs = doc["server"]["write_lock_ms" ] | 30000;
 
     // 情報読取：ホスト
     g_WIFI.hostNum = 0;

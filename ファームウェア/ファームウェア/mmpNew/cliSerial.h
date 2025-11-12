@@ -5,6 +5,7 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #include <Adafruit_NeoPixel.h>
+#include "fnPerser.h"
 
 // 統一入口(fnPerser.h)
 extern String MMP_REQUEST(const String& wire, int clientID);
@@ -197,9 +198,9 @@ namespace srvSerial {
     // 2) 接続スロットの情報を更新
     // (該当処理なし)
 
-    // 3) 全スロットを処理
-    routeMMP(Serial , g_rxUsb  , 0);
-    routeMMP(Serial1, g_rxUart0, 1);
+    // 3) 全シリアルのスロット処理
+    routeMMP(Serial , g_rxUsb  , MMP_CLIENT_USB   );
+    routeMMP(Serial1, g_rxUart0, MMP_CLIENT_UART0 );
   } // handle()
 
 } // namespace srvSerial

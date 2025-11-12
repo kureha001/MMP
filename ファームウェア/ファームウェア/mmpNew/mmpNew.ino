@@ -19,7 +19,8 @@ bool g_CONNECTED_SERIAL = false;
 bool g_CONNECTED_NET    = false;
 
 //━━━━━━━━━━━━━━━━━
-// コンテクスト関連のグローバル定義（fnPerser.h の extern と整合）
+// コンテクスト関連のグローバル定義
+//（fnPerser.h の extern と整合）
 //━━━━━━━━━━━━━━━━━
 
 // MmpContext が参照する「現在の出力先ストリーム」ポインタ

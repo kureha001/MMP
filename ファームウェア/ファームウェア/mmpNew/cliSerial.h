@@ -5,12 +5,19 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #include <Adafruit_NeoPixel.h>
-#include "fnPerser.h"
+#include "cli.h"        // クライアント：共通ユーティリティ
 
-// 統一入口(fnPerser.h)
-extern String MMP_REQUEST(const String& wire, int clientID);
+//━━━━━━━━━━━━━━━━━
+// グローバル資源(宣言)
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 統一入口：fnPerser.hで定義
+  //─────────────────
+  extern String MMP_REQUEST(const String& path, int clientID);
 
+//─────────────────
 // NwoPixel(個数=1) コンテクストのメンバ
+//─────────────────
 #define NEOPIXEL_PIN 38   // Waveshare ESP32-S3-Tiny: WS2812 DIN=GPIO38
 Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -112,55 +119,66 @@ Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 
 //========================================================
-// 受信バッファリング → コマンド実行 → レスポンス送信
+// メイン処理
 //========================================================
 namespace {
+//━━━━━━━━━━━━━━━━━
+// 事前データ
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // サーバー
+  //─────────────────
+  // (該当処理なし)
 
-  // USB=0 / UART0=1 の各受信バッファ
-  String g_rxUsb;
-  String g_rxUart0;
+  //─────────────────
+  // 受信バッファ
+  //─────────────────
+  String g_BUF_USB  ; // USB(CDC)用
+  String g_BUF_UART0; // UART0(GPIO)用
 
 //━━━━━━━━━━━━━━━━━
 // ルート別処理
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // ＭＭＰコマンド
+  // ＭＭＰコマンド実行
   //─────────────────
-  inline void routeMMP(Stream& port, String& rx, int clientID){
-
-    // フレーミング
-    while (port.available()){
-
-      // 1) 受信バッファリング
-        char ch = (char)port.read();
-        rx += ch;
-
-        // ‘!’ までのフレームを取り出して順次処理
-        int p = rx.indexOf('!');
-        if (p < 0) continue;
-
-        // 末尾'!'を削除
-        String wire = rx.substring(0, p+1);
-        rx.remove(0, p+1);
-
-      // 2) コマンドパーサーへリクエスト
-      String resp = MMP_REQUEST(wire, clientID);
-
-      // 3) レスポンスを編集
-      // (該当処理なし)
-
-      // 4) 通信経路にレスポンスする
-      port.print(resp);
-    } // while
-
-  } // routeMMP()
+  inline void routeMMP(
+    Stream& argStream , // 実ストリーム
+    String& argBuf    , // 受信バッファ
+    int argRouteID      // 経路ID
+  ){
+    //┬
+    //◎┐受信バッファリング
+    while (argStream.available()){
+      //○バイト単位で取得
+      char ch = (char)argStream.read();
+      argBuf += ch;
+      int p = argBuf.indexOf('!');
+      if (p < 0) continue;
+      // ＼（'!'ではない）
+        //↓
+        //▼０:スキップ
+      //│
+      //○末尾'!'を削除
+      String path = argBuf.substring(0, p+1);
+      argBuf.remove(0, p+1);
+      //│
+      //○コマンドパーサーへリクエスト
+      String resp = MMP_REQUEST(path, argRouteID);
+      //│
+      //○通信経路にレスポンスする
+      argStream.print(resp);
+      //┴
+    } /* while */
+    //┴
+  } /* routeMMP() */
 
 //━━━━━━━━━━━━━━━━━
 // ルーティング登録
 //━━━━━━━━━━━━━━━━━
 // (該当処理なし)
 
-} // namespace (No Name)
+} /* namespace(匿名) */
 
 
 //========================================================
@@ -169,21 +187,23 @@ namespace {
 namespace srvSerial {
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
-  // - cliNet.hから実行
+  // - スケッチから実行
   //━━━━━━━━━━━━━━━━━
   bool start() {
 
     // 1) 前処理
       // 二重起動チェック： → 起動済みの場合は中断
+      // (該当処理なし)
 
       // スロット情報を確保
       // (該当処理なし)
 
     // 2) サーバを起動
+    // (該当処理なし)
 
     // 3) 正常終了
     return true;
-  } // start()
+  } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
@@ -198,9 +218,9 @@ namespace srvSerial {
     // 2) 接続スロットの情報を更新
     // (該当処理なし)
 
-    // 3) 全シリアルのスロット処理
-    routeMMP(Serial , g_rxUsb  , MMP_CLIENT_USB   );
-    routeMMP(Serial1, g_rxUart0, MMP_CLIENT_UART0 );
-  } // handle()
+    // 3) すべての接続スロットを処理
+    routeMMP(Serial , g_BUF_USB  , ROUTE_ID_USB   );
+    routeMMP(Serial1, g_BUF_UART0, ROUTE_ID_UART0 );
+  } /* handle() */
 
-} // namespace srvSerial
+} /* namespace srvSerial */

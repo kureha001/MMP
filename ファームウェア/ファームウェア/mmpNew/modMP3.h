@@ -5,8 +5,8 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include "mod.h"
 #include <DFRobotDFPlayerMini.h>  // デバイス固有
+#include "mod.h"    // 機能モジュール：抽象基底クラス
 
 //━━━━━━━━━━━━━━━━━
 // デバイス情報
@@ -41,6 +41,9 @@ static void InitMP3(){
 //━━━━━━━━━━━━━━━━━
 class ModuleMP3 : public ModuleBase {
 public:
+  //━━━━━━━━━━━━━━━━━
+  // モジュール(抽象基底クラス)
+  //━━━━━━━━━━━━━━━━━
   using ModuleBase::ModuleBase;
 
   //━━━━━━━━━━━━━━━━━

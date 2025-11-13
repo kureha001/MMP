@@ -5,9 +5,9 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include "mod.h"
-#include <Wire.h>       // デバイスはi2c制御
-#include <PCA9685.h>    // デバイス固有
+#include <Wire.h>     // デバイスはi2c制御
+#include <PCA9685.h>  // デバイス固有
+#include "mod.h"      // 機能モジュール：抽象基底クラス
 
 //━━━━━━━━━━━━━━━
 // グローバル変数
@@ -130,6 +130,9 @@ static void InitPWM(){
 //━━━━━━━━━━━━━━━━━
 class ModulePwm : public ModuleBase {
 public:
+  //━━━━━━━━━━━━━━━━━
+  // モジュール(抽象基底クラス)
+  //━━━━━━━━━━━━━━━━━
   using ModuleBase::ModuleBase;
 
   //━━━━━━━━━━━━━━━━━

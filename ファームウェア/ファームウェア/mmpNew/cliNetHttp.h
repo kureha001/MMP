@@ -5,20 +5,21 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include <Arduino.h>
 #include <WebServer.h>
-#include <WiFi.h>
-#include "fnPerser.h"
+#include "cli.h"  // クライアント：共通ユーティリティ
 
-//─────────────────
-// 統一入口(fnPerser.h)
-//─────────────────
-extern String MMP_REQUEST(const String& path, int clientID);
+//━━━━━━━━━━━━━━━━━
+// グローバル資源(宣言)
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 統一入口：fnPerser.hで定義
+  //─────────────────
+  extern String MMP_REQUEST(const String& path, int clientID);
 
-//─────────────────
-// サーバ情報
-//─────────────────
-// (該当処理なし)
+  //─────────────────
+  // サーバ情報
+  //─────────────────
+  // (該当処理なし)
 
 
 //========================================================
@@ -47,12 +48,12 @@ namespace {
     srv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
     srv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
     srv.sendHeader("Access-Control-Max-Age", "600");
-  } // add_cors()
+  } /* add_cors() */
   //─────────────────
   inline void send_json(WebServer& srv, const String& s, int code=200) {
     add_cors(srv);
     srv.send(code, "application/json; charset=utf-8", s);
-  } // send_json()
+  } /* send_json() */
   //─────────────────
   inline void send_204(WebServer& srv) { add_cors(srv); srv.send(204); }
   //─────────────────
@@ -73,7 +74,7 @@ namespace {
     if (resp == "#SID!") return "Error:未定義の経路ID"        ;
     if (resp == "#MEM!") return "Error:メモリ枠不足"          ;
     return "Error:その他のエラー";
-  } // map_error()
+  } /* map_error() */
   //─────────────────
   // レスポンスが数値であるかを判定
   //─────────────────
@@ -84,7 +85,7 @@ namespace {
       if (!isDigit((unsigned char)body[i])) return false;
     } // for
     return true;
-  } // isDec4Signed
+  } /* isDec4Signed() */
   //─────────────────
   // レスポンスから数値を取得
   //─────────────────
@@ -93,7 +94,7 @@ namespace {
     int v = 0;
     for (int i = neg ? 1 : 0; i < 4; ++i) v = v*10 + (body[i]-'0');
     return neg ? -v : v;
-  } // parseDec4Signed()
+  } /* parseDec4Signed() */
   //─────────────────
 
 //━━━━━━━━━━━━━━━━━
@@ -154,8 +155,7 @@ namespace {
       } /* if */
       //│
       //○コマンドパーサーへリクエスト
-      ClientKeyScope cks( String(ipKey) );              // RAII
-      String resp = MMP_REQUEST(path, MMP_CLIENT_HTTP); // コマンド実行
+      String resp = MMP_REQUEST(path, ROUTE_ID_HTTP); // コマンド実行
       //┴
     //│
     //○┐レスポンスを編集
@@ -211,7 +211,7 @@ namespace {
     js += F(",\"text\":\""  ); js += text                       ;
     js += "\"}"              ;
     //│
-    //○通信経路にレスポンスする
+    //○通信経路にレスポンス
     send_json(srv, js); // JSON形式に出力
     //┴
   } /* routeMMP() */
@@ -227,7 +227,7 @@ namespace {
       "\"value\":-1,"
       "\"text\":\"MMP WEB API\""
       "}"));
-  } // routeRoot()
+  } /* routeRoot() */
 
 //━━━━━━━━━━━━━━━━━
 // ルーティング登録
@@ -279,7 +279,7 @@ namespace srvHttp {
 
     // 3) 正常終了
     return true;
-  } // start()
+  } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
@@ -294,8 +294,8 @@ namespace srvHttp {
     // 2) スロット情報を更新
     // (該当処理なし)
 
-    // 3) 全スロットを処理
+    // 3) すべての接続スロットを処理
     if ( g_SRV_HTTP ) g_SRV_HTTP->handleClient();
-  } // handle()
+  } /* handle() */
 
-} // namespace srvHttp
+} /* namespace srvHttp */

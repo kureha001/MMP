@@ -349,11 +349,13 @@ typeConnect g_WIFI;
     int srcPort;
 
     // HTTP(WEB API)
-    srcPort = 8080; if (!srvHttp::start(srcPort)) return false;
+    srcPort = 8080;
+    if (!srvHttp::start(srcPort)) return false;
     Serial.println(String("　HTTP port : ") + String(srcPort));
 
     // TCP
-    srcPort = 8081; if (!srvTcp::start(srcPort)) return false;
+    srcPort = 8081;
+    if (!srvTcp::start(srcPort)) return false;
     Serial.println(String("　TCP  port : ") + String(srcPort));
 
     // 正常でリターン

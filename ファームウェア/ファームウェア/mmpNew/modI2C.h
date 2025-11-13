@@ -5,14 +5,17 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include "mod.h"
-#include <Wire.h>       // i2c通信を扱うため
+#include <Wire.h>     // i2c通信を扱うため
+#include "mod.h"      // 機能モジュール：抽象基底クラス
 
 //━━━━━━━━━━━━━━━━━
 // メイン処理
 //━━━━━━━━━━━━━━━━━
 class ModuleI2C : public ModuleBase {
 public:
+  //━━━━━━━━━━━━━━━━━
+  // モジュール(抽象基底クラス)
+  //━━━━━━━━━━━━━━━━━
   using ModuleBase::ModuleBase;
 
   //━━━━━━━━━━━━━━━━━

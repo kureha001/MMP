@@ -5,7 +5,6 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 
 // クライアントからのリクエスト条件
@@ -25,65 +24,102 @@ static constexpr LedColor RGB_I2C     = { 10, 10,  0};
 static constexpr LedColor RGB_MP3     = {  0, 10,  0};
 
 //━━━━━━━━━━━━━━━━━
-// コンテクスト(共通の疎結合データ)
-//  - clientID : 経路番号（0=USB,1=UART0,...）
-//  - reply    : 現在の“返信出力先”Stream（二重ポインタ；RAIIで一時差替）
+// グローバル資源(定義)
 //━━━━━━━━━━━━━━━━━
-struct MmpContext {
-  int                 clientID      ; // 対象クライアントID
-  int                 clientID_max  ; // クライアントIDの上限
-  Stream**            reply         ; // 返信出力先（MMP_REPLY(ctx) が参照）
-  Adafruit_NeoPixel*  pixels        ; // コマンド別のRGB-LED発行用
-  const char*         version       ;
-};
-// 返信出力先（経路抽象）
-inline Stream& MMP_REPLY(MmpContext& ctx){ return **ctx.reply; }
+  //─────────────────
+  // コンテクスト(型定義)
+  //─────────────────
+  struct MmpContext {
+    Stream**            vStream     ; // 通信経路
+    int                 clientID    ; // クライアントID
+    Adafruit_NeoPixel*  pixels      ; // コマンド別のRGB-LED発行用
+    const char*         version     ;
+  };
 
 //━━━━━━━━━━━━━━━━━
 // モジュール(抽象基底クラス)
 //━━━━━━━━━━━━━━━━━
 class ModuleBase {
 protected:
+
   // 依存性注入
   MmpContext& ctx;  //コンテクスト
+
   // スコープ
   LedColor    led;  // モジュール別ＬＥＤ色
+
 public:
-  //───── コンストラクタ(実行開始) ─────
-  ModuleBase(MmpContext& c, LedColor col): ctx(c), led(col) {}
-  //───── デストラクタ(特になし) ─────
-  virtual ~ModuleBase() {}
-  // 抽象基底クラス(モジュール インターフェース)
-  virtual bool owns(const char* cmd) const                    = 0;  // コマンド在籍確認
-  virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt)  = 0;  // コマンド・パーサー
-};
+  //─────本体シグネチャ─────
+  ModuleBase(
+    MmpContext& argCtx,
+    LedColor    argCol
+  ):
+  //──────依存性注入──────
+  ctx(argCtx),  // ※LedScope,MMP_REPLYで利用
+  led(argCol)   // ※LedScopeで利用
+  //─────コンストラクタ─────
+  {} // 処理なし
+  //───── デストラクタ ─────
+  virtual ~ModuleBase()
+  {} // 処理なし
+  //─────────────────
+
+  //─────────────────
+  // 抽象基底クラス
+  // (モジュール インターフェース)
+  //─────────────────
+  virtual bool owns(const char* cmd) const = 0;                   // コマンド在籍確認
+  virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0; // コマンド・パーサー
+
+}; /* class ModuleBase */
+
 
 //━━━━━━━━━━━━━━━━━
-// モジュール用ユーティリティ
+// モジュール用：初期処理
 //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 返信出力先（経路抽象）
+  // ※コンテクストはModuleBase経由で指定
+  //─────────────────
+  inline Stream& MMP_REPLY(MmpContext& ctx){ return **ctx.vStream; }
+
   // ───────────────────────
-  // ＬＥＤ点滅(RAIIガード実行)
+  // LED点滅(RAIIガード)
   // ───────────────────────
   class LedScope {
-    // 依存性注入
+
+    // データ退避ワーク
     MmpContext& ctx;  // コンテクスト
+
   public:
-    //─────コンストラクタ(点灯)─────
-    LedScope(MmpContext& c, LedColor col) : ctx(c){
-      ctx.pixels->setPixelColor(0, ctx.pixels->Color(col.g, col.r, col.b));
+    //─────本体シグネチャ─────
+    LedScope(
+      MmpContext& argCtx, // ※ModuleBase経由で指定
+      LedColor    argCol  // ※ModuleBase経由で指定
+    ) :
+    //──────依存性注入──────
+    ctx(argCtx)
+    //─── コンストラクタ(点灯) ───
+    {
+      ctx.pixels->setPixelColor(0, ctx.pixels->Color(argCol.g, argCol.r, argCol.b));
       ctx.pixels->show();
     }
-    //───── デストラクタ(消灯) ─────
-    ~LedScope(){
+    //────デストラクタ(消灯)────
+    ~LedScope()
+    {
       ctx.pixels->clear();
       ctx.pixels->show();
     }
     //─────────────────
-  };
+  }; /* class LedScope */
 
-  // ───────────────────────
+
+//━━━━━━━━━━━━━━━━━
+// モジュール用：ユーティリティ
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
   // 文字列→10進数パース
-  // ───────────────────────
+  //─────────────────
   inline bool _Str2Int(const char* s, int& out, int minv, int maxv){
     if (!s || !*s)                return false; // 空チェック
     char* end = nullptr;
@@ -92,11 +128,11 @@ public:
     if (minv > maxv              ) return false; // 大小チェック
     if (out  < minv || out > maxv) return false; // 範囲チェック
     return true;
-  }
+  } /* _Str2Int() */
 
-  // ───────────────────────
+  //─────────────────
   // 文字列→論理値パース
-  // ───────────────────────
+  //─────────────────
   inline bool _Str2bool(const char* s, bool& out){
     if (!s || !*s) return false;          // 空チェック
     char* end = nullptr;
@@ -104,12 +140,13 @@ public:
     out       = (num > 0) ? true : false; // 数値変換
     if (*end != '\0') return false;       // 終端チェック
     return true;
-  }
+  } /* _Str2bool() */
 
-  // ───────────────────────
-  // 十進数変換（5バイト固定: 末尾は '!' で埋める）
-  //  - v ∈ [-999, 9999] 以外は #FLW! を返す
-  // ───────────────────────
+  //─────────────────
+  // 十進数変換
+  //  - 末尾は '!' で埋める）
+  //  - v ∈ [-999, 9999] 以外は #FLW!
+  //─────────────────
   inline void _ResValue(Stream& sp, int v) {
     if (v < -999 || v > 9999) { sp.print("#FLW!"); return; }
     char buf[6];  // 5文字 + NUL
@@ -117,25 +154,25 @@ public:
       int a = -v;  // 安全に絶対値化
       snprintf(buf, sizeof(buf), "-%03ld!", a);
     } else {
-      snprintf(buf, sizeof(buf), "%04d!", v);
-    }
+      snprintf(buf, sizeof(buf), "%04d!"  , v);
+    } /* if */
     sp.print(buf);
-  }
+  } /* _ResValue() */
 
-  // ───────────────────────
-  // 先頭トークンを削除したコマンドを取得（任意ユーティリティ）
-  // ───────────────────────
+  //─────────────────
+  // 先頭トークンを削除したコマンド取得
+  //─────────────────
   inline const char* _Remove1st(const char* s) {
       if (!s) return s;
       while (*s==' ' || *s=='\t') ++s;
       const char* slash = strchr(s, '/');
       if (slash && slash > s) return slash + 1;
       return s;
-  }
+  } /* _Remove1st() */
   
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // クライアントへレスポンス
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
   inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名が不正
   inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // 引数チェックで不正

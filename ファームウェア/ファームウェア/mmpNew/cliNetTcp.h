@@ -5,13 +5,15 @@
 // Ver 1.0.0 (2025/11/11) 初版
 //========================================================
 #pragma once
-#include <Arduino.h>
-#include "fnPerser.h"
+#include "cli.h"  // クライアント：共通ユーティリティ
 
-//─────────────────
-// 統一入口(fnPerser.h)
-//─────────────────
-extern String MMP_REQUEST(const String& path, int clientID);
+//━━━━━━━━━━━━━━━━━
+// グローバル資源(宣言)
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 統一入口：fnPerser.hで定義
+  //─────────────────
+  extern String MMP_REQUEST(const String& path, int clientID);
 
 //─────────────────
 // サーバ情報
@@ -43,12 +45,12 @@ namespace {
   // スロット管理
   //─────────────────
   struct Slot {
-    WiFiClient cli              ; // Wifi接続
-    String    rx                ; // 受信バッファ     ※ !まで貯める
-    uint32_t  lastActive = 0    ; // 最終更新時刻(ms) ※ タイムアウトで使用
-    bool      used       = false; // 使用状況
+    WiFiClient  cli               ; // Wifi接続
+    String      rx                ; // 受信バッファ     ※ !まで貯める
+    uint32_t    lastActive = 0    ; // 最終更新時刻(ms) ※ タイムアウトで使用
+    bool        used       = false; // 使用状況
   };
-  Slot*   g_SLOT     = nullptr  ; // 接続スロット
+  Slot* g_SLOT = nullptr; // 接続スロット
 
 //━━━━━━━━━━━━━━━━━
 // ヘルパー：接続スロット制御
@@ -115,12 +117,16 @@ namespace {
   //─────────────────
   // ＭＭＰコマンド実行
   //─────────────────
-  void routeMMP(int i){
+  void routeMMP(int argSlotIDX){
     //┬
     //○前処理
-    auto& s = g_SLOT[i];
+    auto& s = g_SLOT[ argSlotIDX ];
     auto& c = s.cli;
-    if (!c.connected()) { dropSlot(i); return; }
+    if (!c.connected()){dropSlot(argSlotIDX); return; }
+    // ＼（通信断の場合）
+      //↓
+      //○スロットをリセット
+      //▼RETURN
     //│
     //◎┐受信バッファリング
     while (c.available()) {
@@ -157,24 +163,23 @@ namespace {
       // ＼（スロットを使い切った）
         //↓
         //○エラーをセット
+        //▼０:スキップ
         c.print("#MEM!");
         s.lastActive = millis();
-        //▼０
         continue;
       }
       //│
       //○コマンドパーサーへリクエスト
-      ClientKeyScope cks( String(ipKey) );              // RAII
-      String resp = MMP_REQUEST(path, MMP_CLIENT_TCP);  // コマンド実行
+      String resp = MMP_REQUEST(path, ROUTE_ID_TCP);  // コマンド実行
       //│
-      //○通信経路にレスポンスする
+      //○通信経路にレスポンス
       c.print(resp);
       s.lastActive = millis();
       //┴
     } /* while */
     //│
     //○アイドル切断
-    if (millis() - s.lastActive > kIdleMs) dropSlot(i);
+    if (millis() - s.lastActive > kIdleMs) dropSlot(argSlotIDX);
     //┴
   } /* routeMMP() */
 

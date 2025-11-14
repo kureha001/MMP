@@ -1,6 +1,8 @@
-// filename : fnPerser.h
+// filename : parser.h
 //========================================================
-// コマンド パーサーのフロント・対象資源の登録
+// コマンド パーサー
+// - 機能モジュールの登録
+// - 機能モジュールへのルーティング
 //--------------------------------------------------------
 // Ver 1.0.0 (2025/11/14) α版
 //========================================================
@@ -28,8 +30,8 @@
   // パーサー本体：前方宣言
   // 外部公開ポインタ：スケッチで定義
   //─────────────────
-  class  Perser;
-  extern Perser* g_PERSER;
+  class  Parser;
+  extern Parser* g_PARSER;
 
   //─────────────────
   // 統一入口：前方宣言
@@ -40,7 +42,7 @@
 //━━━━━━━━━━━━━━━━━
 // パーサー
 //━━━━━━━━━━━━━━━━━
-class Perser {
+class Parser {
 
   // 依存性注入
   MmpContext&               ctxRef;     // コンテクスト
@@ -53,7 +55,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  Perser(MmpContext& c): ctxRef(c) {}
+  Parser(MmpContext& c): ctxRef(c) {}
 
   //━━━━━━━━━━━━━━━━━
   // パーサーの初期化
@@ -71,7 +73,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コマンド実行
   //━━━━━━━━━━━━━━━━━
-  String ExecuteString(const String& argPath){
+  String RunCommand(const String& argPath){
     //┬
     //①┐清書したコマンドパスを取得
     char path[ REQUEST_LENGTH ];
@@ -135,8 +137,8 @@ public:
     //○エラー(未登録コマンド)をリターン
     return "#CMD!";
     //┴
-  } /* ExecuteString() */
-}; /* class Perser */
+  } /* RunCommand() */
+}; /* class Parser */
 
 
 //━━━━━━━━━━━━━━━━━
@@ -148,6 +150,6 @@ inline String MMP_REQUEST(const String& argPath, int argClientID){
   ctx.clientID = argClientID;
 
   // コマンド・パース処理
-  return g_PERSER->ExecuteString(argPath);
+  return g_PARSER->RunCommand(argPath);
 
 } /* MMP_REQUEST() */

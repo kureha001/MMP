@@ -1,10 +1,11 @@
-// filename : mmpNew.ino
-const char* g_VERSION = "V10a!";  // コンテクストのメンバ
+// filename : mmp.ino
 //========================================================
 //  MMP Firmware
 //--------------------------------------------------------
 // ボード情報：Waveshare ESP32-S3-tiny用
-//   - ESP32S3 Dev Module 
+//   - ESP32S3 Dev Module
+//   - USB CDC ON Boot: Enabled
+//   - Flash Size: 4MB (32Mb)
 //--------------------------------------------------------
 // Ver 1.0.0 (2025/11/14) α版
 //========================================================
@@ -14,7 +15,9 @@ const char* g_VERSION = "V10a!";  // コンテクストのメンバ
 #include "cli.h"        // クライアント：共通ユーティリティ
 #include "cliSerial.h"  // クライアント：シリアルポート
 #include "cliNet.h"     // クライアント：ネットワーク
-#include "fnPerser.h"   // コマンド パーサー
+#include "parser.h"     // コマンド パーサー
+
+const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
 
 //━━━━━━━━━━━━━━━━━
 // グローバル変数
@@ -22,8 +25,8 @@ const char* g_VERSION = "V10a!";  // コンテクストのメンバ
   //─────────────────
   // アクティブ判定
   //─────────────────
-  bool g_READY_SERIAL = false;
-  bool g_READY_NET    = false;
+  bool ino_READY_SERIAL = false;
+  bool ino_READY_NET    = false;
 
 
 //━━━━━━━━━━━━━━━━━
@@ -40,15 +43,15 @@ const char* g_VERSION = "V10a!";  // コンテクストのメンバ
   // - 型定義：mod.h
   //─────────────────
   MmpContext ctx  = {
-    .pixels   = &g_PIXEL  , // コマンド別のRGB-LED発行用
-    .version  = g_VERSION   // ファームウェア・バージョン
+    .pixels   = &g_PIXEL,   // コマンド別のRGB-LED発行用
+    .version  = ino_VERSION // ファームウェア・バージョン
   }; /* ctx */
 
   //─────────────────
-  // パーサー
+  // パーサー：parser.hで定義・実装
   //─────────────────
-  Perser  g_ROUTER(ctx)       ; // 本体(依存性注入)
-  Perser* g_PERSER = &g_ROUTER; // 外部公開ポインタ
+  Parser  ino_ROUTER(ctx)       ; // 本体(依存性注入)
+  Parser* g_PARSER = &ino_ROUTER; // 外部公開ポインタ
 
 
 //━━━━━━━━━━━━━━━━━
@@ -57,11 +60,11 @@ const char* g_VERSION = "V10a!";  // コンテクストのメンバ
 void setup(){
 
   // クライアントのハンドルを作成
-  g_READY_SERIAL = InitSerial();  // シリアルポート
-  g_READY_NET    = InitNet();     // ネット
+  ino_READY_SERIAL = InitSerial();  // シリアルポート
+  ino_READY_NET    = InitNet();     // ネット
 
   // パーサーを初期化
-  g_ROUTER.Init();
+  ino_ROUTER.Init();
 
   // 機能モジュールの初期化
   InitAnalog(ctx);
@@ -81,12 +84,12 @@ void setup(){
 void loop(){
 
   // クライアント(シリアル)のハンドル
-  if (g_READY_SERIAL) {
+  if (ino_READY_SERIAL) {
     srvSerial::handle();
   } /* if */
 
   // クライアント(ネット)のハンドル
-  if (g_READY_NET) {
+  if (ino_READY_NET) {
     srvHttp::handle();  // WebAPI用
     srvTcp::handle();   // TCP Bridge用
   } /* if */

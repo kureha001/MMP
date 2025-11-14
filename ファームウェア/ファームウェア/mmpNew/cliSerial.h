@@ -2,24 +2,25 @@
 //========================================================
 // クライアント：シリアル通信
 //-------------------------------------------------------- 
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
-#include <Adafruit_NeoPixel.h>
-#include "cli.h"        // クライアント：共通ユーティリティ
+#include "cli.h"  // クライアント：共通ユーティリティ
+#include "mod.h"  // 機能モジュール：抽象基底クラス
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源(宣言)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
+  // コンテクスト
+  // - 型定義：mod.h
+  // - 実　装：スケッチ
+  //─────────────────
+  extern MmpContext ctx;
+
+  //─────────────────
   // 統一入口：fnPerser.hで定義
   //─────────────────
   extern String MMP_REQUEST(const String& path, int clientID);
-
-//─────────────────
-// NwoPixel(個数=1) コンテクストのメンバ
-//─────────────────
-#define NEOPIXEL_PIN 38   // Waveshare ESP32-S3-Tiny: WS2812 DIN=GPIO38
-Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 //━━━━━━━━━━━━━━━━━
 // 通信速度の定義・設定
@@ -75,15 +76,18 @@ Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
   //━━━━━━━━━━━━━━━━━
   bool InitSerial(){
 
+    //ボーレート設定ボタンのピンを定義
     pinMode(SW_PIN_A, INPUT_PULLUP);
     pinMode(SW_PIN_B, INPUT_PULLUP);
     pinMode(SW_PIN_C, INPUT_PULLUP);
     delay(10);
 
+    //ボタンを読取
     int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
     int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
     int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
 
+    //ボーレートIDを取得
     int id = 7;
     if      (A==0 && B==0 && C==0) id = 0;
     else if (A==1 && B==0 && C==0) id = 1;
@@ -95,10 +99,10 @@ Adafruit_NeoPixel g_pixels(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
     // ボーレートに応じてRGB-LEDを点灯
     RGB c = BAUD_COLORS[id]; // 色パターンを取得
-    g_pixels.begin();        // RGB-LEDを点灯
-    g_pixels.clear();
-    g_pixels.setPixelColor(0, g_pixels.Color(c.g, c.r, c.b));
-    g_pixels.show();
+    ctx.pixels->begin();        // RGB-LEDを点灯
+    ctx.pixels->clear();
+    ctx.pixels->setPixelColor(0, ctx.pixels->Color(c.g, c.r, c.b));
+    ctx.pixels->show();
 
     // シリアルポートを起動
     Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
@@ -163,7 +167,7 @@ namespace {
       String path = argBuf.substring(0, p+1);
       argBuf.remove(0, p+1);
       //│
-      //○コマンドパーサーへリクエスト
+      //○コマンドパーサーへリクエスト(ルートID指定)
       String resp = MMP_REQUEST(path, argRouteID);
       //│
       //○通信経路にレスポンスする

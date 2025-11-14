@@ -2,7 +2,7 @@
 //========================================================
 // コマンド パーサーのフロント・対象資源の登録
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
 #include "cli.h"    // クライアント：共通ユーティリティ
@@ -18,7 +18,9 @@
 // グローバル資源(宣言)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト：スケッチで定義
+  // コンテクスト
+  // - 型定義：mod.h
+  // - 実　装：スケッチ
   //─────────────────
   extern MmpContext ctx;
 
@@ -36,42 +38,6 @@
 
 
 //━━━━━━━━━━━━━━━━━
-// クライアント情報(RAIIガード)
-//━━━━━━━━━━━━━━━━━
-class ReplyScope {
-
-  // データ退避ワーク
-  MmpContext& ctxRef      ; // コンテキスト
-  Stream*     oldVStream  ; // 仮想出力ストリーム
-  int         oldClientID ; // クライアントID
-
-public:
-  //─────本体シグネチャ─────
-  ReplyScope(
-    MmpContext& c           , // コンテキスト
-    Stream*     argVStream  , // 仮想出力ストリーム
-    int         argClientID   // クライアントID
-  ):
-  //─────既存データ退避─────
-  ctxRef(c)                 , // コンテキスト
-  oldVStream(*c.vStream)    , // 仮想出力ストリーム
-  oldClientID(c.clientID)     // クライアントID
-  //─────コンストラクタ─────
-  {
-    *ctxRef.vStream = argVStream  ; // 仮想出力ストリーム
-    ctxRef.clientID = argClientID ; // クライアントID
-  }
-  //───── デストラクタ ─────
-  ~ReplyScope()
-  {
-    *ctxRef.vStream = oldVStream  ; // 仮想出力ストリーム
-    ctxRef.clientID = oldClientID ; // クライアントID
-  }
-  //─────────────────
-}; /* class ReplyScope */
-
-
-//━━━━━━━━━━━━━━━━━
 // パーサー
 //━━━━━━━━━━━━━━━━━
 class Perser {
@@ -82,17 +48,6 @@ class Perser {
   // 保有情報
   std::vector<ModuleBase*>  mods;       // 機能モジュール群
 
-  // 仮想出力ストリーム(モジュールのprintを蓄積)
-  class StringStream : public Stream {
-    String out;
-    public:
-      size_t  write(uint8_t c) override { out += (char)c; return 1; }
-      int     available()      override { return  0; }
-      int     read()           override { return -1; }
-      int     peek()           override { return -1; }
-      void    flush()          override {}
-      String  str()            const    { return out; }
-  }; /* StringStream:Stream{} */
 
 public:
   //━━━━━━━━━━━━━━━━━
@@ -116,58 +71,52 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コマンド実行
   //━━━━━━━━━━━━━━━━━
-  String ExecuteString(const String& argPath, int argClientID){
+  String ExecuteString(const String& argPath){
     //┬
-    //①┐ワークバッファへ安全コピー
-    char buf[ REQUEST_LENGTH ];
+    //①┐清書したコマンドパスを取得
+    char path[ REQUEST_LENGTH ];
     {
-      //◇
-      size_t n = argPath.length();
-      if (n >= sizeof(buf)) n = sizeof(buf) - 1;
-      memcpy(buf, argPath.c_str(), n);
-      buf[n] = '\0';
-    } /* ① */
-      //┴
-    //│
-    //②┐末尾 '!'があれば除去
-    {
-      //◇
-      size_t n = strlen(buf);
-      if (n > 0 && buf[n-1] == '!') buf[n-1] = '\0';
+      //◇コマンドパスを取込(末尾処理あり)
+      size_t pLen = argPath.length();
+      if (pLen >= sizeof(path)) pLen = sizeof(path) - 1;
+      memcpy(path, argPath.c_str(), pLen);
+      path[pLen] = '\0';
+      //│
+      //◇コマンドパスの末尾に'!'があれば除去(末尾処理あり)
+      pLen = strlen(path);
+      if (pLen > 0 && path[pLen-1] == '!') path[pLen-1] = '\0';
     } /* ② */
       //┴
     //│
-    //③┐トークンをコマンド・引数に分解
+    //③┐コマンドデータ、データ数を取得
     char dat[ DAT_COUNT ][ DAT_LENGTH ];
     int  dat_cnt = 0;
     {
-      //○区切文字の存在確認
-      char* tok = strtok(buf, ":");
+      //○コマンドパスの区切文字の存在確認
+      char* tok = strtok(path, ":");
       //│
-      //◎┐区切文字で分解
+      //◎┐トークン毎にコマンドデータに追加
       while (tok && dat_cnt < DAT_COUNT){
-        //○区切文字までをトークン追加
+        //○トークンをコマンドデータに追加(末尾処理あり)
         strncpy(dat[dat_cnt], tok, sizeof(dat[0])-1);
         dat[dat_cnt][sizeof(dat[0])-1] = '\0';
         //│
         //○トークン数をインクリメント
         dat_cnt++;
         //│
-        //○区切文字の存在確認
+        //○コマンドパスの区切文字の存在確認
         tok = strtok(nullptr, ":");
       } /* while */
         //┴
       //│
-      //◇
+      //◇エラー(未登録コマンド)をリターン
       if (dat_cnt == 0) return "#CMD!";
     } /* ③ */
       //┴
     //│
     //④┐モジュール機能を実行
-    StringStream vs;  //仮想出力ストリーム
-    {
-      //○RAIIガード
-      ReplyScope scope(ctxRef, &vs, argClientID);
+      //○仮想出力ストリームを初期化
+      ctx.vStream.clear();
       //│
       //◎┐モジュールを走査
       for (auto* m : mods){
@@ -177,15 +126,13 @@ public:
           //○モジュール機能を実行
           //▼RETURN:モジュールの戻り値をリターン
           m->handle(dat, dat_cnt);
-          return vs.str();
+          return ctx.vStream.str();
         } /* if */
         //┴
       } /* for */
       //┴
-    } /* ④ */
-      //┴
     //│
-    //⑤エラー（未登録コマンド）をリターン
+    //○エラー(未登録コマンド)をリターン
     return "#CMD!";
     //┴
   } /* ExecuteString() */
@@ -197,7 +144,10 @@ public:
 //━━━━━━━━━━━━━━━━━
 inline String MMP_REQUEST(const String& argPath, int argClientID){
 
+  // クライアントIDを更新
+  ctx.clientID = argClientID;
+
   // コマンド・パース処理
-  return g_PERSER->ExecuteString(argPath, argClientID);
+  return g_PERSER->ExecuteString(argPath);
 
 } /* MMP_REQUEST() */

@@ -2,7 +2,7 @@
 //========================================================
 // モジュール：アナログ入力
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
 #include "mod.h"  // 機能モジュール：抽象基底クラス
@@ -15,10 +15,10 @@ const int g_ADDR_PINS[4] = {10, 9, 8, 7}; // アドレス・バス
 const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
 
 //━━━━━━━━━━━━━━━━━
-// クライアント情報
+// クライアント別データ
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // 型
+  // 型宣言
   //─────────────────
   struct AnaClientData {
     int Values[16*4];   // チャンネル別の入力信号
@@ -26,7 +26,7 @@ const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
     int PlayerCnt;      // 使用範囲(プレイヤ数;チャンネル数)
   };
   //─────────────────
-  // クライアント情報
+  // 入力バッファ
   //─────────────────
   static AnaClientData* g_ANA_DAT = nullptr;
 
@@ -39,13 +39,13 @@ void InitAnalog(const MmpContext& ctx) {
   Serial.println("---------------------------");
   Serial.println("[HC4067 buffer initialize]");
 
-  const int datCount = MAX_CLIENTS;
-  void* p = calloc(datCount, sizeof(AnaClientData)); // 全要素0で初期化して確保
+  // クライアント別データのメモリ確保
+  void* p = calloc(MAX_CLIENTS, sizeof(AnaClientData)); // 全要素0で初期化して確保
   if (!p) { return; }
   g_ANA_DAT = static_cast<AnaClientData*>(p);
 
   // 既定設定
-  for (int i = 0; i < datCount; ++i) {
+  for (int i = 0; i < MAX_CLIENTS; ++i) {
     g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
     g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
@@ -80,8 +80,8 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = MMP_REPLY(ctx);      // 返信出力先（経路抽象）
-    LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
+    Stream&     sp = ctx.vStream;         // 仮想ストリーム
+    LedScope    scopeLed(ctx, led);       // モジュール別LED色で発光
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────

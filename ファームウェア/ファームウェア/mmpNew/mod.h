@@ -2,10 +2,9 @@
 //========================================================
 // 各モジュールの共通機能・抽象基底クラス
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
-#include <Adafruit_NeoPixel.h>
 
 // クライアントからのリクエスト条件
 #define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
@@ -15,25 +14,43 @@
 //─────────────────
 // モジュール別のRGB-LED点灯色
 //─────────────────
-struct LedColor { uint8_t r,g,b; };
-static constexpr LedColor RGB_INFO    = {  5,  5,  5};
-static constexpr LedColor RGB_ANALOG  = { 10,  0, 10};
-static constexpr LedColor RGB_DIGITAL = { 10,  0,  0};
-static constexpr LedColor RGB_PWM     = {  0,  0, 50};
-static constexpr LedColor RGB_I2C     = { 10, 10,  0};
-static constexpr LedColor RGB_MP3     = {  0, 10,  0};
+struct typeColor { uint8_t r,g,b; };
+static constexpr typeColor RGB_INFO    = {  5,  5,  5};
+static constexpr typeColor RGB_ANALOG  = { 10,  0, 10};
+static constexpr typeColor RGB_DIGITAL = { 10,  0,  0};
+static constexpr typeColor RGB_PWM     = {  0,  0, 50};
+static constexpr typeColor RGB_I2C     = { 10, 10,  0};
+static constexpr typeColor RGB_MP3     = {  0, 10,  0};
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源(定義)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト(型定義)
+  // 仮想出力ストリーム
+  //─────────────────
+  class StringStream : public Stream {
+    String out;
+  public:
+      // ストリームをオーバーライド
+      size_t  write(uint8_t c) override { out += (char)c; return 1; }
+      int     available()      override { return  0;  }
+      int     read()           override { return -1;  }
+      int     peek()           override { return -1;  }
+      void    flush()          override {             }
+      // 独自メソッドを追加
+      void    clear()                   { out = "";   }
+      String  str()            const    { return out; }
+  }; /* class StringStream */
+
+  //─────────────────
+  // コンテクスト
+  // - 実　装：スケッチ
   //─────────────────
   struct MmpContext {
-    Stream**            vStream     ; // 通信経路
+    StringStream        vStream     ; // メンバとして保持
     int                 clientID    ; // クライアントID
-    Adafruit_NeoPixel*  pixels      ; // コマンド別のRGB-LED発行用
-    const char*         version     ;
+    Adafruit_NeoPixel*  pixels      ; // RGB-LED発光用
+    const char*         version     ; // システムのバージョン
   };
 
 //━━━━━━━━━━━━━━━━━
@@ -46,18 +63,16 @@ protected:
   MmpContext& ctx;  //コンテクスト
 
   // スコープ
-  LedColor    led;  // モジュール別ＬＥＤ色
+  typeColor   led;  // モジュール別ＬＥＤ色
 
 public:
-  //─────本体シグネチャ─────
-  ModuleBase(
-    MmpContext& argCtx,
-    LedColor    argCol
-  ):
-  //──────依存性注入──────
-  ctx(argCtx),  // ※LedScope,MMP_REPLYで利用
-  led(argCol)   // ※LedScopeで利用
   //─────コンストラクタ─────
+  ModuleBase(
+    MmpContext& argCtx, // コンテクスト
+    typeColor   argCol  // モジュール別LED色
+  ):
+  ctx(argCtx),  // コンテクスト
+  led(argCol)   // モジュール別LED色
   {} // 処理なし
   //───── デストラクタ ─────
   virtual ~ModuleBase()
@@ -75,14 +90,8 @@ public:
 
 
 //━━━━━━━━━━━━━━━━━
-// モジュール用：初期処理
+// モジュール用：前処理
 //━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 返信出力先（経路抽象）
-  // ※コンテクストはModuleBase経由で指定
-  //─────────────────
-  inline Stream& MMP_REPLY(MmpContext& ctx){ return **ctx.vStream; }
-
   // ───────────────────────
   // LED点滅(RAIIガード)
   // ───────────────────────
@@ -92,14 +101,12 @@ public:
     MmpContext& ctx;  // コンテクスト
 
   public:
-    //─────本体シグネチャ─────
+    //─── コンストラクタ(点灯) ───
     LedScope(
       MmpContext& argCtx, // ※ModuleBase経由で指定
-      LedColor    argCol  // ※ModuleBase経由で指定
+      typeColor   argCol  // ※ModuleBase経由で指定
     ) :
-    //──────依存性注入──────
-    ctx(argCtx)
-    //─── コンストラクタ(点灯) ───
+    ctx(argCtx) //コンテクスト
     {
       ctx.pixels->setPixelColor(0, ctx.pixels->Color(argCol.g, argCol.r, argCol.b));
       ctx.pixels->show();

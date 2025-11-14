@@ -2,79 +2,65 @@
 //========================================================
 // モジュール：ＰＷＭ出力
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
 #include <Wire.h>     // デバイスはi2c制御
 #include <PCA9685.h>  // デバイス固有
 #include "mod.h"      // 機能モジュール：抽象基底クラス
 
-//━━━━━━━━━━━━━━━
-// グローバル変数
-//━━━━━━━━━━━━━━━
-  // デバイスのコンテナ
-  constexpr uint8_t PWM_COUNT = 8;  // 走査デバイス数
-  PCA9685 g_PWM[PWM_COUNT];         // コンテナ
-
-  // 最大ID
-  int g_MAX_DEVICE_ID  = 0; // デバイスID
-  int g_MAX_CHANNEL_ID = 0; // チャンネルID(デバイスID * 16)
+//━━━━━━━━━━━━━━━━━
+// 物理デバイス数（そのまま）
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 基本
+  //─────────────────
+  constexpr uint8_t PWM_COUNT = 8;        // 走査デバイス数
+  PCA9685 g_PWM[PWM_COUNT];               // コンテナ
+  //─────────────────
+  // チャネル上限（理論最大値）
+  // 実際に使うのは 0 ～ g_MAX_CHANNEL_ID まで
+  //─────────────────
+  static constexpr int MAX_PWM_CHANNEL = PWM_COUNT * 16;
+  //─────────────────
+  // 最大IDは今まで通り物理から算出
+  //─────────────────
+  int g_MAX_DEVICE_ID  = 0;
+  int g_MAX_CHANNEL_ID = 0;
 
 //━━━━━━━━━━━━━━━━━
-// プリセット情報
+// クライアント別データ
 //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 型宣言
   //─────────────────
   typedef struct {
-    int min;      // 最小
-    int max;      // 最大
+    int min;
+    int max;
   } typePreset_Base;
-  //─────────────────
+  //────────────────
   typedef struct {
     uint8_t         enable; // 有効無効(0=unset, 1=set)
     uint8_t         deg;    // 最大角度
-    typePreset_Base pwm;    // ＰＷＭ値用
+    typePreset_Base pwm;    // PWM値用
   } typePresetAngle;
-  //─────────────────
+  //────────────────
   typedef struct {
     uint8_t         enable; // 0=unset, 1=set
     typePreset_Base right ; // 右回り用
     typePreset_Base left  ; // 左回り用
   } typePresetPwm;
-  //─────────────────
-  // プリセット情報
-  //─────────────────
-  typePresetAngle g_TBL_ANGLE[ PWM_COUNT * 16]; // 角度指定用
-  typePresetPwm   g_TBL_ROTATE[PWM_COUNT * 16]; // 回転サーボ用
-
-
-//━━━━━━━━━━━━━━━━━
-// ユーティリティ
-//━━━━━━━━━━━━━━━━━
   //────────────────
-  // 初期化：通常サーボ
+  // プリセット
   //────────────────
-  static void InitAngle(int argFrom, int argTo){
-    for (int idx = argFrom; idx <= argTo; idx++){
-      typePresetAngle &T = g_TBL_ANGLE[idx];
-      T.enable    = 0; // 有効性判定
-      T.deg       = 0; // 最大角度
-      T.pwm.min   = 0; // PWM値：0度
-      T.pwm.max   = 0; //　　　：最大角度
-    }
-  }
+  struct PwmClientData {
+    typePresetAngle angle [ MAX_PWM_CHANNEL ];
+    typePresetPwm   rotate[ MAX_PWM_CHANNEL ];
+  };
   //────────────────
-  // 初期化：回転サーボ
+  // クライアント全体のバッファ
   //────────────────
-  static void InitRotate(int argFrom, int argTo){
-    for (int idx = argFrom; idx <= argTo; idx++){
-      typePresetPwm &T   = g_TBL_ROTATE[idx];
-      T.enable    = 0; // 有効性判定
-      T.right.min = 0; // PWM値：右回り：0%
-      T.right.max = 0; //　　　　　　　：100%
-      T.left.min  = 0; // PWM値：左回り：0%
-      T.left.max  = 0; //　　　　　　　：100%
-    }
-  }
+  static PwmClientData* g_PWM_DAT = nullptr;
 
 
 //━━━━━━━━━━━━━━━━━
@@ -112,9 +98,30 @@ static void InitPWM(){
   g_MAX_DEVICE_ID  = count - 1;       // デバイスID
   g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
 
-  // プリセットを初期化
-  InitRotate(0, g_MAX_CHANNEL_ID);    // 回転サーボ用
-  InitAngle (0, g_MAX_CHANNEL_ID);    // 角度指定用
+  // クライアント別データのメモリ確保
+  const int datCount = MAX_CLIENTS;                       // クライアント数
+  void* p = calloc(datCount, sizeof(PwmClientData));      // 全要素 0 で確保
+  if (!p) { return; }
+  g_PWM_DAT = static_cast<PwmClientData*>(p);
+
+  // 既定設定
+  for   (int cid = 0; cid <  datCount        ; ++cid) {
+    for (int ch  = 0; ch  <= g_MAX_CHANNEL_ID; ++ch ) {
+
+      auto& a = g_PWM_DAT[cid].angle[ch];
+      a.enable    = 0;
+      a.deg       = 0;
+      a.pwm.min   = 0;
+      a.pwm.max   = 0;
+
+      auto& r = g_PWM_DAT[cid].rotate[ch];
+      r.enable    = 0;
+      r.right.min = 0;
+      r.right.max = 0;
+      r.left.min  = 0;
+      r.left.max  = 0;
+    }
+  }
 
   if (g_MAX_DEVICE_ID < 0) Serial.println(String("　Device  ID : Not Found"));
   else                     Serial.println(String("　Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
@@ -150,9 +157,16 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = MMP_REPLY(ctx);      // 返信出力先（経路抽象）
+    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
+
+    const int ID = ctx.clientID;
+    if (!g_PWM_DAT || ID < 0 || ID >= MAX_CLIENTS) {
+      _ResIniErr(sp);  // 安全策
+      return;
+    }
+    PwmClientData& cli = g_PWM_DAT[ID];
 
     // ───────────────────────────────
     // 機能 : モジュールの接続確認
@@ -241,7 +255,7 @@ public:
 
       // ３．プリセット登録：
       for (int ch = from; ch <= to; ++ch){
-        typePresetAngle &tbl = g_TBL_ANGLE[ch];
+        typePresetAngle &tbl = cli.angle[ch];
         tbl.enable  = 1   ; // 有効性判定
         tbl.deg     = deg ; // 最大角度
         tbl.pwm.min = ps  ; // PWM値：0度
@@ -274,7 +288,7 @@ public:
           ){_ResChkErr(sp); return;}
 
         // 1.3.機能チェック
-        typePresetAngle &tbl = g_TBL_ANGLE[ch];
+        typePresetAngle &tbl = cli.angle[ch];
         if(!tbl.enable ){_ResIniErr(sp); return;}   // 有効性判定
 
         // 1.4.相関チェック
@@ -336,7 +350,7 @@ public:
 
       // ２．プリセット登録：
       for (int ch =from; ch <= to; ++ch){
-        typePresetPwm &tbl   = g_TBL_ROTATE[ch];
+        typePresetPwm &tbl   = cli.rotate[ch];
         tbl.enable    = 1 ; // 有効性判定
         tbl.right.min = rs; // PWM値：右回り：0%
         tbl.right.max = re; //　　　　　　　：100%
@@ -370,7 +384,7 @@ public:
            ){_ResChkErr(sp); return;}
 
         // 1.3.機能チェック
-        typePresetPwm &tbl = g_TBL_ROTATE[ch];
+        typePresetPwm &tbl = cli.rotate[ch];
         if(!tbl.enable){_ResIniErr(sp); return;}    // 有効性判定
 
       // ２．主要データ取得：
@@ -424,8 +438,24 @@ public:
         if(from > to){_ResChkErr(sp); return;}
       
       // ２．プリセット削除：
-      if(strcmp(Cmd,"ANGLE/RESET") == 0) InitAngle (from, to);
-      else                               InitRotate(from, to);
+      if(strcmp(Cmd,"ANGLE/RESET") == 0){
+        for (int ch = from; ch <= to; ch++){
+          typePresetAngle &T = cli.angle[ch];
+          T.enable    = 0; // 有効性判定
+          T.deg       = 0; // 最大角度
+          T.pwm.min   = 0; // PWM値：0度
+          T.pwm.max   = 0; //　　　：最大角度
+        }
+      } else {
+        for (int ch = from; ch <= to; ch++){
+          typePresetPwm &T   = cli.rotate[ch];
+          T.enable    = 0; // 有効性判定
+          T.right.min = 0; // PWM値：右回り：0%
+          T.right.max = 0; //　　　　　　　：100%
+          T.left.min  = 0; // PWM値：左回り：0%
+          T.left.max  = 0; //　　　　　　　：100%
+        }
+      }
 
       // ３．後処理：
       _ResOK(sp);

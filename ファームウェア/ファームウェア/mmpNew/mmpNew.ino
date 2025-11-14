@@ -1,14 +1,16 @@
 // filename : mmpNew.ino
-const char* g_version = "V060!";  // コンテクストのメンバ
+const char* g_VERSION = "V10a!";  // コンテクストのメンバ
 //========================================================
 //  MMP Firmware
 //--------------------------------------------------------
 // ボード情報：Waveshare ESP32-S3-tiny用
 //   - ESP32S3 Dev Module 
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/11) 初版
+// Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #include <Wire.h>
+#include <Adafruit_NeoPixel.h>
+
 #include "cli.h"        // クライアント：共通ユーティリティ
 #include "cliSerial.h"  // クライアント：シリアルポート
 #include "cliNet.h"     // クライアント：ネットワーク
@@ -28,14 +30,18 @@ const char* g_version = "V060!";  // コンテクストのメンバ
 // グローバル資源(定義)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト
+  // NwoPixel(個数=1) コンテクストのメンバ
   //─────────────────
-  Stream* g_reply = &Serial;
+  #define NEOPIXEL_PIN 38   // Waveshare ESP32-S3-Tiny: WS2812 DIN=GPIO38
+  Adafruit_NeoPixel g_PIXEL(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+  //─────────────────
+  // コンテクスト
+  // - 型定義：mod.h
+  //─────────────────
   MmpContext ctx  = {
-    .vStream  = &g_reply  , // 現在の“返信出力先”Stream（二重ポインタ）
-    .clientID = -1        , // クライアントID
-    .pixels   = &g_pixels , // コマンド別のRGB-LED発行用（cliSerial.h のグローバル）
-    .version  = g_version   // ファームウェア・バージョン
+    .pixels   = &g_PIXEL  , // コマンド別のRGB-LED発行用
+    .version  = g_VERSION   // ファームウェア・バージョン
   }; /* ctx */
 
   //─────────────────
@@ -65,7 +71,7 @@ void setup(){
   // 開始メッセージ出力
   Serial.println("---------------------------");
   Serial.print  ("Running... MMP Ver");
-  Serial.println(String(g_version));
+  Serial.println(String(ctx.version));
   Serial.println("---------------------------");
 } /* setup() */
 

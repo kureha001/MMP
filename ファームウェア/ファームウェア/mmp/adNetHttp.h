@@ -142,94 +142,156 @@ namespace {
     add_cors(argSrv);
     //│
     //○HTTPステータスを返却
-    argSrv.send(204); // 豆知識{200:返すデータあり｜204:返すデータなし}
+    //  ※豆知識{200:返すデータあり｜204:返すデータなし}
+    // argSrv.send(204);
+    argSrv.send(204, "text/plain", "");
     //┴
   } /* send_204() */
 
   //─────────────────
   // JSON形式でレスポンス
   //─────────────────
-  inline void send_json(WebServer& argSrv, const String& argJSON, int argCode=200) {
+  inline void SEND_JSON(
+    WebServer&    argSrv , // 送信先
+    const String& argJSON
+  ) {
     add_cors(argSrv);
-    argSrv.send(argCode, "application/json; charset=utf-8", argJSON);
-  } /* send_json() */
+    argSrv.send(
+        200,
+        "application/json; charset=utf-8",
+        argJSON
+    );
+  } /* SEND_JSON() */
 
   //─────────────────
-
+  // コマンドパーサーからの戻り値が数値型であるか判定
   //─────────────────
-  // MMPエラーコードを表示用メッセージへ変換
-  //─────────────────
-  static const char* map_error(const String& argErrID){
-    if (argErrID == "#URI!") return "ERR:URIが不正"             ;
-    if (argErrID == "#CMD!") return "ERR:コマンド名が不正"      ;
-    if (argErrID == "#CHK!") return "ERR:引数チェックで違反"    ;
-    if (argErrID == "#INI!") return "ERR:データが未初期化"      ;
-    if (argErrID == "#DEV!") return "ERR:使用不可のデバイス"    ;
-    if (argErrID == "#FIL!") return "ERR:ファイル操作が異常終了";
-    if (argErrID == "#NOD!") return "ERR:データ項目名が不正"    ;
-    if (argErrID == "#SID!") return "ERR:未定義の経路ID"        ;
-    if (argErrID == "#FUL!") return "ERR:認証スロットが満杯"    ;
-    if (argErrID == "#KEY!") return "ERR:認証キーが不正"        ;
-    if (argErrID == "#RET!") return "ERR:コマンド戻値が破損"    ;
-    return "ERR:その他のエラー";
-  } /* map_error() */
-
-  //─────────────────
-  // MMPコマンドのレスポンスが数値であるかを判定
-  //─────────────────
-  static bool isDec4Signed(const String& argBody){
+  static bool SEND_IS_VALUE(const String& argBody){
     if (argBody.length() != 4) return false;
     int start = (argBody[0]=='-') ? 1 : 0;
     for (int i=start; i<4; ++i){
       if (!isDigit((unsigned char)argBody[i])) return false;
     } // for
     return true;
-  } /* isDec4Signed() */
+  } /* SEND_IS_VALUE() */
 
   //─────────────────
-  // MMPコマンドのレスポンスから数値を取得
+  // コマンドパーサーからの戻り値を数値に変換
   //─────────────────
-  static int parseDec4Signed(const String& argBody){
+  static int SEND_CONV_VALUE(const String& argBody){
     bool neg = (argBody[0]=='-');
     int v = 0;
     for (int i = neg ? 1 : 0; i < 4; ++i) v = v*10 + (argBody[i]-'0');
     return neg ? -v : v;
-  } /* parseDec4Signed() */
+  } /* SEND_CONV_VALUE() */
 
   //─────────────────
-  // ユーザにレスポンス(JSON形式)
-  //----------------------------------
-  // タイムスタンプ更新あり(認証情報側)
+  // メッセージIDに該当するメッセージを取得
   //─────────────────
-  static void sendJson(
-    bool          pRes   , // 処理結果             {OK:true | NG:false}
-    const String& pErr   , // エラーMSG            {正常の場合は空}
-    int           pVal   , // 戻値が数値の場合     {-999～9999、対象外は-1000 }
-    const String& pTxt   ,  // 戻値が文字列の場合   {4バイトの文字列、対象外は空}
-    const String& pAuthCD = ""
+  static const char* SEND_MSG(const String& argID){
+
+    // コマンドパーサーの戻り値
+    if (argID == "!!!!!") return "OK:戻り値無し"            ;
+    if (argID == "!VAL!") return "OK:数値"                  ;
+    if (argID == "!STR!") return "OK:文字列"                ;
+    if (argID == "#CMD!") return "NG:コマンド名が不正"      ;
+    if (argID == "#CHK!") return "NG:引数チェックで違反"    ;
+    if (argID == "#INI!") return "NG:データが未初期化"      ;
+    if (argID == "#DEV!") return "NG:使用不可のデバイス"    ;
+    if (argID == "#FIL!") return "NG:ファイル操作が異常終了";
+    if (argID == "#NOD!") return "NG:データ項目名が不正"    ;
+
+    // アダプタ独自のエラー
+    if (argID == "!AST!") return "OK:認証開始(認証コード)"     ;
+    if (argID == "#DFL!") return "NG:URIが不正"                ;
+    if (argID == "#SS0!") return "NG:認証管理の開始に失敗"     ;
+    if (argID == "#SS1!") return "NG:ユーザ認証に失敗"         ;
+    if (argID == "#SS2!") return "NG:接続認証に失敗"           ;
+ 
+    return "NG:その他のエラー";
+  } /* SEND_MSG() */
+
+  //─────────────────
+  // データ送信
+  //─────────────────
+  struct JSON_DATA{
+    bool    Res = false; // MMPの処理結果      {OK:true | NG:false}
+    String  Msg = ""   ; // エラーMSG          {正常の場合は空}
+    int     Val = -1000; // 戻値が数値の場合   {-999～9999、対象外は-1000 }
+    String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
+  }; /* JSON_DATA */
+  //─────────────────
+  void SEND_CONN(
+    SLOT_HTTP&    argSS  , // 送信先
+    const String& argMSG   // 送信メッセージ
   ){
   //┬
   //○前処理
-  String js       ; // JSON文字列
-  js.reserve(160) ; // 予備確保
+  JSON_DATA jsDat     ;
+  String    js;
+  //│
+  //◇┐JSON内容編集
+  String msgID = argMSG;
+    if (
+        argMSG.length() == 7 &&  // 全長7文字
+        argMSG[0] == '$'     &&  // 先頭記号
+        argMSG[6] == '$'         // 末尾記号
+    ){
+    //├→（認証コード発行の場合）
+      //○MSGIDを独自IDに書き換え
+      //○取得値を文字列型にセット
+      //○処理結果をセット
+      msgID     = "!AST!"              ; // 認証開始
+      jsDat.Str = argMSG.substring(1,6); // 取得値(文字列：認証コード)
+      jsDat.Res = true                 ; // 正常
+      //┴
+    } else if (argMSG == "!!!!!") {
+    //├→（正常系：戻り値なし の場合）
+      //○処理結果を正常にセット
+      jsDat.Res = true ; // 正常
+      //┴
+    } else {
+    //└┐（その他）
+      //◇┐データ型に応じて編集
+      String body = argMSG.substring(0, argMSG.length()-1);
+      if (SEND_IS_VALUE(body)) {
+      //├→（戻り値が数値型の場合）
+        //○MSGIDを独自IDに書き換え
+        //○処理結果をセット
+        //●取得値を数値型にセット
+        msgID = "!VAL!"                  ; // 数値型
+        jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
+        jsDat.Res = true                 ; // 正常
+        //┴
+      } else {
+      //└┐（その他；戻り値が文字列型の場合）
+        //○MSGIDを独自IDに書き換え
+        //○処理結果をセット
+        //○取得値を文字列型にセット
+        msgID = "!STR!"  ; // 文字列型
+        jsDat.Str = body ; // 取得値(文字列)
+        jsDat.Res = true ; // 正常
+        //┴
+      } /* END-if */
+      //┴
+    } /* END-if */
+  //│
+  //○メッセージを取得
+  jsDat.Msg = SEND_MSG(msgID)
   //│
   //○JSON形式に編集
-  js += F("{\"ok\":true"  )                                 ; // 処理結果：HTTP通信の成功
-  js += F(",\"result\":"  ); js += (pRes ? "true" : "false"); // 処理結果：MMPコマンドの成功
-  js += F(",\"error\":\"" ); js += pErr; js += '"'          ; // エラーMSG
-  js += F(",\"value\":"   ); js += String(pVal)             ; // 戻値（数値）
-  js += F(",\"text\":\""  ); js += pTxt                     ; // 戻値（文字列）
+  js.reserve(160) ; // 予備確保
+  js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
+  js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
+  js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
+  js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）
+  js += F(",\"string\":\"" ); js += jsDat.Str                     ; // 戻値（文字列）
   js += "\"}"              ;
   //│
   //○通信経路にJSON形式でレスポンス
-  send_json(*argSS.conn , js);
-  //│
-  //○┐後処理
-    //●タイムスタンプを更新
-    if (pAuthCD != "") UpdateAuthSlot(ROUTE_ID, pAuthCD); // 認証情報側
-    //┴
+  SEND_JSON(*argSS.conn, js);
   //┴
-  } /* sendJson() */
+  } /* SEND_CONN() */
   //─────────────────
 
 //━━━━━━━━━━━━━━━━━
@@ -247,7 +309,7 @@ namespace {
   // ・OBJ(参)ストリームO：通信ストリームのオブジェクト
   //─────────────────
   void routeRoot(WebServer& srv){
-    send_json(srv, F("{"
+    SEND_JSON(srv, F("{"
       "\"ok\":true,"
       "\"result\":true,"
       "\"error\":\"\","
@@ -276,64 +338,62 @@ namespace {
   void routeMMP(SLOT_HTTP& argSS){
   //┬
   //○┐０．前処理
-    //○0-1.処理継続可否を確認
-    //　➡【該当処理なし】※WEBサーバのリスナーが実行するので確認は不要
+    //○┐0-1.処理継続可否を確認
+      //○0-1-1.物理状態を確認
+      //　➡【該当処理なし】※WEBサーバのリスナーが実行するので確認は不要
+      //│
+      //○0-1-2.論理状態(接続管理スロット)を確認
+      if (!argSS.used) return;
+      // ＼（未使用スロットの場合）
+        // ▼ルーティング処理を中断
+      //┴
     //│
     //○0-2.準備完了フラグを用意
     bool isReady = false;
-    //│
-    //○0-3.レスポンス内容の編集ワークを用意
-    //○0-4.レスポンス内容の編集ワークを用意
-    bool    jResult  = false; // MMPの処理結果      {OK:true | NG:false}
-    String  jError   = ""   ; // エラーMSG          {正常の場合は空}
-    int     jValue   = -1000; // 戻値が数値の場合   {-999～9999、対象外は-1000 }
-    String  jText    = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
     //┴
   //│
   //◎┐１．受信待ちデータの取り込み
+  //while (argSS.conn->available()){
     //○1-1.取り込みの継続を確認
     // ＼（受信待ちデータがない場合）
       //▼取り込みを終了
     //│
-    //○1-2.受信バッファに受信データを加える
-    String ch = argSS.conn.uri();
+    //○1-2.受信データを受信バッファに加える
+    String ch = argSS.conn->uri();
     if (argSS.rx.length() < SS_RX_SIZE) {argSS.rx += ch;}
     else {
     // ＼（受信バッファが許容サイズを超過した場合）
       //○データ容量超過状態へ移行
-      argSS.isOverflow = true;
-      //│
       //○受信バッファの内容を破棄
+      argSS.isOverflow = true;
       argSS.rx         = "";
       //┴
-    } /*【1-2.受信バッファに１バイト取り込み】*/
+    } /*【1-2.受信データを受信バッファに加える】*/
     //│
-    //○┐1-3.フレーム完成時の処理フローを制御
+    //◇┐1-3.フレームの完成を確認
+    //if (ch == '!') {
       //├→（コマンド終端を検出した場合）
-        //◇┐1-3-1.処理フローを制御
-        if (!argSS.isOverflow) {
-        //├→（容量超過状態ではない場合）
-          //○準備完了フラグを[ON]
-          isReady = true;
-          //┴
-        //└┐（その他；受信バッファ溢れ中の場合）
+        //○オーバーフローを確認
+        if (argSS.isOverflow) {
+        // ＼（オーバーフロー中の場合）
           //○データ容量超過状態を解除
-          argSS.isOverflow = false;
-          //│
           //○受信バッファをクリア
-          argSS.rx         = ""   ;
-          //│
-          //○┐エラーコードをレスポンス
-            //○レスポンス内容を編集
-            //○ユーザにレスポンス
-            jError = map_error("#DFL!");
-            sendJson(jResult, jError, jValue, jText, "");
-            //┴
-          //│
+          //●エラーコードをレスポンス
           //▼ルーティング処理を中断
+          argSS.isOverflow = false;
+          argSS.rx         = ""   ;
+          SEND_CONN(argSS, "#DFL!");
           return;
         } /*【1-3-1.処理フローを制御】*/
+        //│
+        //○準備完了フラグを[ON]
+        //▼取り込みを終了
+        isReady = true;
+        //break;
+      //┴
+    //} /*【1-3.フレームの完成を確認】*/
     //┴
+  //} /*【１．受信待ちデータの取り込み】*/
   //│
   //○┐２．事前準備
     //○2-1.後続処理の継続を判断
@@ -355,116 +415,53 @@ namespace {
     argSS.rx = "";
     //┴
   //│
-  //○┐３．認証を実施
-    //○3-1.認証開始要求を処理
+  //○┐４．認証を実施
+    //○4-1.認証開始要求を処理
     if (authCD == "_START_!") {
       //├→（例外的に認証コードの中身が「接続開始コマンド」の文字列の場合）
-        //●3-1-1.この接続を認証管理に加える
-        String newAuthCD = AUTH_START(argRID);
+        //●4-1-1.この接続を認証管理に加える
+        String newAuthCD = AUTH_START(AUTH_TBL);
         if(newAuthCD == ""){
         // ＼（管理開始に失敗した場合）
-          //○┐エラーコードをレスポンス
-            //○レスポンス内容を編集
-            //○ユーザにレスポンス
-            jError = map_error("#FUL!");
-            sendJson(jResult, jError, jValue, jText, newAuthCD);
-            //┴
-          //│
+          //●エラーコードをレスポンス
           //▼ルーティング処理を中断
+          SEND_CONN(argSS, "#SS0!"); // 認証開始に失敗
           return;
-        } /* end-if */
+        } /* END-if*/
         //│
-        //○3-1-2.認証コードをスロットに反映
+        //○4-1-2.認証コードをスロットに反映
         argSS.authCD = newAuthCD;
         //│
-        //○┐3-1-3.認証コードをレスポンス
-          //○レスポンス内容を編集
-          //○ユーザにレスポンス
-          jResult = true     ; // 正常
-          jText   = newAuthCD; // 認証コード
-          argSS.conn .print(newAuthCD);
-          //┴
-        //│
-        //▼3-1-4.ルーティング処理を中断
+        //●4-1-3.認証コードをレスポンス
+        //▼4-1-4.ルーティング処理を中断
+        SEND_CONN(argSS, String("$") + newAuthCD + "$");
         return;
       //┴
-    } /*【3-1.この接続を認証管理の対象に登録】*/
+    } /*【4-1.認証開始要求を処理】*/
     //│
-    //○┐3-2.認証の実施
-      //●3-2-1.認証情報と照合
-      int authID = AUTH_GET_ID(ROUTE_ID, authCD);
+    //○┐4-2.認証の実施
+      //●4-2-1.ユーザ認証を実施
+      int authID = AUTH_GET_ID(AUTH_TBL, authCD);
       if (authID < 0) {
-      // ＼（存在しない場合）
-        //○┐エラーコードをレスポンス
-          //○レスポンス内容を編集
-          //○ユーザにレスポンス
-          jError = map_error("#KEY!");
-          sendJson(jResult, jError, jValue, jText, authCD);
-          //┴
-        //│
+      // ＼（認証に失敗した場合）
+        //●エラーコードをレスポンス
         //▼ルーティング処理を中断
+        SEND_CONN(argSS, "#SS1!"); // セッションエラー(ユーザ認証)
         return;
-      } /*【3-2-1.認証情報と照合】*/
+      } /* 4-2-1.ユーザ認証を実施 */
       //│
-      //○3-2-2.接続管理と照合
+      //●4-2-2.接続認証を実施
       //　➡【該当処理なし】
       //┴
     //┴
   //│
-  //○┐４．MMPコマンドを実行
-    //○┐4-1.コマンドを実行
-      //●対象ユーザを特定
-      //●コマンドパーサーへ処理を移譲
-      int usrID = GET_USER_ID(ROUTE_ID, authID); // ※認証情報から照会
-      String mmpResp = MMP_REQUEST(cmdPath, usrID);
-      //┴
-    //│
-    //○┐4-2.実行結果をレスポンス
-      //◇┐4-2-1.レスポンス内容を編集
-      if (mmpResp.length() < 1 || mmpResp[mmpResp.length()-1] != '!') {
-      //├→（異常系：データ欠損 の場合）
-        //○処理結果
-        //●エラーMSG
-        jResult = false             ; // 異常
-        jError  = map_error("#RET!");
-        //┴
-      } else if (mmpResp == "!!!!!") {
-      //├→（正常系：戻り値なし の場合）
-        //○処理結果
-        jResult = true ; // 正常
-        //┴
-      } else if (mmpResp.length() == 5 && mmpResp[0] == '#') {
-      //├→（異常系：各種エラー の場合）
-        //○処理結果
-        //●エラーMSG
-        jResult = false          ; // 異常
-        jError  = map_error(mmpResp);
-        //┴
-      } else {
-      //└┐（その他）
-        //◇┐データ型に応じて編集
-        String body = mmpResp.substring(0, mmpResp.length()-1);
-        if (isDec4Signed(body)) {
-        //├→（正常系：戻り値が数値）
-          //○処理結果
-          //●数値
-          jResult = true                 ; // 正常
-          jValue  = parseDec4Signed(body); // 取得値(数値)
-          //┴
-        } else {
-        //└┐（その他；正常系：戻り値が文字列）
-          //○処理結果
-          //○テキスト値
-          jResult = true ; // 正常
-          jText   = body ; // 取得値(文字列)
-          //┴
-        } /* end-if */
-        //┴
-      } /* end-if */
-      //│
-      //○4-2-2.ユーザにレスポンス
-      sendJson(jResult, jError, jValue, jText, authCD);
-      //┴
+  //○┐５．MMPコマンドを実行
+    //●対象ユーザを特定
+    //●コマンドパーサーへ処理を移譲
+    //●実行結果をレスポンス
+    int usrID = GET_USER_ID(ROUTE_ID, authID); // ※認証情報から照会
+    String mmpResp = MMP_REQUEST(cmdPath, usrID);
+    SEND_CONN(argSS, mmpResp);
     //┴
   //┴
   } /* routeMMP() */
@@ -513,6 +510,16 @@ namespace {
 
 //========================================================
 // ハンドラ関連処理
+//--------------------------------------------------------
+// start()
+// ├ WebServer生成
+// ├ 空SLOT生成（使いまわしのスロット1個を生成）
+// ├ SLOT割当  （conn登録）
+// ├ route登録
+// └ begin
+//--------------------------------------------------------
+// handle()
+// └ route処理
 //========================================================
 namespace srvHttp {
   //━━━━━━━━━━━━━━━━━
@@ -525,16 +532,20 @@ namespace srvHttp {
     // 1) 二重起動防止
     if (ns_ACCEPTOR ) return true     ; // ユーザ受付が準備済みか
 
-    // 2) サーバを起動
-    ns_ACCEPTOR  = new WebServer(port); // HTTP要求受付資源を生成
-    registRoutes(*ns_ACCEPTOR )       ; // ルーティング登録
-    ns_ACCEPTOR ->begin()             ; // サーバ起動 ※ポインタ経由
+    // 2) サーバ資源生成
+    ns_ACCEPTOR = new WebServer(port);
 
     // 3) 接続管理TBLを作成
-    CREATE_SS_TBL()  ; // 領域確保
-    ATTACH_SS_SLOT() ; // 一時スロットとしてスロットを固定
+    CREATE_SS_TBL()                  ; // 領域確保
+    ATTACH_SS_SLOT()                 ; // 一時スロットとしてスロットを固定
 
-    // 4) 正常終了
+    // 4) ルーティング登録
+    registRoutes(*ns_ACCEPTOR )      ; // ルーティング登録
+
+    // 5) サーバ開始
+    ns_ACCEPTOR->begin()             ; // サーバ起動 ※ポインタ経由
+
+    // 6) 正常終了
     return true;
   } /* start() */
 

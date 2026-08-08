@@ -5,8 +5,8 @@
 // Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
-#include "mod.h"  // 機能モジュール：抽象基底クラス
-#include "cli.h"  // クライアント：共通ユーティリティ
+#include "mod.h" // 機能モジュール：抽象基底クラス
+#include "ad.h"  // 通信アダプタ共通
 
 //━━━━━━━━━━━━━━━
 // グローバル変数
@@ -32,7 +32,7 @@ const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
 
 
 //━━━━━━━━━━━━━━━━━
-// 初期化処理
+// AUTH_GET_ID
 //━━━━━━━━━━━━━━━━━
 void InitAnalog(const MmpContext& ctx) {
 
@@ -40,12 +40,12 @@ void InitAnalog(const MmpContext& ctx) {
   Serial.println("[HC4067 buffer initialize]");
 
   // クライアント別データのメモリ確保
-  void* p = calloc(MAX_CLIENTS, sizeof(AnaClientData)); // 全要素0で初期化して確保
+  void* p = calloc(USER_COUNT, sizeof(AnaClientData)); // 全要素0で初期化して確保
   if (!p) { return; }
   g_ANA_DAT = static_cast<AnaClientData*>(p);
 
   // 既定設定
-  for (int i = 0; i < MAX_CLIENTS; ++i) {
+  for (int i = 0; i < USER_COUNT; ++i) {
     g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
     g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }

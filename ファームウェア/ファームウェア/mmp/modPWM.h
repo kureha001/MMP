@@ -99,7 +99,7 @@ static void InitPWM(){
   g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
 
   // クライアント別データのメモリ確保
-  const int datCount = MAX_CLIENTS;                       // クライアント数
+  const int datCount = USER_COUNT;                       // クライアント数
   void* p = calloc(datCount, sizeof(PwmClientData));      // 全要素 0 で確保
   if (!p) { return; }
   g_PWM_DAT = static_cast<PwmClientData*>(p);
@@ -162,7 +162,7 @@ public:
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     const int ID = ctx.clientID;
-    if (!g_PWM_DAT || ID < 0 || ID >= MAX_CLIENTS) {
+    if (!g_PWM_DAT || ID < 0 || ID >= USER_COUNT) {
       _ResIniErr(sp);  // 安全策
       return;
     }

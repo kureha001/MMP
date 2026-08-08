@@ -1,17 +1,18 @@
 // filename : cliNet.h
 //========================================================
-// クライアント：ネット
+// 通信アダプタ：ネットワーク共通
 //  - Wi-Fiの起動
 //  - TCP/HTTP WEB APIの起動指示
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/14) α版
+// Ver 1.1.0 (2026/08/07) α版 
+// ・ファイル名を変更
 //========================================================
 #pragma once
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "cliNetTcp.h"  // サーバー：TCPブリッジ
-#include "cliNetHttp.h" // サーバー：WEB API
+#include "adNetTcp.h"  // 通信アダプタ：TCPブリッジ
+#include "adNetHttp.h" // 通信アダプタ：WEB API
 
 //━━━━━━━━━━━━━━━
 // グローバル

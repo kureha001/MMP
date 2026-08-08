@@ -7,7 +7,7 @@
 // Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
-#include "cli.h"    // クライアント：共通ユーティリティ
+#include "ad.h"     // 通信アダプタ共通
 #include "mod.h"    // 機能モジュール：抽象基底クラス
 #include "modINF.h" // 機能モジュール：システム
 #include "modANA.h" // 機能モジュール：アナログ入力
@@ -36,7 +36,7 @@
   //─────────────────
   // 統一入口：前方宣言
   //─────────────────
-  String MMP_REQUEST(const String& path, int clientID);
+  String MMP_REQUEST(const String& cmdPath, int usrID);
 
 
 //━━━━━━━━━━━━━━━━━
@@ -87,10 +87,10 @@ public:
       //◇コマンドパスの末尾に'!'があれば除去(末尾処理あり)
       pLen = strlen(path);
       if (pLen > 0 && path[pLen-1] == '!') path[pLen-1] = '\0';
-    } /* ② */
       //┴
+    }   /* ① */
     //│
-    //③┐コマンドデータ、データ数を取得
+    //②┐コマンドデータ、データ数を取得
     char dat[ DAT_COUNT ][ DAT_LENGTH ];
     int  dat_cnt = 0;
     {
@@ -113,10 +113,10 @@ public:
       //│
       //◇エラー(未登録コマンド)をリターン
       if (dat_cnt == 0) return "#CMD!";
-    } /* ③ */
       //┴
+    }   /* ② */
     //│
-    //④┐モジュール機能を実行
+    //③┐モジュール機能を実行
       //○仮想出力ストリームを初期化
       ctx.vStream.clear();
       //│
@@ -131,8 +131,8 @@ public:
           return ctx.vStream.str();
         } /* if */
         //┴
-      } /* for */
       //┴
+      } /* for */
     //│
     //○エラー(未登録コマンド)をリターン
     return "#CMD!";
@@ -144,12 +144,12 @@ public:
 //━━━━━━━━━━━━━━━━━
 // 統一呼び出し
 //━━━━━━━━━━━━━━━━━
-inline String MMP_REQUEST(const String& argPath, int argClientID){
+inline String MMP_REQUEST(const String& cmdPath, int usrID){
 
   // クライアントIDを更新
-  ctx.clientID = argClientID;
+  ctx.clientID = usrID;
 
   // コマンド・パース処理
-  return g_PARSER->RunCommand(argPath);
+  return g_PARSER->RunCommand(cmdPath);
 
 } /* MMP_REQUEST() */

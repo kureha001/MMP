@@ -12,10 +12,10 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 
-#include "cli.h"        // クライアント：共通ユーティリティ
-#include "cliSerial.h"  // クライアント：シリアルポート
-#include "cliNet.h"     // クライアント：ネットワーク
-#include "parser.h"     // コマンド パーサー
+#include "ad.h"       // 通信アダプタ共通
+#include "adSerial.h" // 通信アダプタ：シリアルポート
+#include "adNet.h"    // 通信アダプタ：ネットワーク共通
+#include "parser.h"   // コマンド パーサー
 
 const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
 

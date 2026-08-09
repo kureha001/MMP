@@ -7,7 +7,7 @@
 // Ver 1.0.0 (2025/11/14) α版
 //========================================================
 #pragma once
-#include "ad.h"     // 通信アダプタ共通
+#include "adp.h"    // 通信アダプタ共通
 #include "mod.h"    // 機能モジュール：抽象基底クラス
 #include "modINF.h" // 機能モジュール：システム
 #include "modANA.h" // 機能モジュール：アナログ入力
@@ -45,6 +45,7 @@
 class Parser {
 
   // 依存性注入
+  // ※スケッチで依存注入
   MmpContext&               ctxRef;     // コンテクスト
 
   // 保有情報
@@ -54,6 +55,7 @@ class Parser {
 public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
+  // ※スケッチで実装化
   //━━━━━━━━━━━━━━━━━
   Parser(MmpContext& c): ctxRef(c) {}
 
@@ -143,6 +145,8 @@ public:
 
 //━━━━━━━━━━━━━━━━━
 // 統一呼び出し
+// ユーザID は通信経路から提供される実行コンテキスト情報であり、
+// コマンド実行時に一時的に更新する
 //━━━━━━━━━━━━━━━━━
 inline String MMP_REQUEST(const String& cmdPath, int usrID){
 

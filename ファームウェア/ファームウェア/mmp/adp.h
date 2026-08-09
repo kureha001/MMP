@@ -1,4 +1,4 @@
-// filename : ad.h
+// filename : adp.h
 //========================================================
 // 通信アダプタ共通
 //  - 経路IDの提供
@@ -59,45 +59,60 @@
       argSlot.isOverflow = false    ; // 容量超過フラグをクリア
     }
     //─────────────────
-    // Ａ．ストリーム資源
+    // Ａ．ストリーム資源(ポインタ)
+    //----------------------------------
+    // 所有：シリアル(ストリーム)を所有しない ※Arduinoに存在する資源
+    // 参照：外部生成されたストリーム資源
+    // 割当：特定の物理ポートを処理
+    // 持続：永続的に利用 ※start()で一度だけ初期化
     //─────────────────
     struct SLOT_STREAM : SLOT_BASE { // Ｚ．共通部
-      Stream* conn  = nullptr ; // 個別ストリームを接続
-      int     usrID = -1      ; // ユーザID(アダプタ内で物理ポート別の固定値をセット)
+      Stream* conn  = nullptr ; // 接続資源(個別ストリームを参照)
+      int     usrID = -1      ; // ユーザID(物理ポート別の固定値)
     };
     //----------------------------------
     void INIT_SLOT_STREAM(SLOT_STREAM& argSlot){
       INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn  = nullptr ; // ストリームを解除
-      argSlot.usrID = -1      ; // ユーザをクリア
+      argSlot.conn  = nullptr ; // 参照解除
+      argSlot.usrID = -1      ; // クリア
     }
     //─────────────────
     // Ｂ．WiFiサーバ資源(接続確認あり)
+    //----------------------------------
+    // 所有：TCP接続オブジェクトを所有する
+    // 保持：個別TCP接続情報を保持
+    // 割当：単一のTCP接続を処理
+    // 持続：ポーリング中に新規接続で生成／切断で破棄
     //─────────────────
-    struct SLOT_TCP : SLOT_BASE{ // Ｚ．共通部
-      WiFiClient conn            ; // 個別TCP接続
+    struct SLOT_TCP : SLOT_BASE{   // Ｚ．共通部
+      WiFiClient conn            ; // 接続資源(個別TCP接続の実体)
       String     authCD     = "" ; // 認証情報TBL検索用キー
       uint32_t   lastActive = 0  ; // 最終更新時刻(ms)
     };
     //----------------------------------
     void INIT_SLOT_TCP(SLOT_TCP& argSlot){
       INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn.stop()     ; // TCP接続を解除
-      argSlot.authCD     = "" ; // 認証情報TBL検索用キーをクリア
-      argSlot.lastActive = 0  ; // 最終更新時刻をクリア
+      argSlot.conn.stop()     ; // 資源破棄
+      argSlot.authCD     = "" ; // クリア
+      argSlot.lastActive = 0  ; // クリア
     }
     //─────────────────
-    // Ｃ．WEBサーバ資源
+    // Ｃ．WEBサーバ資源(ポインタ)
+    //----------------------------------
+    // 所有：HTTPサーバ資源を所有しない
+    // 参照：start()で生成された受付資源を参照
+    // 担当：複数のHTTP要求を処理
+    // 持続：永続的に利用 ※start()で一度だけ初期化
     //─────────────────
     struct SLOT_HTTP : SLOT_BASE{  // Ｚ．共通部
-      WebServer* conn   = nullptr; // HTTP受付資源
+      WebServer* conn   = nullptr; // 受付資源(HTTPサーバの参照)
       String     authCD = ""     ; // 認証情報TBL検索用キー
     };
     //----------------------------------
     void INIT_SLOT_HTTP(SLOT_HTTP& argSlot){
       INIT_SLOT_BASE(argSlot)    ; // Ｚ．共通部
-      argSlot.conn   = nullptr   ; // WebServer参照を解除
-      argSlot.authCD = ""        ; // 認証情報TBL検索用キーをクリア
+      argSlot.conn   = nullptr   ; // 参照解除
+      argSlot.authCD = ""        ; // クリア
     }
     //─────────────────
 

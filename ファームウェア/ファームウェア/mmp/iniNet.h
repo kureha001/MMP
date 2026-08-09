@@ -1,21 +1,25 @@
-// filename : cliNet.h
+// filename : iniNet.h
 //========================================================
-// 通信アダプタ：ネットワーク共通
-//  - Wi-Fiの起動
-//  - TCP/HTTP WEB APIの起動指示
+// 資源初期化：ネットワーク系
+//--------------------------------------------------------
+// ネットワーク通信が利用可能な状態にする
+//・通信アダプタが必要とする資源を準備
+//・通信サービス開始を通信アダプタへ移譲
+//・対象通信アダプタ：TCPブリッジ / WebAPI
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/07) α版 
-// ・ファイル名を変更
+//・ファイル名を変更
+//・コメントを強化
 //========================================================
 #pragma once
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "adNetTcp.h"  // 通信アダプタ：TCPブリッジ
-#include "adNetHttp.h" // 通信アダプタ：WEB API
+#include "adpTcp.h"  // TCPブリッジ
+#include "adpHttp.h" // WEB API
 
 //━━━━━━━━━━━━━━━
-// グローバル
+// グローバル資源
 //━━━━━━━━━━━━━━━
 constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
 constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
@@ -351,12 +355,12 @@ typeConnect g_WIFI;
 
     int srcPort;
 
-    // HTTP(WEB API)
+    // 通信アダプタの初期処理(WebAPI)にサービス起動処理を移譲
     srcPort = 8080;
     if (!srvHttp::start(srcPort)) return false;
     Serial.println(String("　HTTP port : ") + String(srcPort));
 
-    // TCP
+    // 通信アダプタの初期処理(TCPブリッジ)にサービス起動処理を移譲
     srcPort = 8081;
     if (!srvTcp::start(srcPort)) return false;
     Serial.println(String("　TCP  port : ") + String(srcPort));

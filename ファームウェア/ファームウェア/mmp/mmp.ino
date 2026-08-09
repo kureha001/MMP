@@ -12,10 +12,10 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 
-#include "ad.h"       // 通信アダプタ共通
-#include "adSerial.h" // 通信アダプタ：シリアルポート
-#include "adNet.h"    // 通信アダプタ：ネットワーク共通
-#include "parser.h"   // コマンド パーサー
+#include "adp.h"       // 通信アダプタ共通
+#include "iniSerial.h" // シリアルポート資源の初期化
+#include "iniNet.h"    // ネットワーク資源の初期化
+#include "parser.h"    // コマンド パーサー
 
 const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
 
@@ -39,7 +39,7 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   Adafruit_NeoPixel g_PIXEL(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
   //─────────────────
-  // コンテクスト
+  // コンテクスト（実体化）
   // - 型定義：mod.h
   //─────────────────
   MmpContext ctx  = {
@@ -48,7 +48,7 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   }; /* ctx */
 
   //─────────────────
-  // パーサー：parser.hで定義・実装
+  // パーサー：parser.hで定義
   //─────────────────
   Parser  ino_ROUTER(ctx)       ; // 本体(依存性注入)
   Parser* g_PARSER = &ino_ROUTER; // 外部公開ポインタ
@@ -59,17 +59,17 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
 //━━━━━━━━━━━━━━━━━
 void setup(){
 
-  // クライアントのハンドルを作成
-  ino_READY_SERIAL = InitSerial();  // シリアルポート
-  ino_READY_NET    = InitNet();     // ネット
+  // 通信アダプタを初期化
+  ino_READY_SERIAL = InitSerial();  // シリアル系
+  ino_READY_NET    = InitNet();     // ネットワーク系
 
   // パーサーを初期化
   ino_ROUTER.Init();
 
   // 機能モジュールの初期化
-  InitAnalog(ctx);
-  InitPWM();
-  InitMP3();
+  InitAnalog(ctx); // アナログ入力
+  InitPWM();       // PWM出力
+  InitMP3();       // MP3プレイヤー
 
   // 開始メッセージ出力
   Serial.println("---------------------------");
@@ -83,14 +83,14 @@ void setup(){
 //━━━━━━━━━━━━━━━━━
 void loop(){
 
-  // クライアント(シリアル)のハンドル
+  // シリアル系のポーリング
   if (ino_READY_SERIAL) {
-    srvSerial::handle();
+    srvSerial::handle(); // シリアル通信アダプタのハンドル
   } /* if */
 
-  // クライアント(ネット)のハンドル
+  // ネットワーク系のポーリング
   if (ino_READY_NET) {
-    srvHttp::handle();  // WebAPI用
-    srvTcp::handle();   // TCP Bridge用
+    srvHttp::handle();  // WebAPI通信アダプタのハンドル
+    srvTcp::handle();   // TCPブリッジ通信アダプタのハンドル
   } /* if */
 } /* loop() */

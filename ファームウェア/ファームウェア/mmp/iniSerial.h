@@ -106,7 +106,7 @@ bool InitSerial(){
   Serial.println("　UART(GPIO 0,1) : OK");
 
 // 通信アダプタの初期処理(シリアル)に通信経路開始処理を移譲
-srvSerial::start();
+adpSerial::start();
 
   return true;
 } // InitSerial()

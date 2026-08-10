@@ -1,0 +1,41 @@
+{
+  "server": {
+    "max_clients": 4,
+    "write_lock": false,
+    "write_lock_ms": 30000
+  },
+
+  "host": [
+    {
+      "type": "sta",
+      "name": "mmp-sta-mode",
+      "ip": "254"
+    },
+    {
+      "type": "ap",
+      "name": "mmp-ap-mode",
+      "ip": "192.168.254.254"
+    }
+  ],
+
+  "wifi": [
+    {
+      "label": "home",
+      "ssid": "Buffalo-G-C0F0",
+      "pass": "6shkfa53dk8ks",
+      "default": true
+    },
+    {
+      "label": "mbph",
+      "ssid": "kureha",
+      "pass": "09017390454",
+      "default": false
+    },
+    {
+      "label": "mbrt",
+      "ssid": "Kureha",
+      "pass": "090173904541012",
+      "default": false
+    }
+  ]
+}

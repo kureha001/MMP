@@ -85,12 +85,12 @@ void loop(){
 
   // シリアル系のポーリング
   if (ino_READY_SERIAL) {
-    srvSerial::handle(); // シリアル通信アダプタのハンドル
+    adpSerial::handle(); // シリアル通信アダプタのハンドル
   } /* if */
 
   // ネットワーク系のポーリング
   if (ino_READY_NET) {
-    srvHttp::handle();  // WebAPI通信アダプタのハンドル
-    srvTcp::handle();   // TCPブリッジ通信アダプタのハンドル
+    adpHttp::handle();  // WebAPI通信アダプタのハンドル
+    adpTcp::handle();   // TCPブリッジ通信アダプタのハンドル
   } /* if */
 } /* loop() */

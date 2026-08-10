@@ -10,6 +10,7 @@
 // Ver 1.1.0 (2026/08/07) α版 
 //・ファイル名を変更
 //・コメントを強化
+//・g_SRV_TCPのセットを廃止
 //========================================================
 #pragma once
 #include <WiFi.h>
@@ -206,9 +207,9 @@ typeConnect g_WIFI;
     if (err) { return false; }
 
     // 情報読取：サーバー
-    g_SRV_TCP.maxClients  = doc["server"]["max_clients"   ] | 4;
-    g_SRV_TCP.writeLock   = doc["server"]["write_lock"    ] | false;
-    g_SRV_TCP.writeLockMs = doc["server"]["write_lock_ms" ] | 30000;
+    //g_SRV_TCP.maxClients  = doc["server"]["max_clients"   ] | 4;
+    //g_SRV_TCP.writeLock   = doc["server"]["write_lock"    ] | false;
+    //g_SRV_TCP.writeLockMs = doc["server"]["write_lock_ms" ] | 30000;
 
     // 情報読取：ホスト
     g_WIFI.hostNum = 0;
@@ -357,12 +358,12 @@ typeConnect g_WIFI;
 
     // 通信アダプタの初期処理(WebAPI)にサービス起動処理を移譲
     srcPort = 8080;
-    if (!srvHttp::start(srcPort)) return false;
+    if (!adpHttp::start(srcPort)) return false;
     Serial.println(String("　HTTP port : ") + String(srcPort));
 
     // 通信アダプタの初期処理(TCPブリッジ)にサービス起動処理を移譲
     srcPort = 8081;
-    if (!srvTcp::start(srcPort)) return false;
+    if (!adpTcp::start(srcPort)) return false;
     Serial.println(String("　TCP  port : ") + String(srcPort));
 
     // 正常でリターン

@@ -43,7 +43,6 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   // - 型定義：mod.h
   //─────────────────
   MmpContext ctx  = {
-    .pixels   = &g_PIXEL,   // コマンド別のRGB-LED発行用
     .version  = ino_VERSION // ファームウェア・バージョン
   }; /* ctx */
 

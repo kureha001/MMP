@@ -6,8 +6,9 @@
 //  - RAIIガード機能の提供
 //  - ユーティリティの提供
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/07) α版 
-// ・コメント強化
+// Ver 1.1.0 (2026/08/10) α版 
+//・コメント強化
+//・LED表示処理を廃止
 //========================================================
 #pragma once
 
@@ -15,17 +16,6 @@
 #define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
 #define DAT_COUNT       10  // コマンド＋引数の個数
 #define DAT_LENGTH      20  // 上記1個あたりの上限バイト数
-
-//─────────────────
-// モジュール別のRGB-LED点灯色
-//─────────────────
-struct typeColor { uint8_t r,g,b; };
-static constexpr typeColor RGB_INFO    = {  5,  5,  5};
-static constexpr typeColor RGB_ANALOG  = { 10,  0, 10};
-static constexpr typeColor RGB_DIGITAL = { 10,  0,  0};
-static constexpr typeColor RGB_PWM     = {  0,  0, 50};
-static constexpr typeColor RGB_I2C     = { 10, 10,  0};
-static constexpr typeColor RGB_MP3     = {  0, 10,  0};
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源(定義)
@@ -74,7 +64,6 @@ static constexpr typeColor RGB_MP3     = {  0, 10,  0};
     StringStream        vStream ; // 応答データを一時蓄積する仮想ストリーム
     String              cmdPath ; // コマンドパス
     int                 accID   ; // アクセス識別子（ユーザメモリ用のキー）
-    Adafruit_NeoPixel*  pixels  ; // 共有ハードウェアリソース(RGB-LED発光用ポインタ)
     const char*         version ; // システム共通のバージョン情報
   };
 
@@ -84,25 +73,27 @@ static constexpr typeColor RGB_MP3     = {  0, 10,  0};
 class ModuleBase {
 protected:
 
-  // 依存性注入
-  MmpContext& ctx;  //コンテクスト
-
-  // スコープ
-  typeColor   led;  // モジュール別ＬＥＤ色
+  MmpContext& ctx    ; //コンテクスト
+  const char* modName; // 機能名
 
 public:
   //─────コンストラクタ─────
   ModuleBase(
-    MmpContext& argCtx, // コンテクスト
-    typeColor   argCol  // モジュール別LED色
+    MmpContext& argCtx    , // コンテクスト
+    const char* argModName  // 機能名
   ):
-  ctx(argCtx),  // コンテクスト
-  led(argCol)   // モジュール別LED色
+  ctx(argCtx)         , // コンテクスト
+  modName(argModName)   // 機能名
   {} // 処理なし
   //───── デストラクタ ─────
   virtual ~ModuleBase()
   {} // 処理なし
   //─────────────────
+
+  //─────────────────
+  // 機能名
+  //─────────────────
+  const char* getModName() const {return modName;}
 
   //─────────────────
   // 抽象基底クラス
@@ -112,38 +103,6 @@ public:
   virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0; // コマンド・パーサー
 
 }; /* class ModuleBase */
-
-
-//━━━━━━━━━━━━━━━━━
-// モジュール用：前処理
-//━━━━━━━━━━━━━━━━━
-  // ───────────────────────
-  // LED点滅(RAIIガード)
-  // ───────────────────────
-  class LedScope {
-
-    // データ退避ワーク
-    MmpContext& ctx;  // コンテクスト
-
-  public:
-    //─── コンストラクタ(点灯) ───
-    LedScope(
-      MmpContext& argCtx, // ※ModuleBase経由で指定
-      typeColor   argCol  // ※ModuleBase経由で指定
-    ) :
-    ctx(argCtx) //コンテクスト
-    {
-      ctx.pixels->setPixelColor(0, ctx.pixels->Color(argCol.g, argCol.r, argCol.b));
-      ctx.pixels->show();
-    }
-    //────デストラクタ(消灯)────
-    ~LedScope()
-    {
-      ctx.pixels->clear();
-      ctx.pixels->show();
-    }
-    //─────────────────
-  }; /* class LedScope */
 
 
 //━━━━━━━━━━━━━━━━━

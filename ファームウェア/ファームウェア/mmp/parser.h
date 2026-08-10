@@ -4,7 +4,8 @@
 // - 機能モジュールの登録
 // - 機能モジュールへのルーティング
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/14) α版
+// Ver 1.1.0 (2026/08/10) α版 
+//・LED表示処理を移設
 //========================================================
 #pragma once
 #include "adp.h"    // 通信アダプタ共通
@@ -22,7 +23,8 @@
   //─────────────────
   // コンテクスト
   //─────────────────
-  extern MmpContext ctx;       // 定義：mod.h、実装：mmp.ino
+  extern MmpContext ctx           ; // 定義：mod.h、実装：mmp.ino
+  extern Adafruit_NeoPixel g_PIXEL; // スケッチの資源を利用
 
   //─────────────────
   // パーサー本体：前方宣言
@@ -62,14 +64,44 @@ public:
   //─────────────────
   void Init(){
     // 機能モジュールを登録
-    mods.push_back(new ModuleInfo   (ctxRef, RGB_INFO   ));
-    mods.push_back(new ModuleAnalog (ctxRef, RGB_ANALOG ));
-    mods.push_back(new ModuleDigital(ctxRef, RGB_DIGITAL));
-    mods.push_back(new ModulePwm    (ctxRef, RGB_PWM    ));
-    mods.push_back(new ModuleI2C    (ctxRef, RGB_I2C    ));
-    mods.push_back(new ModuleMP3    (ctxRef, RGB_MP3    ));
+    mods.push_back(new ModuleInfo   (ctxRef, "INFO"   ));
+    mods.push_back(new ModuleAnalog (ctxRef, "ANALOG" ));
+    mods.push_back(new ModuleDigital(ctxRef, "DIGITAL"));
+    mods.push_back(new ModulePwm    (ctxRef, "PWM"    ));
+    mods.push_back(new ModuleI2C    (ctxRef, "I2C"    ));
+    mods.push_back(new ModuleMP3    (ctxRef, "MP3"    ));
   } /* Init() */
 
+private:
+  //━━━━━━━━━━━━━━━━━
+  // 機能名表示
+  //━━━━━━━━━━━━━━━━━
+  void SHOW_NAME(const char* argName){
+  //┬
+  //○RGB値を初期化
+  struct typeColor { uint8_t r,g,b; };
+  typeColor col = {255,255,255};
+  //│
+  //○RGB値を選択
+  if      (strcmp(argName, "INFO"   ) == 0) col = {  5,  5,  5};
+  else if (strcmp(argName, "ANALOG" ) == 0) col = { 10,  0, 10};
+  else if (strcmp(argName, "DIGITAL") == 0) col = { 10,  0,  0};
+  else if (strcmp(argName, "PWM"    ) == 0) col = {  0,  0, 50};
+  else if (strcmp(argName, "I2C"    ) == 0) col = { 10, 10,  0};
+  else if (strcmp(argName, "MP3"    ) == 0) col = {  0, 10,  0};
+  //│
+  //○RGB値をセット
+   g_PIXEL.setPixelColor(
+    0,
+    g_PIXEL.Color(col.g, col.r, col.b)
+  );
+  //│
+  //○LEDを発光
+  g_PIXEL.show();
+  //┴
+  } /* SHOW_NAME() */
+
+public:
   //─────────────────
   // コマンド実行
   //─────────────────
@@ -125,9 +157,11 @@ public:
         //◇在籍有無に応じて、モジュール機能を実行
         if (m->owns(dat[0])){
         //├→(当該モジュールに在籍する場合)
+          //●RGB-LEDを発光
           //○モジュール機能を実行
           //▼RETURN:モジュールの戻り値をリターン
-          m->handle(dat, dat_cnt);
+          SHOW_NAME(m->getModName());
+          m->handle(dat, dat_cnt);          
           return ctx.vStream.str();
         } /* if */
         //┴

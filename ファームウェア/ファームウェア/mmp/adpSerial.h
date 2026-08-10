@@ -17,18 +17,20 @@
 //   - フレームが完成したら後続処理するよう変更
 //========================================================
 #pragma once
+#include "mod.h" // コンテクスト利用
 #include "adp.h" // 通信アダプタ共通
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源(宣言)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // 統一入口：fnPerser.hで定義
+  // コマンドパーサ資源：fnPerser.hで定義
   //----------------------------------
   // 通信経路に依存しない共通処理のため
   // namespace内には配置しない
   //─────────────────
-  extern String MMP_REQUEST(const String& cmdPath, int usrID);
+  extern MmpContext ctx;
+  extern String MMP_REQUEST();
 
 
 //========================================================
@@ -90,12 +92,12 @@ namespace adpSerial {
   //○スロットに[USB-CDC]接続を登録
   ssTBL[0].used  = true     ; // 使用中をセット
   ssTBL[0].conn  = &Serial  ; // 接続を登録(既存オブジェクトを指す)
-  ssTBL[0].usrID = 0        ; // 固有のユーザIDをセット
+  ssTBL[0].accID = 0        ; // 固有のユーザIDをセット
   //│
   //○スロットに[UART1]接続を登録
   ssTBL[1].used  = true     ; // 使用中をセット
   ssTBL[1].conn  = &Serial1 ; // 接続を登録(既存オブジェクトを指す)
-  ssTBL[1].usrID = 1        ; // 固有のユーザIDをセット
+  ssTBL[1].accID = 1        ; // 固有のユーザIDをセット
   //┴
   } /* ATTACH_SS_SLOT() */
 
@@ -235,11 +237,13 @@ namespace adpSerial {
   //　➡【該当処理なし】
   //│
   //○┐５．MMPコマンドを実行
-    //●対象ユーザを特定
+    //○コンテクストに情報をセット
+    ctx.accID   = argSS.accID; // スロットの情報
+    ctx.cmdPath = cmdPath    ; // フレームから取得した情報
+    //│
     //●コマンドパーサーへ処理を移譲
     //●実行結果をレスポンス
-    int usrID = argSS.usrID; // ※スロット情報から取得
-    String mmpResp = MMP_REQUEST(cmdPath, usrID);
+    String mmpResp = MMP_REQUEST();
     SEND_CONN(argSS, mmpResp);
     //┴
   //┴

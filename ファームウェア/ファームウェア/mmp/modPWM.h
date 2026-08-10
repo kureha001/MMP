@@ -161,7 +161,7 @@ public:
     LedScope    scopeLed(ctx, led);       // コマンド色のLED発光
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
-    const int ID = ctx.clientID;
+    const int ID = ctx.accID;
     if (!g_PWM_DAT || ID < 0 || ID >= USER_COUNT) {
       _ResIniErr(sp);  // 安全策
       return;

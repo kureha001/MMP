@@ -71,10 +71,11 @@ static constexpr typeColor RGB_MP3     = {  0, 10,  0};
   //  背後にある通信経路（シリアル/TCP/HTTP）の違いを意識する必要がない
   //──────────────────────────────────────────────
   struct MmpContext {
-    StringStream        vStream     ; // 応答データを一時蓄積する仮想ストリーム
-    int                 clientID    ; // クライアント識別子（セッション管理用）
-    Adafruit_NeoPixel*  pixels      ; // 共有ハードウェアリソース(RGB-LED発光用ポインタ)
-    const char*         version     ; // システム共通のバージョン情報
+    StringStream        vStream ; // 応答データを一時蓄積する仮想ストリーム
+    String              cmdPath ; // コマンドパス
+    int                 accID   ; // アクセス識別子（ユーザメモリ用のキー）
+    Adafruit_NeoPixel*  pixels  ; // 共有ハードウェアリソース(RGB-LED発光用ポインタ)
+    const char*         version ; // システム共通のバージョン情報
   };
 
 //━━━━━━━━━━━━━━━━━

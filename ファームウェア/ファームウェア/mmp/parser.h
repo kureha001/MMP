@@ -36,7 +36,7 @@
   //─────────────────
   // 統一入口：前方宣言
   //─────────────────
-  String MMP_REQUEST(const String& cmdPath, int usrID);
+  String MMP_REQUEST();
 
 
 //━━━━━━━━━━━━━━━━━
@@ -75,15 +75,15 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コマンド実行
   //━━━━━━━━━━━━━━━━━
-  String RunCommand(const String& argPath){
+  String RunCommand(){
     //┬
     //①┐清書したコマンドパスを取得
     char path[ REQUEST_LENGTH ];
     {
       //◇コマンドパスを取込(末尾処理あり)
-      size_t pLen = argPath.length();
+      size_t pLen = ctx.cmdPath.length();
       if (pLen >= sizeof(path)) pLen = sizeof(path) - 1;
-      memcpy(path, argPath.c_str(), pLen);
+      memcpy(path, ctx.cmdPath.c_str(), pLen);
       path[pLen] = '\0';
       //│
       //◇コマンドパスの末尾に'!'があれば除去(末尾処理あり)
@@ -148,12 +148,9 @@ public:
 // ユーザID は通信経路から提供される実行コンテキスト情報であり、
 // コマンド実行時に一時的に更新する
 //━━━━━━━━━━━━━━━━━
-inline String MMP_REQUEST(const String& cmdPath, int usrID){
-
-  // クライアントIDを更新
-  ctx.clientID = usrID;
+inline String MMP_REQUEST(){
 
   // コマンド・パース処理
-  return g_PARSER->RunCommand(cmdPath);
+  return g_PARSER->RunCommand();
 
 } /* MMP_REQUEST() */

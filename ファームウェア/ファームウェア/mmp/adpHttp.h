@@ -23,12 +23,13 @@
 // グローバル資源(宣言)
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // 統一入口：fnPerser.hで定義
+  // コマンドパーサ資源：fnPerser.hで定義
   //----------------------------------
   // 通信経路に依存しない共通処理のため
   // namespace内には配置しない
   //─────────────────
-  extern String MMP_REQUEST(const String& cmdPath, int usrID);
+  extern MmpContext ctx;
+  extern String MMP_REQUEST();
 
 
 //========================================================
@@ -422,11 +423,12 @@ namespace adpHttp {
     //┴
   //│
   //○┐５．MMPコマンドを実行
-    //●対象ユーザを特定
+    //○コンテクストに情報をセット
+    ctx.accID   = GET_USER_ID(ROUTE_ID, authID); // ※認証情報から照会
+    ctx.cmdPath = cmdPath    ; // フレームから取得した情報
     //●コマンドパーサーへ処理を移譲
     //●実行結果をレスポンス
-    int usrID = GET_USER_ID(ROUTE_ID, authID); // ※認証情報から照会
-    String mmpResp = MMP_REQUEST(cmdPath, usrID);
+    String mmpResp = MMP_REQUEST();
     SEND_CONN(argSS, mmpResp);
     //┴
   //┴

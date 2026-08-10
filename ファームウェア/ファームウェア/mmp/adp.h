@@ -41,7 +41,7 @@
   // スロット
   //─────────────────
   // SLOT_BASE      used/rx/isOverflow
-  // ├ SLOT_STREAM ├ conn(Stream)/usrID
+  // ├ SLOT_STREAM ├ conn(Stream)/accID
   // ├ SLOT_TCP    ├ conn(WiFiClient)/authCD/lastActive
   // └ SLOT_HTTP   └ conn(WebServer)/authCD(認証情報TBL検索用キー)
   //━━━━━━━━━━━━━━━━━
@@ -70,13 +70,13 @@
     //─────────────────
     struct SLOT_STREAM : SLOT_BASE { // Ｚ．共通部
       Stream* conn  = nullptr ; // 接続資源(個別ストリームを参照)
-      int     usrID = -1      ; // ユーザID(物理ポート別の固定値)
+      int     accID = -1      ; // ユーザID(物理ポート別の固定値)
     };
     //----------------------------------
     void INIT_SLOT_STREAM(SLOT_STREAM& argSlot){
       INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
       argSlot.conn  = nullptr ; // 参照解除
-      argSlot.usrID = -1      ; // クリア
+      argSlot.accID = -1      ; // クリア
     }
     //─────────────────
     // Ｂ．WiFiサーバ資源(接続確認あり)

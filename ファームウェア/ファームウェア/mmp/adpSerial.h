@@ -237,7 +237,7 @@ namespace adpSerial {
   //　➡【該当処理なし】
   //│
   //○┐５．MMPコマンドを実行
-    //○コンテクストに情報をセット
+    //○コマンド実行に必要な情報を確定
     ctx.accID   = argSS.accID; // スロットの情報
     ctx.cmdPath = cmdPath    ; // フレームから取得した情報
     //│

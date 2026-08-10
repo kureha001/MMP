@@ -203,7 +203,7 @@ public:
   } /* _Remove1st() */
   
   //─────────────────
-  // クライアントへレスポンス
+  // 通信アダプタへレスポンス
   //─────────────────
   inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
   inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名が不正

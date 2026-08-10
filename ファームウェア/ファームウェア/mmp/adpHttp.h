@@ -423,9 +423,10 @@ namespace adpHttp {
     //┴
   //│
   //○┐５．MMPコマンドを実行
-    //○コンテクストに情報をセット
+    //●コマンド実行に必要な情報を確定
     ctx.accID   = GET_USER_ID(ROUTE_ID, authID); // ※認証情報から照会
     ctx.cmdPath = cmdPath    ; // フレームから取得した情報
+    //│
     //●コマンドパーサーへ処理を移譲
     //●実行結果をレスポンス
     String mmpResp = MMP_REQUEST();

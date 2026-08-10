@@ -31,7 +31,7 @@
   // 外部公開ポインタ：スケッチで定義
   //─────────────────
   class  Parser;
-  extern Parser* g_PARSER;
+  extern Parser* G_PARSER;
 
   //─────────────────
   // 統一入口：前方宣言
@@ -59,9 +59,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   Parser(MmpContext& c): ctxRef(c) {}
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // パーサーの初期化
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void Init(){
     // 機能モジュールを登録
     mods.push_back(new ModuleInfo   (ctxRef, RGB_INFO   ));
@@ -72,9 +72,9 @@ public:
     mods.push_back(new ModuleMP3    (ctxRef, RGB_MP3    ));
   } /* Init() */
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // コマンド実行
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   String RunCommand(){
     //┬
     //①┐清書したコマンドパスを取得
@@ -151,6 +151,6 @@ public:
 inline String MMP_REQUEST(){
 
   // コマンド・パース処理
-  return g_PARSER->RunCommand();
+  return G_PARSER->RunCommand();
 
 } /* MMP_REQUEST() */

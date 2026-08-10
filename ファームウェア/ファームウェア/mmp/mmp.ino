@@ -50,8 +50,8 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   //─────────────────
   // パーサー：parser.hで定義
   //─────────────────
-  Parser  ino_ROUTER(ctx)       ; // 本体(依存性注入)
-  Parser* g_PARSER = &ino_ROUTER; // 外部公開ポインタ
+  Parser  ino_ROUTER(ctx)       ; // 本体(依存性注入) ※コンストラクタ
+  Parser* G_PARSER = &ino_ROUTER; // 外部公開ポインタ
 
 
 //━━━━━━━━━━━━━━━━━
@@ -64,7 +64,7 @@ void setup(){
   ino_READY_NET    = InitNet();     // ネットワーク系
 
   // パーサーを初期化
-  ino_ROUTER.Init();
+  ino_ROUTER.Init(); // 依存注入済みに対し初期化処理を実行
 
   // 機能モジュールの初期化
   InitAnalog(ctx); // アナログ入力

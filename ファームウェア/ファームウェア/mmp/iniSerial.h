@@ -9,29 +9,28 @@
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/07) α版 
 //・シリアル通信アダプタからファイルを分割
+//・コンテクストの利用を廃止
+//・ジャンパ設定の分岐条件バグを修正(id=6～7)
 //========================================================
 #include "adpSerial.h"  // 通信アダプタ：シリアル
-#include "mod.h"        // 機能モジュール：抽象基底クラス
+
+extern Adafruit_NeoPixel g_PIXEL;
 
 //━━━━━━━━━━━━━━━━━
-// グローバル
+// 通信速度の定義・設定
 //━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // コンテクスト
-  //----------------------------------
-  // 型定義：mod.h
-  // 実　装：mmp.ino
-  //─────────────────
-  extern MmpContext ctx;
-
-  //━━━━━━━━━━━━━━━━━
-  // 通信速度の定義・設定
-  //━━━━━━━━━━━━━━━━━
   //─────────────────
   // ボーレートのプリセット
   //─────────────────
   static const int BAUD_PRESETS[8] = {
-    921600,57600,38400,19200,9600,4800,2400,300
+    921600,
+    57600,
+    38400,
+    19200,
+    9600,
+    4800,
+    2400,
+    300
   };
 
   //─────────────────
@@ -76,20 +75,21 @@ bool InitSerial(){
 
   //ボーレートIDを取得
   int id = 7;
-  if      (A==0 && B==0 && C==0) id = 0;
-  else if (A==1 && B==0 && C==0) id = 1;
-  else if (A==0 && B==1 && C==0) id = 2;
-  else if (A==0 && B==0 && C==1) id = 3;
-  else if (A==1 && B==1 && C==0) id = 4;
-  else if (A==0 && B==1 && C==1) id = 5;
-  else if (A==1 && B==0 && C==1) id = 6;
+  if      (A==0 && B==0 && C==0) id = 0; // □□□
+  else if (A==1 && B==0 && C==0) id = 1; // ■□□
+  else if (A==0 && B==1 && C==0) id = 2; // □■□
+  else if (A==0 && B==0 && C==1) id = 3; // □□■
+  else if (A==1 && B==1 && C==0) id = 4; // ■■□
+  else if (A==0 && B==1 && C==1) id = 5; // □■■
+  else if (A==1 && B==0 && C==1) id = 6; // ■□■
+  else if (A==1 && B==0 && C==1) id = 7; // ■■■
 
   // ボーレートに応じてRGB-LEDを点灯
   RGB c = BAUD_COLORS[id]; // 色パターンを取得
-  ctx.pixels->begin();     // RGB-LEDを点灯
-  ctx.pixels->clear();
-  ctx.pixels->setPixelColor(0, ctx.pixels->Color(c.g, c.r, c.b));
-  ctx.pixels->show();
+  g_PIXEL.begin();     // RGB-LEDを点灯
+  g_PIXEL.clear();
+  g_PIXEL.setPixelColor(0, g_PIXEL.Color(c.g, c.r, c.b));
+  g_PIXEL.show();
 
   // シリアルポートを起動
   Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)

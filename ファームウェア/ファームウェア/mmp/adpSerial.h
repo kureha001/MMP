@@ -29,8 +29,8 @@
   // 通信経路に依存しない共通処理のため
   // namespace内には配置しない
   //─────────────────
-  extern MmpContext ctx;
-  extern String MMP_REQUEST();
+  extern MmpContext ctx;       // 定義：mod.h、実装：mmp.ino
+  extern String MMP_REQUEST(); // 所在：parser.h
 
 
 //========================================================

@@ -16,8 +16,8 @@
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "adpTcp.h"  // TCPブリッジ
-#include "adpHttp.h" // WEB API
+#include "adpTcp.h"  // 通信アダプタ：TCPブリッジ
+#include "adpHttp.h" // 通信アダプタ：WwbAPI
 
 //━━━━━━━━━━━━━━━
 // グローバル資源

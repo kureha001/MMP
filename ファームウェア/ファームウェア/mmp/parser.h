@@ -31,7 +31,7 @@
   // 外部公開ポインタ：スケッチで定義
   //─────────────────
   class  Parser;
-  extern Parser* G_PARSER;
+  extern Parser* INO_PARSER;
 
   //─────────────────
   // 統一入口：前方宣言
@@ -183,6 +183,6 @@ public:
 inline String MMP_REQUEST(){
 
   // コマンド・パース処理
-  return G_PARSER->RunCommand();
+  return INO_PARSER->RunCommand();
 
 } /* MMP_REQUEST() */

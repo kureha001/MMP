@@ -7,7 +7,8 @@
 //   - USB CDC ON Boot: Enabled
 //   - Flash Size: 4MB (32Mb)
 //--------------------------------------------------------
-// Ver 1.0.0 (2025/11/14) α版
+// Ver 1.1.0 (2026/08/10) α版 
+//・スケッチ由来のグローバル変数名をINO_*で一律変更
 //========================================================
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
@@ -17,7 +18,7 @@
 #include "iniNet.h"    // ネットワーク資源の初期化
 #include "parser.h"    // コマンド パーサー
 
-const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
+const char* INO_VERSION = "V10a!";  // コンテクストのメンバ
 
 //━━━━━━━━━━━━━━━━━
 // グローバル変数
@@ -27,7 +28,6 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   //─────────────────
   bool ino_READY_SERIAL = false;
   bool ino_READY_NET    = false;
-
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源(定義)
@@ -43,14 +43,14 @@ const char* ino_VERSION = "V10a!";  // コンテクストのメンバ
   // - 型定義：mod.h
   //─────────────────
   MmpContext ctx  = {
-    .version  = ino_VERSION // ファームウェア・バージョン
+    .version  = INO_VERSION // ファームウェア・バージョン
   }; /* ctx */
 
   //─────────────────
   // パーサー：parser.hで定義
   //─────────────────
-  Parser  ino_ROUTER(ctx)       ; // 本体(依存性注入) ※コンストラクタ
-  Parser* G_PARSER = &ino_ROUTER; // 外部公開ポインタ
+  Parser  INO_ROUTER(ctx)       ; // 本体(依存性注入) ※コンストラクタ
+  Parser* INO_PARSER = &INO_ROUTER; // 外部公開ポインタ
 
 
 //━━━━━━━━━━━━━━━━━
@@ -63,7 +63,7 @@ void setup(){
   ino_READY_NET    = InitNet();     // ネットワーク系
 
   // パーサーを初期化
-  ino_ROUTER.Init(); // 依存注入済みに対し初期化処理を実行
+  INO_ROUTER.Init(); // 依存注入済みに対し初期化処理を実行
 
   // 機能モジュールの初期化
   InitAnalog(ctx); // アナログ入力

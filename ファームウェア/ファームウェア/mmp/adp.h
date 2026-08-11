@@ -396,19 +396,19 @@
   static constexpr int USER_COUNT = (AUTH_SLOTS * AUTH_ROUTES) + PORTS_SERIAL;
 
   //─────────────────
-  // 4-1-1.対象ユーザを特定
+  // 5-1.コマンド実行に必要な情報を確定
   //----------------------------------
-  // ユーザIDを取得
+  // アクセスIDを取得
   //----------------------------------
   // 引数：
   // ・経路ID：対象の通信経路用
   // ・認証ID：シリアル系はダミー値
   //----------------------------------
   // 戻り値：整数型
-  // ・正常：ユーザID
+  // ・正常：アクセスID
   // ・異常：-1
   //─────────────────
-  static int GET_USER_ID(int routeID, int authID){
+  static int GET_ACC_ID(int routeID, int authID){
     int offset = -1;
     switch(routeID){
     case ROUTE_ID_SERIAL: offset = 0; break; // シリアルは先頭なのでオフセット無し

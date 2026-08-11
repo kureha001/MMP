@@ -92,45 +92,64 @@ flowchart LR
   P  <--> M
 ```
 
-### (詳細)
-各層・各モジュール間で共有する実行コンテキストや共通資源は、MmpContext を介して受け渡します。
+### (詳細１)
+
+リクエストは、責務別のモジュールを経て処理されます。
 ```mermaid
 flowchart LR
-    A["通信経路<br/>Serial / TCP / HTTP<br/>..."]
-    B["アダプター<br/>通信経路の違いを吸収"]
-    C["MmpContext<br/>共通資源・実行コンテキスト"]
-    D["コマンドパーサ<br/>コマンドをルーティング"]
-    E["機能モジュール<br/>INFO / ANALOG / DIGITAL<br/>PWM / I2C / MP3"]
+    A["通信経路<br/>Serial/TCP/HTTP"] 
+    B["通信アダプタ(adp*.h)<br/>経路固有の事情を吸収"]
+    C["コマンドパーサ(parser.h)<br/>コマンドをルーティング"]
+    D["ModuleBase(mod.h)<br/>機能モジュールの共通I/F"]
+    E["機能モジュール(mod*.h)<br/>INFO,ANALOG,DIGITAL<br/>PWM,I2C,MP3"]
+
+    A --> B
+    B -->|"統一された<br/>コマンド形式"| C
+    C -->|"owns() / handle()"| D
+    D --> E
+
+    E -->|"統一された実行結果"| C
+    C -->|"統一された<br/>実行結果"| B
+    B --> A
+```
+
+### (詳細２)
+各レイヤで共有する実行コンテキストや共通資源は、MmpContext を介して受け渡します。<br>
+通信アダプタが受け取る処理結果は、実際には共通資源(MmpContext)経由で取得します。
+```mermaid
+flowchart LR
+    A["通信経路<br/>Serial/TCP/HTTP"]
+    B["通信アダプタ(adp*.h)<br/>通信経路の違いを吸収"]
+    C["<b>共通資源<br/>（MmpContext）<b/>"]
+    D["コマンドパーサ(parser.h)<br/>コマンドをルーティング"]
+    E["機能モジュール(mod*.h)<br/>INFO,ANALOG,DIGITAL<br/>PWM,I2C,MP3"]
 
     A <--> B
     B -->|"共通形式"| D
-    B <--> C
+    B <-->|"仮想ストリーム，コマンドパス，アクセスID，処理結果"| C
     C <--> D
     D -->|"コマンド実行"| E
     E <--> C
 ```
 
-
 ---
 ## ５. 機能モジュールとの連携
-各機能モジュール(*)は ModuleBase を継承し、以下の特徴を持つ。
-> *機能モジュール：INFO / ANALOG / DIGITAL / PWM / I2C / MP3
-
+各機能モジュールは ModuleBase を継承し、以下の特徴を持ちます。
 - **コマンド所有判定 (`owns()`) と処理本体 (`handle()`) の明確な分離**
 - 出力は **仮想ストリーム(MmpContext内)** へ統一  
 - モジュール追加/削除が非常に簡単
 
 ```mermaid
 flowchart LR
-    subgraph ADAPTER["アダプター層"]
-        A1["Serial"]
-        A2["TCP"]
-        A3["HTTP"]
+    subgraph ADAPTER["通信アダプター層"]
+        A1["Serial<br>（USB-CDC/UART）"]
+        A2["TCP<br>（TCPブリッジ）"]
+        A3["HTTP<br>（WebAPI）"]
     end
 
     subgraph CORE["共通処理層"]
-        C["MmpContext<br/>共通資源"]
-        P["Parser<br/>コマンド・ルーティング<br/>(owns,handleでI/F)"]
+        C["共通資源<br/>（MmpContext）"]
+        P["コマンド・ルーティング<br/>（Parser+ModuleBase）<br/>※owns,handleでI/F"]
     end
 
     subgraph MODULE["機能モジュール層"]

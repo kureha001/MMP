@@ -436,7 +436,7 @@
   // 戻り値：整数型
   // ・正常：ルーム番号
   //─────────────────
-  static int GET_ROOM_No(){
+  static int GET_ROOM_NO(){
     switch(ctx.floorNo){
     case ROUTE_ID_HTTP  : return (AUTH_SLOTS * 1 + PORTS_SERIAL);
     }

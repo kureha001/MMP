@@ -18,9 +18,6 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <WiFi.h>
-  #include <LittleFS.h>
-  #include <ArduinoJson.h>
   //│
   //■ＭＭＰシステム
   #include "adpSerial.h"  // 通信アダプタ：シリアル
@@ -98,7 +95,7 @@ bool InitSerial(){
   else if (A==1 && B==1 && C==0) id = 4; // ■■□
   else if (A==0 && B==1 && C==1) id = 5; // □■■
   else if (A==1 && B==0 && C==1) id = 6; // ■□■
-  else if (A==1 && B==0 && C==1) id = 7; // ■■■
+  else if (A==1 && B==1 && C==1) id = 7; // ■■■
 
   // ボーレートに応じてRGB-LEDを点灯
   RGB c = COLOR_LIST[id]; // 色パターンを取得

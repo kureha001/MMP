@@ -4,53 +4,63 @@
 // - 機能モジュールの登録
 // - 機能モジュールへのルーティング
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/10) α版 
-//・LED表示処理を移設
+// Ver 1.1.0 (2026/08/11) α版 
+//・インクルードファイルを最適化
+//・コメントを強化
+//・LED表示処理を廃止
 //========================================================
 #pragma once
-#include "adp.h"    // 通信アダプタ共通
-#include "mod.h"    // 機能モジュール：抽象基底クラス
-#include "modINF.h" // 機能モジュール：システム
-#include "modANA.h" // 機能モジュール：アナログ入力
-#include "modDIG.h" // 機能モジュール：デジタル入出力
-#include "modPWM.h" // 機能モジュール：PWM出力
-#include "modI2C.h" // 機能モジュール：I2C通信
-#include "modMP3.h" // 機能モジュール：MP3プレイヤー
+//┬
+//■┐インクルード
+  //■Arduinoシステム
+  //│
+  //■ＭＭＰシステム
+  #include "mod.h"    // 抽象基底クラス
+  #include "modINF.h" // 機能：システム
+  #include "modANA.h" // 機能：アナログ入力
+  #include "modDIG.h" // 機能：デジタル入出力
+  #include "modPWM.h" // 機能：PWM出力
+  #include "modI2C.h" // 機能：I2C通信
+  #include "modMP3.h" // 機能：MP3プレイヤー
+  //┴
+//┴
 
 //━━━━━━━━━━━━━━━━━
-// グローバル資源(宣言)
+// グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
   // コンテクスト
   //─────────────────
-  extern MmpContext ctx           ; // 定義：mod.h、実装：mmp.ino
-  extern Adafruit_NeoPixel g_PIXEL; // スケッチの資源を利用
+  extern MmpContext ctx     ; // 所在：mmpCtx.h、実装：mmp.ino
 
   //─────────────────
-  // パーサー本体：前方宣言
-  // 外部公開ポインタ：スケッチで定義
+  // パーサ公開
   //─────────────────
-  class  Parser;
-  extern Parser* INO_PARSER;
+  class  Parser             ; // 前方宣言
+  extern Parser* INO_PARSER ; // 外部公開ポインタ
 
   //─────────────────
-  // 統一入口：前方宣言
+  // 各アダプタからの進行移譲先
   //─────────────────
-  String MMP_REQUEST();
+  String MMP_REQUEST()      ; // 前方宣言
 
+  //─────────────────
+  // クライアントからのリクエスト条件
+  //─────────────────
+  #define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
+  #define DAT_COUNT       10  // コマンド＋引数の個数
 
-//━━━━━━━━━━━━━━━━━
-// パーサー
-//━━━━━━━━━━━━━━━━━
+//========================================================
+// クラス：コマンドパーサ
+//========================================================
 class Parser {
-
-  // 依存性注入
-  // ※スケッチで依存注入
-  MmpContext&               ctxRef;     // コンテクスト
-
-  // 保有情報
+  //┬
+  //□コンテクスト(ポインタ)
+  MmpContext&               ctxRef;     // ※スケッチで依存注入
+  //｜
+  //□保有情報
   std::vector<ModuleBase*>  mods;       // 機能モジュール群
-
+  //┴
 
 public:
   //━━━━━━━━━━━━━━━━━
@@ -63,7 +73,7 @@ public:
   // パーサーの初期化
   //─────────────────
   void Init(){
-    // 機能モジュールを登録
+    // 機能モジュールをモジュールベースに登録
     mods.push_back(new ModuleInfo   (ctxRef, "INFO"   ));
     mods.push_back(new ModuleAnalog (ctxRef, "ANALOG" ));
     mods.push_back(new ModuleDigital(ctxRef, "DIGITAL"));
@@ -74,77 +84,88 @@ public:
 
 private:
   //━━━━━━━━━━━━━━━━━
-  // 機能名表示
+  // 機能名を表示
   //━━━━━━━━━━━━━━━━━
   void SHOW_NAME(const char* argName){
   //┬
-  //○RGB値を初期化
-  struct typeColor { uint8_t r,g,b; };
-  typeColor col = {255,255,255};
+  //○┐RGB値をセット
+    //○前準備
+    struct typeColor { uint8_t r,g,b; }; // 型宣言
+    //│
+    //◇┐RGB値を選択
+    typeColor col = {255,255,255}      ; // 初期値
+      //├→(機能名が一致するの場合)
+      if      (strcmp(argName, "INFO"   ) == 0) col = {  5,  5,  5};
+      else if (strcmp(argName, "ANALOG" ) == 0) col = { 10,  0, 10};
+      else if (strcmp(argName, "DIGITAL") == 0) col = { 10,  0,  0};
+      else if (strcmp(argName, "PWM"    ) == 0) col = {  0,  0, 50};
+      else if (strcmp(argName, "I2C"    ) == 0) col = { 10, 10,  0};
+      else if (strcmp(argName, "MP3"    ) == 0) col = {  0, 10,  0};
+    //└┐（その他）
+      //┴
   //│
-  //○RGB値を選択
-  if      (strcmp(argName, "INFO"   ) == 0) col = {  5,  5,  5};
-  else if (strcmp(argName, "ANALOG" ) == 0) col = { 10,  0, 10};
-  else if (strcmp(argName, "DIGITAL") == 0) col = { 10,  0,  0};
-  else if (strcmp(argName, "PWM"    ) == 0) col = {  0,  0, 50};
-  else if (strcmp(argName, "I2C"    ) == 0) col = { 10, 10,  0};
-  else if (strcmp(argName, "MP3"    ) == 0) col = {  0, 10,  0};
-  //│
-  //○RGB値をセット
-   g_PIXEL.setPixelColor(
-    0,
-    g_PIXEL.Color(col.g, col.r, col.b)
-  );
-  //│
-  //○LEDを発光
-  g_PIXEL.show();
+  //○┐LEDを発光
+    //○前準備
+    Adafruit_NeoPixel objLED; // RGB-LEDオブジェクト
+    //│
+    //○RGB値をセット
+    objLED.setPixelColor(0, objLED.Color(col.g, col.r, col.b));
+    //│
+    //○LEDを発光
+    INO_PIXEL.show();
+    //┴
   //┴
   } /* SHOW_NAME() */
 
 public:
   //─────────────────
   // コマンド実行
+  //----------------------------------
+  // エイリアス経由で実行
   //─────────────────
   String RunCommand(){
     //┬
-    //①┐清書したコマンドパスを取得
-    char path[ REQUEST_LENGTH ];
+    //①┐コマンドパスを清書
+    char pPath[ REQUEST_LENGTH ];
     {
-      //◇コマンドパスを取込(末尾処理あり)
+      //◇超過分を削除
       size_t pLen = ctx.cmdPath.length();
-      if (pLen >= sizeof(path)) pLen = sizeof(path) - 1;
-      memcpy(path, ctx.cmdPath.c_str(), pLen);
-      path[pLen] = '\0';
+      if (pLen >= sizeof(pPath)) pLen = sizeof(pPath) - 1;
+      memcpy(pPath, ctx.cmdPath.c_str(), pLen);
+      pPath[pLen] = '\0';
       //│
-      //◇コマンドパスの末尾に'!'があれば除去(末尾処理あり)
-      pLen = strlen(path);
-      if (pLen > 0 && path[pLen-1] == '!') path[pLen-1] = '\0';
+      //◇末尾'!'を除去
+      pLen = strlen(pPath);
+      if (pLen > 0 && pPath[pLen-1] == '!') pPath[pLen-1] = '\0';
       //┴
     }   /* ① */
     //│
     //②┐コマンドデータ、データ数を取得
-    char dat[ DAT_COUNT ][ DAT_LENGTH ];
-    int  dat_cnt = 0;
+    char dat[ DAT_COUNT ][ DAT_LENGTH ]; // 登録バッファ
+    int  regCount = 0                  ; // 登録数
     {
-      //○コマンドパスの区切文字の存在確認
-      char* tok = strtok(path, ":");
+      //○先頭のトークンを取得
+      char* tok = strtok(pPath, ":");
       //│
-      //◎┐トークン毎にコマンドデータに追加
-      while (tok && dat_cnt < DAT_COUNT){
-        //○トークンをコマンドデータに追加(末尾処理あり)
-        strncpy(dat[dat_cnt], tok, sizeof(dat[0])-1);
-        dat[dat_cnt][sizeof(dat[0])-1] = '\0';
+      //◎┐トークン毎を登録バッファに登録
+      while (tok && regCount < DAT_COUNT){
+        //○当該トークンを登録バッファに登録
+        strncpy(dat[regCount], tok, sizeof(dat[0])-1);
+        dat[regCount][sizeof(dat[0])-1] = '\0';
         //│
-        //○トークン数をインクリメント
-        dat_cnt++;
+        //○登録数をカウントアップ
+        regCount++;
         //│
-        //○コマンドパスの区切文字の存在確認
+        //○次のトークンを取得
         tok = strtok(nullptr, ":");
       } /* while */
         //┴
       //│
-      //◇エラー(未登録コマンド)をリターン
-      if (dat_cnt == 0) return "#CMD!";
+      //○エラーメッセージを返却
+      if (regCount == 0) return "#CMD!"; //コマンド名不正
+      // ＼（登録数がゼロの場合）
+        //▼エラーメッセージを返却
+        //┴
       //┴
     }   /* ② */
     //│
@@ -152,37 +173,41 @@ public:
       //○仮想出力ストリームを初期化
       ctx.vStream.clear();
       //│
-      //◎┐モジュールを走査
+      //◎┐機能モジュールを走査
       for (auto* m : mods){
-        //◇在籍有無に応じて、モジュール機能を実行
+        //◇┐当該機能モジュールを実行
         if (m->owns(dat[0])){
-        //├→(当該モジュールに在籍する場合)
-          //●RGB-LEDを発光
-          //○モジュール機能を実行
-          //▼RETURN:モジュールの戻り値をリターン
-          SHOW_NAME(m->getModName());
-          m->handle(dat, dat_cnt);          
-          return ctx.vStream.str();
+          //├→(コマンドが在籍する場合)
+            //●機能名を表示
+            //○機能モジュールを実行
+            //▼実行結果をリターン
+            SHOW_NAME(m->getModName());
+            m->handle(dat, regCount);          
+            return ctx.vStream.str();
         } /* if */
+          //└┐（その他）
+            //┴
         //┴
       //┴
       } /* for */
     //│
-    //○エラー(未登録コマンド)をリターン
-    return "#CMD!";
+    //○エラーメッセージを返却
+    return "#CMD!"; //コマンド名不正
     //┴
   } /* RunCommand() */
 }; /* class Parser */
 
-
-//━━━━━━━━━━━━━━━━━
-// 統一呼び出し
-// ユーザID は通信経路から提供される実行コンテキスト情報であり、
-// コマンド実行時に一時的に更新する
-//━━━━━━━━━━━━━━━━━
-inline String MMP_REQUEST(){
-
-  // コマンド・パース処理
+//========================================================
+// 公開関数
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // 各アダプタからの進行移譲先
+  //----------------------------------
+  // パーサのメソッドをエイリアス
+  //━━━━━━━━━━━━━━━━━
+  inline String MMP_REQUEST(){
+  //┬
+  //○コマンド・パース処理
   return INO_PARSER->RunCommand();
-
-} /* MMP_REQUEST() */
+  //┴
+  } /* MMP_REQUEST() */

@@ -7,18 +7,34 @@
 //・通信経路の開始を通信アダプタへ移譲
 //・対象通信アダプタ：シリアル
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/07) α版 
+// Ver 1.1.0 (2026/08/11) α版 
 //・シリアル通信アダプタからファイルを分割
+//・インクルードファイルを最適化
+//・コメントを強化
 //・コンテクストの利用を廃止
 //・ジャンパ設定のパターン漏れバグ修正(id=6～7)
 //========================================================
-#include "adpSerial.h"  // 通信アダプタ：シリアル
-
-extern Adafruit_NeoPixel g_PIXEL;
+#pragma once
+//┬
+//■┐インクルード
+  //■Arduinoシステム
+  #include <WiFi.h>
+  #include <LittleFS.h>
+  #include <ArduinoJson.h>
+  //│
+  //■ＭＭＰシステム
+  #include "adpSerial.h"  // 通信アダプタ：シリアル
+  //┴
+//┴
 
 //━━━━━━━━━━━━━━━━━
-// 通信速度の定義・設定
+// グローバル資源
 //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 共通ＬＥＤオブジェクト
+  //─────────────────
+  extern Adafruit_NeoPixel INO_PIXEL;
+
   //─────────────────
   // ボーレートのプリセット
   //─────────────────
@@ -44,7 +60,7 @@ extern Adafruit_NeoPixel g_PIXEL;
   // ボーレート別のRGB-LED点灯色
   //─────────────────
   struct RGB { uint8_t r,g,b; };
-  static const RGB BAUD_COLORS[8] = {
+    static const RGB COLOR_LIST[8] = {
     /*0:白*/ {10,10,10},
     /*1:緑*/ { 0,10, 0},
     /*2:青*/ { 0, 0,10},
@@ -55,11 +71,11 @@ extern Adafruit_NeoPixel g_PIXEL;
     /*7:赤*/ {10, 0, 0}
   };
 
-//─────────────────
+//━━━━━━━━━━━━━━━━━
 // 初期化処理
 //----------------------------------
 // 実行元：mmp.ino - setup()
-//─────────────────
+//━━━━━━━━━━━━━━━━━
 bool InitSerial(){
 
   // ボーレート設定ボタンのピンを定義
@@ -85,11 +101,11 @@ bool InitSerial(){
   else if (A==1 && B==0 && C==1) id = 7; // ■■■
 
   // ボーレートに応じてRGB-LEDを点灯
-  RGB c = BAUD_COLORS[id]; // 色パターンを取得
-  g_PIXEL.begin();     // RGB-LEDを点灯
-  g_PIXEL.clear();
-  g_PIXEL.setPixelColor(0, g_PIXEL.Color(c.g, c.r, c.b));
-  g_PIXEL.show();
+  RGB c = COLOR_LIST[id]; // 色パターンを取得
+  INO_PIXEL.begin();     // RGB-LEDを点灯
+  INO_PIXEL.clear();
+  INO_PIXEL.setPixelColor(0, INO_PIXEL.Color(c.g, c.r, c.b));
+  INO_PIXEL.show();
 
   // シリアルポートを起動
   Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)

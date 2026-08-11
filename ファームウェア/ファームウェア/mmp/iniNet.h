@@ -7,17 +7,25 @@
 //・通信サービス開始を通信アダプタへ移譲
 //・対象通信アダプタ：TCPブリッジ / WebAPI
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/07) α版 
+// Ver 1.1.0 (2026/08/11) α版 
 //・ファイル名を変更
+//・インクルードファイルを最適化
 //・コメントを強化
 //・g_SRV_TCPのセットを廃止
 //========================================================
 #pragma once
-#include <WiFi.h>
-#include <LittleFS.h>
-#include <ArduinoJson.h>
-#include "adpTcp.h"  // 通信アダプタ：TCPブリッジ
-#include "adpHttp.h" // 通信アダプタ：WwbAPI
+//┬
+//■┐インクルード
+  //■Arduinoシステム
+  #include <WiFi.h>
+  #include <LittleFS.h>
+  #include <ArduinoJson.h>
+  //│
+  //■ＭＭＰシステム
+  #include "adpTcp.h"  // 通信アダプタ：TCPブリッジ
+  #include "adpHttp.h" // 通信アダプタ：WwbAPI
+  //┴
+//┴
 
 //━━━━━━━━━━━━━━━
 // グローバル資源

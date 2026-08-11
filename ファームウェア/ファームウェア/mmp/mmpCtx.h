@@ -61,8 +61,11 @@ class StringStream : public Stream {
 //  背後にある通信経路（シリアル/TCP/HTTP）の違いを意識する必要がない
 //──────────────────────────────────────────────
 struct MmpContext {
-  StringStream vStream ; // 応答データを一時蓄積する仮想ストリーム
-  String       cmdPath ; // コマンドパス
-  int          accID   ; // アクセス識別子（ユーザメモリ用のキー）
-  const char*  version ; // システム共通のバージョン情報
+  const char*  version = "" ; // システム共通のバージョン情報
+  StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム
+  String       cmdPath = "" ; // コマンドパス
+  int          floorNo = -1 ; // フロア番号（経路IDをセット）
+  int          roomNo  = -1 ; // ルーム番号（個室は0、大部屋は）
+  int          zoneNo  = -1 ; // ゾーン番号
+  int          accNo   = -1 ; // アクセス番号（GET_ACC_ID()でセット）
 };

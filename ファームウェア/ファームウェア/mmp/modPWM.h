@@ -168,7 +168,7 @@ public:
     Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
-    const int ID = ctx.accID;
+    const int ID = ctx.accNo;
     if (!g_PWM_DAT || ID < 0 || ID >= USER_COUNT) {
       _ResIniErr(sp);  // 安全策
       return;

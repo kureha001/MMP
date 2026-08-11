@@ -24,6 +24,13 @@
   //■ＭＭＰシステム
   //┴
 //┴
+//━━━━━━━━━━━━━━━━━
+// グローバル資源
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // コンテクスト
+  //─────────────────
+  extern MmpContext ctx     ; // 所在：mmpCtx.h、実装：mmp.ino
 
 //========================================================
 // 基本情報
@@ -37,20 +44,19 @@
   static const int ROUTE_ID_HTTP   = 2 ; // WebAPI用
 
 //========================================================
-// 接続管理：ユーザを接続単位で受信状態を管理
+// 接続情報：ユーザを接続単位で受信状態を管理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 基本情報
   //━━━━━━━━━━━━━━━━━
   static const int SS_SLOTS      = 10    ; // 経路毎のスロット総数
   static const int SS_RX_SIZE    = 256   ; // 受信バッファ容量
-  const uint32_t   SS_TIME_LIMIT = 30000 ; // タイムアウト閾値
 
   //━━━━━━━━━━━━━━━━━
   // スロット
   //─────────────────
   // SLOT_BASE      used/rx/isOverflow
-  // ├ SLOT_STREAM ├ conn(Stream)/accID
+  // ├ SLOT_STREAM ├ conn(Stream)/accNo
   // ├ SLOT_TCP    ├ conn(WiFiClient)/authCD/lastActive
   // └ SLOT_HTTP   └ conn(WebServer)/authCD(認証情報TBL検索用キー)
   //━━━━━━━━━━━━━━━━━
@@ -58,13 +64,13 @@
     // Ｚ．共通部
     //─────────────────
     struct SLOT_BASE {
-      bool    used       = false ; // 使用状況フラグ
+      int     roomNo     = -1    ; // ルーム番号
       String  rx         = ""    ; // 受信バッファ
       bool    isOverflow = false ; // 容量超過フラグ
     };
     //----------------------------------
     void INIT_SLOT_BASE(SLOT_BASE& argSlot){
-      argSlot.used       = false    ; // 使用状況を未使用に設定
+      argSlot.roomNo     = -1       ; // ルーム番号をクリア
       argSlot.rx         = ""       ; // 受信バッファをクリア
       argSlot.rx.reserve(SS_RX_SIZE); // 受信バッファ容量を事前確保
       argSlot.isOverflow = false    ; // 容量超過フラグをクリア
@@ -79,13 +85,12 @@
     //─────────────────
     struct SLOT_STREAM : SLOT_BASE { // Ｚ．共通部
       Stream* conn  = nullptr ; // 接続資源(個別ストリームを参照)
-      int     accID = -1      ; // ユーザID(物理ポート別の固定値)
+      int     accNo = -1      ; // ユーザID(物理ポート別の固定値)
     };
     //----------------------------------
     void INIT_SLOT_STREAM(SLOT_STREAM& argSlot){
       INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn  = nullptr ; // 参照解除
-      argSlot.accID = -1      ; // クリア
+      argSlot.conn  = nullptr ; // 接続資源を参照解除
     }
     //─────────────────
     // Ｂ．WiFiサーバ資源(接続確認あり)
@@ -97,15 +102,11 @@
     //─────────────────
     struct SLOT_TCP : SLOT_BASE{   // Ｚ．共通部
       WiFiClient conn            ; // 接続資源(個別TCP接続の実体)
-      String     authCD     = "" ; // 認証情報TBL検索用キー
-      uint32_t   lastActive = 0  ; // 最終更新時刻(ms)
     };
     //----------------------------------
     void INIT_SLOT_TCP(SLOT_TCP& argSlot){
       INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn.stop()     ; // 資源破棄
-      argSlot.authCD     = "" ; // クリア
-      argSlot.lastActive = 0  ; // クリア
+      argSlot.conn.stop()     ; // 接続資源を資源破棄
     }
     //─────────────────
     // Ｃ．WEBサーバ資源(ポインタ)
@@ -307,6 +308,36 @@
     //┴
   } /* AUTH_START() */
 
+  //─────────────────
+  // 古いスロットを照会
+  //----------------------------------
+  // 該当条件：使用中 かつ タイムアウト
+  //----------------------------------
+  // 戻り値：
+  // ・0,1,2...：タイムアウトしたスロットID
+  // ・-1：タイムアウトしたスロットが無い
+  //─────────────────
+  int AUTH_GET_OLD_ID(TYPE_AUTH_SLOT* pTBL) {
+  //┬
+  //◎┐先頭から走査
+  for (int id = 0 ; id < SS_SLOTS ; id++) {
+    //○次データの捜査を開始
+    // ＼（全スロットを走査し終えた場合）
+      //▼ループ処理を中断
+    //│
+    //○一致確認
+    if ( pTBL[id].used &&
+         millis() - pTBL[id].lastActive > AUTH_TIME_LIMIT) return id;
+    // ＼（使用中でタイムアウトしている場合）
+      //▼当該スロットIDを返す
+    //┴
+  } /* END-for */
+  //│
+  //▼エラーコードを返す(空きスロットがない)
+  return -1;
+  //┴
+  } /* SS_GET_OLD_ID() */
+
 
 //========================================================
 // 受信データ：フレーム（URI)を編集
@@ -396,25 +427,40 @@
   static constexpr int USER_COUNT = (AUTH_SLOTS * AUTH_ROUTES) + PORTS_SERIAL;
 
   //─────────────────
-  // 5-1.コマンド実行に必要な情報を確定
+  // ルームNoを取得
   //----------------------------------
-  // アクセスIDを取得
-  //----------------------------------
-  // 引数：
-  // ・経路ID：対象の通信経路用
-  // ・認証ID：シリアル系はダミー値
+  // ルーム番号を取得
+  // caseの経路ID以外は使用禁止
+  // 事前にコンテクストの(floorNo)をセットする
   //----------------------------------
   // 戻り値：整数型
-  // ・正常：アクセスID
-  // ・異常：-1
+  // ・正常：ルーム番号
   //─────────────────
-  static int GET_ACC_ID(int routeID, int authID){
-    int offset = -1;
-    switch(routeID){
-    case ROUTE_ID_SERIAL: offset = 0; break; // シリアルは先頭なのでオフセット無し
-    case ROUTE_ID_TCP   : offset = PORTS_SERIAL + AUTH_SLOTS * 0; break;
-    case ROUTE_ID_HTTP  : offset = PORTS_SERIAL + AUTH_SLOTS * 1; break;
+  static int GET_ROOM_No(){
+    switch(ctx.floorNo){
+    case ROUTE_ID_HTTP  : return (AUTH_SLOTS * 1 + PORTS_SERIAL);
     }
-    if (offset < 0) return -1;
-    return (offset + authID);
+    return -1;
+  } /* GetUserID() */
+
+  //─────────────────
+  // 5-1.コンテクストの内容を確定
+  //----------------------------------
+  // アクセスIDを取得
+  // 事前にコンテクストの(floorNo,roomNo,zoneNo)をセットする
+  //----------------------------------
+  // 引数：
+  // ・フロア番号：経路ID
+  //----------------------------------
+  // 戻り値：整数型
+  // ・正常：アクセス番号
+  //─────────────────
+  static int GET_ACC_NO(){
+    int offsetNum = 0;
+    switch(ctx.floorNo){
+    case ROUTE_ID_SERIAL: return offsetNum = 0;
+    case ROUTE_ID_TCP   : return offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0;
+    case ROUTE_ID_HTTP  : return offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1;
+    }
+    return (offsetNum + ctx.roomNo + ctx.zoneNo);
   } /* GetUserID() */

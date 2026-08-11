@@ -108,7 +108,7 @@ public:
             !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accID;
+      int ID = ctx.accNo;
       g_ANA_DAT[ID].PlayerCnt = plCnt;
       g_ANA_DAT[ID].SwitchCnt = swCnt;
 
@@ -129,7 +129,7 @@ public:
         if (dat_cnt != 1){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accID;
+      int ID = ctx.accNo;
       for (int ch = 0; ch < g_ANA_DAT[ID].PlayerCnt; ch++) {
 
         // アドレスバスをセット
@@ -167,7 +167,7 @@ public:
 
         // 1.2. 単項目チェック
         int pl, sw;
-        int ID = ctx.accID;
+        int ID = ctx.accNo;
         if (!_Str2Int(dat[1], pl, 0, g_ANA_DAT[ID].PlayerCnt - 1) ||
             !_Str2Int(dat[2], sw, 0, g_ANA_DAT[ID].SwitchCnt - 1) )
             {_ResChkErr(sp); return;}

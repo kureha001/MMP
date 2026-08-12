@@ -368,7 +368,7 @@
     String retStr = ""   ; // リクエストURI
     int    pos    = pURI.indexOf('/');
     if (pos >= 0) {
-      //├→（URIに"/"がある）
+      //├┐（URIに"/"がある）
         //○URIから第１トークンを取得
         retStr  = pURI.substring(0, pos) ;
         //┴
@@ -399,11 +399,12 @@
     //◇┐URIから切り出す
     String retStr = ""   ; // 戻り値
     int    pos    = pURI.indexOf('/');
-
     if (pos >= 0) {
-      //├→（URIに"/"がある）
+      //├┐（URIに"/"がある）
         //○URIから第２トークン以降を取得
         retStr = pURI.substring(pos + 1);
+        //┴
+      //└┐
         //┴
     }
     //│
@@ -421,12 +422,19 @@
   //─────────────────
   // 0-3.コンテクストをセットアップ
   //─────────────────
-  static void SETUP_CONTEXT(){
-    ctx.cmdPath = "" ; // コマンドパス
-    ctx.authID  = 0  ; // 区画ID ※固定値[0：なし]をセット
-    ctx.accID   = -1 ; // アクセスID
-    ctx.accIDS  = -1 ; // アクセスIDの総数
-} /* RUN_MMP_CMD() */
+  static void ADP_SETUP_CTX(int argRID, int argSID){
+
+    ctx.strFrame = ""   ; // フレーム
+    ctx.cmdPath  = ""   ; // コマンドパス
+
+    ctx.routeID = argRID; // 経路ID
+    ctx.slotID  = argSID; // スロットID
+
+    ctx.authID   = 0    ; // 認証ID（0：常時接続）
+    ctx.accID    = -1   ; // アクセスID
+    ctx.accIDS   = -1   ; // アクセスIDの総数
+
+} /* ADP_SETUP_CTX() */
 
   //─────────────────
   // ５．MMPコマンドを実行
@@ -434,14 +442,14 @@
   // 戻り値：文字列
   // ・正常：コマンドパーサのレスポンス
   //─────────────────
-  static String ADP_RUN(){
+  static String P5_RUN(){
 
     //◇オフセットを求める
     int offsetNum = 0;
     switch(ctx.routeID){
-    case ROUTE_ID_SERIAL: offsetNum = 0;
-    case ROUTE_ID_TCP   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0;
-    case ROUTE_ID_HTTP  : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1;
+    case ROUTE_ID_SERIAL: offsetNum = 0                            ; break;
+    case ROUTE_ID_TCP   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0; break;
+    case ROUTE_ID_HTTP  : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1; break;
     }
 
     //アクセスIDをセット（オフセット ＋ スロットID ＋ 認証ID）
@@ -453,4 +461,4 @@
     //ＭＭＰコマンドを実行→リターン
     return MMP_REQUEST();
 
-  } /* ADP_RUN() */
+  } /* P5_RUN() */

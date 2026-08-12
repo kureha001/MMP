@@ -56,12 +56,17 @@ class StringStream : public Stream {
 //  背後にある通信経路（シリアル/TCP/HTTP）の違いを意識する必要がない
 //──────────────────────────────────────────────
 struct MmpContext {
-  const char*  version = ""; // システム共通のバージョン情報
-  StringStream vStream     ; // 応答データを一時蓄積する仮想ストリーム
-  String       cmdPath = ""; // コマンドパス
-  int          routeID = -1; // 経路ID
-  int          slotID  = -1; // スロットID（個室は0）
-  int          authID  = -1; // 認証ID
-  int          accID   = -1; // アクセスID
-  int          accIDS  = -1; // アクセスIDの総数
+  const char*  version  = ""; // システム共通のバージョン情報
+
+  StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム
+
+  String       strFrame = ""; // フレーム
+  String       cmdPath  = ""; // コマンドパス
+
+  int          routeID  = -1; // 経路ID
+  int          slotID   = -1; // スロットID
+  int          authID   = -1; // 認証ID（0：常時接続）
+  int          accID    = -1; // アクセスID
+
+  int          accIDS   = -1; // アクセスIDの総数
 };

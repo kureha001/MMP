@@ -138,9 +138,9 @@ namespace adpTcp {
     INIT_SLOT_TCP(ssTBL[id]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[id].conn   = newConn       ; // CP接続を登録
-    ssTBL[id].conn .setNoDelay(true) ; // TCPパケット遅延制御
-    ssTBL[id].used   = true          ; // 仕様通
+    ssTBL[id].conn   = newConn      ; // CP接続を登録
+    ssTBL[id].conn.setNoDelay(true) ; // TCPパケット遅延制御
+    ssTBL[id].used   = true         ; // 仕様通
     //┴
   } // while
   //┴
@@ -151,7 +151,7 @@ namespace adpTcp {
 // レスポンス
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // データ送信
+  // スロットの受付資源に送信
   //─────────────────
   void SEND_CONN(
     SLOT_TCP&     argSS  , // 送信先
@@ -180,6 +180,8 @@ namespace adpTcp {
   //─────────────────
   // ルート１：ＭＭＰコマンド
   //----------------------------------
+  // handle()で明示的に呼び出す
+  //----------------------------------
   // 引数：
   // (参)接続情報スロット
   //----------------------------------
@@ -188,12 +190,6 @@ namespace adpTcp {
   //・通信状態は継続的に保持する
   //・再接続に対応する為、毎回ユーザー認証する
   //----------------------------------
-  //【処理フロー】
-  //・状態管理       ：conn.connected()
-  //・フレーム分割   ：しない
-  //・ユーザ認証     ：しない
-  //・接続認証       ：しない
-  //----------------------------------
   //【処理詳細】
   // 資源            ：WiFiClient (実体)
   // 資源の実体所有  ：する
@@ -201,8 +197,8 @@ namespace adpTcp {
   // データ受信単位  ：1byte[conn->read()]
   // フレーム化処理  ：する
   // 受信バッファ    ：する ※ポーリング跨ぎにも対応
-  // 受信継続判定    ：available()
-  // フレーム終端判定：する(データ受信単位で確認)
+  // 受信継続判定    ：する available()
+  // フレーム終端判定：する ※データ受信単位で確認
   //─────────────────
   void routeMMP(SLOT_TCP& argSS){
   //┬
@@ -218,9 +214,6 @@ namespace adpTcp {
     //│
     //○0-2.ワーク変数を用意
     bool isReady = false;
-    //│
-    //○0-3.コンテクストをセットアップ
-    SETUP_CONTEXT();
     //┴
   //│
   //◎┐１．受信待ちデータの取り込み
@@ -245,7 +238,7 @@ namespace adpTcp {
     //│
     //◇┐1-3.フレームの完成を確認
     if (ch == '!') {
-      //├→（コマンド終端を検出した場合）
+      //├┐（コマンド終端を検出した場合）
         //○オーバーフローを確認
         if (argSS.isOverflow) {
         // ＼（オーバーフロー中の場合）
@@ -288,7 +281,7 @@ namespace adpTcp {
   //　➡【該当処理なし】※常時接続は対象外
   //│
   //●５．MMPコマンドを実行→レスポンス
-  SEND_CONN(argSS, ADP_RUN());
+  SEND_CONN(argSS, P5_RUN());
   //┴
   } /* routeMMP() */
 
@@ -333,16 +326,13 @@ namespace adpTcp {
     // 1) 起動チェック
     if (!ns_ACCEPTOR ) return; // サーバの実体化有無を評価
 
-    // 2) 経路を指定
-    ctx.routeID = ROUTE_ID    ; // ★CONTEXT更新：経路ID
-
-    // 3) 新規接続のスロットを登録
+    // 2) 新規接続のスロットを登録
     SS_ATTACH_SLOT();
 
-    // 4) ルーティング処理
-    for (int id = 0; id < PORTS_SERIAL; id++) {
-      ctx.slotID = id;     // ★CONTEXT更新：スロットID
-      routeMMP(ssTBL[id]); // MMPコマンドへルーティング
+    // 3) ルーティング処理
+    for (int slotID = 0; slotID < PORTS_SERIAL; slotID++) {
+      ADP_SETUP_CTX(ROUTE_ID, slotID); // コンテクストをセットアップ
+      routeMMP(ssTBL[slotID])        ; // MMPコマンドへルーティング
     }
   } /* handle() */
 

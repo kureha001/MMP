@@ -127,7 +127,7 @@ namespace adpSerial {
   //【詳細】
   // 常時接続の物理ポートなので確認は不要
   //----------------------------------
-  // 戻り値：論理値
+  // 戻り値：接続状態（論理値）
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
@@ -145,7 +145,7 @@ namespace adpSerial {
   //  ・オーバーフロー中：フラグを[OFF]にし、処理継続を不可能と判定する。
   //----------------------------------
   //【詳細】
-  // データ受信単位  ：1byte[conn->read()]
+  // データ受信単位  ：1byte[conn->read()]★★★
   // 受信バッファ    ：する ※ポーリング跨ぎにも対応
   // 受信継続判定    ：する ※オーバーフロー/終端文字/オーバーフロー解除/フレーム完成
   // フレーム終端判定：する ※データ受信単位で確認
@@ -157,7 +157,7 @@ namespace adpSerial {
   bool P21_RECEIVE(SLOT_STREAM&  argSS){
   //┬
   //○受信データを受信バッファに加える
-  argSS.rx += (char)argSS.conn->read();
+  argSS.rx += (char)argSS.conn->read(); //★★★
   //│
   //○受信バッファのオーバーフローを確認
   if (argSS.rx.length() > SS_RX_SIZE) {
@@ -180,11 +180,11 @@ namespace adpSerial {
     //├┐（通常の場合）
       //●受信バッファをURI形式に変換
       //○コンテクストにフレームをセット
-      FormatURI(argSS.rx);
+      P2_FORMAT_URI(argSS.rx);
       ctx.strFrame = argSS.rx;
     //┴
   } else {
-    //└┐
+    //└┐（その他）
       //○オーバーフロー中を解除
       //●エラーコードをレスポンス
       argSS.isOverflow = false;
@@ -205,7 +205,7 @@ namespace adpSerial {
   //----------------------------------
   //【詳細】
   // フレーム化処理  ：する
-  // 受信継続判定    ：する available()
+  // 受信継続判定    ：する[conn->available()]★★★
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
@@ -214,7 +214,7 @@ namespace adpSerial {
   bool P2_MAKE_FRAME(SLOT_STREAM&  argSS){
   //┬
   //◎┐受信待ちデータの取り込み
-  while (argSS.conn->available()){
+  while (argSS.conn->available()){     //★★★
     // ＼（未取り込みデータが空の場合）
       //▼取り込みを終了
     //│
@@ -231,7 +231,7 @@ namespace adpSerial {
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
-  // ３．フレームから基本情報を取得
+  // ３．基本情報を取得
   //----------------------------------
   //【詳細】
   // フレーム書式    ：{コマンドパス}!
@@ -239,7 +239,7 @@ namespace adpSerial {
   void P3_MAKE_INFO(){
   //┬
   //〇受信待ちデータの取り込み
-  ctx.cmdPath = ctx.strFrame; // ★CONTEXT更新：コマンドパス
+  ctx.cmdPath = ctx.strFrame;
   //┴
   } /* P3_MAKE_INFO() */
 
@@ -279,7 +279,7 @@ namespace adpSerial {
     // ＼（フレームが未完成の場合）
       //▼処理を中断
   //│
-  //○３．フレームから基本情報を取得
+  //○３．基本情報を取得
   P3_MAKE_INFO();
   //│
   //○４．認証を実施
@@ -296,7 +296,7 @@ namespace adpSerial {
   } /* routeMMP() */
 
   //─────────────────
-  // ルート０：ホスト直下
+  // ルート２：ホスト直下
   //─────────────────
   //　➡【該当処理なし】※Webサーバが対象
 
@@ -309,25 +309,26 @@ namespace adpSerial {
   // 実行元：iniSerial.h - InitSerial()
   //━━━━━━━━━━━━━━━━━
   bool start() {
-
-    // 1) 二重起動防止
+    //┬
+    //○１．二重起動防止
     if(ssTBL) return true ; // 接続情報TBLの状況を評価
-
-    // 2) サーバ資源生成
+    //│
+    //○２．サーバ資源生成
     //　➡【該当処理なし】※セットアップ処理で事前に初期化済み
-
-    // 3) 接続情報TBLを作成
+    //│
+    //○３．接続情報TBLを作成
     CREATE_SS_TBL()       ; // 領域確保
     ATTACH_SS_SLOT()      ; // 常時接続スロットを登録
-
-    // 4) ルーティング登録
+    //│
+    //○４．ルーティング登録
     //　➡【該当処理なし】※Webサーバが対象
-
-    // 5) サーバ開始
+    //│
+    //○５．サーバ開始
     //　➡【該当処理なし】※ネットワーク系が対象
-
-    // 6) 正常終了
+    //│
+    //▼６．正常終了
     return true;
+    //┴
   } /* start() */
 
   //━━━━━━━━━━━━━━━━━
@@ -336,18 +337,25 @@ namespace adpSerial {
   // 実行元：mmp.ino - loop()
   //━━━━━━━━━━━━━━━━━
   void handle(){
-
-    // 1) 起動チェック
+    //┬
+    //○１．起動チェック
     if(!ssTBL) return; // 接続情報TBLの状況を評価
-
-    // 2) 新規接続のスロットを登録
+    //│
+    //○２．新規接続のスロットを登録
     //　➡【該当処理なし】※start()で登録済み
-
-    // 3) ルーティング処理
+    //│
+    //◎┐３．ルーティング処理
     for (int slotID = 0; slotID < PORTS_SERIAL; slotID++) {
-      ADP_SETUP_CTX(ROUTE_ID, slotID); // コンテクストをセットアップ
+      // ＼（最終うスロットに達した場合）
+        //▼ルーティングを終了
+      //│
+      //●コンテクストをセットアップ
+      //●スロット処理を指示
+      P0_SETUP_CTX(ROUTE_ID, slotID);
       routeMMP(ssTBL[slotID])        ; // MMPコマンドへルーティング
-    }
+      //┴
+      } /* END-for */
+    //┴
   } /* handle() */
 
 } /* namespace adpSerial */

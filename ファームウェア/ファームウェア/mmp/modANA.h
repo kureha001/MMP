@@ -3,7 +3,6 @@
 // 機能モジュール：アナログ入力
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
-//・インクルードファイルを最適化
 //・LED表示処理を廃止
 //・ANALOG/SETUPコマンドでreturnが漏れていたバグを修正
 //========================================================
@@ -48,12 +47,12 @@ void InitAnalog(const MmpContext& ctx) {
   Serial.println("[HC4067 buffer initialize]");
 
   // クライアント別データのメモリ確保
-  void* p = calloc(USER_COUNT, sizeof(AnaClientData)); // 全要素0で初期化して確保
+  void* p = calloc(ctx.accIDS, sizeof(AnaClientData)); // 全要素0で初期化して確保
   if (!p) { return; }
   g_ANA_DAT = static_cast<AnaClientData*>(p);
 
   // 既定設定
-  for (int i = 0; i < USER_COUNT; ++i) {
+  for (int i = 0; i < ctx.accIDS; ++i) {
     g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
     g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
   }
@@ -109,7 +108,7 @@ public:
             !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accNo;
+      int ID = ctx.accID;
       g_ANA_DAT[ID].PlayerCnt = plCnt;
       g_ANA_DAT[ID].SwitchCnt = swCnt;
 
@@ -131,7 +130,7 @@ public:
         if (dat_cnt != 1){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accNo;
+      int ID = ctx.accID;
       for (int ch = 0; ch < g_ANA_DAT[ID].PlayerCnt; ch++) {
 
         // アドレスバスをセット
@@ -169,7 +168,7 @@ public:
 
         // 1.2. 単項目チェック
         int pl, sw;
-        int ID = ctx.accNo;
+        int ID = ctx.accID;
         if (!_Str2Int(dat[1], pl, 0, g_ANA_DAT[ID].PlayerCnt - 1) ||
             !_Str2Int(dat[2], sw, 0, g_ANA_DAT[ID].SwitchCnt - 1) )
             {_ResChkErr(sp); return;}

@@ -7,21 +7,6 @@
 //   受信→認証開始→認証検証→コマンド実行→結果返却
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
-//・ファイル名を変更
-//・インクルードファイルを最適化
-//・コメントを強化
-//・namespaceを固有の1つにまとめた
-//・各種リソース(処理/構造体など)を共通側に定義
-//・g_SRV_TCPのセットを廃止
-//・ルート１：ＭＭＰコマンド
-//  - 引数をスロット(オブジェクト)に変更
-//  - プロセスを見直し
-//  - 接続情報を大幅変更
-//  - フレームが完成したら後続処理するよう変更
-//  - 受信データの容量超過に対応
-//・必要な情報はすべてコンテストに集約
-//・スロットを再設計
-//・すべての認証は廃止
 //========================================================
 #pragma once
 //┬
@@ -33,19 +18,10 @@
   //┴
 //┴
 
-//========================================================
-// グローバル資源
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // コンテクスト
-  //━━━━━━━━━━━━━━━━━
-  extern MmpContext ctx;       // 所在：mmpCtx.h、実装：mmp.ino
-
-  //━━━━━━━━━━━━━━━━━
-  // コマンドパーサ
-  //━━━━━━━━━━━━━━━━━
-  extern String MMP_REQUEST(); // 所在：parser.h
-
+//─────────────────
+// コンテクスト
+//─────────────────
+extern MmpContext ctx;       // 所在：mmpCtx.h、実装：mmp.ino
 
 //========================================================
 // ＴＣＰブリッジ通信アダプター
@@ -120,7 +96,7 @@ namespace adpTcp {
       //▼ループ処理を中断
     //│
     //○スロットを確認
-    if (ssTBL[id].roomNo < 0) return id;
+    if (!ssTBL[id].used < 0) return id;
     // ＼（未使用の場合）
       //▼当該スロットIDを返す
   } /* END-for */
@@ -162,9 +138,9 @@ namespace adpTcp {
     INIT_SLOT_TCP(ssTBL[id]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[id].conn   = newConn       ; // 新規のTCP接続を管理スロットへ登録
-    ssTBL[id].conn .setNoDelay(true) ; // TCPパケット遅延制御を設定
-    ssTBL[id].roomNo = id            ; // ルーム番号
+    ssTBL[id].conn   = newConn       ; // CP接続を登録
+    ssTBL[id].conn .setNoDelay(true) ; // TCPパケット遅延制御
+    ssTBL[id].used   = true          ; // 仕様通
     //┴
   } // while
   //┴
@@ -243,11 +219,8 @@ namespace adpTcp {
     //○0-2.ワーク変数を用意
     bool isReady = false;
     //│
-    //○0-3.コンテクストを初期化
-    ctx.cmdPath = ""          ; // コマンドパス（この後で取得）
-    ctx.roomNo  = argSS.roomNo; // ルーム番号  （接続情報）
-    ctx.zoneNo  = 0           ; // ゾーン番号  （0：固定）
-    ctx.accNo   = -1          ; // アクセスID  （この後で取得）
+    //○0-3.コンテクストをセットアップ
+    SETUP_CONTEXT();
     //┴
   //│
   //◎┐１．受信待ちデータの取り込み
@@ -257,7 +230,7 @@ namespace adpTcp {
       //▼取り込みを終了
     //│
     //○1-2.受信データを受信バッファに加える
-    char ch = (char)argSS.conn.read(); // ※バイト単位
+    char ch = (char)argSS.conn.read();
     if (argSS.rx.length() < SS_RX_SIZE) {argSS.rx += ch;}
     else {
     // ＼（オーバーフローした場合）
@@ -307,21 +280,15 @@ namespace adpTcp {
     //○3-2.事前データを用意
     //○3-3.受信バッファを破棄
     FormatURI(argSS.rx);
-    ctx.cmdPath = argSS.rx;
+    ctx.cmdPath = argSS.rx; // ★CONTEXT更新：コマンドパス
     argSS.rx    = "";
     //┴
   //│
   //○４．認証を実施
   //　➡【該当処理なし】※常時接続は対象外
   //│
-  //○┐５．MMPコマンドを実行
-    //●5-1.コンテクストの内容を確定
-    //●5-2.コマンドパーサーへ処理を移譲
-    //●5-3.実行結果をレスポンス
-    ctx.accNo      = GET_ACC_NO(); // コンテクスト：アクセスID
-    String mmpResp = MMP_REQUEST();
-    SEND_CONN(argSS, mmpResp);
-    //┴
+  //●５．MMPコマンドを実行→レスポンス
+  SEND_CONN(argSS, ADP_RUN());
   //┴
   } /* routeMMP() */
 
@@ -367,13 +334,16 @@ namespace adpTcp {
     if (!ns_ACCEPTOR ) return; // サーバの実体化有無を評価
 
     // 2) 経路を指定
-    ctx.floorNo = ROUTE_ID    ; // フロア番号（経路ID）
+    ctx.routeID = ROUTE_ID    ; // ★CONTEXT更新：経路ID
 
     // 3) 新規接続のスロットを登録
     SS_ATTACH_SLOT();
 
     // 4) ルーティング処理
-    for (int id = 0; id < SS_SLOTS; id++) routeMMP(ssTBL[id]);
+    for (int id = 0; id < PORTS_SERIAL; id++) {
+      ctx.slotID = id;     // ★CONTEXT更新：スロットID
+      routeMMP(ssTBL[id]); // MMPコマンドへルーティング
+    }
   } /* handle() */
 
 } /* namespace adpTcp */

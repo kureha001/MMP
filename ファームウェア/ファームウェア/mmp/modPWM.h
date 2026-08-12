@@ -3,7 +3,6 @@
 // 機能モジュール：ＰＷＭ出力
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
-//・インクルードファイルを最適化
 //・LED表示処理を廃止
 //========================================================
 #pragma once
@@ -107,7 +106,7 @@ static void InitPWM(){
   g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
 
   // クライアント別データのメモリ確保
-  const int datCount = USER_COUNT;                       // クライアント数
+  const int datCount = ctx.accIDS;                       // クライアント数
   void* p = calloc(datCount, sizeof(PwmClientData));      // 全要素 0 で確保
   if (!p) { return; }
   g_PWM_DAT = static_cast<PwmClientData*>(p);
@@ -168,8 +167,8 @@ public:
     Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
-    const int ID = ctx.accNo;
-    if (!g_PWM_DAT || ID < 0 || ID >= USER_COUNT) {
+    const int ID = ctx.accID;
+    if (!g_PWM_DAT || ID < 0 || ID >= ctx.accIDS) {
       _ResIniErr(sp);  // 安全策
       return;
     }

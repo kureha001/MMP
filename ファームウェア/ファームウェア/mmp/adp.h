@@ -5,13 +5,6 @@
 //  - クライアント管理機能の提供
 //--------------------------------------------------------
 // Ver 1.0.1 (2026/08/11) α版 
-//・ファイル名を変更
-//・全体的にリファクタリング
-//・インクルードファイルを最適化
-//・コメントを強化
-//・セッション管理方式を変更
-//・ユーザ認証機能を追加
-//・クライアント管理機能を追加
 //========================================================
 #pragma once
 //┬
@@ -31,6 +24,11 @@
   // コンテクスト
   //─────────────────
   extern MmpContext ctx     ; // 所在：mmpCtx.h、実装：mmp.ino
+
+  //─────────────────
+  // コマンドパーサ
+  //─────────────────
+  extern String MMP_REQUEST(); // 所在：parser.h
 
 //========================================================
 // 基本情報
@@ -56,7 +54,7 @@
   // スロット
   //─────────────────
   // SLOT_BASE      used/rx/isOverflow
-  // ├ SLOT_STREAM ├ conn(Stream)/accNo
+  // ├ SLOT_STREAM ├ conn(Stream)/accID
   // ├ SLOT_TCP    ├ conn(WiFiClient)/authCD/lastActive
   // └ SLOT_HTTP   └ conn(WebServer)/authCD(認証情報TBL検索用キー)
   //━━━━━━━━━━━━━━━━━
@@ -64,13 +62,13 @@
     // Ｚ．共通部
     //─────────────────
     struct SLOT_BASE {
-      int     roomNo     = -1    ; // ルーム番号
+      bool    used       = false ; // スロット有効性
       String  rx         = ""    ; // 受信バッファ
       bool    isOverflow = false ; // 容量超過フラグ
     };
     //----------------------------------
     void INIT_SLOT_BASE(SLOT_BASE& argSlot){
-      argSlot.roomNo     = -1       ; // ルーム番号をクリア
+      argSlot.used       = false    ; // スロット有効性をクリア
       argSlot.rx         = ""       ; // 受信バッファをクリア
       argSlot.rx.reserve(SS_RX_SIZE); // 受信バッファ容量を事前確保
       argSlot.isOverflow = false    ; // 容量超過フラグをクリア
@@ -85,7 +83,7 @@
     //─────────────────
     struct SLOT_STREAM : SLOT_BASE { // Ｚ．共通部
       Stream* conn  = nullptr ; // 接続資源(個別ストリームを参照)
-      int     accNo = -1      ; // ユーザID(物理ポート別の固定値)
+      int     accID = -1      ; // ユーザID(物理ポート別の固定値)
     };
     //----------------------------------
     void INIT_SLOT_STREAM(SLOT_STREAM& argSlot){
@@ -420,47 +418,39 @@
 //========================================================
 // ユーザメモリ：機能モジュールのユーザメモリを管理
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // 基本情報
-  //━━━━━━━━━━━━━━━━━
-  // ユーザ総数：ユーザ認証総数にシリアル総数を加えた数
-  static constexpr int USER_COUNT = (AUTH_SLOTS * AUTH_ROUTES) + PORTS_SERIAL;
+  //─────────────────
+  // 0-3.コンテクストをセットアップ
+  //─────────────────
+  static void SETUP_CONTEXT(){
+    ctx.cmdPath = "" ; // コマンドパス
+    ctx.authID  = 0  ; // 区画ID ※固定値[0：なし]をセット
+    ctx.accID   = -1 ; // アクセスID
+    ctx.accIDS  = -1 ; // アクセスIDの総数
+} /* RUN_MMP_CMD() */
 
   //─────────────────
-  // ルームNoを取得
+  // ５．MMPコマンドを実行
   //----------------------------------
-  // ルーム番号を取得
-  // caseの経路ID以外は使用禁止
-  // 事前にコンテクストの(floorNo)をセットする
-  //----------------------------------
-  // 戻り値：整数型
-  // ・正常：ルーム番号
+  // 戻り値：文字列
+  // ・正常：コマンドパーサのレスポンス
   //─────────────────
-  static int GET_ROOM_NO(){
-    switch(ctx.floorNo){
-    case ROUTE_ID_HTTP  : return (AUTH_SLOTS * 1 + PORTS_SERIAL);
-    }
-    return -1;
-  } /* GetUserID() */
+  static String ADP_RUN(){
 
-  //─────────────────
-  // 5-1.コンテクストの内容を確定
-  //----------------------------------
-  // アクセスIDを取得
-  // 事前にコンテクストの(floorNo,roomNo,zoneNo)をセットする
-  //----------------------------------
-  // 引数：
-  // ・フロア番号：経路ID
-  //----------------------------------
-  // 戻り値：整数型
-  // ・正常：アクセス番号
-  //─────────────────
-  static int GET_ACC_NO(){
+    //◇オフセットを求める
     int offsetNum = 0;
-    switch(ctx.floorNo){
-    case ROUTE_ID_SERIAL: return offsetNum = 0;
-    case ROUTE_ID_TCP   : return offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0;
-    case ROUTE_ID_HTTP  : return offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1;
+    switch(ctx.routeID){
+    case ROUTE_ID_SERIAL: offsetNum = 0;
+    case ROUTE_ID_TCP   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0;
+    case ROUTE_ID_HTTP  : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1;
     }
-    return (offsetNum + ctx.roomNo + ctx.zoneNo);
-  } /* GetUserID() */
+
+    //アクセスIDをセット（オフセット ＋ スロットID ＋ 認証ID）
+    ctx.accID = offsetNum + ctx.slotID + ctx.authID;
+
+    //アクセスIDの総数
+    ctx.accIDS = (AUTH_SLOTS * AUTH_ROUTES) + PORTS_SERIAL;
+
+    //ＭＭＰコマンドを実行→リターン
+    return MMP_REQUEST();
+
+  } /* ADP_RUN() */

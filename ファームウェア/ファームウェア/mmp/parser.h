@@ -5,9 +5,7 @@
 // - 機能モジュールへのルーティング
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
-//・インクルードファイルを最適化
-//・コメントを強化
-//・LED表示処理を廃止
+//・LED表示処理をこちらに移設
 //========================================================
 #pragma once
 //┬
@@ -73,7 +71,7 @@ public:
   // パーサーの初期化
   //─────────────────
   void Init(){
-    // 機能モジュールをモジュールベースに登録
+    //○モジュールベースに登録
     mods.push_back(new ModuleInfo   (ctxRef, "INFO"   ));
     mods.push_back(new ModuleAnalog (ctxRef, "ANALOG" ));
     mods.push_back(new ModuleDigital(ctxRef, "DIGITAL"));
@@ -125,7 +123,7 @@ public:
   //─────────────────
   String RunCommand(){
     //┬
-    //①┐コマンドパスを清書
+    //①┐コマンドパスを整形
     char pPath[ REQUEST_LENGTH ];
     {
       //◇超過分を削除
@@ -162,7 +160,7 @@ public:
         //┴
       //│
       //○エラーメッセージを返却
-      if (regCount == 0) return "#CMD!"; //コマンド名不正
+      if (regCount == 0) return "#CMD!"; // コマンド名不正
       // ＼（登録数がゼロの場合）
         //▼エラーメッセージを返却
         //┴

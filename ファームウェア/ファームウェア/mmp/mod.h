@@ -7,8 +7,6 @@
 //  - ユーティリティの提供
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
-//・インクルードファイルを最適化
-//・コメントを強化
 //・LED表示処理を廃止
 //・コンテクストを別ファイルに分離
 //========================================================
@@ -70,13 +68,11 @@ public:
   //┬
   //□┐共通インタフェイス
     //□機能名
-    const char* getModName() const {return modName;}
-    //│
     //□コマンド在籍確認
-    virtual bool owns(const char* cmd) const = 0;
-    //│
     //□コマンド実行(実行結果は仮想ストリームに格納)
-    virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
+    const   char* getModName() const {return modName;}
+    virtual bool  owns(const char* cmd) const = 0;
+    virtual void  handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
     //┴
 }; /* class ModuleBase */
 

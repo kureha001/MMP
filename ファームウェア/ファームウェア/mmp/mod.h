@@ -68,7 +68,9 @@ public:
     //│
     //□コマンド在籍確認
     bool owns(const char* cmd) const {
+      // 空なら早期リターン
       if (!cmd || !modName) return false;
+      // コマンド名と機能名を比較し判定
       const size_t nameLen = strlen(modName);
       return strncmp(cmd, modName, nameLen) == 0
         && (cmd[nameLen] == '\0' || cmd[nameLen] == '/');

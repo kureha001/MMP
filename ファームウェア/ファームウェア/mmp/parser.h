@@ -43,6 +43,39 @@
   #define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
   #define DAT_COUNT       10  // コマンド＋引数の個数
 
+
+//========================================================
+// 機能モジュール定義
+//========================================================
+  struct T_MMP_MOD {
+    const char* name;
+    uint8_t     r;
+    uint8_t     g;
+    uint8_t     b;
+  };
+
+  namespace MMP_MOD {
+    //★★★ 機能モジュール保守の対応箇所(1/3) ★★★
+    static const T_MMP_MOD INF    = { "INF"   ,  5,  5,  5 };
+    static const T_MMP_MOD ANA_I  = { "ANA_I" , 10,  0, 10 };
+    static const T_MMP_MOD DIG_IO = { "DIG_IO", 10,  0,  0 };
+    static const T_MMP_MOD PWM    = { "PWM"   ,  0,  0, 50 };
+    static const T_MMP_MOD I2C    = { "I2C"   , 10, 10,  0 };
+    static const T_MMP_MOD MP3    = { "MP3"   ,  0, 10,  0 };
+
+    //★★★ 機能モジュール保守の対応箇所(2/3) ★★★
+    static const T_MMP_MOD* const LIST[] = {
+      &INF,
+      &ANA_I,
+      &DIG_IO,
+      &PWM,
+      &I2C,
+      &MP3,
+    };
+
+    static const size_t COUNT = sizeof(LIST) / sizeof(LIST[0]);
+  }
+
 //========================================================
 // クラス：コマンドパーサ
 //========================================================
@@ -67,12 +100,13 @@ public:
   //─────────────────
   void Init(){
     //○モジュールベースに登録
-    mods.push_back(new ModuleInfo   (ctxRef, "INFO"   ));
-    mods.push_back(new ModuleAnalog (ctxRef, "ANALOG" ));
-    mods.push_back(new ModuleDigital(ctxRef, "DIGITAL"));
-    mods.push_back(new ModulePwm    (ctxRef, "PWM"    ));
-    mods.push_back(new ModuleI2C    (ctxRef, "I2C"    ));
-    mods.push_back(new ModuleMP3    (ctxRef, "MP3"    ));
+    //★★★ 機能モジュール保守の対応箇所(3/3) ★★★
+    mods.push_back(new ModuleInfo   (ctxRef, MMP_MOD::INF.name   ));
+    mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
+    mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
+    mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
+    mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
+    mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
   } /* Init() */
 
 private:
@@ -81,32 +115,16 @@ private:
   //━━━━━━━━━━━━━━━━━
   void SHOW_NAME(const char* argName){
   //┬
-  //○┐RGB値をセット
-    //○前準備
-    struct typeColor { uint8_t r,g,b; }; // 型宣言
-    //│
-    //◇┐RGB値を選択
-    typeColor col = {255,255,255}      ; // 初期値
-      //├→(機能名が一致するの場合)
-      if      (strcmp(argName, "INFO"   ) == 0) col = {  5,  5,  5};
-      else if (strcmp(argName, "ANALOG" ) == 0) col = { 10,  0, 10};
-      else if (strcmp(argName, "DIGITAL") == 0) col = { 10,  0,  0};
-      else if (strcmp(argName, "PWM"    ) == 0) col = {  0,  0, 50};
-      else if (strcmp(argName, "I2C"    ) == 0) col = { 10, 10,  0};
-      else if (strcmp(argName, "MP3"    ) == 0) col = {  0, 10,  0};
-    //└┐（その他）
-      //┴
+  //◎┐機能名に対応するRGB値を取得
+  T_MMP_MOD col = {nullptr, 255, 255, 255}; // 初期値
+  for (size_t i = 0; i < MMP_MOD::COUNT; ++i){
+    const T_MMP_MOD& def = *MMP_MOD::LIST[i];
+    if (strcmp(argName, def.name) == 0){ col = def; break; }
+  } /* for */
   //│
-  //○┐LEDを発光
-    //○前準備
-    Adafruit_NeoPixel objLED; // RGB-LEDオブジェクト
-    //│
-    //○RGB値をセット
-    objLED.setPixelColor(0, objLED.Color(col.g, col.r, col.b));
-    //│
-    //○LEDを発光
-    INO_PIXEL.show();
-    //┴
+  //○LEDを発光
+  INO_PIXEL.setPixelColor(0, INO_PIXEL.Color(col.g, col.r, col.b));
+  INO_PIXEL.show();
   //┴
   } /* SHOW_NAME() */
 
@@ -157,9 +175,8 @@ public:
       //│
       //○エラーメッセージを返却
       if (regCount == 0) return "#CMD!"; // コマンド名不正
-      // ＼（登録数がゼロの場合）
-        //▼エラーメッセージを返却
-        //┴
+        // ＼（登録数がゼロの場合）
+          //▼エラーメッセージを返却
       //┴
     }   /* ② */
     //│

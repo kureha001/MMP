@@ -23,11 +23,6 @@
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト
-  //─────────────────
-  //extern MmpContext ctx;       // 所在：mmpCtx.h、実装：mmp.ino
-
-  //─────────────────
   // クライアントからのリクエスト条件
   //─────────────────
   #define DAT_LENGTH 20 // 上記1個あたりの上限バイト数
@@ -67,11 +62,19 @@ public:
 
   //┬
   //□┐共通インタフェイス
+    //│
     //□機能名
-    //□コマンド在籍確認
-    //□コマンド実行(実行結果は仮想ストリームに格納)
     const   char* getModName() const {return modName;}
-    virtual bool  owns(const char* cmd) const = 0;
+    //│
+    //□コマンド在籍確認
+    bool owns(const char* cmd) const {
+      if (!cmd || !modName) return false;
+      const size_t nameLen = strlen(modName);
+      return strncmp(cmd, modName, nameLen) == 0
+        && (cmd[nameLen] == '\0' || cmd[nameLen] == '/');
+    }
+    //│
+    //□コマンド実行(実行結果は仮想ストリームに格納)
     virtual void  handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
     //┴
 }; /* class ModuleBase */
@@ -81,7 +84,7 @@ public:
 // ヘルパ
 //========================================================
   //─────────────────
-  // 文字列→10進数パース
+  // 引数用：文字列→10進数パース
   //─────────────────
   inline bool _Str2Int(const char* s, int& out, int minv, int maxv){
     if (!s || !*s)                return false; // 空チェック
@@ -94,7 +97,7 @@ public:
   } /* _Str2Int() */
 
   //─────────────────
-  // 文字列→論理値パース
+  // 引数用：文字列→論理値パース
   //─────────────────
   inline bool _Str2bool(const char* s, bool& out){
     if (!s || !*s) return false;          // 空チェック
@@ -106,7 +109,7 @@ public:
   } /* _Str2bool() */
 
   //─────────────────
-  // 十進数変換
+  // 戻値用：十進数変換
   //  - 末尾は '!' で埋める）
   //  - v ∈ [-999, 9999] 以外は #FLW!
   //─────────────────

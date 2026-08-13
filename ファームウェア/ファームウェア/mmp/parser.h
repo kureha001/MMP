@@ -27,11 +27,6 @@
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト
-  //─────────────────
-  //extern MmpContext ctx     ; // 所在：mmpCtx.h、実装：mmp.ino
-
-  //─────────────────
   // パーサ公開
   //─────────────────
   class  Parser             ; // 前方宣言
@@ -118,8 +113,6 @@ private:
 public:
   //─────────────────
   // コマンド実行
-  //----------------------------------
-  // エイリアス経由で実行
   //─────────────────
   String RunCommand(){
     //┬
@@ -138,15 +131,18 @@ public:
       //┴
     }   /* ① */
     //│
-    //②┐コマンドデータ、データ数を取得
-    char dat[ DAT_COUNT ][ DAT_LENGTH ]; // 登録バッファ
-    int  regCount = 0                  ; // 登録数
+    //②┐コマンドパラメータを取得
+    char dat[ DAT_COUNT ][ DAT_LENGTH ]; // 登録バッファ（コマンド、引数１...引数n）
+    int  regCount = 0                  ; // 登録数（コマンド名＋引数）
     {
       //○先頭のトークンを取得
       char* tok = strtok(pPath, ":");
       //│
       //◎┐トークン毎を登録バッファに登録
       while (tok && regCount < DAT_COUNT){
+        //│＼（データ数の上限を超えた場合）
+        //│ ▼ループ処理を中断
+        //│
         //○当該トークンを登録バッファに登録
         strncpy(dat[regCount], tok, sizeof(dat[0])-1);
         dat[regCount][sizeof(dat[0])-1] = '\0';
@@ -173,6 +169,9 @@ public:
       //│
       //◎┐機能モジュールを走査
       for (auto* m : mods){
+        //│＼（全機能モジュールを走査し終えた場合）
+        //│ ▼ループ処理を中断
+        //│
         //◇┐当該機能モジュールを実行
         if (m->owns(dat[0])){
           //├→(コマンドが在籍する場合)
@@ -182,7 +181,7 @@ public:
             SHOW_NAME(m->getModName());
             m->handle(dat, regCount);          
             return ctx.vStream.str();
-        } /* if */
+        } /* END-if */
           //└┐（その他）
             //┴
         //┴

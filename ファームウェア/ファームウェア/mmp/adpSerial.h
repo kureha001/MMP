@@ -6,9 +6,9 @@
 //・基本処理      ：受信→コマンド実行→結果返却
 //・スロット構成  ：物理ポート毎に１スロットを占有
 //・ポーリング跨ぎ：対応 ※通信状態は継続的に保持
-//・認証          ：常時接続のため、認証は行わない
+//・ユーザ認証    ：常時接続のため行わない
 //--------------------------------------------------------
-// Ver 1.0.1 (2026/08/05) α版 
+// Ver 1.1.0 (2026/08/13) α版 
 //========================================================
 #pragma once
 //┬
@@ -42,13 +42,28 @@ namespace adpSerial {
 //========================================================
 // Ｃ．接続情報
 //========================================================
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   // スロット
   //----------------------------------
-  // 資源            ：Stream* (参照)
-  // 資源の実体所有  ：しない
-  //─────────────────
-  static SLOT_STREAM* ssTBL = nullptr; // スロット型を定義
+  // 資源：Stream* (参照)
+  // 所有：しない ※Arduinoに存在する資源を参照
+  // 参照：外部生成されたストリーム資源
+  // 割当：物理ポートごとに１スロット
+  // 持続：永続的に利用 ※start()で一度だけ初期化
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 領域確保：構造体の派生→実体化
+    //─────────────────
+    struct T_SS_SLOT : T_SS_BASE { Stream* conn = nullptr; };
+    static T_SS_SLOT* ssTBL = nullptr;
+
+    //─────────────────
+    // スロット初期化：関数の派生
+    //─────────────────
+    void INI_SS_SLOT(T_SS_SLOT& argSlot){
+      INI_SS_SLOT_BASE(argSlot);
+      argSlot.conn = nullptr; // 資源の参照を解除
+    }
 
   //─────────────────
   // 接続情報TBLを作る
@@ -56,15 +71,18 @@ namespace adpSerial {
   // 戻り値：なし
   //─────────────────
   void CREATE_SS_TBL(){
-  //┬
-  //○領域を確保
-  ssTBL = new SLOT_STREAM[PORTS_SERIAL]; // シリアルポート総数
-  //│
-  //◎┐TBL全体を初期化
-  for (int id = 0; id < PORTS_SERIAL; id++) INIT_SLOT_STREAM(ssTBL[id]);
-    //●このスロットを初期化
+    //┬
+    //○領域を確保
+    ssTBL = new T_SS_SLOT[PORTS_SERIAL]; // シリアルポート総数
+    //│
+    //◎┐TBL全体を初期化
+    for (int id = 0; id < PORTS_SERIAL; id++) INI_SS_SLOT(ssTBL[id]);
+      //│＼（全スロットを走査し終えた場合）
+      //│ ▼ループ処理を中断
+      //│
+      //●このスロットを初期化
+      //┴
     //┴
-  //┴
   } /* CREATE_SS_TBL() */
 
   //─────────────────
@@ -74,7 +92,7 @@ namespace adpSerial {
   //----------------------------------
   // 戻り値：なし
   //─────────────────
-  void SS_DETACH_SLOT(SLOT_STREAM& argSlot){
+  void SS_DETACH_SLOT(T_SS_SLOT& argSlot){
   //　➡【該当処理なし】※マルチ接続系が対象
   } /* SS_DETACH_SLOT() */
 
@@ -97,15 +115,15 @@ namespace adpSerial {
   // 開始処理で「一度だけ」実行すること
   //─────────────────
   void ATTACH_SS_SLOT(){
-  //┬
-  //○スロットに[USB-CDC]接続を登録
-  ssTBL[0].conn   = &Serial  ; // 接続を登録(既存オブジェクトを指す)
-  ssTBL[0].used   = true     ; // 使用中
-  //│
-  //○スロットに[UART1]接続を登録
-  ssTBL[1].conn   = &Serial1 ; // 接続を登録(既存オブジェクトを指す)
-  ssTBL[1].used   = true     ; // 使用中
-  //┴
+    //┬
+    //○スロットに[USB-CDC]接続を登録
+    ssTBL[0].conn   = &Serial  ; // 接続を登録(既存オブジェクトを指す)
+    ssTBL[0].used   = true     ; // 使用中
+    //│
+    //○スロットに[UART1]接続を登録
+    ssTBL[1].conn   = &Serial1 ; // 接続を登録(既存オブジェクトを指す)
+    ssTBL[1].used   = true     ; // 使用中
+    //┴
   } /* ATTACH_SS_SLOT() */
 
 
@@ -116,13 +134,13 @@ namespace adpSerial {
   // スロットの受付資源に送信
   //─────────────────
   void SEND_CONN(
-    SLOT_STREAM&  argSS  , // 送信先
-    const String& argMSG   // 送信メッセージ
+    T_SS_SLOT&    argSS, // 送信先
+    const String& argMSG // 送信メッセージ
   ){
-  //┬
-  //○メッセージをレスポンス
-  argSS.conn->print(argMSG);
-  //┴
+    //┬
+    //○メッセージをレスポンス
+    argSS.conn->print(argMSG);
+    //┴
   } /* SEND_CONN() */
 
 
@@ -139,7 +157,7 @@ namespace adpSerial {
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
-  bool P1_CONNECT(SLOT_STREAM&  argSS){return false;}
+  bool P1_CONNECT(T_SS_SLOT&  argSS){return false;}
 
   //─────────────────
   // ２．フレームを取得(データ受信)
@@ -153,7 +171,7 @@ namespace adpSerial {
   //  ・オーバーフロー中：フラグを[OFF]にし、処理継続を不可能と判定する。
   //----------------------------------
   //【詳細】
-  // データ受信単位  ：1byte[conn->read()]★★★
+  // データ受信単位  ：1byte[conn->read()] ★★参照★★
   // 受信バッファ    ：する ※ポーリング跨ぎにも対応
   // 受信継続判定    ：する ※オーバーフロー/終端文字/オーバーフロー解除/フレーム完成
   // フレーム終端判定：する ※データ受信単位で確認
@@ -162,48 +180,49 @@ namespace adpSerial {
   // ・true ：不可能
   // ・false：可能
   //─────────────────
-  bool P21_RECEIVE(SLOT_STREAM&  argSS){
-  //┬
-  //○受信データを受信バッファに加える
-  argSS.rx += (char)argSS.conn->read(); //★★★
-  //│
-  //○受信バッファのオーバーフローを確認
-  if (argSS.rx.length() > SS_RX_SIZE) {
-  // ＼（オーバーフローになった場合）
-    //○オーバーフロー中へ移行
-    //○受信バッファの内容を破棄
-    //▼RETURN:不可能(オーバーフローが発生)
-    argSS.isOverflow = true;
-    argSS.rx         = "";
+  bool P21_RECEIVE(T_SS_SLOT&  argSS){
+    //┬
+    //○受信データを受信バッファに加える
+    argSS.rx += (char)argSS.conn->read(); //★★参照★★
+    //│
+    //○受信バッファのオーバーフローを確認
+    if (argSS.rx.length() > SS_RX_SIZE) {
+    //│ ＼（オーバーフローになった場合）
+        //▼当該スロットIDを返す
+        //○オーバーフロー中へ移行
+        //○受信バッファの内容を破棄
+        //▼RETURN:不可能(オーバーフローが発生)
+        argSS.isOverflow = true;
+        argSS.rx         = "";
+        return true;
+    } /* END-if */
+    //│
+    //○取り込み状態を確認
+    if (!argSS.rx.endsWith("!")) { return false; }
+    //│ ＼（終端に達していない場合）※受信バッファを維持
+    //│  ▼RETURN:可能(フレームが未完成)
+    //│
+    //◇┐理由別に処理
+    if (!argSS.isOverflow) {
+      //├┐（通常の場合）
+        //●受信バッファをURI形式に変換
+        //○コンテクストにフレームをセット
+        P2_FORMAT_URI(argSS.rx);
+        ctx.strFrame = argSS.rx;
+        //┴
+    } else {
+      //└┐（その他）
+        //○オーバーフロー中を解除
+        //●エラーコードをレスポンス
+        argSS.isOverflow = false;
+        SEND_CONN(argSS, "#DFL!");
+        //┴
+    } /* END-if */
+    //│
+    //▼RETURN:不可能
+    argSS.rx = "";
     return true;
-  } /* END-if */
-  //│
-  //○取り込み状態を確認
-  if (!argSS.rx.endsWith("!")) { return false; }
-    // ＼（終端に達していない場合）※受信バッファを維持
-      //▼RETURN:可能(フレームが未完成)
-  //│
-  //◇┐理由別に処理
-  if (!argSS.isOverflow) {
-    //├┐（通常の場合）
-      //●受信バッファをURI形式に変換
-      //○コンテクストにフレームをセット
-      P2_FORMAT_URI(argSS.rx);
-      ctx.strFrame = argSS.rx;
     //┴
-  } else {
-    //└┐（その他）
-      //○オーバーフロー中を解除
-      //●エラーコードをレスポンス
-      argSS.isOverflow = false;
-      SEND_CONN(argSS, "#DFL!");
-      //┴
-  } /* END-if */
-  //│
-  //▼RETURN:不可能
-  argSS.rx = "";
-  return true;
-  //┴
   } /* P21_RECEIVE() */
 
   //─────────────────
@@ -213,29 +232,29 @@ namespace adpSerial {
   //----------------------------------
   //【詳細】
   // フレーム化処理  ：する
-  // 受信継続判定    ：する[conn->available()]★★★
+  // 受信継続判定    ：する[conn->available()] ★★参照★★
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
   // ・false：完成
   //─────────────────
-  bool P2_MAKE_FRAME(SLOT_STREAM&  argSS){
-  //┬
-  //◎┐受信待ちデータの取り込み
-  while (argSS.conn->available()){     //★★★
-    // ＼（未取り込みデータが空の場合）
-      //▼取り込みを終了
+  bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
+    //┬
+    //◎┐受信待ちデータの取り込み
+    while (argSS.conn->available()){     //★★参照★★
+      //│＼（未取り込みデータが空の場合）
+      //│ ▼取り込みを終了
+      //│
+      //●受信バッファに蓄える
+      if (P21_RECEIVE(argSS)) break;
+      //│ ＼（継続が不可能と判断されたの場合）
+      //│  ▼取り込みを打切り
+      //┴
+    } /* END-while */
     //│
-    //●受信バッファに蓄える
-    if (P21_RECEIVE(argSS)) break;
-    // ＼（継続が不可能と判断されたの場合）
-      //▼取り込みを打切り
-  } /* END-while */
+    //▼処理継続の判定を返す
+    return (ctx.strFrame == "" ? true : false);
     //┴
-  //│
-  //▼処理継続の判定を返す
-  return (ctx.strFrame == "" ? true : false);
-  //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
@@ -245,10 +264,10 @@ namespace adpSerial {
   // フレーム書式    ：{コマンドパス}!
   //─────────────────
   void P3_MAKE_INFO(){
-  //┬
-  //〇受信待ちデータの取り込み
-  ctx.cmdPath = ctx.strFrame;
-  //┴
+    //┬
+    //〇受信待ちデータの取り込み
+    ctx.cmdPath = ctx.strFrame;
+    //┴
   } /* P3_MAKE_INFO() */
 
   //─────────────────
@@ -275,32 +294,32 @@ namespace adpSerial {
   // 引数：
   // (参)接続情報スロット
   //─────────────────
-  void routeMMP(SLOT_STREAM& argSS){
-  //┬
-  //○１．接続状態を確認
-  if (P1_CONNECT(argSS)) return;
-    // ＼（切断の場合）
-      //▼処理を中断
-  //│
-  //●２．フレームを取得
-  if (P2_MAKE_FRAME(argSS)) return;
-    // ＼（フレームが未完成の場合）
-      //▼処理を中断
-  //│
-  //○３．基本情報を取得
-  P3_MAKE_INFO();
-  //│
-  //○４．認証を実施
-  if (P4_AUTH()) return;
-    // ＼（認証に失敗した場合）
-      //▼処理を中断
-  //│
-  //●５．MMPコマンドを実行
-  String resMMP = P5_RUN();
-  //│
-  //●６．実行結果をレスポンス
-  SEND_CONN(argSS, resMMP);
-  //┴
+  void routeMMP(T_SS_SLOT& argSS){
+    //┬
+    //○１．接続状態を確認
+    if (P1_CONNECT(argSS)) return;
+    //│ ＼（切断の場合）
+    //│  ▼処理を中断
+    //│
+    //●２．フレームを取得
+    if (P2_MAKE_FRAME(argSS)) return;
+    //│ ＼（フレームが未完成の場合）
+    //│  ▼処理を中断
+    //│
+    //○３．基本情報を取得
+    P3_MAKE_INFO();
+    //│
+    //○４．認証を実施
+    if (P4_AUTH()) return;
+    //│ ＼（認証に失敗した場合）
+    //│  ▼処理を中断
+    //│
+    //●５．MMPコマンドを実行
+    String resMMP = P5_RUN();
+    //│
+    //●６．実行結果をレスポンス
+    SEND_CONN(argSS, resMMP);
+    //┴
   } /* routeMMP() */
 
   //─────────────────
@@ -354,8 +373,8 @@ namespace adpSerial {
     //│
     //◎┐３．ルーティング処理
     for (int slotID = 0; slotID < PORTS_SERIAL; slotID++) {
-      // ＼（最終うスロットに達した場合）
-        //▼ルーティングを終了
+      //│＼（最終うスロットに達した場合）
+      //│ ▼ルーティングを終了
       //│
       //●コンテクストをセットアップ
       //●スロット処理を指示

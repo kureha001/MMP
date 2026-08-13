@@ -6,9 +6,9 @@
 //・基本処理      ：受信→認証開始→認証検証→コマンド実行→結果返却(JSON)
 //・スロット構成  ：ユーザに関係なくHTTPリクエスト・１スロット(一時型;使いまわし)
 //・ポーリング跨ぎ：しない ※リクエスト単位で処理・接続が完結する為
-//・認証          ：する   ※リクエスト単位で処理・接続が完結する為
+//・ユーザ認証    ：する   ※リクエスト単位で処理・接続が完結する為
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/11) α版 
+// Ver 1.1.0 (2026/08/13) α版 
 //========================================================
 #pragma once
 //┬
@@ -38,19 +38,34 @@ namespace adpHttp {
   //─────────────────
   // テーブルを領域確保
   //─────────────────
-  static TYPE_AUTH_SLOT AUTH_TBL[SS_SLOTS]; 
+  static T_AUTH_SLOT auTBL[SS_SLOTS]; 
 
 
 //========================================================
 // Ｃ．接続情報
 //========================================================
-  //─────────────────
-  // テーブルを宣言
+  //━━━━━━━━━━━━━━━━━
+  // スロット
   //----------------------------------
-  // 資源          ：WebServer* (参照)
-  // 資源の実体所有：しない
-  //─────────────────
-  static SLOT_HTTP* ssTBL = nullptr;
+  // 資源：WebServer* (参照)
+  // 所有：しない
+  // 参照：起動したWEBサーバを参照
+  // 割当：1スロット ※すべてのHTTPリクエストを賄う
+  // 持続：永続的に利用 ※start()で一度だけ初期化
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 領域確保：構造体の派生→実体化
+    //─────────────────
+    struct T_SS_SLOT : T_SS_BASE{ WebServer* conn = nullptr; };
+    static T_SS_SLOT* ssTBL = nullptr;
+
+    //─────────────────
+    // スロット初期化：関数の派生
+    //─────────────────
+    void INI_SS_SLOT(T_SS_SLOT& argSlot){
+      INI_SS_SLOT_BASE(argSlot)    ; // Ｚ．共通部
+      argSlot.conn   = nullptr   ; // 参照解除
+    }
 
   //─────────────────
   // 接続情報TBLを作る
@@ -58,12 +73,12 @@ namespace adpHttp {
   // 戻り値：なし
   //─────────────────
   void SS_CREATE_TBL(){
-  //┬
-  //○領域を確保
-  //○TBL全体を初期化
-  ssTBL = new SLOT_HTTP[1]; // 容量：一時データ1個
-  INIT_SLOT_HTTP(ssTBL[0]);
-  //┴
+    //┬
+    //○領域を確保
+    //○TBL全体を初期化
+    ssTBL = new T_SS_SLOT[1]; // 容量：一時データ1個
+    INI_SS_SLOT(ssTBL[0]);
+    //┴
   } /* SS_CREATE_TBL() */
 
   //─────────────────
@@ -73,7 +88,7 @@ namespace adpHttp {
   //----------------------------------
   // 戻り値：なし
   //─────────────────
-  void SS_DETACH_SLOT(SLOT_HTTP& argSlot){
+  void SS_DETACH_SLOT(T_SS_SLOT& argSlot){
   //　➡【該当処理なし】※マルチ接続系が対象
   } /* SS_DETACH_SLOT() */
 
@@ -96,11 +111,11 @@ namespace adpHttp {
   // 開始処理で「一度だけ」実行すること
   //─────────────────
   void SS_ATTACH_SLOT(){
-  //┬
-  //○スロットに新規接続を登録
-  ssTBL[0].conn = ns_ACCEPTOR; // HTTP受付資源を管理スロットへ登録
-  ssTBL[0].used = true;        // 使用中
-  //┴
+    //┬
+    //○スロットに新規接続を登録
+    ssTBL[0].conn = ns_ACCEPTOR; // HTTP受付資源を管理スロットへ登録
+    ssTBL[0].used = true;        // 使用中
+    //┴
   } /* SS_ATTACH_SLOT() */
 
 //━━━━━━━━━━━━━━━━━
@@ -113,23 +128,23 @@ namespace adpHttp {
   // → Webブラウザのセキュリティ制約(CORS)を通過させる
   //─────────────────
   inline void ADD_CROSS(WebServer& argSrv) {
-  //┬
-  //○アクセス元Webページの制限
-  //  → 制限なし
-  argSrv.sendHeader("Access-Control-Allow-Origin", "*");
-  //│
-  //○有効なHTTPメソッドを指定
-  //  → データ取得・事前確認
-  argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  //│
-  //○許可するHTTPリクエストヘッダーを指定
-  //  → データ形式・JavaScript(Ajax)向け識別・認証情報
-  argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
-  //│
-  //○CORS確認結果をブラウザが記憶する時間を指定
-  //  ← 600秒=10分
-  argSrv.sendHeader("Access-Control-Max-Age", "600");
-  //┴
+    //┬
+    //○アクセス元Webページの制限
+    //  → 制限なし
+    argSrv.sendHeader("Access-Control-Allow-Origin", "*");
+    //│
+    //○有効なHTTPメソッドを指定
+    //  → データ取得・事前確認
+    argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+    //│
+    //○許可するHTTPリクエストヘッダーを指定
+    //  → データ形式・JavaScript(Ajax)向け識別・認証情報
+    argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
+    //│
+    //○CORS確認結果をブラウザが記憶する時間を指定
+    //  ← 600秒=10分
+    argSrv.sendHeader("Access-Control-Max-Age", "600");
+    //┴
   } /* ADD_CROSS() */
 
 
@@ -190,11 +205,10 @@ namespace adpHttp {
     if (argID == "#NOD!") return "NG:データ項目名が不正"    ;
 
     // アダプタ独自のエラー
-    if (argID == "!AST!") return "OK:認証開始(認証コード)"     ;
-    if (argID == "#DFL!") return "NG:URIが不正"                ;
-    if (argID == "#SS0!") return "NG:認証管理の開始に失敗"     ;
-    if (argID == "#SS1!") return "NG:ユーザ認証に失敗"         ;
-    if (argID == "#SS2!") return "NG:接続認証に失敗"           ;
+    if (argID == "!SS0!") return "OK:ユーザ認証に成功"      ;
+    if (argID == "#SS1!") return "NG:認証管理の開始に失敗"  ;
+    if (argID == "#SS2!") return "NG:認証に失敗"            ;
+    if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
  
     return "NG:その他のエラー";
   } /* SEND_MSG() */
@@ -210,74 +224,77 @@ namespace adpHttp {
   }; /* JSON_DATA */
   //─────────────────
   void SEND_CONN(
-    SLOT_HTTP&    argSS  , // 送信先
-    const String& argMSG   // 送信メッセージ
+    T_SS_SLOT&       argSS, // 送信先
+    const String& argMSG // 送信メッセージ
   ){
-  //┬
-  //○前処理
-  JSON_DATA jsDat     ;
-  String    js;
-  //│
-  //◇┐JSON内容編集
-  String msgID = argMSG;
+    //┬
+    //○前処理
+    JSON_DATA jsDat     ;
+    String    js;
+    //│
+    //◇┐JSON内容編集
+    String msgID = argMSG;
     if (
-        argMSG.length() == 7 &&  // 全長7文字
-        argMSG[0] == '$'     &&  // 先頭記号
-        argMSG[6] == '$'         // 末尾記号
+      argMSG.length() == 7 &&  // 全長7文字
+      argMSG[0] == '$'     &&  // 先頭記号
+      argMSG[6] == '$'         // 末尾記号
     ){
-    //├┐（認証コード発行の場合）
-      //○MSGIDを独自IDに書き換え
-      //○取得値を文字列型にセット
-      //○処理結果をセット
-      msgID     = "!AST!"              ; // 認証開始
-      jsDat.Str = argMSG.substring(1,6); // 取得値(文字列：認証コード)
-      jsDat.Res = true                 ; // 正常
-      //┴
-    } else if (argMSG == "!!!!!") {
-    //├┐（正常系：戻り値なし の場合）
-      //○処理結果を正常にセット
-      jsDat.Res = true ; // 正常
-      //┴
-    } else {
-    //└┐（その他）
-      //◇┐データ型に応じて編集
-      String body = argMSG.substring(0, argMSG.length()-1);
-      if (SEND_IS_VALUE(body)) {
-      //├┐（戻り値が数値型の場合）
+      //├┐（認証コード発行の場合）
         //○MSGIDを独自IDに書き換え
+        //○取得値を文字列型にセット
         //○処理結果をセット
-        //●取得値を数値型にセット
-        msgID = "!VAL!"                  ; // 数値型
-        jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
+        msgID     = "!SS0!"              ; // 認証開始
+        jsDat.Str = argMSG.substring(1,6); // 取得値(文字列：認証コード)
         jsDat.Res = true                 ; // 正常
         //┴
-      } else {
-      //└┐（その他；戻り値が文字列型の場合）
-        //○MSGIDを独自IDに書き換え
-        //○処理結果をセット
-        //○取得値を文字列型にセット
-        msgID = "!STR!"  ; // 文字列型
-        jsDat.Str = body ; // 取得値(文字列)
+
+    } else if (argMSG == "!!!!!") {
+      //├┐（正常系：戻り値なし の場合）
+        //○処理結果を正常にセット
         jsDat.Res = true ; // 正常
         //┴
-      } /* END-if */
+
+    } else {
+      //└┐（その他）
+        //◇┐データ型に応じて編集
+        String body = argMSG.substring(0, argMSG.length()-1);
+        if (SEND_IS_VALUE(body)) {
+        //├┐（戻り値が数値型の場合）
+          //○MSGIDを独自IDに書き換え
+          //○処理結果をセット
+          //●取得値を数値型にセット
+          msgID = "!VAL!"                  ; // 数値型
+          jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
+          jsDat.Res = true                 ; // 正常
+          //┴
+
+        } else {
+        //└┐（その他；戻り値が文字列型の場合）
+          //○MSGIDを独自IDに書き換え
+          //○処理結果をセット
+          //○取得値を文字列型にセット
+          msgID = "!STR!"  ; // 文字列型
+          jsDat.Str = body ; // 取得値(文字列)
+          jsDat.Res = true ; // 正常
+          //┴
+        } /* END-if */
     } /* END-if */
-  //│
-  //○メッセージを取得
-  jsDat.Msg = SEND_MSG(msgID);
-  //│
-  //○JSON形式に編集
-  js.reserve(160) ; // 予備確保
-  js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
-  js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
-  js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
-  js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）
-  js += F(",\"string\":\"" ); js += jsDat.Str                     ; // 戻値（文字列）
-  js += "\"}"              ;
-  //│
-  //○通信経路にJSON形式でレスポンス
-  SEND_JSON(*argSS.conn, js);
-  //┴
+    //│
+    //○メッセージを取得
+    jsDat.Msg = SEND_MSG(msgID);
+    //│
+    //○JSON形式に編集
+    js.reserve(160) ; // 予備確保
+    js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
+    js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
+    js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
+    js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）
+    js += F(",\"string\":\"" ); js += jsDat.Str                     ; // 戻値（文字列）
+    js += "\"}"              ;
+    //│
+    //○通信経路にJSON形式でレスポンス
+    SEND_JSON(*argSS.conn, js);
+    //┴
   } /* SEND_CONN() */
   //─────────────────
 
@@ -295,7 +312,7 @@ namespace adpHttp {
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
-  bool P1_CONNECT(SLOT_HTTP&  argSS){return false;}
+  bool P1_CONNECT(T_SS_SLOT&  argSS){return false;}
 
   //─────────────────
   // ２．フレームを取得(データ受信)
@@ -313,37 +330,37 @@ namespace adpHttp {
   // ・true ：不可能
   // ・false：可能
   //─────────────────
-  bool P21_RECEIVE(SLOT_HTTP&  argSS){
-  //┬
-  //○受信データを受信バッファに加える
-  argSS.rx = argSS.conn->uri();
-  //│
-  //○受信バッファのオーバーフローを確認
-  if (argSS.rx.length() > SS_RX_SIZE) {
-    // ＼（オーバーフローになった場合）
-      //●エラーコードをレスポンス
-      //▼RETURN:不可能(オーバーフローが発生)
-      SEND_CONN(argSS, "#DFL!");
-      return true;
-  } /* END-if */
-  //│
-  //○取り込み状態を確認
-  if (!argSS.rx.endsWith("!")) {
-    // ＼（終端に達していない場合）※受信バッファを維持
-      //●エラーコードをレスポンス
-      //▼RETURN:不可能(フレームが未完成)
-      SEND_CONN(argSS, "#CMD!");
-      return true;
-  } /* END-if */
-  //│
-  //●受信バッファをURI形式に変換
-  //○コンテクストにフレームをセット
-  P2_FORMAT_URI(argSS.rx);
-  ctx.strFrame = argSS.rx;
-  //│
-  //▼RETURN:不可能
-  return true;
-  //┴
+  bool P21_RECEIVE(T_SS_SLOT&  argSS){
+    //┬
+    //○受信データを受信バッファに加える
+    argSS.rx = argSS.conn->uri();
+    //│
+    //○受信バッファのオーバーフローを確認
+    if (argSS.rx.length() > SS_RX_SIZE) {
+    //│ ＼（オーバーフローになった場合）
+        //●エラーコードをレスポンス
+        //▼RETURN:不可能(オーバーフローが発生)
+        SEND_CONN(argSS, "#DFL!");
+        return true;
+    } /* END-if */
+    //│
+    //○取り込み状態を確認
+    if (!argSS.rx.endsWith("!")) {
+    //│ ＼（終端に達していない場合）
+        //●エラーコードをレスポンス
+        //▼RETURN:不可能(フレームが未完成)
+        SEND_CONN(argSS, "#CMD!");
+        return true;
+    } /* END-if */
+    //│
+    //●受信バッファをURI形式に変換
+    //○コンテクストにフレームをセット
+    P2_FORMAT_URI(argSS.rx);
+    ctx.strFrame = argSS.rx;
+    //│
+    //▼RETURN:不可能
+    return true;
+    //┴
   } /* P21_RECEIVE() */
 
   //─────────────────
@@ -359,17 +376,17 @@ namespace adpHttp {
   // ・true ：未完成
   // ・false：完成
   //─────────────────
-  bool P2_MAKE_FRAME(SLOT_HTTP&  argSS){
-  //┬
-  //○受信バッファの内容を破棄
-  //●受信バッファに蓄える
-  //○受信バッファの内容を破棄
-  //▼処理継続の判定を返す
-  argSS.rx = "";
-  P21_RECEIVE(argSS);
-  argSS.rx = "";
-  return (ctx.strFrame == "" ? true : false);
-  //┴
+  bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
+    //┬
+    //○受信バッファの内容を破棄
+    //●受信バッファに蓄える
+    //○受信バッファの内容を破棄
+    //▼処理継続の判定を返す
+    argSS.rx = "";
+    P21_RECEIVE(argSS);
+    argSS.rx = "";
+    return (ctx.strFrame == "" ? true : false);
+    //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
@@ -379,11 +396,11 @@ namespace adpHttp {
   // フレーム書式    ：{認証コード}/{コマンドパス}!
   //─────────────────
   void P3_MAKE_INFO(){
-  //┬
-  //〇受信待ちデータの取り込み
-  ctx.authCD  = P3_GET_TOKEN1(ctx.strFrame);
-  ctx.cmdPath = P3_GET_TOKEN2(ctx.strFrame);
-  //┴
+    //┬
+    //〇受信待ちデータの取り込み
+    ctx.authCD  = P3_GET_TOKEN1(ctx.strFrame);
+    ctx.cmdPath = P3_GET_TOKEN2(ctx.strFrame);
+    //┴
   } /* P3_MAKE_INFO() */
 
   //─────────────────
@@ -396,45 +413,45 @@ namespace adpHttp {
   // ・false：認証に成功
   // ・true ：認証に失敗
   //─────────────────
-  bool P4_AUTH(SLOT_HTTP&  argSS){
-  //┬
-  //◇┐認証開始要求に応答
-  if (ctx.authCD == "_START_!") {
-    //├┐（例外的に認証コードの中身が「接続開始コマンド」文字列の場合）
-      //●認証管理に加える
-      String newAuthCD = P4_START(AUTH_TBL);
-      if(newAuthCD == ""){
-        // ＼（管理開始に失敗した場合）
-          //●エラーコードをレスポンス
-          //▼RETURN:認証開始に失敗
-          SEND_CONN(argSS, "#SS0!");
-          return true;
-      } /* END-if */
-      //│
-      //○認証コードを書き換え
-      //●認証コードをレスポンス
-      //▼RETURN:認証に失敗
-      ctx.authCD = newAuthCD;
-      SEND_CONN(argSS, String("$") + newAuthCD + "$");
-      return true;
-    //└┐（その他）
-      //┴
-  } /* END-if */
-  //│
-  //○ユーザ認証を実施
-  ctx.authID = P4_GET_ID(AUTH_TBL, ctx.authCD);
-  if (ctx.authID < 0) {
-    // ＼（認証に失敗した場合）
-      //●エラーコードをレスポンス
-      //▼RETURN:認証に失敗
-      SEND_CONN(argSS, "#SS1!");
-      return true;
+  bool P4_AUTH(T_SS_SLOT&  argSS){
+    //┬
+    //◇┐認証開始要求に応答
+    if (ctx.authCD == "_START_!") {
+      //├┐（例外的に認証コードの中身が「接続開始コマンド」文字列の場合）
+        //●認証管理に加える
+        String newAuthCD = P4_START(auTBL);
+        if(newAuthCD == ""){
+        //│ ＼（管理開始に失敗した場合）
+            //●エラーコードをレスポンス
+            //▼RETURN:認証開始に失敗
+            SEND_CONN(argSS, "#SS1!");
+            return true;
+        } /* END-if */
+        //│
+        //○認証コードを書き換え
+        //●認証コードをレスポンス
+        //▼RETURN:認証に失敗
+        ctx.authCD = newAuthCD;
+        SEND_CONN(argSS, String("$") + newAuthCD + "$");
+        return true;
+      //└┐（その他）
+        //┴
     } /* END-if */
+    //│
+    //○ユーザ認証を実施
+    ctx.authID = P4_GET_ID(auTBL, ctx.authCD);
+    if (ctx.authID < 0) {
+    //│ ＼（認証に失敗した場合）
+        //●エラーコードをレスポンス
+        //▼RETURN:認証に失敗
+        SEND_CONN(argSS, "#SS2!");
+        return true;
+        } /* END-if */
+        //┴
+    //│
+    //▼認証に成功
+    return false;
     //┴
-  //│
-  //▼認証に成功
-  return false;
-  //┴
   } /* P4_AUTH() */
 
 
@@ -451,32 +468,32 @@ namespace adpHttp {
   // 引数：
   // (参)接続情報スロット
   //─────────────────
-  void routeMMP(SLOT_HTTP& argSS){
-  //┬
-  //○１．接続状態を確認
-  if (P1_CONNECT(argSS)) return;
-    // ＼（切断の場合）
-      //▼処理を中断
-  //│
-  //●２．フレームを取得
-  if (P2_MAKE_FRAME(argSS)) return;
-    // ＼（フレームが未完成の場合）
-      //▼処理を中断
-  //│
-  //○３．基本情報を取得
-  P3_MAKE_INFO();
-  //│
-  //○４．認証を実施
-  if (P4_AUTH(argSS)) return;
-    // ＼（認証に失敗した場合）
-      //▼処理を中断
-  //│
-  //●５．MMPコマンドを実行
-  String resMMP = P5_RUN();
-  //│
-  //●６．実行結果をレスポンス
-  SEND_CONN(argSS, resMMP);
-  //┴
+  void routeMMP(T_SS_SLOT& argSS){
+    //┬
+    //○１．接続状態を確認
+    if (P1_CONNECT(argSS)) return;
+    //│ ＼（切断の場合）
+    //│  ▼処理を中断
+    //│
+    //●２．フレームを取得
+    if (P2_MAKE_FRAME(argSS)) return;
+    //│ ＼（フレームが未完成の場合）
+    //│  ▼処理を中断
+    //│
+    //○３．基本情報を取得
+    P3_MAKE_INFO();
+    //│
+    //○４．ユーザ認証を実施
+    if (P4_AUTH(argSS)) return;
+    //│ ＼（認証に失敗した場合）
+    //│  ▼処理を中断
+    //│
+    //●５．MMPコマンドを実行
+    String resMMP = P5_RUN();
+    //│
+    //●６．実行結果をレスポンス
+    SEND_CONN(argSS, resMMP);
+    //┴
   } /* routeMMP() */
 
   //─────────────────
@@ -530,11 +547,11 @@ namespace adpHttp {
     server.onNotFound( [&server](){ // NotFound("/"以外)が処理対象
       //○ＭＭＰ処理へ渡す要求であるかを確認
       if (server.method() == HTTP_OPTIONS){
-      // ＼（HTTP層で完結している）
-        //●CORS事前確認へ応答
-        route204(server);
-        //▼RETURN
-        return;
+      //│ ＼（HTTP層で完結している）
+          //●CORS事前確認へ応答
+          route204(server);
+          //▼RETURN
+          return;
       }   /* if */
       //│
       //●ＭＭＰコマンドへの応答

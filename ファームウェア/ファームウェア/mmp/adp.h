@@ -4,7 +4,7 @@
 //  - 経路IDの提供
 //  - クライアント管理機能の提供
 //--------------------------------------------------------
-// Ver 1.0.1 (2026/08/11) α版 
+// Ver 1.0.1 (2026/08/13) α版 
 //========================================================
 #pragma once
 //┬
@@ -23,7 +23,7 @@
   //─────────────────
   // コンテクスト
   //─────────────────
-  extern MmpContext ctx     ; // 所在：mmpCtx.h、実装：mmp.ino
+  extern MmpContext ctx; // 所在：mmpCtx.h、実装：mmp.ino
 
   //─────────────────
   // コマンドパーサ
@@ -53,77 +53,29 @@
 
   //━━━━━━━━━━━━━━━━━
   // スロット
-  //─────────────────
-  // SLOT_BASE      used/rx/isOverflow
-  // ├ SLOT_STREAM ├ conn(Stream)/accID
-  // ├ SLOT_TCP    ├ conn(WiFiClient)
-  // └ SLOT_HTTP   └ conn(WebServer)/authCD(認証情報TBL検索用キー)
   //━━━━━━━━━━━━━━━━━
     //─────────────────
-    // Ｚ．共通部
+    // 構造体
+    //----------------------------------
+    // 通信アダプタのネームスペース内で派生(名称:T_SLOT)し実体化(名称:ssTBL)
     //─────────────────
-    struct SLOT_BASE {
+    struct T_SS_BASE {
       bool    used       = false ; // スロット有効性
       String  rx         = ""    ; // 受信バッファ
       bool    isOverflow = false ; // 容量超過フラグ
     };
+
+    //─────────────────
+    // スロット初期化
     //----------------------------------
-    void INIT_SLOT_BASE(SLOT_BASE& argSlot){
+    // 通信アダプタのネームスペース内で派生(名称:INIT_SLOT)
+    //─────────────────
+    void INI_SS_SLOT_BASE(T_SS_BASE& argSlot){
       argSlot.used       = false    ; // スロット有効性をクリア
       argSlot.rx         = ""       ; // 受信バッファをクリア
       argSlot.rx.reserve(SS_RX_SIZE); // 受信バッファ容量を事前確保
       argSlot.isOverflow = false    ; // 容量超過フラグをクリア
     }
-    //─────────────────
-    // Ａ．ストリーム資源(ポインタ)
-    //----------------------------------
-    // 所有：シリアル(ストリーム)を所有しない ※Arduinoに存在する資源
-    // 参照：外部生成されたストリーム資源
-    // 割当：特定の物理ポートを処理
-    // 持続：永続的に利用 ※start()で一度だけ初期化
-    //─────────────────
-    struct SLOT_STREAM : SLOT_BASE { // Ｚ．共通部
-      Stream* conn  = nullptr ; // 接続資源(個別ストリームを参照)
-    };
-    //----------------------------------
-    void INIT_SLOT_STREAM(SLOT_STREAM& argSlot){
-      INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn  = nullptr ; // 接続資源を参照解除
-    }
-    //─────────────────
-    // Ｂ．WiFiサーバ資源(接続確認あり)
-    //----------------------------------
-    // 所有：TCP接続オブジェクトを所有する
-    // 保持：個別TCP接続情報を保持
-    // 割当：単一のTCP接続を処理
-    // 持続：ポーリング中に新規接続で生成／切断で破棄
-    //─────────────────
-    struct SLOT_TCP : SLOT_BASE{   // Ｚ．共通部
-      WiFiClient conn            ; // 接続資源(個別TCP接続の実体)
-    };
-    //----------------------------------
-    void INIT_SLOT_TCP(SLOT_TCP& argSlot){
-      INIT_SLOT_BASE(argSlot) ; // Ｚ．共通部
-      argSlot.conn.stop()     ; // 接続資源を資源破棄
-    }
-    //─────────────────
-    // Ｃ．WEBサーバ資源(ポインタ)
-    //----------------------------------
-    // 所有：HTTPサーバ資源を所有しない
-    // 参照：start()で生成された受付資源を参照
-    // 担当：複数のHTTP要求を処理
-    // 持続：永続的に利用 ※start()で一度だけ初期化
-    //─────────────────
-    struct SLOT_HTTP : SLOT_BASE{  // Ｚ．共通部
-      WebServer* conn   = nullptr; // 受付資源(HTTPサーバの参照)
-    };
-    //----------------------------------
-    void INIT_SLOT_HTTP(SLOT_HTTP& argSlot){
-      INIT_SLOT_BASE(argSlot)    ; // Ｚ．共通部
-      argSlot.conn   = nullptr   ; // 参照解除
-    }
-    //─────────────────
-
 
 //========================================================
 // ユーザ認証
@@ -137,15 +89,29 @@
 
   //━━━━━━━━━━━━━━━━━
   // スロット
-  //─────────────────
-  // ※必要とする通信アダプタごとに自分の資源として作成する
   //━━━━━━━━━━━━━━━━━
-  struct TYPE_AUTH_SLOT {
-    String   authCD     = ""    ; // 認証コード
-    bool     used       = false ; // 有効性判定
-    uint32_t lastActive = 0     ; // 最終更新時刻(ms) ※ タイムアウトで使用
-  };
+    //─────────────────
+    // 構造体
+    //----------------------------------
+    // 通信アダプタのネームスペース内で実体化(名称:authTBL)
+    //─────────────────
+    struct T_AUTH_SLOT {
+      bool     used       = false ; // 有効性判定
+      String   authCD     = ""    ; // 認証コード
+      uint32_t lastActive = 0     ; // 最終更新時刻 ※単位：ms
+    };
  
+    //─────────────────
+    // 初期化
+    //----------------------------------
+    // 通信アダプタのネームスペース内で派生(名称:INIT_SLOT)
+    //─────────────────
+    void INIT_SLOT_AUTH(T_AUTH_SLOT& argSlot){
+      argSlot.used       = false ; // 有効性判定リセット(無効)
+      argSlot.authCD     = ""    ; // 認証コードをクリア
+      argSlot.lastActive = 0     ; // 最終更新時刻をリセット
+    }
+
   //─────────────────
   // 認証コード定義
   //─────────────────
@@ -224,7 +190,7 @@
   // ・0,1,2...：タイムアウトしたスロットID
   // ・-1：タイムアウトしたスロットが無い
   //─────────────────
-  int AUTH_GET_ID_OLD(TYPE_AUTH_SLOT* pTBL) {
+  int AUTH_GET_ID_OLD(T_AUTH_SLOT* pTBL) {
     //┬
     //◎┐先頭から走査
     for (int id = 0 ; id < SS_SLOTS ; id++) {
@@ -374,8 +340,8 @@
   //  データなし：-1
   //─────────────────
   static int P4_GET_ID(
-    TYPE_AUTH_SLOT* pTBL   , // 認証情報TBL
-    const String&   pKeyCD   // 認証コード(検索キー)
+    T_AUTH_SLOT*  pTBL,  // 認証情報TBL
+    const String& pKeyCD // 認証コード(検索キー)
   ){
     //┬
     //◎┐認証情報全体を照合
@@ -409,7 +375,7 @@
   // ・成功：半角の大小文字を含む英数で5文字
   // ・失敗：空文字
   //─────────────────
-  static String P4_START(TYPE_AUTH_SLOT* pTBL){
+  static String P4_START(T_AUTH_SLOT* pTBL){
     //┬
     //○前処理
     String retCD = "" ; // 戻り値を[失敗]で初期化

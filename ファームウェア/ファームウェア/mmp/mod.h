@@ -86,6 +86,18 @@ public:
 // ヘルパ
 //========================================================
   //─────────────────
+  // 仮想ストリームにレスポンス
+  //─────────────────
+  inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
+  inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名が不正
+  inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // 引数チェックで不正
+  inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // データが未初期化
+  inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // 使用不可のデバイス
+  inline void _ResFilErr(Stream& sp){sp.print("#FIL!");} // ファイル操作が異常終了
+  inline void _ResNoDErr(Stream& sp){sp.print("#NOD!");} // データ項目名が不正  
+  inline void _ResValErr(Stream& sp){sp.print("#VAL!");} // 数値変換エラー  
+
+  //─────────────────
   // 引数用：文字列→10進数パース
   //─────────────────
   inline bool _Str2Int(const char* s, int& out, int minv, int maxv){
@@ -113,10 +125,10 @@ public:
   //─────────────────
   // 戻値用：十進数変換
   //  - 末尾は '!' で埋める）
-  //  - v ∈ [-999, 9999] 以外は #FLW!
+  //  - v ∈ [-999, 9999] 以外はエラー
   //─────────────────
   inline void _ResValue(Stream& sp, int v) {
-    if (v < -999 || v > 9999) { sp.print("#FLW!"); return; }
+    if (v < -999 || v > 9999) { _ResValErr(sp); return; }
     char buf[6];  // 5文字 + NUL
     if (v < 0) {
       int a = -v;  // 安全に絶対値化
@@ -137,14 +149,3 @@ public:
       if (slash && slash > s) return slash + 1;
       return s;
   } /* _Remove1st() */
-  
-  //─────────────────
-  // 通信アダプタへレスポンス
-  //─────────────────
-  inline void _ResOK    (Stream& sp){sp.print("!!!!!");} // 正常終了
-  inline void _ResNotCmd(Stream& sp){sp.print("#CMD!");} // コマンド名が不正
-  inline void _ResChkErr(Stream& sp){sp.print("#CHK!");} // 引数チェックで不正
-  inline void _ResIniErr(Stream& sp){sp.print("#INI!");} // データが未初期化
-  inline void _ResDevErr(Stream& sp){sp.print("#DEV!");} // 使用不可のデバイス
-  inline void _ResFilErr(Stream& sp){sp.print("#FIL!");} // ファイル操作が異常終了
-  inline void _ResNoDErr(Stream& sp){sp.print("#NOD!");} // データ項目名が不正  

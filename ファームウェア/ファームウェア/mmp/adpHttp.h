@@ -193,22 +193,22 @@ namespace adpHttp {
   //─────────────────
   static const char* SEND_MSG(const String& argID){
 
-    // コマンドパーサーの戻り値
+    // 共通のコード
     if (argID == "!!!!!") return "OK:戻り値無し"            ;
-    if (argID == "!VAL!") return "OK:数値"                  ;
-    if (argID == "!STR!") return "OK:文字列"                ;
     if (argID == "#CMD!") return "NG:コマンド名が不正"      ;
     if (argID == "#CHK!") return "NG:引数チェックで違反"    ;
     if (argID == "#INI!") return "NG:データが未初期化"      ;
     if (argID == "#DEV!") return "NG:使用不可のデバイス"    ;
     if (argID == "#FIL!") return "NG:ファイル操作が異常終了";
     if (argID == "#NOD!") return "NG:データ項目名が不正"    ;
+    if (argID == "#VAL!") return "NG:数値が基底範囲外"      ;
 
-    // アダプタ独自のエラー
+    // アダプタ独自のコード
+    if (argID == "!VAL!") return "OK:数値"                  ;
+    if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
     if (argID == "!SS0!") return "OK:ユーザ認証に成功"      ;
     if (argID == "#SS1!") return "NG:認証管理の開始に失敗"  ;
     if (argID == "#SS2!") return "NG:認証に失敗"            ;
-    if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
  
     return "NG:その他のエラー";
   } /* SEND_MSG() */
@@ -224,7 +224,7 @@ namespace adpHttp {
   }; /* JSON_DATA */
   //─────────────────
   void SEND_CONN(
-    T_SS_SLOT&       argSS, // 送信先
+    T_SS_SLOT&    argSS, // 送信先
     const String& argMSG // 送信メッセージ
   ){
     //┬
@@ -269,13 +269,9 @@ namespace adpHttp {
           //┴
 
         } else {
-        //└┐（その他；戻り値が文字列型の場合）
-          //○MSGIDを独自IDに書き換え
+        //└┐（その他）
           //○処理結果をセット
-          //○取得値を文字列型にセット
-          msgID = "!STR!"  ; // 文字列型
-          jsDat.Str = body ; // 取得値(文字列)
-          jsDat.Res = true ; // 正常
+          jsDat.Res = false                 ; // 異常
           //┴
         } /* END-if */
     } /* END-if */

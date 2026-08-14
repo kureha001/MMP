@@ -3,11 +3,12 @@
 //  MMP Firmware
 //--------------------------------------------------------
 // ボード情報：Waveshare ESP32-S3-tiny用
-//   - ESP32S3 Dev Module
-//   - USB CDC ON Boot: Enabled
-//   - Flash Size: 4MB (32Mb)
+//  - ESP32S3 Dev Module
+//  - USB CDC ON Boot: Enabled
+//  - Flash Size: 4MB (32Mb)
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/11) α版 
+// Ver 1.1.0 (2026/08/14) α版 
+//・[ＷＥＢページ：管理画面]サービスを追加
 //========================================================
 //┬
 //■┐インクルード
@@ -31,12 +32,6 @@
   // ＭＭＰシステムバージョン
   //─────────────────
   const char* INO_VERSION = "V10a!";  // コンテクストのメンバ
-
-  //─────────────────
-  // アクティブ判定
-  //─────────────────
-  bool ino_READY_SERIAL = false;
-  bool ino_READY_NET    = false;
 
   //─────────────────
   // NwoPixel ※初期化・パーサで利用
@@ -64,8 +59,8 @@
 void setup(){
 
   // 通信アダプタを初期化
-  ino_READY_SERIAL = InitSerial();  // シリアル系
-  ino_READY_NET    = InitNet();     // ネットワーク系
+  InitSerial(); // シリアル系
+  InitNet()   ; // ネットワーク系
 
   // パーサーを初期化
   ino_ROUTER.Init(); // 依存注入済みに対し初期化処理を実行
@@ -87,14 +82,12 @@ void setup(){
 //━━━━━━━━━━━━━━━━━
 void loop(){
 
-  // シリアル系のポーリング
-  if (ino_READY_SERIAL) {
-    adpSerial::handle(); // シリアル通信アダプタのハンドル
-  } /* if */
+  //○通信アダプタ
+  adpSerial::handle(); // シリアル
+  adpTcp   ::handle(); // TCPブリッジ
+  adpHttp  ::handle(); // WebAPI
 
-  // ネットワーク系のポーリング
-  if (ino_READY_NET) {
-    adpHttp::handle();  // WebAPI通信アダプタのハンドル
-    adpTcp::handle();   // TCPブリッジ通信アダプタのハンドル
-  } /* if */
+  //○ＷＥＢページ
+  httpAdmin::handle(); // 管理画面
+
 } /* loop() */

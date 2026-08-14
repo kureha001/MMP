@@ -30,6 +30,7 @@ namespace adpHttp {
 //========================================================
   static constexpr int  ROUTE_ID = ROUTE_ID_HTTP ; // 経路IDを定義
   WebServer*       ns_ACCEPTOR   = nullptr       ; // ユーザ受付資源を定義
+  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
 
 
 //========================================================
@@ -525,7 +526,7 @@ namespace adpHttp {
   } /* route204() */
 
 //========================================================
-// Ｇ．ポーリング
+// Ｇ．初期化・ポーリング
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // WEBサーバのルーティング(リスナー)登録
@@ -563,33 +564,31 @@ namespace adpHttp {
   //----------------------------------
   // 実行元：iniNet.h - InitNet_Service()
   //━━━━━━━━━━━━━━━━━
-  bool start(uint16_t port) {
+  void start(uint16_t port) {
     //┬
     //○１．起動チェック
-    if (ns_ACCEPTOR ) return true    ; // サーバの実体化有無を評価
+    if (ns_ACCEPTOR ) return         ; // サーバの実体化有無を評価
     //│
     //○２．サーバ資源生成
-    ns_ACCEPTOR = new WebServer(port);
+    ns_ACCEPTOR = new WebServer(port); // WebServer
     //│
     //○３．接続情報TBLを作成
     SS_CREATE_TBL()                  ; // 領域確保
     SS_ATTACH_SLOT()                 ; // 一時スロットを登録
     //│
     //○４．ルーティング登録
-    registRoutes(*ns_ACCEPTOR )      ; // ルーティング登録
+    registRoutes(*ns_ACCEPTOR);
     //│
     //○５．サーバ開始
-    ns_ACCEPTOR->begin()             ; // サーバ起動 ※ポインタ経由
+    ns_ACCEPTOR->begin();
     //│
     //▼６．正常終了
-    return true;
+    ENABLED = true; // 有効
     //┴
   } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
-  //----------------------------------
-  // 実行元：mmp.ino - loop()
   //----------------------------------
   // 明示的にルーティング指示しない
   // サーバ(リスナー)がにルーティング登録した内容に従う
@@ -597,7 +596,8 @@ namespace adpHttp {
   void handle() {
     //┬
     //○１．起動チェック
-    if (!ns_ACCEPTOR ) return; // サーバの実体化有無を評価
+    if (!ENABLED    ) return;
+    if (!ns_ACCEPTOR) return; // サーバの実体化有無を評価
     //│
     //○２．新規接続のスロットを登録
     //　➡【該当処理なし】※start()で登録済み

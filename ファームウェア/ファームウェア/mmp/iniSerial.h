@@ -68,7 +68,7 @@
 //----------------------------------
 // 実行元：mmp.ino - setup()
 //━━━━━━━━━━━━━━━━━
-bool InitSerial(){
+void InitSerial(){
 
   // ボーレート設定ボタンのピンを定義
   pinMode(SW_PIN_A, INPUT_PULLUP);
@@ -100,21 +100,16 @@ bool InitSerial(){
   INO_PIXEL.show();
 
   // シリアルポートを起動
-  Serial.begin(BAUD_PRESETS[id]);                       // USB(CDC)
-  Serial.setDebugOutput(false);                         // SDKデバッグ出力を抑止
-  Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43);  // GPIO Serial
-  delay(100);
-  Serial.flush();
-  Serial1.flush();
-  delay(100);
+  Serial.begin(BAUD_PRESETS[id]);                      // USB(CDC)
+  Serial.setDebugOutput(false);                        // SDKデバッグ出力を抑止
+  Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43); // GPIO Serial
+  delay(3000); // 安定するまで待つ
   
   // 起動メッセージを表示
   Serial.println("[Serial initialize]"  );
   Serial.println("　USB (CDC)      : OK");
-  Serial.println("　UART(GPIO 0,1) : OK");
+  Serial.println("　UART(#01)      : OK");
 
-// 通信アダプタの初期処理(シリアル)に通信経路開始処理を移譲
-adpSerial::start();
-
-  return true;
+  // 通信アダプタ(シリアル)に初期化を指示
+  adpSerial::start();
 } // InitSerial()

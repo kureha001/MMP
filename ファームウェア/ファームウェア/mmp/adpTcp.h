@@ -29,6 +29,7 @@ namespace adpTcp {
 //========================================================
   static constexpr int ROUTE_ID = ROUTE_ID_TCP; // 経路IDを定義
   WiFiServer*      ns_ACCEPTOR  = nullptr     ; // ユーザ受付資源を定義
+  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
 
 
 //========================================================
@@ -384,20 +385,20 @@ namespace adpTcp {
 
 
 //========================================================
-// Ｇ．ポーリング
+// Ｇ．初期化・ポーリング
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //----------------------------------
   // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
-  bool start(uint16_t port){
+  void start(uint16_t port){
     //┬
     //○１．起動チェック
-    if (ns_ACCEPTOR ) return true      ; // サーバの実体化有無を評価
+    if (ns_ACCEPTOR ) return           ; // サーバの実体化有無を評価
     //│
     //○２．サーバ資源生成
-    ns_ACCEPTOR = new WiFiServer(port) ; // ユーザ受付に資源をセット
+    ns_ACCEPTOR = new WiFiServer(port) ; // WiFiServer
     //│
     //○３．接続情報TBLを作成
     SS_CREATE_TBL()                    ; // 領域確保
@@ -407,22 +408,21 @@ namespace adpTcp {
     //│
     //○５．サーバ開始
     ns_ACCEPTOR->setNoDelay(true)      ; // TCPの遅延を抑制
-    ns_ACCEPTOR->begin()               ; // サーバ起動
+    ns_ACCEPTOR->begin();
     //│
     //▼６．正常終了
-    return true;
+    ENABLED = true;
     //┴
   } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
-  //----------------------------------
-  // 実行元：mmp.ino - loop()
   //━━━━━━━━━━━━━━━━━
   void handle(){
     //┬
     //○１．起動チェック
-    if (!ns_ACCEPTOR ) return; // サーバの実体化有無を評価
+    if (!ENABLED    ) return;
+    if (!ns_ACCEPTOR) return; // サーバの実体化有無を評価
     //│
     //○２．新規接続のスロットを登録
     SS_ATTACH_SLOT();

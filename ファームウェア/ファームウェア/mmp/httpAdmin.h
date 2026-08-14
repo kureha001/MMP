@@ -1,0 +1,209 @@
+// filename : httpAdmin.h
+//========================================================
+// Wifi設定
+//--------------------------------------------------------
+// Ver 1.0.0 (2026/08/14)
+//========================================================
+#pragma once
+//┬
+//■┐インクルード
+  //■Arduinoシステム
+  #include <WebServer.h>
+  #include <LittleFS.h>
+  //│
+  //■ＭＭＰシステム
+  //┴
+//┴
+
+//########################################################
+//# メイン処理
+//########################################################
+namespace httpAdmin {
+
+//========================================================
+// Ａ．基本情報
+//========================================================
+  static WebServer* ns_ACCEPTOR = nullptr;
+  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
+
+
+//========================================================
+// Ｆ．ルーティング処理
+//--------------------------------------------------------
+// handle()で明示的に呼び出す
+//========================================================
+  //─────────────────
+  // １．管理画面
+  //─────────────────
+  static void routeRoot() {
+    //┬
+    //○HTMLバッファを開始
+    String html = "<!DOCTYPE html>";
+    //│
+    //○HTMLバッファに「ヘッダ～ボディ」を追加
+    html += "<html lang=\"ja\"><head><meta charset=\"UTF-8\"><title>MMP Config Uploader</title>";
+    html += "<style>";
+    html += "body { font-family: sans-serif; max-width: 800px; margin: 30px auto; padding: 0 20px; background: #f4f7f6; color: #333; }";
+    html += "h2 { border-bottom: 2px solid #ccc; padding-bottom: 5px; }";
+    html += "textarea { width: 100%; height: 250px; font-family: monospace; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #fff; resize: vertical; }";
+    html += ".drop-zone { border: 2px dashed #4CAF50; border-radius: 6px; padding: 30px; text-align: center; background: #e8f5e9; cursor: pointer; margin-top: 20px; transition: background 0.2s; }";
+    html += ".drop-zone.dragover { background: #c8e6c9; }";
+    html += ".btn { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }";
+    html += ".btn:hover { background: #45a049; }";
+    html += "#status { margin-top: 15px; font-weight: bold; }";
+    html += "</style></head><body>";
+    //│
+    //○HTMLバッファに「本文」を追加
+    html += "<h2>現在の設定 (/config.json)</h2>";
+    html += "<textarea id=\"configViewer\" readonly>";
+    //│
+    //◇┐LittleFSから現在のconfig.jsonを読み込んでテキストエリアに初期表示
+    if (LittleFS.exists("/config.json")) {
+      //├┐（通常の場合）
+        //◇┐既存ファイルを表示する
+        File f = LittleFS.open("/config.json", "r");
+        if (f) {
+        //├┐（通常の場合）
+          //○中身をバッファする
+          while (f.available()) { html += (char)f.read(); }
+          //○ファイルを閉じる
+          f.close();
+          //┴
+        //└┐（その他）
+          //○HTMLバッファに「エラーメッセージ」を追加
+          } else { html += "ファイルを開けませんでした"; }
+          //┴
+      //└┐（その他）
+        //┴
+    //└┐（その他）
+    //○HTMLバッファに「エラーメッセージ」を追加
+    } else { html += "config.json が存在しません"; }
+      //┴
+    //│
+    //○HTMLバッファに「本文」を追加
+    html += "</textarea>";
+    html += "<h2>設定ファイルの更新</h2>";
+    html += "<div class=\"drop-zone\" id=\"dropZone\">";
+    html += "<p>ここに設定ファイル（JSON）をドラッグ＆ドロップ</p>";
+    html += "<p>または</p>";
+    html += "<button class=\"btn\" onclick=\"document.getElementById('fileInput').click()\">ファイルを選択</button>";
+    html += "<input type=\"file\" id=\"fileInput\" style=\"display: none;\" accept=\".json,text/plain\">";
+    html += "</div>";
+    html += "<div id=\"status\"></div>";
+    //│
+    //○HTMLバッファに「javascript」を追加
+    html += "<script>";
+    html += "const dropZone = document.getElementById('dropZone');";
+    html += "const fileInput = document.getElementById('fileInput');";
+    html += "['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, (evt) => { evt.preventDefault(); dropZone.classList.add('dragover'); }, false));";
+    html += "['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (evt) => { evt.preventDefault(); dropZone.classList.remove('dragover'); }, false));";
+    html += "dropZone.addEventListener('drop', (e) => { if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0]); });";
+    html += "fileInput.addEventListener('change', (e) => { if (fileInput.files.length > 0) uploadFile(fileInput.files[0]); });";
+    html += "function uploadFile(file) {";
+    html += "  const statusDiv = document.getElementById('status');";
+    html += "  statusDiv.style.color = '#333'; statusDiv.textContent = 'アップロード中...';";
+    html += "  const reader = new FileReader();";
+    html += "  reader.onload = function(e) {";
+    html += "    const content = e.target.result;";
+    html += "    document.getElementById('configViewer').value = content;";
+    html += "    fetch('/upload', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: content })";
+    html += "    .then(res => res.text().then(text => {";
+    html += "      if (res.ok) { statusDiv.style.color = 'green'; statusDiv.textContent = '成功: ' + text; }";
+    html += "      else { statusDiv.style.color = 'red'; statusDiv.textContent = '失敗: ' + text; }";
+    html += "    })).catch(err => { statusDiv.style.color = 'red'; statusDiv.textContent = '通信エラー: ' + err; });";
+    html += "  };";
+    html += "  reader.readAsText(file);";
+    html += "}";
+    html += "</script></body></html>";
+    //│
+    //○HTMLバッファをレスポンス
+    ns_ACCEPTOR->send(200, "text/html", html);
+    //┴
+  }
+
+  //─────────────────
+  // ルート２：設定フィルアップロード
+  //─────────────────
+  static void routeUpload() {
+    //┬
+    //○既存ファイルを削除
+    if (LittleFS.exists("/config.json")) { LittleFS.remove("/config.json"); }
+    //│
+    //○新規ファイルを開く
+    File configFile = LittleFS.open("/config.json", FILE_WRITE);
+    if (!configFile) {
+      ns_ACCEPTOR->send(500, "text/plain", "Failed to open config file for writing");
+      return;
+    }
+    //│
+    //○新規ファイルを作成
+    if (ns_ACCEPTOR->hasArg("plain")) {
+      String body = ns_ACCEPTOR->arg("plain");
+      configFile.print(body);
+    }
+    //│
+    //○新規ファイルを閉じる
+    configFile.close();
+    //│
+    //○正常終了
+    ns_ACCEPTOR->send(200, "text/plain", "Config updated successfully");
+    Serial.println(" -> [Upload] 設定ファイルを受信し、/config.json を上書きしました");
+    //┴
+  } /* routeUpload() */
+
+
+//========================================================
+// Ｇ．初期化・ポーリング
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // WEBサーバのルーティング登録
+  //━━━━━━━━━━━━━━━━━
+  static void registRoutes(WebServer& server) {
+    server.on("/"      , HTTP_GET , routeRoot  ); // アクセスで管理画面
+    server.on("/upload", HTTP_POST, routeUpload); // 設定フィルアップロード
+  }
+
+  //━━━━━━━━━━━━━━━━━
+  // 初期化処理
+  //━━━━━━━━━━━━━━━━━
+  bool start(uint16_t port) {
+    //┬
+    //○１．起動チェック
+    if (ns_ACCEPTOR) return true     ; // サーバの実体化有無を評価
+    //│
+    //○２．サーバ資源生成
+    ns_ACCEPTOR = new WebServer(port); // WebServer
+    //│
+    //○３．接続情報TBLを作成
+    //　➡【該当処理なし】※通信アダプタが対象
+    //│
+    //○４．ルーティング登録
+    registRoutes(*ns_ACCEPTOR);
+    //│
+    //○５．サーバ開始
+    ns_ACCEPTOR->begin();
+    //│
+    //▼６．正常終了
+    ENABLED = true; // 有効
+    return false;
+    //┴
+  }
+
+  //━━━━━━━━━━━━━━━━━
+  // ハンドラ入口（ポーリング入口）
+  //━━━━━━━━━━━━━━━━━
+  void handle() {
+   //┬
+    //○１．起動チェック
+    if (!ENABLED    ) return;
+    if (!ns_ACCEPTOR) return;
+    //│
+    //○２．新規接続のスロットを登録
+    //　➡【該当処理なし】※通信アダプタが対象
+    //│
+    //○３．ルーティング処理
+    ns_ACCEPTOR->handleClient();
+    //┴
+  }
+
+} //* namespace httpAdmin */

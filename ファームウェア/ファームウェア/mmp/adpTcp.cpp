@@ -1,10 +1,10 @@
-// filename : adpSerial.h
+// filename : adpTcp.cpp
 //========================================================
-// 通信アダプタ：シリアル
+// 通信アダプタ：ＴＣＰブリッジ
 //--------------------------------------------------------
-//【常時接続・切断時スロット維持型】
-//・基本処理      ：受信→コマンド実行→結果返却
-//・スロット構成  ：物理ポート毎に１スロットを占有
+//【常時接続：切断時スロット開放型】
+//・基本処理      ：接続確認→受信→コマンド実行→結果返却
+//・スロット構成  ：TCP接続毎に空スロットに動的割り当て
 //・ポーリング跨ぎ：対応 ※通信状態は継続的に保持
 //・ユーザ認証    ：常時接続のため行わない
 //--------------------------------------------------------
@@ -14,6 +14,7 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <WiFi.h>
   //│
   //■ＭＭＰシステム
   #include "adp.h" // 通信アダプタ共通
@@ -23,11 +24,12 @@
 //########################################################
 //# メイン処理
 //########################################################
-namespace adpSerial {
+namespace adpTcp {
 //========================================================
 // Ａ．基本情報
 //========================================================
-  static constexpr int ROUTE_ID = ROUTE_ID_SERIAL; // 経路IDを定義
+  static constexpr int ROUTE_ID = ROUTE_ID_TCP; // 経路IDを定義
+  WiFiServer*      ns_ACCEPTOR  = nullptr     ; // ユーザ受付資源を定義
   bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
 
 
@@ -46,16 +48,16 @@ namespace adpSerial {
   //━━━━━━━━━━━━━━━━━
   // スロット
   //----------------------------------
-  // 資源：Stream* (参照)
-  // 所有：しない ※Arduinoに存在する資源を参照
+  // 資源：WiFiClient (実体)
+  // 所有：TCP接続のオブジェクトを所有する
   // 参照：外部生成されたストリーム資源
-  // 割当：物理ポートごとに１スロット
-  // 持続：永続的に利用 ※start()で一度だけ初期化
+  // 割当：TCP接続ごとに１スロット
+  // 持続：ポーリング中に新規接続で生成／切断で破棄
   //━━━━━━━━━━━━━━━━━
     //─────────────────
     // 領域確保：構造体の派生→実体化
     //─────────────────
-    struct T_SS_SLOT : T_SS_BASE { Stream* conn = nullptr; };
+    struct T_SS_SLOT : T_SS_BASE{ WiFiClient conn; };
     static T_SS_SLOT* ssTBL = nullptr;
 
     //─────────────────
@@ -63,7 +65,7 @@ namespace adpSerial {
     //─────────────────
     void INI_SS_SLOT(T_SS_SLOT& argSlot){
       INI_SS_SLOT_BASE(argSlot);
-      argSlot.conn = nullptr; // 資源の参照を解除
+      argSlot.conn.stop(); // 資源を破棄
     }
 
   //─────────────────
@@ -71,20 +73,20 @@ namespace adpSerial {
   //----------------------------------
   // 戻り値：なし
   //─────────────────
-  void CREATE_SS_TBL(){
+  void SS_CREATE_TBL(){
     //┬
     //○領域を確保
-    ssTBL = new T_SS_SLOT[PORTS_SERIAL]; // シリアルポート総数
+    ssTBL = new T_SS_SLOT[SS_SLOTS]; // 通信経路別の規定値
     //│
     //◎┐TBL全体を初期化
-    for (int id = 0; id < PORTS_SERIAL; id++) INI_SS_SLOT(ssTBL[id]);
+    for (int id = 0; id < SS_SLOTS ; id++) INI_SS_SLOT(ssTBL[id]);
       //│＼（全スロットを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
       //●このスロットを初期化
       //┴
     //┴
-  } /* CREATE_SS_TBL() */
+  } /* SS_CREATE_TBL() */
 
   //─────────────────
   // スロットを開放
@@ -94,7 +96,8 @@ namespace adpSerial {
   // 戻り値：なし
   //─────────────────
   void SS_DETACH_SLOT(T_SS_SLOT& argSlot){
-  //　➡【該当処理なし】※マルチ接続系が対象
+    if (argSlot.conn) argSlot.conn .stop(); // 接続を切断
+    INI_SS_SLOT(argSlot);
   } /* SS_DETACH_SLOT() */
 
   //─────────────────
@@ -107,25 +110,62 @@ namespace adpSerial {
   // ・-1：空きスロットが無い
   //─────────────────
   int SS_GET_FREE_ID() {
-  //　➡【該当処理なし】※マルチ接続系が対象
+    //┬
+    //◎┐先頭から走査
+    for (int id = 0 ; id < SS_SLOTS ; id++) {
+      //│＼（全スロットを走査し終えた場合）
+      //│ ▼ループ処理を中断
+      //│
+      //○スロットを確認
+      if (!ssTBL[id].used) return id;
+      //│ ＼（未使用の場合）
+      //│  ▼当該スロットIDを返す
+      //┴
+    } /* END-for */
+    //│
+    //▼エラーコードを返す(空きスロットがない)
+    return -1;
+    //┴
   } /* SS_GET_FREE_ID() */
+
 
   //─────────────────
   // 接続を登録
   //----------------------------------
-  // 開始処理で「一度だけ」実行すること
+  // 戻り値：なし
+  //----------------------------------
+  // 新たなTCP接続を接続情報下に置く
+  // ポーリングで繰り返し実行される
   //─────────────────
-  void ATTACH_SS_SLOT(){
+  void SS_ATTACH_SLOT(){
     //┬
-    //○スロットに[USB-CDC]接続を登録
-    ssTBL[0].conn   = &Serial  ; // 接続を登録(既存オブジェクトを指す)
-    ssTBL[0].used   = true     ; // 使用中
-    //│
-    //○スロットに[UART1]接続を登録
-    ssTBL[1].conn   = &Serial1 ; // 接続を登録(既存オブジェクトを指す)
-    ssTBL[1].used   = true     ; // 使用中
+    //◎┐未管理のTCP接続をMMP管理対象へ登録する
+    while (true) {
+      //○新規のTCP接続を取得
+      //  ※受付待ちキュー内のTCP接続情報を取得
+      //  ※取得後、受付待ち状態から管理処理へ移行
+      WiFiClient newConn = ns_ACCEPTOR->available();
+      if (!newConn) break;
+      //│ ＼（取得に失敗(待ち接続なし)の場合）
+      //│  ▼ループ処理を中断
+      //│
+      //●空きスロットを探す
+      int id = SS_GET_FREE_ID();
+      if (id < 0) {continue;}
+      //│ ＼（空きスロットがない）
+      //│  ▼次を探す
+      //│
+      //●スロットを初期化
+      INI_SS_SLOT(ssTBL[id]);
+      //│
+      //○スロットに新規接続を登録
+      ssTBL[id].conn   = newConn      ; // CP接続を登録
+      ssTBL[id].conn.setNoDelay(true) ; // TCPパケット遅延制御
+      ssTBL[id].used   = true         ; // 仕様通
+      //┴
+    } // while
     //┴
-  } /* ATTACH_SS_SLOT() */
+  } /* SS_ATTACH_SLOT() */
 
 
 //========================================================
@@ -140,7 +180,7 @@ namespace adpSerial {
   ){
     //┬
     //○メッセージをレスポンス
-    argSS.conn->print(argMSG);
+    argSS.conn.print(argMSG);
     //┴
   } /* SEND_CONN() */
 
@@ -158,7 +198,23 @@ namespace adpSerial {
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
-  bool P1_CONNECT(T_SS_SLOT&  argSS){return false;}
+  bool P1_CONNECT(T_SS_SLOT&  argSS){
+    //┬
+    //◇┐接続状態を判定
+    if (argSS.conn.connected()) {
+      //├┐（通常の場合）
+        //▼RETURN：接続中
+        return false;
+
+    } else {
+      //└┐（その他：切断の場合）
+        //●スロットを廃棄
+        //▼RETURN：切断中
+        SS_DETACH_SLOT(argSS);
+        return true; // 切断中
+    } // END-if */
+    //┴
+  } /* P1_CONNECT() */
 
   //─────────────────
   // ２．フレームを取得(データ受信)
@@ -172,7 +228,7 @@ namespace adpSerial {
   //  ・オーバーフロー中：フラグを[OFF]にし、処理継続を不可能と判定する。
   //----------------------------------
   //【詳細】
-  // データ受信単位  ：1byte[conn->read()] ★★参照★★
+  // データ受信単位  ：1byte[conn.read()] ★★実体★★
   // 受信バッファ    ：する ※ポーリング跨ぎにも対応
   // 受信継続判定    ：する ※オーバーフロー/終端文字/オーバーフロー解除/フレーム完成
   // フレーム終端判定：する ※データ受信単位で確認
@@ -184,7 +240,7 @@ namespace adpSerial {
   bool P21_RECEIVE(T_SS_SLOT&  argSS){
     //┬
     //○受信データを受信バッファに加える
-    argSS.rx += (char)argSS.conn->read(); //★★参照★★
+    argSS.rx += (char)argSS.conn.read(); //★★実体★★
     //│
     //○受信バッファのオーバーフローを確認
     if (argSS.rx.length() > SS_RX_SIZE) {
@@ -233,7 +289,7 @@ namespace adpSerial {
   //----------------------------------
   //【詳細】
   // フレーム化処理  ：する
-  // 受信継続判定    ：する[conn->available()] ★★参照★★
+  // 受信継続判定    ：する[conn.available()] ★★実体★★
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
@@ -242,7 +298,7 @@ namespace adpSerial {
   bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
     //┬
     //◎┐受信待ちデータの取り込み
-    while (argSS.conn->available()){     //★★参照★★
+    while (argSS.conn.available()){ //★★実体★★
       //│＼（未取り込みデータが空の場合）
       //│ ▼取り込みを終了
       //│
@@ -328,33 +384,34 @@ namespace adpSerial {
   //─────────────────
   //　➡【該当処理なし】※Webサーバが対象
 
+
 //========================================================
 // Ｇ．初期化・ポーリング
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //----------------------------------
-  // 実行元：iniSerial.h - InitSerial()
+  // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
-  void start() {
+  void start(uint16_t port){
     //┬
-    //○１．二重起動防止
-    if(ssTBL) return      ; // 接続情報TBLの状況を評価
+    //○１．起動チェック
+    if (ns_ACCEPTOR ) return           ; // サーバの実体化有無を評価
     //│
     //○２．サーバ資源生成
-    //　➡【該当処理なし】※セットアップ処理で事前に初期化済み
+    ns_ACCEPTOR = new WiFiServer(port) ; // WiFiServer
     //│
     //○３．接続情報TBLを作成
-    CREATE_SS_TBL()       ; // 領域確保
-    ATTACH_SS_SLOT()      ; // 常時接続スロットを登録
+    SS_CREATE_TBL()                    ; // 領域確保
     //│
     //○４．ルーティング登録
     //　➡【該当処理なし】※Webサーバが対象
     //│
     //○５．サーバ開始
-    //　➡【該当処理なし】※ネットワーク系が対象
+    ns_ACCEPTOR->setNoDelay(true)      ; // TCPの遅延を抑制
+    ns_ACCEPTOR->begin();
     //│
-    //○６．正常終了
+    //▼６．正常終了
     ENABLED = true;
     //┴
   } /* start() */
@@ -365,24 +422,24 @@ namespace adpSerial {
   void handle(){
     //┬
     //○１．起動チェック
-    if (!ENABLED) return;
-    if (!ssTBL  ) return; // 接続情報TBLの状況を評価
+    if (!ENABLED    ) return;
+    if (!ns_ACCEPTOR) return; // サーバの実体化有無を評価
     //│
     //○２．新規接続のスロットを登録
-    //　➡【該当処理なし】※start()で登録済み
+    SS_ATTACH_SLOT();
     //│
     //◎┐３．ルーティング処理
-    for (int slotID = 0; slotID < PORTS_SERIAL; slotID++) {
-      //│＼（最終うスロットに達した場合）
+    for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
+      //│＼（最終スロットに達した場合）
       //│ ▼ルーティングを終了
       //│
       //●コンテクストをセットアップ
       //●スロット処理を指示
-      P0_SETUP_CTX(ROUTE_ID, slotID);
+      P0_SETUP_CTX(ROUTE_ID, slotID); // コンテクストをセットアップ
       routeMMP(ssTBL[slotID])        ; // MMPコマンドへルーティング
       //┴
       } /* END-for */
     //┴
   } /* handle() */
 
-} /* namespace adpSerial */
+} /* namespace adpTcp */

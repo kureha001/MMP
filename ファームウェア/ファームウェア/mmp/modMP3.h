@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
 //・LED表示処理を廃止
+//・初期設定関数をコンストラクタに変更
+//・グローバル資源をクラスに移動
 //========================================================
 #pragma once
 //┬
@@ -15,43 +17,41 @@
   //┴
 //┴
 
-//━━━━━━━━━━━━━━━━━
-// デバイス情報
-//━━━━━━━━━━━━━━━━━
-  DFRobotDFPlayerMini g_MP3[2];           // コンテナ
-  bool g_MP3STATUS[2] = { false, false }; // 接続状況
-
-//━━━━━━━━━━━━━━━━━
-// 初期化処理
-//━━━━━━━━━━━━━━━━━
-static void InitMP3(){
-
-  Serial.println("---------------------------");
-  Serial.println("[DFPlayer mini initialize]");
-
-  g_MP3STATUS[0] = false;
-  g_MP3STATUS[1] = false;
-
-  Serial2.begin(9600, SERIAL_8N1, 11, 12);
-  delay(50);
-
-  if (g_MP3[0].begin(Serial2)){ // 接続済み設定
-    g_MP3[0].volume(20);        // プロパティ：音量の規定値
-    g_MP3STATUS[0] = true;      // Global変数：状況を接続済
-  }
-
-  Serial.println(String("　Device ID : 1"));
-}
-
 //========================================================
 // メイン処理
 //========================================================
 class ModuleMP3 : public ModuleBase {
+//--------------------------------------------------------
+private:
+//━━━━━━━━━━━━━━━━━
+// デバイス情報
+//━━━━━━━━━━━━━━━━━
+    DFRobotDFPlayerMini g_MP3[2];           // コンテナ
+    bool g_MP3STATUS[2] = { false, false }; // 接続状況
+
+//--------------------------------------------------------
 public:
   //━━━━━━━━━━━━━━━━━
   // モジュール(抽象基底クラス)
   //━━━━━━━━━━━━━━━━━
-  using ModuleBase::ModuleBase;
+  ModuleMP3(MmpContext& ctx, const char* name): ModuleBase(ctx, name) {
+
+    Serial.println("---------------------------");
+    Serial.println("[DFPlayer mini initialize]");
+
+    g_MP3STATUS[0] = false;
+    g_MP3STATUS[1] = false;
+
+    Serial2.begin(9600, SERIAL_8N1, 11, 12);
+    delay(50);
+
+    if (g_MP3[0].begin(Serial2)){ // 接続済み設定
+        g_MP3[0].volume(20);      // プロパティ：音量の規定値
+        g_MP3STATUS[0] = true;    // Global変数：状況を接続済
+    }
+
+    Serial.println(String("　Device ID : 1"));
+  }
 
   //========================================================
   // コマンド・パーサー(実装)

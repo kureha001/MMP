@@ -8,6 +8,7 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <Arduino.h>
   //│
   //■ＭＭＰシステム
   //┴
@@ -44,6 +45,7 @@ class StringStream : public Stream {
 
 }; /* class StringStream */
 
+
 //──────────────────────────────────────────────
 // コンテクスト
 //--------------------------------------------------------------------------------------------
@@ -77,3 +79,5 @@ struct MmpContext {
   int          accID    = -1; // アクセスID
   int          accIDS   = -1; // アクセスIDの総数
 };
+
+extern MmpContext ctx;

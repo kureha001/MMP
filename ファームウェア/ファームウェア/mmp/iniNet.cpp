@@ -1,4 +1,4 @@
-// filename : iniNet.h
+// filename : iniNet.cpp
 //========================================================
 // 資源初期化：ネットワーク系
 //--------------------------------------------------------
@@ -13,7 +13,7 @@
 //・ Wi-Fi設定　　　 ：失敗すると緊急ＡＰモードで起動
 //・ サービス起動    ：軌道に失敗したサービスが使えない
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/14) α版 
+// Ver 1.1.0 (2026/08/15) α版 
 //・[ＷＥＢページ：管理画面]サービスを追加
 //========================================================
 #pragma once
@@ -25,17 +25,19 @@
   #include <ArduinoJson.h>
   //│
   //■ＭＭＰシステム
-  #include "adpTcp.h"    // 通信アダプタ：TCPブリッジ
-  #include "adpHttp.h"   // 通信アダプタ：WwbAPI
-  #include "httpAdmin.h" // ＷＥＢページ：管理画面
+  #include "adp.h"    // 通信アダプタ
   //┴
 //┴
 
-//━━━━━━━━━━━━━━━
-// グローバル資源
-//━━━━━━━━━━━━━━━
-constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
-constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
+//########################################################
+// ネームスペース：シリアル用
+//########################################################
+namespace iniNet {
+  //========================================================
+  //共通資源
+  //========================================================
+  constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
+  constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
 
 //━━━━━━━━━━━━━━━━━
 // 設定ファイル情報
@@ -74,9 +76,9 @@ constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルータ�
 typeConnect g_WIFI;
 
 
-//━━━━━━━━━━━━━━━━━
+//========================================================
 // ヘルパ
-//━━━━━━━━━━━━━━━━━
+//========================================================
   //─────────────────
   // host 配列からtype一致のものを取得
   // （"sta" / "ap"）
@@ -113,9 +115,13 @@ typeConnect g_WIFI;
     return true;
   } /* IS_OCTET() */
 
-  //─────────────────
+
+//========================================================
+// サブ処理
+//========================================================
+  //━━━━━━━━━━━━━━━━━
   // IPアドレスを作成
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
     //─────────────────
     // ＳＴＡモード用
     //----------------------------------
@@ -177,87 +183,94 @@ typeConnect g_WIFI;
       //┴
     } /* GET_IP_AP() */
 
-  //─────────────────
-  // Wi-Fi候補1つを試行
-  // （DHCP → 必要なら静的IPへ再接続）
-  // 要件：hList.ipが空ならDHCPのまま採用
-  //─────────────────
-  static bool CONNECT_STA(const typeRouter& argWifi)
-  {
-    if (argWifi.ssid.isEmpty()) return false;
+  //━━━━━━━━━━━━━━━━━
+  // Wifi接続
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // ＡＰモード用
+    //----------------------------------
+    //─────────────────
+    //　➡【該当処理なし】※ＡＰモードは対象外
 
-    //○STA ホスト情報を JSON から取得（無ければデフォルト）
-    const typeHost* hList = GET_HOST("sta");
-    String hostName       = hList ? hList->name : String("mmp-sta-mode");
-    String oct4           = hList ? hList->ip   : String("");  // 第4オクテット or 空
-    //│
-    //○DHCPで接続（第三オクテット把握のため）
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(hostName.c_str());
-    WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
-    //│
-    //◎8秒間接続トライ
-    uint32_t t0 = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
-    if (WiFi.status() != WL_CONNECTED) {
-    //│ ＼（タイムアウトの場合）
-    //│  ▼RETURN:失敗
-          WiFi.disconnect(true, true);
-          delay(200);
-          return false;
-    } /* END-if */
-    //│
-    //○DHCP情報を退避
-    IPAddress dhcpIP     = WiFi.localIP();
-    IPAddress gatewayIP  = WiFi.gatewayIP();
-    IPAddress subnetMask = WiFi.subnetMask();
-    IPAddress dnsIP1     = WiFi.dnsIP(0);
-    IPAddress dnsIP2     = WiFi.dnsIP(1);
-    //│
-    //○hList.ip が空なら DHCP のまま採用
-    if (oct4.length() == 0) return true;
-    //│
-    //○新たに静的IPを作成(DHCP発行のIPアドレスの第4オクテットを変更)
-    IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
-    if (!newIP) return true;
-    // →（失敗なら DHCP のまま）
-    //│
-    // サブネットは固定 /24
-    // GW は DHCP 優先・無ければ x.y.z.1、DNS 未取得なら GW
-    subnetMask = IPAddress(255,255,255,0);
-    if (!gatewayIP) gatewayIP = IPAddress(newIP[0], newIP[1], newIP[2], 1);
-    if (!dnsIP1   ) dnsIP1 = gatewayIP;
-    //│
-    //○静的IPで再接続
-    WiFi.disconnect(false, false);
-    delay(100);
-    WiFi.config(newIP, gatewayIP, subnetMask, dnsIP1, dnsIP2);
-    WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
-    //│
-    //◎8秒間接続トライ
-    t0 = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
-    if (WiFi.status() == WL_CONNECTED) return true;
-    //│ ＼（タイムアウトの場合）
-    //│  ▼RETURN:失敗
-    //│
-    //○
-    WiFi.disconnect(true, true);
-    delay(200);
-    return false;
-    //┴
-  } /* CONNECT_STA() */
+    //─────────────────
+    // ＳＴＡモード用
+    //----------------------------------
+    // DHCP → 必要なら静的IPへ再接続
+    // 要件：hList.ipが空ならDHCPのまま採用
+    //─────────────────
+    static bool CONNECT_STA(const typeRouter& argWifi)
+    {
+      if (argWifi.ssid.isEmpty()) return false;
 
-//━━━━━━━━━━━━━━━
-// 初期化処理
-//━━━━━━━━━━━━━━━
-  //─────────────────
-  // P1.設定ファイル読込
+      //○STA ホスト情報を JSON から取得（無ければデフォルト）
+      const typeHost* hList = GET_HOST("sta");
+      String hostName       = hList ? hList->name : String("mmp-sta-mode");
+      String oct4           = hList ? hList->ip   : String("");  // 第4オクテット or 空
+      //│
+      //○DHCPで接続（第三オクテット把握のため）
+      WiFi.mode(WIFI_STA);
+      WiFi.setHostname(hostName.c_str());
+      WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
+      //│
+      //◎8秒間接続トライ
+      uint32_t t0 = millis();
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
+      if (WiFi.status() != WL_CONNECTED) {
+      //│ ＼（タイムアウトの場合）
+      //│  ▼RETURN:失敗
+            WiFi.disconnect(true, true);
+            delay(200);
+            return false;
+      } /* END-if */
+      //│
+      //○DHCP情報を退避
+      IPAddress dhcpIP     = WiFi.localIP();
+      IPAddress gatewayIP  = WiFi.gatewayIP();
+      IPAddress subnetMask = WiFi.subnetMask();
+      IPAddress dnsIP1     = WiFi.dnsIP(0);
+      IPAddress dnsIP2     = WiFi.dnsIP(1);
+      //│
+      //○hList.ip が空なら DHCP のまま採用
+      if (oct4.length() == 0) return true;
+      //│
+      //○新たに静的IPを作成(DHCP発行のIPアドレスの第4オクテットを変更)
+      IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
+      if (!newIP) return true;
+      // →（失敗なら DHCP のまま）
+      //│
+      // サブネットは固定 /24
+      // GW は DHCP 優先・無ければ x.y.z.1、DNS 未取得なら GW
+      subnetMask = IPAddress(255,255,255,0);
+      if (!gatewayIP) gatewayIP = IPAddress(newIP[0], newIP[1], newIP[2], 1);
+      if (!dnsIP1   ) dnsIP1 = gatewayIP;
+      //│
+      //○静的IPで再接続
+      WiFi.disconnect(false, false);
+      delay(100);
+      WiFi.config(newIP, gatewayIP, subnetMask, dnsIP1, dnsIP2);
+      WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
+      //│
+      //◎8秒間接続トライ
+      t0 = millis();
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
+      if (WiFi.status() == WL_CONNECTED) return true;
+      //│ ＼（タイムアウトの場合）
+      //│  ▼RETURN:失敗
+      //│
+      //○
+      WiFi.disconnect(true, true);
+      delay(200);
+      return false;
+      //┴
+    } /* CONNECT_STA() */
+
+  //━━━━━━━━━━━━━━━
+  // 設定ファイル読込
   //----------------------------------
   //【戻り値】実行結果（論理値）
   //・成功：false
   //・失敗：true
-  //─────────────────
+  //━━━━━━━━━━━━━━━
   bool InitNet_JsonMain() {
     // jsonファイル読取を開始
     File f = LittleFS.open("/config.json", "r");
@@ -339,6 +352,10 @@ typeConnect g_WIFI;
     return false;
   } /* InitNet_JsonMain() */
 
+
+//========================================================
+// メイン処理
+//========================================================
   //─────────────────
   // P1.設定ファイル読込
   //----------------------------------
@@ -483,8 +500,8 @@ typeConnect g_WIFI;
     //│
     //○ＷＥＢページ(管理画面)に初期化を指示
     intPort = 8082;
-    httpAdmin::start(intPort);
-    strPort = httpAdmin::ENABLED ? String(intPort) : "(none)";
+    adpAdmin::start(intPort);
+    strPort = adpAdmin::ENABLED ? String(intPort) : "(none)";
     Serial.println(String("　Wifi port : ") + strPort);
     //┴
   } /* InitNet_Service() */
@@ -493,7 +510,7 @@ typeConnect g_WIFI;
   // 初期化処理のメイン
   // - スケッチのsetup()から実行
   //─────────────────
-  void InitNet(){
+  void start(){
     //┬
     //○開始表示
     Serial.println("---------------------------");
@@ -528,4 +545,5 @@ typeConnect g_WIFI;
     //○終了表示
     Serial.println(String("３．Wi-Fiの起動に") + String(isErr ? "失敗" : "成功"));
     //┴
-  }
+  } /* start() */
+} /* namespace iniNet */

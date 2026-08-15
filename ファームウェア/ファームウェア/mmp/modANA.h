@@ -5,6 +5,8 @@
 // Ver 1.1.0 (2026/08/11) α版 
 //・LED表示処理を廃止
 //・ANALOG/SETUPコマンドでreturnが漏れていたバグを修正
+//・初期設定関数をコンストラクタに変更
+//・グローバル資源をクラスに移動
 //========================================================
 #pragma once
 //┬
@@ -15,61 +17,53 @@
   //┴
 //┴
 
-//━━━━━━━━━━━━━━━
-// グローバル変数
-//━━━━━━━━━━━━━━━
-const int g_ADDR_PINS[4] = {10, 9, 8, 7}; // アドレス・バス
-const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
-
-//━━━━━━━━━━━━━━━━━
-// クライアント別データ
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 型宣言
-  //─────────────────
-  struct AnaClientData {
-    int Values[16*4];   // チャンネル別の入力信号
-    int SwitchCnt;      // 使用範囲(スイッチ数;デバイス数)
-    int PlayerCnt;      // 使用範囲(プレイヤ数;チャンネル数)
-  };
-  //─────────────────
-  // 入力バッファ
-  //─────────────────
-  static AnaClientData* g_ANA_DAT = nullptr;
-
-
-//━━━━━━━━━━━━━━━━━
-// AUTH_GET_ID
-//━━━━━━━━━━━━━━━━━
-void InitAnalog(const MmpContext& ctx) {
-
-  Serial.println("---------------------------");
-  Serial.println("[HC4067 buffer initialize]");
-
-  // クライアント別データのメモリ確保
-  void* p = calloc(ctx.accIDS, sizeof(AnaClientData)); // 全要素0で初期化して確保
-  if (!p) { return; }
-  g_ANA_DAT = static_cast<AnaClientData*>(p);
-
-  // 既定設定
-  for (int i = 0; i < ctx.accIDS; ++i) {
-    g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
-    g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
-  }
-
-  Serial.println(String("　Device  ID : 0 ～ 3 "));
-  Serial.println(String("　Channel ID : 0 ～ 16"));
-}
-
 //========================================================
 // メイン処理
 //========================================================
 class ModuleAnalog : public ModuleBase {
+//--------------------------------------------------------
+private:
+//━━━━━━━━━━━━━━━
+// ＧＰＩＯピンアサイン
+//━━━━━━━━━━━━━━━
+    const int g_ADDR_PINS[4] = {10, 9, 8, 7}; // アドレス・バス
+    const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
+
+//━━━━━━━━━━━━━━━━━
+// クライアント別データ
+//━━━━━━━━━━━━━━━━━
+    struct AnaClientData {
+        int Values[16*4];   // チャンネル別の入力信号
+        int SwitchCnt;      // 使用範囲(スイッチ数;デバイス数)
+        int PlayerCnt;      // 使用範囲(プレイヤ数;チャンネル数)
+    };
+    //────────────────
+    AnaClientData* g_ANA_DAT = nullptr;
+
+//--------------------------------------------------------
 public:
   //━━━━━━━━━━━━━━━━━
   // モジュール(抽象基底クラス)
   //━━━━━━━━━━━━━━━━━
-  using ModuleBase::ModuleBase;
+  ModuleAnalog(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
+
+    Serial.println("---------------------------");
+    Serial.println("[HC4067 buffer initialize]");
+
+    // クライアント別データのメモリ確保
+    void* p = calloc(ctx.accIDS, sizeof(AnaClientData)); // 全要素0で初期化して確保
+    if (!p) { return; }
+    g_ANA_DAT = static_cast<AnaClientData*>(p);
+
+    // 既定設定
+    for (int i = 0; i < ctx.accIDS; ++i) {
+        g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
+        g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
+    }
+
+    Serial.println(String("　Device  ID : 0 ～ 3 "));
+    Serial.println(String("　Channel ID : 0 ～ 16"));
+  }
 
   //========================================================
   // コマンド・パーサー(実装)

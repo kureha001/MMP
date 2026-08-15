@@ -4,150 +4,142 @@
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/11) α版 
 //・LED表示処理を廃止
+//・初期設定関数をコンストラクタに変更
+//・グローバル資源をクラスに移動
 //========================================================
 #pragma once
-#include <Wire.h>     // デバイスはi2c制御
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <Wire.h>     // デバイスはi2c制御
   #include <PCA9685.h>  // デバイス固有
   //│
   //■ＭＭＰシステム
   //┴
 //┴
 
+//========================================================
+// メイン処理
+//========================================================
+class ModulePwm : public ModuleBase {
+//--------------------------------------------------------
+private:
 //━━━━━━━━━━━━━━━━━
 // 物理デバイス数（そのまま）
 //━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 基本
-  //─────────────────
-  constexpr uint8_t PWM_COUNT = 8;        // 走査デバイス数
-  PCA9685 g_PWM[PWM_COUNT];               // コンテナ
-  //─────────────────
-  // チャネル上限（理論最大値）
-  // 実際に使うのは 0 ～ g_MAX_CHANNEL_ID まで
-  //─────────────────
-  static constexpr int MAX_PWM_CHANNEL = PWM_COUNT * 16;
-  //─────────────────
-  // 最大IDは今まで通り物理から算出
-  //─────────────────
-  int g_MAX_DEVICE_ID  = 0;
-  int g_MAX_CHANNEL_ID = 0;
+    //─────────────────
+    // 基本
+    //─────────────────
+    static constexpr uint8_t PWM_COUNT = 8; // 走査デバイス数
+    PCA9685 g_PWM[PWM_COUNT];               // コンテナ
+
+    //─────────────────
+    // チャネル上限（理論最大値）
+    // 実際に使うのは 0 ～ g_MAX_CHANNEL_ID まで
+    //─────────────────
+    static constexpr int MAX_PWM_CHANNEL = PWM_COUNT * 16;
+
+    //─────────────────
+    // 最大IDは今まで通り物理から算出
+    //─────────────────
+    int g_MAX_DEVICE_ID  = 0;
+    int g_MAX_CHANNEL_ID = 0;
 
 //━━━━━━━━━━━━━━━━━
 // クライアント別データ
 //━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 型宣言
-  //─────────────────
-  typedef struct {
-    int min;
-    int max;
-  } typePreset_Base;
-  //────────────────
-  typedef struct {
-    uint8_t         enable; // 有効無効(0=unset, 1=set)
-    uint8_t         deg;    // 最大角度
-    typePreset_Base pwm;    // PWM値用
-  } typePresetAngle;
-  //────────────────
-  typedef struct {
-    uint8_t         enable; // 0=unset, 1=set
-    typePreset_Base right ; // 右回り用
-    typePreset_Base left  ; // 左回り用
-  } typePresetPwm;
-  //────────────────
-  // プリセット
-  //────────────────
-  struct PwmClientData {
-    typePresetAngle angle [ MAX_PWM_CHANNEL ];
-    typePresetPwm   rotate[ MAX_PWM_CHANNEL ];
-  };
-  //────────────────
-  // クライアント全体のバッファ
-  //────────────────
-  static PwmClientData* g_PWM_DAT = nullptr;
+    typedef struct {
+        int min;
+        int max;
+    } typePreset_Base;
+    //────────────────
+    typedef struct {
+        uint8_t         enable; // 有効無効(0=unset, 1=set)
+        uint8_t         deg;    // 最大角度
+        typePreset_Base pwm;    // PWM値用
+    } typePresetAngle;
+    //────────────────
+    typedef struct {
+        uint8_t         enable; // 0=unset, 1=set
+        typePreset_Base right ; // 右回り用
+        typePreset_Base left  ; // 左回り用
+    } typePresetPwm;
+    //────────────────
+    struct PwmClientData {
+        typePresetAngle angle [ MAX_PWM_CHANNEL ];
+        typePresetPwm   rotate[ MAX_PWM_CHANNEL ];
+    };
+    //────────────────
+    PwmClientData* g_PWM_DAT = nullptr;
 
-
-//━━━━━━━━━━━━━━━━━
-// 初期化処理
-//━━━━━━━━━━━━━━━━━
-static void InitPWM(){
-
-  Serial.println("---------------------------");
-  Serial.println("[PCA9685 initialize]");
-
-  // ｉ２ｃ通信を開始
-  Wire.begin(16, 15);
-
-  // ちょっと待つ
-  delay(50);
-
-  // I2Cアドレス0x40から接続走査
-  int count = 0;
-  for (int i = 0; i < PWM_COUNT; i++){
-    
-    // 接続開始
-    uint8_t addr = 0x40 + i;
-    Wire.beginTransmission(addr);
-
-    // 接続されている場合
-    if(Wire.endTransmission() == 0){
-      g_PWM[count] = PCA9685(addr); // オブジェクトを登録
-      g_PWM[count].begin();         // 通信開始
-      g_PWM[count].setPWMFreq(60);  // 初期設定
-      count++;                      // 次を走査
-    }
-  }
-
-  // 最大IDを求める
-  g_MAX_DEVICE_ID  = count - 1;       // デバイスID
-  g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
-
-  // クライアント別データのメモリ確保
-  const int datCount = ctx.accIDS;                       // クライアント数
-  void* p = calloc(datCount, sizeof(PwmClientData));      // 全要素 0 で確保
-  if (!p) { return; }
-  g_PWM_DAT = static_cast<PwmClientData*>(p);
-
-  // 既定設定
-  for   (int cid = 0; cid <  datCount        ; ++cid) {
-    for (int ch  = 0; ch  <= g_MAX_CHANNEL_ID; ++ch ) {
-
-      auto& a = g_PWM_DAT[cid].angle[ch];
-      a.enable    = 0;
-      a.deg       = 0;
-      a.pwm.min   = 0;
-      a.pwm.max   = 0;
-
-      auto& r = g_PWM_DAT[cid].rotate[ch];
-      r.enable    = 0;
-      r.right.min = 0;
-      r.right.max = 0;
-      r.left.min  = 0;
-      r.left.max  = 0;
-    }
-  }
-
-  if (g_MAX_DEVICE_ID < 0) Serial.println(String("　Device  ID : Not Found"));
-  else                     Serial.println(String("　Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
-
-  if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　Channel ID : Not Found"));
-  else                      Serial.println(String("　Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
-
-}
-
-
-//━━━━━━━━━━━━━━━━━
-// メイン処理
-//━━━━━━━━━━━━━━━━━
-class ModulePwm : public ModuleBase {
+//--------------------------------------------------------
 public:
   //━━━━━━━━━━━━━━━━━
   // モジュール(抽象基底クラス)
   //━━━━━━━━━━━━━━━━━
-  using ModuleBase::ModuleBase;
+  ModulePwm(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
+
+    Serial.println("---------------------------");
+    Serial.println("[PCA9685 initialize]");
+
+    // ｉ２ｃ通信を開始
+    Wire.begin(16, 15);
+
+    // ちょっと待つ
+    delay(50);
+
+    // I2Cアドレス0x40から接続走査
+    int count = 0;
+    for (int i = 0; i < PWM_COUNT; i++){
+      
+      // 接続開始
+      uint8_t addr = 0x40 + i;
+      Wire.beginTransmission(addr);
+
+      // 接続されている場合
+      if(Wire.endTransmission() == 0){
+        g_PWM[count] = PCA9685(addr); // オブジェクトを登録
+        g_PWM[count].begin();         // 通信開始
+        g_PWM[count].setPWMFreq(60);  // 初期設定
+        count++;                      // 次を走査
+      }
+    }
+
+    // 最大IDを求める
+    g_MAX_DEVICE_ID  = count - 1;       // デバイスID
+    g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
+
+    // クライアント別データのメモリ確保
+    const int datCount = ctx.accIDS;                   // クライアント数
+    void* p = calloc(datCount, sizeof(PwmClientData)); // 全要素 0 で確保
+    if (!p) { return; }
+    g_PWM_DAT = static_cast<PwmClientData*>(p);
+
+    // 既定設定
+    for   (int cid = 0; cid <  datCount        ; ++cid) {
+      for (int ch  = 0; ch  <= g_MAX_CHANNEL_ID; ++ch ) {
+
+        auto& a = g_PWM_DAT[cid].angle[ch];
+        a.enable    = 0;
+        a.deg       = 0;
+        a.pwm.min   = 0;
+        a.pwm.max   = 0;
+
+        auto& r = g_PWM_DAT[cid].rotate[ch];
+        r.enable    = 0;
+        r.right.min = 0;
+        r.right.max = 0;
+        r.left.min  = 0;
+        r.left.max  = 0;
+      }
+    }
+
+    if (g_MAX_DEVICE_ID < 0) Serial.println(String("　Device  ID : Not Found"));
+    else                     Serial.println(String("　Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
+
+    if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　Channel ID : Not Found"));
+    else                      Serial.println(String("　Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
+  }
 
   //========================================================
   // コマンド・パーサー(実装)

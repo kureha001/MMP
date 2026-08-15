@@ -11,6 +11,7 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
   #include "mod.h"    // 抽象基底クラス
@@ -26,6 +27,16 @@
 //━━━━━━━━━━━━━━━━━
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // RGB-LED
+  //─────────────────
+  extern Adafruit_NeoPixel INO_PIXEL;
+
+  //─────────────────
+  // コンテクスト
+  //─────────────────
+  extern MmpContext ctx; // 所在：mmpCtx.h、実装：mmp.ino
+
   //─────────────────
   // パーサ公開
   //─────────────────
@@ -107,7 +118,7 @@ public:
     mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
     mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
     mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
-  } /* Init() */
+} /* Init() */
 
 private:
   //━━━━━━━━━━━━━━━━━

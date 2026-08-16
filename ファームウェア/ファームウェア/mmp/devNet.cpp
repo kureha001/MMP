@@ -1,4 +1,4 @@
-// filename : iniNet.cpp
+// filename : devNet.cpp
 //========================================================
 // 資源初期化：ネットワーク系
 //--------------------------------------------------------
@@ -25,17 +25,21 @@
   #include <ArduinoJson.h>
   //│
   //■ＭＭＰシステム
-  #include "adp.h"    // 通信アダプタ
   //┴
 //┴
 
 //########################################################
-// ネームスペース：シリアル用
+// ネームスペース：ネットワーク用
 //########################################################
-namespace iniNet {
-  //========================================================
-  //共通資源
-  //========================================================
+namespace devNetwork {
+//========================================================
+// 基本情報
+//========================================================
+  bool ENABLED = false; // 有効判定：有効：true、無効：false
+
+//========================================================
+// 共通資源
+//========================================================
   constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
   constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
 
@@ -354,7 +358,7 @@ typeConnect g_WIFI;
 
 
 //========================================================
-// メイン処理
+// プロセス
 //========================================================
   //─────────────────
   // P1.設定ファイル読込
@@ -393,16 +397,16 @@ typeConnect g_WIFI;
     if (!isRun) {
     //│ ＼（起動していない場合）
     //│  ▼RETURN:起動に失敗
-          Serial.println("　[NG] STAモードの起動に失敗");
+          Serial.println("　　[NG] STAモードの起動に失敗");
           return true;
     } /* END-if*/
     //│
     //○状況を画面に表示
-    Serial.println("　STAモード");
-    Serial.println(String("　 SSID: ") + WiFi.SSID().c_str());
-    Serial.println(String("　 IP  : ") + WiFi.localIP().toString().c_str());
+    Serial.println("　　・STAモード");
+    Serial.println(String("　- SSID: ") + WiFi.SSID().c_str());
+    Serial.println(String("　- IP  : ") + WiFi.localIP().toString().c_str());
     //│
-    //▼正常でリターン
+    //▼リターン
     return false;
     //┴
   } /* InitNet_RUN_STA() */
@@ -429,14 +433,14 @@ typeConnect g_WIFI;
     if (!WiFi.softAP(pSSID.c_str())) {
     //│ ＼（起動に失敗した場合）
     //│  ▼RETURN:起動に失敗
-          Serial.println("　[NG] APモードの起動に失敗");
+          Serial.println("　　[NG] APモードの起動に失敗");
           return true;
     } /* END-if*/
     //│
     //○状況を画面に表示
-    Serial.println("　APモード");
-    Serial.println(String("　 SSID: ") + pSSID.c_str());
-    Serial.println(String("　 IP  : ") + WiFi.softAPIP().toString().c_str());
+    Serial.println("　　・APモード");
+    Serial.println(String("　　- SSID: ") + pSSID.c_str());
+    Serial.println(String("　　- IP  : ") + WiFi.softAPIP().toString().c_str());
     //│
     //▼正常でリターン
     return false;
@@ -450,8 +454,8 @@ typeConnect g_WIFI;
     //┬
     //○┐事前準備
       //○APモード固定でパラメータ値を用意
-      String    pSSID       = String("mmp-ap-mode");
-      IPAddress pIP         = IPAddress(111,111,111,111);
+      String    pSSID = String("mmp-ap-mode");
+      IPAddress pIP   = IPAddress(111,111,111,111);
       //│
       //○パラメータをセット
       WiFi.mode(WIFI_AP);
@@ -462,14 +466,14 @@ typeConnect g_WIFI;
     if (!WiFi.softAP(pSSID.c_str())) {
     //│ ＼（起動に失敗した場合）
     //│  ▼RETURN:起動に失敗
-          Serial.println("　[NG] 緊急モードの起動に失敗");
+          Serial.println("　　[NG] 緊急モードの起動に失敗");
           return true;
     } /* END-if*/
     //│
     //○状況を画面に表示
-    Serial.println("　緊急モード");
-    Serial.println(String("　 SSID: ") + pSSID.c_str());
-    Serial.println(String("　 IP  : ") + WiFi.softAPIP().toString().c_str());
+    Serial.println("　・緊急モード");
+    Serial.println(String("　　- SSID: ") + pSSID.c_str());
+    Serial.println(String("　　- IP  : ") + WiFi.softAPIP().toString().c_str());
     //│
     //▼正常でリターン
     return false;
@@ -477,52 +481,28 @@ typeConnect g_WIFI;
   } /* InitNet_RUN_AP() */
 
 
+//########################################################
+//# メイン処理
+//########################################################
   //─────────────────
-  // P4.サービス作成
-  //─────────────────
-  void InitNet_Service(){
-    //┬
-    //○前処理
-    int    intPort ; // ポート番号
-    String strPort ; // ポート表示
-    //│
-    //○通信アダプタ(WebAPI)に初期化を指示
-    intPort = 8080;
-    adpHttp::start(intPort);
-    strPort = adpHttp::ENABLED ? String(intPort) : "(none)";
-    Serial.println(String("　HTTP port : ") + strPort);
-    //│
-    //○通信アダプタ(TCPブリッジ)に初期化を指示
-    intPort = 8081;
-    adpTcp::start(intPort);
-    strPort = adpTcp::ENABLED ? String(intPort) : "(none)";
-    Serial.println(String("　TCP  port : ") + strPort);
-    //│
-    //○ＷＥＢページ(管理画面)に初期化を指示
-    intPort = 8082;
-    adpAdmin::start(intPort);
-    strPort = adpAdmin::ENABLED ? String(intPort) : "(none)";
-    Serial.println(String("　Wifi port : ") + strPort);
-    //┴
-  } /* InitNet_Service() */
-
-  //─────────────────
-  // 初期化処理のメイン
-  // - スケッチのsetup()から実行
+  // 初期化処理
+  //----------------------------------
+  // 戻り値：処理結果（論理値）
+  // ・true ：失敗
+  // ・false：成功
   //─────────────────
   void start(){
     //┬
     //○開始表示
-    Serial.println("---------------------------");
-    Serial.println("[Network initialize]");
+    Serial.println(" [Network initialize]");
     //│
     //●P1.設定ファイル読込
     // 【前提条件】無条件
-     Serial.println("１．設定ファイルの読込");
+     Serial.println(" １．設定ファイルの読込");
     bool isErr = InitNet_Json();
     //│
     //◇┐P2.設定ファイルに従い起動
-    Serial.println("２．Wifiを起動設定");
+    Serial.println("  ２．Wifiを起動設定");
     if (!isErr) {
       //├┐（エラーが残っいない場合）
         //●P2-1.ＳＴＡモードでを起動
@@ -538,12 +518,12 @@ typeConnect g_WIFI;
     // 【前提条件】エラーが残ってる
     if (isErr) isErr = InitNet_RUN_ALTERNATIVE();
     //│
-    //●P4.サービスを起動
-    // 【前提条件】エラーが残っていない
-    if (!isErr) InitNet_Service();
-    //│
     //○終了表示
-    Serial.println(String("３．Wi-Fiの起動に") + String(isErr ? "失敗" : "成功"));
+    Serial.println(String(" ３．Wi-Fiの起動に") + String(isErr ? "失敗" : "成功"));
+    Serial.println("");
+    //│
+    //○有効性セット
+    ENABLED = !isErr;
     //┴
   } /* start() */
-} /* namespace iniNet */
+} /* namespace devNetwork */

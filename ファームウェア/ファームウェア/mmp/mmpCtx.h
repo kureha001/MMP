@@ -59,25 +59,31 @@ class StringStream : public Stream {
 //──────────────────────────────────────────────
 struct MmpContext {
 
-  // ---システム情報---
-  const char*  version  = ""; // システム共通のバージョン情報
+  //■ファームウェア情報
+  const char*  version  = ""; // バージョン
 
-  // ---仮想ストリーム---
-  StringStream vStream      ; // 応答データを一時蓄積
+  //■機能モジュールのレスポンス
+  StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム
 
-  // ---フレームデータ---
+  //■リクエスト情報---
   String       strFrame = ""; // フレーム
   String       cmdPath  = ""; // コマンドパス
   String       authCD   = ""; // 認証コード
 
-  // ---グルーピング---
+  //■ユーザメモリ管理の識別情報
   int          routeID  = -1; // 経路ID
   int          slotID   = -1; // スロットID
   int          authID   = -1; // 認証ID（0：常時接続）
 
-  // ---アクセスID---
+  //■ユーザメモリ管理のアドレス情報
   int          accID    = -1; // アクセスID
   int          accIDS   = -1; // アクセスIDの総数
 };
 
-extern MmpContext ctx;
+//━━━━━━━━━━━━━━━━━
+// グローバル資源
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // コンテクスト
+  //─────────────────
+  extern MmpContext ctx; // ※実体の所有者はスケッチ（共有参照のみ公開）

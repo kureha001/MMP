@@ -30,8 +30,8 @@ namespace adpTcp {
 //========================================================
   static constexpr int ROUTE_ID = ROUTE_ID_TCP; // 経路IDを定義
   WiFiServer*      ns_ACCEPTOR  = nullptr     ; // ユーザ受付資源を定義
-  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
-
+  bool ENABLED  = false; // ハンドル有効判定：有効：true、無効：false
+  int  SRV_PORT = 8081 ; // サーバのポート
 
 //========================================================
 // Ｂ．ユーザ認証
@@ -393,13 +393,21 @@ namespace adpTcp {
   //----------------------------------
   // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
-  void start(uint16_t port){
+  void start(){
     //┬
-    //○１．起動チェック
-    if (ns_ACCEPTOR ) return           ; // サーバの実体化有無を評価
+    //○１．前準備の完了状態を確認
+    if (ns_ACCEPTOR ) {
+    //│ ＼（通信デバイスが起動していない場合）
+        //○エラーメッセージを表示
+        //○無効化
+        //▼異常終了
+        Serial.println("　TCP Bridge : Wi-Fiサーバが起動していません ");
+        ENABLED = false; // 無効
+        return;
+    } /* END-if */
     //│
     //○２．サーバ資源生成
-    ns_ACCEPTOR = new WiFiServer(port) ; // WiFiServer
+    ns_ACCEPTOR = new WiFiServer(SRV_PORT) ; // WiFiServer
     //│
     //○３．接続情報TBLを作成
     SS_CREATE_TBL()                    ; // 領域確保
@@ -411,8 +419,11 @@ namespace adpTcp {
     ns_ACCEPTOR->setNoDelay(true)      ; // TCPの遅延を抑制
     ns_ACCEPTOR->begin();
     //│
-    //▼６．正常終了
-    ENABLED = true;
+    //○┐６．成功終了
+      //○成功メッセージ
+      //○有効化
+      Serial.println(String("　TCP Bridge : OK -> port ") + String(SRV_PORT));
+      ENABLED = true;
     //┴
   } /* start() */
 

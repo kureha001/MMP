@@ -30,7 +30,8 @@ namespace adpHttp {
 //========================================================
   static constexpr int  ROUTE_ID = ROUTE_ID_HTTP ; // 経路IDを定義
   WebServer*       ns_ACCEPTOR   = nullptr       ; // ユーザ受付資源を定義
-  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
+  bool ENABLED  = false; // ハンドル有効判定：有効：true、無効：false
+  int  SRV_PORT = 8080 ; // サーバのポート
 
 
 //========================================================
@@ -564,13 +565,21 @@ namespace adpHttp {
   //----------------------------------
   // 実行元：iniNet.h - InitNet_Service()
   //━━━━━━━━━━━━━━━━━
-  void start(uint16_t port) {
+  void start() {
     //┬
-    //○１．起動チェック
-    if (ns_ACCEPTOR ) return         ; // サーバの実体化有無を評価
+    //○１．前準備の完了状態を確認
+    if (ns_ACCEPTOR ) {
+    //│ ＼（通信デバイスが起動していない場合）
+        //○エラーメッセージを表示
+        //○無効化
+        //▼異常終了
+        Serial.println("　WEB API    : ＷＥＢサーバが起動していません ");
+        ENABLED = false; // 無効
+        return;
+    } /* END-if */
     //│
     //○２．サーバ資源生成
-    ns_ACCEPTOR = new WebServer(port); // WebServer
+    ns_ACCEPTOR = new WebServer(SRV_PORT); // WebServer
     //│
     //○３．接続情報TBLを作成
     SS_CREATE_TBL()                  ; // 領域確保
@@ -582,8 +591,12 @@ namespace adpHttp {
     //○５．サーバ開始
     ns_ACCEPTOR->begin();
     //│
-    //▼６．正常終了
-    ENABLED = true; // 有効
+    //○┐６．成功終了
+      //○成功メッセージ
+      //○有効化
+      Serial.println(String("　WEB API    : OK -> port ") + String(SRV_PORT));
+      ENABLED = true; // 有効
+      //┴
     //┴
   } /* start() */
 

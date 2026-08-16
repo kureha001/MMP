@@ -338,8 +338,16 @@ namespace adpSerial {
   //━━━━━━━━━━━━━━━━━
   void start() {
     //┬
-    //○１．二重起動防止
-    if(ssTBL) return      ; // 接続情報TBLの状況を評価
+    //○１．前準備の完了状態を確認
+    if (ssTBL) {
+    //│ ＼（接続管理TBLが存在する場合）
+        //○エラーメッセージを表示
+        //○無効化
+        //▼異常終了
+        Serial.println("　　Serial   : シリアル通信の開始に失敗 ");
+        ENABLED = false; // 無効
+        return;
+    } /* END-if */
     //│
     //○２．サーバ資源生成
     //　➡【該当処理なし】※セットアップ処理で事前に初期化済み
@@ -354,8 +362,12 @@ namespace adpSerial {
     //○５．サーバ開始
     //　➡【該当処理なし】※ネットワーク系が対象
     //│
-    //○６．正常終了
-    ENABLED = true;
+    //○┐６．成功終了
+      //○成功メッセージ
+      //○有効化
+      Serial.println(String("　Serial     : OK"));
+      ENABLED = true; // 有効
+      //┴
     //┴
   } /* start() */
 

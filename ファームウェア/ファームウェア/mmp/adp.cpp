@@ -18,6 +18,9 @@
   //┴
 //┴
 
+//━━━━━━━━━━━━━━━━━
+// グローバル資源
+//━━━━━━━━━━━━━━━━━
   //─────────────────
   // コマンドパーサ
   //─────────────────
@@ -394,3 +397,32 @@
     return MMP_REQUEST();
     //┴
   } /* P5_RUN() */
+
+//========================================================
+// サービス・アダプタ
+//========================================================
+  void InitAdapter() {
+    //┬
+    //○開始表示
+    Serial.println("---------------------------");
+    Serial.println("<<サービス・アダプタの初期化>>");
+    //│
+    //●通信アダプタ
+    adpSerial::start();
+    adpHttp  ::start();
+    adpTcp   ::start();
+    //│
+    //●ＷＥＢアダプタ
+    adpAdmin ::start();
+    //│
+    //○終了表示
+    Serial.println("");
+    //┴
+  } /* InitAdapter() */
+
+  void kickHandle(){
+    adpSerial::handle();
+    adpTcp   ::handle();
+    adpHttp  ::handle();
+    adpAdmin ::handle();
+  } /* kickHandle() */

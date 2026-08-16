@@ -24,7 +24,8 @@ namespace adpAdmin {
 // Ａ．基本情報
 //========================================================
   static WebServer* ns_ACCEPTOR = nullptr;
-  bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
+  bool ENABLED  = false; // ハンドル有効判定：有効：true、無効：false
+  int  SRV_PORT = 8082 ; // サーバのポート
 
 
 //========================================================
@@ -166,13 +167,21 @@ namespace adpAdmin {
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
-  bool start(uint16_t port) {
+  void start() {
     //┬
-    //○１．起動チェック
-    if (ns_ACCEPTOR) return true     ; // サーバの実体化有無を評価
+    //○１．前準備の完了状態を確認
+    if (ns_ACCEPTOR ) {
+    //│ ＼（通信デバイスが起動していない場合）
+        //○エラーメッセージを表示
+        //○無効化
+        //▼異常終了
+        Serial.println("　WEB Admin  : ＷＥＢサーバが起動していません ");
+        ENABLED = false; // 無効
+        return;
+    } /* END-if */
     //│
     //○２．サーバ資源生成
-    ns_ACCEPTOR = new WebServer(port); // WebServer
+    ns_ACCEPTOR = new WebServer(SRV_PORT); // WebServer
     //│
     //○３．接続情報TBLを作成
     //　➡【該当処理なし】※通信アダプタが対象
@@ -183,9 +192,11 @@ namespace adpAdmin {
     //○５．サーバ開始
     ns_ACCEPTOR->begin();
     //│
-    //▼６．正常終了
-    ENABLED = true; // 有効
-    return false;
+    //○┐６．成功終了
+      //○成功メッセージ
+      //○有効化
+      Serial.println(String("　WEB Admin  : OK -> port ") + String(SRV_PORT));
+      ENABLED = true; // 有効
     //┴
   }
 

@@ -15,6 +15,7 @@
   //│
   //■ＭＭＰシステム
   #include "mod.h"    // 抽象基底クラス
+  //★★★ 機能モジュール保守の対応箇所(1/4) ★★★
   #include "modINF.h" // 機能：システム
   #include "modANA.h" // 機能：アナログ入力
   #include "modDIG.h" // 機能：デジタル入出力
@@ -35,13 +36,13 @@
   //─────────────────
   // コンテクスト
   //─────────────────
-  extern MmpContext ctx; // 所在：mmpCtx.h、実装：mmp.ino
+  extern MmpContext ctx;
 
   //─────────────────
   // パーサ公開
   //─────────────────
   class  Parser             ; // 前方宣言
-  extern Parser* INO_PARSER ; // 外部公開ポインタ
+  extern Parser* INO_PARSER ; // ※実体の所有者はスケッチ（依存方向制御用公開ポインタ）
 
   //─────────────────
   // 各アダプタからの進行移譲先
@@ -66,7 +67,8 @@
   };
 
   namespace MMP_MOD {
-    //★★★ 機能モジュール保守の対応箇所(1/3) ★★★
+
+    //★★★ 機能モジュール保守の対応箇所(2/4) ★★★
     static const T_MMP_MOD INF    = { "INF"   ,  5,  5,  5 };
     static const T_MMP_MOD ANA_I  = { "ANA_I" , 10,  0, 10 };
     static const T_MMP_MOD DIG_IO = { "DIG_IO", 10,  0,  0 };
@@ -74,7 +76,7 @@
     static const T_MMP_MOD I2C    = { "I2C"   , 10, 10,  0 };
     static const T_MMP_MOD MP3    = { "MP3"   ,  0, 10,  0 };
 
-    //★★★ 機能モジュール保守の対応箇所(2/3) ★★★
+    //★★★ 機能モジュール保守の対応箇所(3/4) ★★★
     static const T_MMP_MOD* const LIST[] = {
       &INF,
       &ANA_I,
@@ -85,7 +87,8 @@
     };
 
     static const size_t COUNT = sizeof(LIST) / sizeof(LIST[0]);
-  }
+
+  } /* namespace MMP_MOD */
 
 //========================================================
 // クラス：コマンドパーサ
@@ -110,14 +113,33 @@ public:
   // パーサーの初期化
   //─────────────────
   void Init(){
+    //┬
     //○モジュールベースに登録
-    //★★★ 機能モジュール保守の対応箇所(3/3) ★★★
+    //★★★ 機能モジュール保守の対応箇所(4/4) ★★★
     mods.push_back(new ModuleInfo   (ctxRef, MMP_MOD::INF.name   ));
     mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
     mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
     mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
     mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
     mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
+    //│
+    //○開始表示
+    Serial.println("---------------------------");
+    Serial.println("<<機能モジュールの初期化>>");
+    //│
+    //◎┐機能モジュールをログ表示
+    for (auto* m : mods){
+      //│＼（全機能モジュールを走査し終えた場合）
+      //│ ▼ループ処理を中断
+      //│
+      //●機能名を表示
+      Serial.println(String("　installed  : ") + String(m->getModName()));
+      //┴
+    } /* END-for */
+    //│
+    //○終了表示
+    Serial.println("");
+    //┴
 } /* Init() */
 
 private:
@@ -131,7 +153,7 @@ private:
   for (size_t i = 0; i < MMP_MOD::COUNT; ++i){
     const T_MMP_MOD& def = *MMP_MOD::LIST[i];
     if (strcmp(argName, def.name) == 0){ col = def; break; }
-  } /* for */
+  } /* END-for */
   //│
   //○LEDを発光
   INO_PIXEL.setPixelColor(0, INO_PIXEL.Color(col.g, col.r, col.b));
@@ -214,7 +236,7 @@ public:
             //┴
         //┴
       //┴
-      } /* for */
+      } /* END-for */
     //│
     //○エラーメッセージを返却
     return "#CMD!"; //コマンド名不正

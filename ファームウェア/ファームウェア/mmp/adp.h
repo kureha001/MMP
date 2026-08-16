@@ -1,13 +1,13 @@
 // filename : adp.h
 //========================================================
 // 通信アダプタ共通
-//  - 経路IDの提供
-//  - クライアント管理機能の提供
+//  - サービス・アダプタの共通資源を提供
+//  - サービス・アダプタの初期化
+//  - サービス・アダプタのハンドルをキック
 //--------------------------------------------------------
 // Ver 1.0.1 (2026/08/13) α版
 //========================================================
 #pragma once
-
 //┬
 //■┐インクルード
   //■Arduinoシステム
@@ -22,7 +22,7 @@
   //─────────────────
   // コンテクスト
   //─────────────────
-  extern MmpContext ctx; // 所在：mmpCtx.h、実装：mmp.ino
+  extern MmpContext ctx;
 
 //========================================================
 // 基本情報
@@ -188,30 +188,40 @@
     String P5_RUN();
 
 
-
 //━━━━━━━━━━━━━━━━━
-// 初期化処理
+// アダプタの公開情報
 //━━━━━━━━━━━━━━━━━
-namespace adpSerial{
-    extern bool ENABLED;
-    void start();
-    void handle();
-}
+  //【通信アダプタ：シリアル】
+  namespace adpSerial{
+    extern bool ENABLED ; // 有効性
+    void start()        ; // サービス開始の指示
+    void handle()       ; // ポーリングのハンドル
+  }
 
-namespace adpTcp{
-    extern bool ENABLED;
-    void start(uint16_t port);
-    void handle();
-}
+  //【通信アダプタ：ＴＣＰブリッジ】
+  namespace adpTcp{
+    extern int  SRV_PORT; // サーバのポート
+    extern bool ENABLED ; // 有効性
+    void start()        ; // サービス開始の指示
+    void handle()       ; // ポーリングのハンドル
+  }
 
-namespace adpHttp{
-    extern bool ENABLED;
-    void start(uint16_t port);
-    void handle();
-}
+  //【通信アダプタ：ＷＥＢ ＡＰＩ】
+  namespace adpHttp{     
+    extern int  SRV_PORT; // サーバのポート
+    extern bool ENABLED ; // 有効性
+    void start()        ; // サービス開始の指示
+    void handle()       ; // ポーリングのハンドル
+  }
 
-namespace adpAdmin{
-    extern bool ENABLED;
-    void start(uint16_t port);
-    void handle();
-}
+  //【ＷＥＢアダプタ：管理画面】
+  namespace adpAdmin{
+    extern int  SRV_PORT; // サーバのポート
+    extern bool ENABLED ; // 有効性
+    void start()        ; // サービス開始の指示
+    void handle()       ; // ポーリングのハンドル
+  }
+
+  // サービス・アダプタ
+  void InitAdapter(); // 初期化
+  void kickHandle() ; // ハンドルをキック

@@ -43,7 +43,6 @@ namespace adpBLE {
   //─────────────────
   // ➡【該当処理なし】※常時接続は対象外
 
-
 //========================================================
 // Ｃ．接続情報
 //========================================================
@@ -59,9 +58,9 @@ namespace adpBLE {
     // 領域確保：構造体の派生→実体化
     //─────────────────
     struct T_SS_SLOT : T_SS_BASE{
-      uint16_t connId            = 0;
-      bool     isConnected       = false;
-      BLECharacteristic* pTxChar = nullptr;
+      bool               connected = false  ; // 接続判定フラグ
+      String             conn_rx   = ""     ; // 受信（onWriteイベントでフレーム上書）
+      BLECharacteristic* conn_tx   = nullptr; // 送信（参照）
     };
     static T_SS_SLOT* ssTBL = nullptr;
 
@@ -70,8 +69,9 @@ namespace adpBLE {
     //─────────────────
     void INI_SS_SLOT(T_SS_SLOT& argSlot){
       INI_SS_SLOT_BASE(argSlot);
-      argSlot.isConnected = false  ; // 通信を切断
-      argSlot.pTxChar     = nullptr; // 送信バッファをクリア
+      argSlot.connected = false  ; // 接続判定フラグを切断
+      argSlot.conn_rx   = ""      ; // 受信をクリア
+      argSlot.conn_tx   = nullptr; // 送信の参照解除
     } /* INI_SS_SLOT */
 
   //─────────────────
@@ -80,15 +80,9 @@ namespace adpBLE {
   void SS_CREATE_TBL(){
     //┬
     //○領域を確保
-    ssTBL = new T_SS_SLOT[SS_SLOTS]; // 通信経路別の規定値
-    //│
-    //◎┐TBL全体を初期化
-    for (int id = 0; id < SS_SLOTS ; id++) INI_SS_SLOT(ssTBL[id]);
-      //│＼（全スロットを走査し終えた場合）
-      //│ ▼ループ処理を中断
-      //│
-      //●このスロットを初期化
-      //┴
+    // ※シングルスロット運用のためサイズは 1 に固定
+    ssTBL = new T_SS_SLOT[1]; 
+    INI_SS_SLOT(ssTBL[0]);
     //┴
   } /* SS_CREATE_TBL() */
 
@@ -104,46 +98,27 @@ namespace adpBLE {
   // 空きスロットを照会
   //----------------------------------
   int SS_GET_FREE_ID() {
-    //┬
-    //◎┐先頭から走査
-    for (int id = 0; id < SS_SLOTS; id++) {
-      //│＼（全スロットを走査し終えた場合）
-      //│ ▼ループ処理を中断
-      //│
-      //○スロットを確認
-      if (!ssTBL[id].used) return id;
-      //│ ＼（未使用の場合）
-      //│  ▼当該スロットIDを返す
-      //┴
-    } /* END-for */
-    //│
-    //▼エラーコードを返す(空きスロットがない)
-    return -1;
-    //┴
+  //　➡【該当処理なし】※マルチ接続系が対象
   } /* SS_GET_FREE_ID() */
 
   //─────────────────
   // 接続を登録（BLE接続開始時）
   //─────────────────
-  void SS_ATTACH_SLOT(
-    uint16_t connId,
-    BLECharacteristic* pTxChar
-  ){
+  void SS_ATTACH_SLOT(){
     //┬
     //●空きスロットを探す
-    int id = SS_GET_FREE_ID();
-    if (id < 0) return;
+    if (ssTBL[0].used) return;
     //│ ＼（空きスロットがない）
     //│  ▼次を探す
     //│
     //●スロットを初期化
-    INI_SS_SLOT(ssTBL[id]);
+    INI_SS_SLOT(ssTBL[0]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[id].connId      = connId; // 接続IDを格納
-    ssTBL[id].isConnected = true;
-    ssTBL[id].pTxChar     = pTxChar;
-    ssTBL[id].used        = true;
+    ssTBL[0].used      = true; // 使用中
+    ssTBL[0].connected = true; // 接続判定フラグを接続
+    ssTBL[0].conn_rx   = ""  ; // 受信をクリア
+    ssTBL[0].conn_tx   = devBLE::BLE_TX; // 送信の参照
     //┴
   } /* SS_ATTACH_SLOT() */
 
@@ -160,10 +135,11 @@ namespace adpBLE {
   ){
     //┬
     //○メッセージをレスポンス
-    if (argSS.isConnected && argSS.pTxChar != nullptr) {
-      argSS.pTxChar->setValue(argMSG.c_str());
-      argSS.pTxChar->notify();
+    if (argSS.connected && argSS.conn_tx != nullptr) {
+      argSS.conn_tx->setValue(argMSG.c_str());
+      argSS.conn_tx->notify();
     } /* END-if */
+    ctx.strFrame = "";
     //┴
   } /* SEND_CONN() */
 
@@ -175,35 +151,22 @@ namespace adpBLE {
   // １．接続状態を確認
   //----------------------------------
   //【詳細】
-  // 切断の場合は当該スロットを廃棄
+  // イベントドリブンなので確認は不要
   //----------------------------------
   // 戻り値：接続状態（論理値）
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
-  bool P1_CONNECT(T_SS_SLOT& argSS){
-    //┬
-    //◇┐接続状態を判定
-    if (argSS.isConnected) {
-      //├┐（通常の場合）
-        //▼RETURN：接続中
-      return false; // 接続中
-    } else {
-      //└┐（その他：切断の場合）
-        //●スロットを廃棄
-        //▼RETURN：切断中
-        SS_DETACH_SLOT(argSS);
-        return true;  // 切断中
-    } // END-if */
-    //┴
-  } /* P1_CONNECT() */
+  bool P1_CONNECT(T_SS_SLOT&  argSS){return false;}
 
   //─────────────────
   // ２．フレームを取得(データ受信)
   // ※データ受信：Writeイベントから呼び出し
   //----------------------------------
-  // 処理継続を判定は、一律で不可能とする。
+  // 受信イベントが先回りして実行する。
+  // そのため、P2_MAKE_FRAME()を介さない。
   // 終端文字を見つけた場合、フレームをコンテクストに反映する。
+  // 受信継続の判定は、一律で不可能とする。
   //----------------------------------
   //【詳細】
   // データ受信単位  ：フレーム単位
@@ -211,46 +174,51 @@ namespace adpBLE {
   // 受信継続判定    ：しない
   // フレーム終端判定：する
   //----------------------------------
-  // 戻り値：処理継続の判定（論理値）
-  // ・true ：不可能
-  // ・false：可能
+  // 戻り値：受信継続の要否（論理値）
+  // ・true ：不要
+  // ・false：必要
   //─────────────────
-  bool P21_RECEIVE(T_SS_SLOT& argSS, const String& incomingData){
-    //○受信データをバッファに追加
-    argSS.rx += incomingData;
-
-    //○オーバーフローを確認
+  bool P21_RECEIVE(T_SS_SLOT& argSS){
+    //┬
+    //○受信データを受信バッファに加える
+    argSS.rx += argSS.conn_rx;
+    //│
+    //○受信バッファのオーバーフローを確認
     if (argSS.rx.length() > SS_RX_SIZE) {
-      argSS.isOverflow = true;
-      argSS.rx = "";
-      SEND_CONN(argSS, "#DFL!");
-      return true;
-    }
-
-    //○終端文字を確認
+    //│ ＼（オーバーフローになった場合）
+        //●エラーコードをレスポンス
+        //▼RETURN:不可能(オーバーフローが発生)
+        argSS.isOverflow = true;
+        argSS.rx = "";
+        SEND_CONN(argSS, "#DFL!");
+        return true;
+    } /* END-if */
+    //│
+    //○取り込み状態を確認
     if (!argSS.rx.endsWith("!")) {
-      return true; // 未完成
-    }
-
-    //○フレーム完成時の処理
-    if (!argSS.isOverflow) {
-      P2_FORMAT_URI(argSS.rx);
-      ctx.strFrame = argSS.rx;
-    } else {
-      argSS.isOverflow = false;
-      SEND_CONN(argSS, "#DFL!");
-    }
-
+    //│ ＼（終端に達していない場合）
+        //●エラーコードをレスポンス
+        //▼RETURN:不可能(フレームが未完成)
+        SEND_CONN(argSS, "#CMD!");
+        return true;
+    } /* END-if */
+    //│
+    //●受信バッファをURI形式に変換
+    //○コンテクストにフレームをセット
+    P2_FORMAT_URI(argSS.rx);
+    ctx.strFrame = argSS.rx;
+    //│
+    //▼RETURN:不可能
     argSS.rx = "";
-    return false; // フレーム完成
+    return true ; // フレーム完成
+    //┴
   } /* P21_RECEIVE() */
 
   //─────────────────
   // ２．フレームを取得
   //----------------------------------
   // フレームの作成状況を判定する。
-  // Writeイベントドリブンでバッファに蓄積されるため、
-  // コンテクストにフレームがセットされているかを判定する
+  // ※受信イベントが先回りしてP21_RECEIVE()を実行済み。
   //----------------------------------
   //【詳細】
   // フレーム化処理  ：する
@@ -322,58 +290,86 @@ namespace adpBLE {
     //●６．実行結果をレスポンス
     SEND_CONN(argSS, resMMP);
     //┴
-
-    // 処理完了後、フレームをクリア
-    ctx.strFrame = "";
-
-} /* routeMMP() */
+  } /* routeMMP() */
 
 
 //========================================================
 // Ｇ．初期化・ポーリング
 //========================================================
-  // BLEイベントコールバック用クラス
-  class ServerCallbacks : public BLEServerCallbacks {
-
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // BLEイベントコールバック：サーバ用
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  class Callback_Server : public BLEServerCallbacks {
+    //─────────────────
+    // 接続イベント
+    //─────────────────
     void onConnect(BLEServer* pServer) override {
-      SS_ATTACH_SLOT(0, devBLE::BLE_TX);
+      //┬
+      //○接続状況を確認
+      if (ssTBL[0].connected) return;
+      //│ ＼（参加済みの場合）
+          //▼RETURN：これ以上は参加させない
+      //│
+      //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
+      if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
+      //│
+      //●スロットを割り当て
+      SS_ATTACH_SLOT();
+      //┴
     } /* onConnect() */
 
+    //─────────────────
+    // 切断イベント
+    //─────────────────
     void onDisconnect(BLEServer* pServer) override {
-      if (devBLE::MY_SRV != nullptr) {
-        devBLE::MY_SRV->startAdvertising();
-      }
+      //┬
+      //●スロットを破棄
+      if (ssTBL != nullptr) SS_DETACH_SLOT(ssTBL[0]);
+      //│
+      //○アドバタイジングを再開
+      if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
+      //┴
     } /* onDisconnect() */
-  }; /* ServerCallbacks */
+  }; /* Callback_Server */
 
-  class CharacteristicCallbacks : public BLECharacteristicCallbacks {
-
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // BLEイベントコールバック：クライアント用
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  class Callback_Client : public BLECharacteristicCallbacks {
+    //─────────────────
+    // 受信イベント
+    //─────────────────
     void onWrite(BLECharacteristic *pCharacteristic) override {
-
-      String rxValue = pCharacteristic->getValue();
-
-      if (rxValue.length() > 0) {
-
-        // 現在有効なスロットに対して受信データを流し込む（単一/マルチ対応）
-        for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
-
-          if (ssTBL[slotID].used && ssTBL[slotID].isConnected) {
-
-            P0_SETUP_CTX(ROUTE_ID, slotID);
-
-            if (P21_RECEIVE(ssTBL[slotID], rxValue)) {
-              routeMMP(ssTBL[slotID]);
-              ctx.strFrame = "";
-              break;
-            } /* END-if  */
-          } /* END-if  */
-        } /* END-for */
-      } /* END-if  */
+      //┬
+      //○未取り込みデータを受信（getValue()参照後は消費されない）
+      ssTBL[0].conn_rx = pCharacteristic->getValue();
+      if (ssTBL[0].conn_rx.length() < 1) return;
+      //│ ＼（空の場合）
+          //▼RETURN
+      //│
+      //○状態を確認
+      if (!ssTBL[0].used || !ssTBL[0].connected) return;
+      //│ ＼（スロットが使用不可 または 切断中の場合）
+          //▼RETURN
+      //│
+      //●コンテクストをセットアップ
+      P0_SETUP_CTX(ROUTE_ID, 0);
+      //│
+      //◇┐データ受信
+        if (P21_RECEIVE(ssTBL[0])) {
+        //├┐（フレームを取り込めた場合）
+          //●スロット処理を指示
+          routeMMP(ssTBL[0]);
+          ctx.strFrame = "";
+        //└┐（その他）
+          //┴
+        } /* END-if  */
+    //┴
     } /* onWrite() */
-  }; /* CharacteristicCallbacks */
+  }; /* Callback_Client */
 
-  static ServerCallbacks srvCallbacks;
-  static CharacteristicCallbacks chrCallbacks;
+  static Callback_Server ON_CONNECTION; // 接続・切断
+  static Callback_Client ON_RECIVE    ; // データ受信
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
@@ -395,6 +391,7 @@ namespace adpBLE {
     } /* END-if */
     //│
     //○２．サーバ資源生成
+    //　➡【該当処理なし】※BLEサーバが対象
     //│
     //○３．接続情報TBLを作成
     SS_CREATE_TBL();
@@ -403,9 +400,9 @@ namespace adpBLE {
     // ➡【該当処理なし】※Webサーバが対象
     //│
     //○５．サーバ開始
-    devBLE::MY_SRV->setCallbacks(&srvCallbacks);
+    devBLE::MY_SRV->setCallbacks(&ON_CONNECTION);
     if (devBLE::BLE_RX != nullptr) {
-      devBLE::BLE_RX->setCallbacks(&chrCallbacks);
+      devBLE::BLE_RX->setCallbacks(&ON_RECIVE);
     };
     //│
     //○┐６．成功終了

@@ -425,6 +425,6 @@
     adpSerial::handle();
     adpTcp   ::handle();
     adpHttp  ::handle();
-    adpBLE   ::handle();
+    //adpBLE ::handle(); ※割込み処理されるので実行不要
     adpAdmin ::handle();
   } /* kickHandle() */

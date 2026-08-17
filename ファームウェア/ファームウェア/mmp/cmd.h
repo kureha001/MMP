@@ -1,8 +1,8 @@
-// filename : parser.h
+// filename : cmd.h
 //========================================================
-// コマンド パーサー
-// - 機能モジュールの登録
-// - 機能モジュールへのルーティング
+// コマンド管理
+// - コマンド・モジュールの登録
+// - コマンド・モジュールのルーティング
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/13) α版 
 //・LED表示処理をこちらに移設
@@ -14,14 +14,16 @@
   #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
-  #include "mod.h"    // 抽象基底クラス
-  //★★★ 機能モジュール保守の対応箇所(1/4) ★★★
-  #include "modINF.h" // 機能：システム
-  #include "modANA.h" // 機能：アナログ入力
-  #include "modDIG.h" // 機能：デジタル入出力
-  #include "modPWM.h" // 機能：PWM出力
-  #include "modI2C.h" // 機能：I2C通信
-  #include "modMP3.h" // 機能：MP3プレイヤー
+  #include "cmdAPI.h"  // 抽象基底クラス
+  //│
+  //★★★ コマンド・モジュール保守の対応箇所(1/4) ★★★
+  //■コマンド・モジュール
+  #include "modINF.h" // システム情報
+  #include "modANA.h" // アナログ入力
+  #include "modDIG.h" // デジタル入出力
+  #include "modPWM.h" // PWM出力
+  #include "modI2C.h" // I2C通信
+  #include "modMP3.h" // MP3プレイヤー
   //┴
 //┴
 
@@ -41,13 +43,13 @@
   //─────────────────
   // パーサ公開
   //─────────────────
-  class  Parser             ; // 前方宣言
-  extern Parser* INO_PARSER ; // ※実体の所有者はスケッチ（依存方向制御用公開ポインタ）
+  class  CmdManager         ; // 前方宣言
+  extern CmdManager* INO_CMD; // ※実体の所有者はスケッチ
 
   //─────────────────
   // 各アダプタからの進行移譲先
   //─────────────────
-  String MMP_REQUEST()      ; // 前方宣言
+  String RUN_COMMAND(); // 前方宣言
 
   //─────────────────
   // クライアントからのリクエスト条件
@@ -57,27 +59,31 @@
 
 
 //========================================================
-// 機能モジュール定義
+// コマンド・モジュール定義
 //========================================================
-  struct T_MMP_MOD {
+  struct T_MOD {
     const char* name;
     uint8_t     r;
     uint8_t     g;
     uint8_t     b;
   };
 
+
+//########################################################
+//# 専用名の前空間
+//########################################################
   namespace MMP_MOD {
 
-    //★★★ 機能モジュール保守の対応箇所(2/4) ★★★
-    static const T_MMP_MOD INF    = { "INF"   ,  5,  5,  5 };
-    static const T_MMP_MOD ANA_I  = { "ANA_I" , 10,  0, 10 };
-    static const T_MMP_MOD DIG_IO = { "DIG_IO", 10,  0,  0 };
-    static const T_MMP_MOD PWM    = { "PWM"   ,  0,  0, 50 };
-    static const T_MMP_MOD I2C    = { "I2C"   , 10, 10,  0 };
-    static const T_MMP_MOD MP3    = { "MP3"   ,  0, 10,  0 };
+    //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
+    static const T_MOD INF    = { "INF"    ,  5,  5,  5 };
+    static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
+    static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
+    static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
+    static const T_MOD I2C    = { "I2C"    , 10, 10,  0 };
+    static const T_MOD MP3    = { "MP3"    ,  0, 10,  0 };
 
-    //★★★ 機能モジュール保守の対応箇所(3/4) ★★★
-    static const T_MMP_MOD* const LIST[] = {
+    //★★★ コマンド・モジュール保守の対応箇所(3/4) ★★★
+    static const T_MOD* const LIST[] = {
       &INF,
       &ANA_I,
       &DIG_IO,
@@ -93,13 +99,13 @@
 //========================================================
 // クラス：コマンドパーサ
 //========================================================
-class Parser {
+class CmdManager {
   //┬
   //□コンテクスト(ポインタ)
   MmpContext&               ctxRef;     // ※スケッチで依存注入
   //｜
   //□保有情報
-  std::vector<ModuleBase*>  mods;       // 機能モジュール群
+  std::vector<ModuleBase*>  mods;       // コマンド・モジュール群
   //┴
 
 public:
@@ -107,15 +113,15 @@ public:
   // コンストラクタ
   // ※スケッチで実装化
   //━━━━━━━━━━━━━━━━━
-  Parser(MmpContext& c): ctxRef(c) {}
+  CmdManager(MmpContext& c): ctxRef(c) {}
 
   //─────────────────
-  // パーサーの初期化
+  // コマンド・モジュールの初期化
   //─────────────────
   void Init(){
     //┬
-    //○モジュールベースに登録
-    //★★★ 機能モジュール保守の対応箇所(4/4) ★★★
+    //○コマンド・モジュールを登録
+    //★★★ コマンド・モジュール保守の対応箇所(4/4) ★★★
     mods.push_back(new ModuleInfo   (ctxRef, MMP_MOD::INF.name   ));
     mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
     mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
@@ -125,14 +131,14 @@ public:
     //│
     //○開始表示
     Serial.println("---------------------------");
-    Serial.println("<<機能モジュールの初期化>>");
+    Serial.println("<<コマンド・モジュールの初期化>>");
     //│
-    //◎┐機能モジュールをログ表示
+    //◎┐ログを表示
     for (auto* m : mods){
-      //│＼（全機能モジュールを走査し終えた場合）
+      //│＼（全モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
-      //●機能名を表示
+      //●モジュール名を表示
       Serial.println(String("　installed  : ") + String(m->getModName()));
       //┴
     } /* END-for */
@@ -144,14 +150,14 @@ public:
 
 private:
   //━━━━━━━━━━━━━━━━━
-  // 機能名を表示
+  // モジュール名を表示
   //━━━━━━━━━━━━━━━━━
   void SHOW_NAME(const char* argName){
   //┬
-  //◎┐機能名に対応するRGB値を取得
-  T_MMP_MOD col = {nullptr, 255, 255, 255}; // 初期値
+  //◎┐モジュール名に対応するRGB値を取得
+  T_MOD col = {nullptr, 255, 255, 255}; // 初期値
   for (size_t i = 0; i < MMP_MOD::COUNT; ++i){
-    const T_MMP_MOD& def = *MMP_MOD::LIST[i];
+    const T_MOD& def = *MMP_MOD::LIST[i];
     if (strcmp(argName, def.name) == 0){ col = def; break; }
   } /* END-for */
   //│
@@ -217,16 +223,16 @@ public:
       //○仮想出力ストリームを初期化
       ctx.vStream.clear();
       //│
-      //◎┐機能モジュールを走査
+      //◎┐モジュールを走査
       for (auto* m : mods){
-        //│＼（全機能モジュールを走査し終えた場合）
+        //│＼（全モジュールを走査し終えた場合）
         //│ ▼ループ処理を中断
         //│
-        //◇┐当該機能モジュールを実行
+        //◇┐当該モジュールを実行
         if (m->owns(dat[0])){
           //├→(コマンドが在籍する場合)
-            //●機能名を表示
-            //○機能モジュールを実行
+            //●モジュール名を表示
+            //○モジュールを実行
             //▼実行結果をリターン
             SHOW_NAME(m->getModName());
             m->handle(dat, regCount);          
@@ -242,19 +248,17 @@ public:
     return "#CMD!"; //コマンド名不正
     //┴
   } /* RunCommand() */
-}; /* class Parser */
+}; /* class CmdManager */
 
 //========================================================
 // 公開関数
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 各アダプタからの進行移譲先
-  //----------------------------------
-  // パーサのメソッドをエイリアス
   //━━━━━━━━━━━━━━━━━
-  inline String MMP_REQUEST(){
+  inline String RUN_COMMAND(){
   //┬
   //○コマンド・パース処理
-  return INO_PARSER->RunCommand();
+  return INO_CMD->RunCommand();
   //┴
-  } /* MMP_REQUEST() */
+  } /* RUN_COMMAND() */

@@ -29,7 +29,7 @@
 
 
 //########################################################
-// ネームスペース：シリアル用
+//# 専用名の前空間
 //########################################################
 namespace devSerial {
 //========================================================
@@ -130,6 +130,7 @@ namespace devSerial {
     Serial.println(" [Serial initialize]"  );
     Serial.println("　USB (CDC)      : OK");
     Serial.println("　UART(#01)      : OK");
+    Serial.println("");
 
     //○有効性セット
     ENABLED = true;

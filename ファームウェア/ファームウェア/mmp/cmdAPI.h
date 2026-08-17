@@ -1,14 +1,11 @@
-// filename : mod.h
+// filename : cmdAPI.h
 //========================================================
-// 機能モジュール：共通
+// コマンドAPI
 //  - コンテキストの提供
 //  - 抽象基底クラスの提供
-//  - RAIIガード機能の提供
 //  - ユーティリティの提供
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/13) α版 
-//・LED表示処理を廃止
-//・コンテクストを別ファイルに分離
 //========================================================
 #pragma once
 //┬
@@ -34,7 +31,7 @@
   #define DAT_LENGTH 20 // 上記1個あたりの上限バイト数
 
 //========================================================
-// クラス：機能モジュールの抽象基底クラス
+// コマンド・モジュールの抽象基底クラス
 //========================================================
 class ModuleBase {
 protected:
@@ -44,7 +41,7 @@ protected:
     //□コンテクスト(参照)
     MmpContext& ctx;
     //│
-    //□機能名
+    //□モジュール名
     const char* modName;
     //┴
 
@@ -53,10 +50,10 @@ public:
   //○コンストラクタ
   ModuleBase(
     MmpContext& argCtx    , // 引数：コンテクスト
-    const char* argModName  // 引数：機能名
+    const char* argModName  // 引数：モジュール名
   ):
   ctx(argCtx)             , // 引数をコンテクスト(参照メンバ)に結び付ける
-  modName(argModName)       // 引数を機能名(メンバ)にセット
+  modName(argModName)       // 引数をモジュール名(メンバ)にセット
   {} // 処理なし
   //┴
 
@@ -69,14 +66,14 @@ public:
   //┬
   //□┐共通インタフェイス
     //│
-    //□機能名
+    //□モジュール名
     const   char* getModName() const {return modName;}
     //│
     //□コマンド在籍確認
     bool owns(const char* cmd) const {
       // 空なら早期リターン
       if (!cmd || !modName) return false;
-      // コマンド名と機能名を比較し判定
+      // コマンド名とモジュール名を比較し判定
       const size_t nameLen = strlen(modName);
       return strncmp(cmd, modName, nameLen) == 0
         && (cmd[nameLen] == '\0' || cmd[nameLen] == '/');

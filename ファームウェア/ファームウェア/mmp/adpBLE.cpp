@@ -1,35 +1,39 @@
-// filename : adpSerial.cpp
+// filename : adpBLE.cpp
 //========================================================
-// 通信アダプタ：シリアル
+// 通信アダプタ：ＢＬＥブリッジ
 //--------------------------------------------------------
-//【常時接続・切断時スロット維持型】
-//・基本処理      ：受信→コマンド実行→結果返却
-//・スロット構成  ：物理ポート毎に１スロットを占有
+//【常時接続：切断時スロット開放型】
+//・基本処理       ：接続確認→受信(Writeイベント)→コマンド実行→結果返却
+//・スロット構成   ：BLE接続毎に空スロットに動的割り当て
 //・ポーリング跨ぎ：対応 ※通信状態は継続的に保持
-//・ユーザ認証    ：常時接続のため行わない
+//・ユーザ認証     ：行わない ※TCPと同様
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/13) α版 
+// Ver 1.1.0 (2026/08/17) α版 
 //========================================================
 #pragma once
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <BLEDevice.h>
+  #include <BLEServer.h>
+  #include <BLEUtils.h>
+  #include <BLE2902.h>
   //│
   //■ＭＭＰシステム
   #include "adp.h" // 通信アダプタ共通
+  #include "dev.h" // 統合デバイス定義（devBLEの公開資源を含む）
   //┴
 //┴
 
 //########################################################
 //# 専用名の前空間
 //########################################################
-namespace adpSerial {
+namespace adpBLE {
 //========================================================
 // Ａ．基本情報
 //========================================================
-  static constexpr int ROUTE_ID = ROUTE_ID_SERIAL; // 経路IDを定義
+  static constexpr int ROUTE_ID = ROUTE_ID_BLE; // 経路IDを定義
   bool ENABLED = false; // ハンドル有効判定：有効：true、無効：false
-
 
 //========================================================
 // Ｂ．ユーザ認証
@@ -37,7 +41,7 @@ namespace adpSerial {
   //─────────────────
   // スロット
   //─────────────────
-  //　➡【該当処理なし】※常時接続は対象外
+  // ➡【該当処理なし】※常時接続は対象外
 
 
 //========================================================
@@ -46,16 +50,19 @@ namespace adpSerial {
   //━━━━━━━━━━━━━━━━━
   // スロット
   //----------------------------------
-  // 資源：Stream* (参照)
-  // 所有：しない ※Arduinoに存在する資源を参照
-  // 参照：外部生成されたストリーム資源
-  // 割当：物理ポートごとに１スロット
-  // 持続：永続的に利用 ※start()で一度だけ初期化
+  // 資源：接続状態および送信用キャラクタリスティック
+  // 所有：BLE接続のオブジェクトを所有する
+  // 割当：BLE接続ごとに１スロット
+  // 持続：接続中に生成／切断で破棄
   //━━━━━━━━━━━━━━━━━
     //─────────────────
     // 領域確保：構造体の派生→実体化
     //─────────────────
-    struct T_SS_SLOT : T_SS_BASE { Stream* conn = nullptr; };
+    struct T_SS_SLOT : T_SS_BASE{
+      uint16_t connId            = 0;
+      bool     isConnected       = false;
+      BLECharacteristic* pTxChar = nullptr;
+    };
     static T_SS_SLOT* ssTBL = nullptr;
 
     //─────────────────
@@ -63,69 +70,82 @@ namespace adpSerial {
     //─────────────────
     void INI_SS_SLOT(T_SS_SLOT& argSlot){
       INI_SS_SLOT_BASE(argSlot);
-      argSlot.conn = nullptr; // 資源の参照を解除
-    }
+      argSlot.isConnected = false  ; // 通信を切断
+      argSlot.pTxChar     = nullptr; // 送信バッファをクリア
+    } /* INI_SS_SLOT */
 
   //─────────────────
   // 接続情報TBLを作る
   //----------------------------------
-  // 戻り値：なし
-  //─────────────────
-  void CREATE_SS_TBL(){
+  void SS_CREATE_TBL(){
     //┬
     //○領域を確保
-    ssTBL = new T_SS_SLOT[PORTS_SERIAL]; // シリアルポート総数
+    ssTBL = new T_SS_SLOT[SS_SLOTS]; // 通信経路別の規定値
     //│
     //◎┐TBL全体を初期化
-    for (int id = 0; id < PORTS_SERIAL; id++) INI_SS_SLOT(ssTBL[id]);
+    for (int id = 0; id < SS_SLOTS ; id++) INI_SS_SLOT(ssTBL[id]);
       //│＼（全スロットを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
       //●このスロットを初期化
       //┴
     //┴
-  } /* CREATE_SS_TBL() */
+  } /* SS_CREATE_TBL() */
 
   //─────────────────
   // スロットを開放
   //----------------------------------
-  // スロットを管理から外す
-  //----------------------------------
-  // 戻り値：なし
-  //─────────────────
   void SS_DETACH_SLOT(T_SS_SLOT& argSlot){
-  //　➡【該当処理なし】※マルチ接続系が対象
+    // 接続を切断は不要？
+    INI_SS_SLOT(argSlot);
   } /* SS_DETACH_SLOT() */
 
   //─────────────────
   // 空きスロットを照会
   //----------------------------------
-  // 該当条件：未使用
-  //----------------------------------
-  // 戻り値：
-  // ・0,1,2...：空きスロットのID
-  // ・-1：空きスロットが無い
-  //─────────────────
   int SS_GET_FREE_ID() {
-  //　➡【該当処理なし】※マルチ接続系が対象
+    //┬
+    //◎┐先頭から走査
+    for (int id = 0; id < SS_SLOTS; id++) {
+      //│＼（全スロットを走査し終えた場合）
+      //│ ▼ループ処理を中断
+      //│
+      //○スロットを確認
+      if (!ssTBL[id].used) return id;
+      //│ ＼（未使用の場合）
+      //│  ▼当該スロットIDを返す
+      //┴
+    } /* END-for */
+    //│
+    //▼エラーコードを返す(空きスロットがない)
+    return -1;
+    //┴
   } /* SS_GET_FREE_ID() */
 
   //─────────────────
-  // 接続を登録
-  //----------------------------------
-  // 開始処理で「一度だけ」実行すること
+  // 接続を登録（BLE接続開始時）
   //─────────────────
-  void ATTACH_SS_SLOT(){
+  void SS_ATTACH_SLOT(
+    uint16_t connId,
+    BLECharacteristic* pTxChar
+  ){
     //┬
-    //○スロットに[USB-CDC]接続を登録
-    ssTBL[0].conn   = &Serial  ; // 接続を登録(既存オブジェクトを指す)
-    ssTBL[0].used   = true     ; // 使用中
+    //●空きスロットを探す
+    int id = SS_GET_FREE_ID();
+    if (id < 0) return;
+    //│ ＼（空きスロットがない）
+    //│  ▼次を探す
     //│
-    //○スロットに[UART1]接続を登録
-    ssTBL[1].conn   = &Serial1 ; // 接続を登録(既存オブジェクトを指す)
-    ssTBL[1].used   = true     ; // 使用中
+    //●スロットを初期化
+    INI_SS_SLOT(ssTBL[id]);
+    //│
+    //○スロットに新規接続を登録
+    ssTBL[id].connId      = connId; // 接続IDを格納
+    ssTBL[id].isConnected = true;
+    ssTBL[id].pTxChar     = pTxChar;
+    ssTBL[id].used        = true;
     //┴
-  } /* ATTACH_SS_SLOT() */
+  } /* SS_ATTACH_SLOT() */
 
 
 //========================================================
@@ -140,7 +160,10 @@ namespace adpSerial {
   ){
     //┬
     //○メッセージをレスポンス
-    argSS.conn->print(argMSG);
+    if (argSS.isConnected && argSS.pTxChar != nullptr) {
+      argSS.pTxChar->setValue(argMSG.c_str());
+      argSS.pTxChar->notify();
+    } /* END-if */
     //┴
   } /* SEND_CONN() */
 
@@ -152,110 +175,96 @@ namespace adpSerial {
   // １．接続状態を確認
   //----------------------------------
   //【詳細】
-  // 常時接続の物理ポートなので確認は不要
+  // 切断の場合は当該スロットを廃棄
   //----------------------------------
   // 戻り値：接続状態（論理値）
   // ・false：接続中
   // ・true ：切断中
   //─────────────────
-  bool P1_CONNECT(T_SS_SLOT&  argSS){return false;}
+  bool P1_CONNECT(T_SS_SLOT& argSS){
+    //┬
+    //◇┐接続状態を判定
+    if (argSS.isConnected) {
+      //├┐（通常の場合）
+        //▼RETURN：接続中
+      return false; // 接続中
+    } else {
+      //└┐（その他：切断の場合）
+        //●スロットを廃棄
+        //▼RETURN：切断中
+        SS_DETACH_SLOT(argSS);
+        return true;  // 切断中
+    } // END-if */
+    //┴
+  } /* P1_CONNECT() */
 
   //─────────────────
   // ２．フレームを取得(データ受信)
+  // ※データ受信：Writeイベントから呼び出し
   //----------------------------------
-  // 受信内容や状況から、受信データの取り込みを継続するかを判定する。
-  // 条件(下記3を参照)を満たした場合、フレームをコンテクストに反映する。
-  // 1.オーバーフローした場合、フラグ[ON]にセットし、処理継続を不可能と判定する。
-  // 2.終端文字でない場合、処理継続を可能と判定する。
-  // 3.終端文字を見つけた場合：
-  //  ・通常            ：フレームをコンテクストに反映し、処理継続を不可能と判定する。
-  //  ・オーバーフロー中：フラグを[OFF]にし、処理継続を不可能と判定する。
+  // 処理継続を判定は、一律で不可能とする。
+  // 終端文字を見つけた場合、フレームをコンテクストに反映する。
   //----------------------------------
   //【詳細】
-  // データ受信単位  ：1byte[conn->read()] ★★参照★★
-  // 受信バッファ    ：する ※ポーリング跨ぎにも対応
-  // 受信継続判定    ：する ※オーバーフロー/終端文字/オーバーフロー解除/フレーム完成
-  // フレーム終端判定：する ※データ受信単位で確認
+  // データ受信単位  ：フレーム単位
+  // 受信バッファ    ：しない
+  // 受信継続判定    ：しない
+  // フレーム終端判定：する
   //----------------------------------
   // 戻り値：処理継続の判定（論理値）
   // ・true ：不可能
   // ・false：可能
   //─────────────────
-  bool P21_RECEIVE(T_SS_SLOT&  argSS){
-    //┬
-    //○受信データを受信バッファに加える
-    argSS.rx += (char)argSS.conn->read(); //★★参照★★
-    //│
-    //○受信バッファのオーバーフローを確認
+  bool P21_RECEIVE(T_SS_SLOT& argSS, const String& incomingData){
+    //○受信データをバッファに追加
+    argSS.rx += incomingData;
+
+    //○オーバーフローを確認
     if (argSS.rx.length() > SS_RX_SIZE) {
-    //│ ＼（オーバーフローになった場合）
-        //▼当該スロットIDを返す
-        //○オーバーフロー中へ移行
-        //○受信バッファの内容を破棄
-        //▼RETURN:不可能(オーバーフローが発生)
-        argSS.isOverflow = true;
-        argSS.rx         = "";
-        return true;
-    } /* END-if */
-    //│
-    //○取り込み状態を確認
-    if (!argSS.rx.endsWith("!")) { return false; }
-    //│ ＼（終端に達していない場合）※受信バッファを維持
-    //│  ▼RETURN:可能(フレームが未完成)
-    //│
-    //◇┐理由別に処理
+      argSS.isOverflow = true;
+      argSS.rx = "";
+      SEND_CONN(argSS, "#DFL!");
+      return true;
+    }
+
+    //○終端文字を確認
+    if (!argSS.rx.endsWith("!")) {
+      return true; // 未完成
+    }
+
+    //○フレーム完成時の処理
     if (!argSS.isOverflow) {
-      //├┐（通常の場合）
-        //●受信バッファをURI形式に変換
-        //○コンテクストにフレームをセット
-        P2_FORMAT_URI(argSS.rx);
-        ctx.strFrame = argSS.rx;
-        //┴
+      P2_FORMAT_URI(argSS.rx);
+      ctx.strFrame = argSS.rx;
     } else {
-      //└┐（その他）
-        //○オーバーフロー中を解除
-        //●エラーコードをレスポンス
-        argSS.isOverflow = false;
-        SEND_CONN(argSS, "#DFL!");
-        //┴
-    } /* END-if */
-    //│
-    //▼RETURN:不可能
+      argSS.isOverflow = false;
+      SEND_CONN(argSS, "#DFL!");
+    }
+
     argSS.rx = "";
-    return true;
-    //┴
+    return false; // フレーム完成
   } /* P21_RECEIVE() */
 
   //─────────────────
   // ２．フレームを取得
   //----------------------------------
   // フレームの作成状況を判定する。
+  // Writeイベントドリブンでバッファに蓄積されるため、
+  // コンテクストにフレームがセットされているかを判定する
   //----------------------------------
   //【詳細】
   // フレーム化処理  ：する
-  // 受信継続判定    ：する[conn->available()] ★★参照★★
+  // 受信継続判定    ：しない
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
   // ・false：完成
   //─────────────────
-  bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
+  bool P2_MAKE_FRAME(T_SS_SLOT& argSS){
     //┬
-    //◎┐受信待ちデータの取り込み
-    while (argSS.conn->available()){     //★★参照★★
-      //│＼（未取り込みデータが空の場合）
-      //│ ▼取り込みを終了
-      //│
-      //●受信バッファに蓄える
-      if (P21_RECEIVE(argSS)) break;
-      //│ ＼（継続が不可能と判断されたの場合）
-      //│  ▼取り込みを打切り
-      //┴
-    } /* END-while */
-    //│
+    //○受信バッファの内容を破棄
     //▼処理継続の判定を返す
     return (ctx.strFrame == "" ? true : false);
-    //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
@@ -286,15 +295,7 @@ namespace adpSerial {
 
 //========================================================
 // Ｆ．ルーティング処理
-//--------------------------------------------------------
-// handle()で明示的に呼び出す
 //========================================================
-  //─────────────────
-  // ルート１：ＭＭＰコマンド
-  //----------------------------------
-  // 引数：
-  // (参)接続情報スロット
-  //─────────────────
   void routeMMP(T_SS_SLOT& argSS){
     //┬
     //○１．接続状態を確認
@@ -321,80 +322,106 @@ namespace adpSerial {
     //●６．実行結果をレスポンス
     SEND_CONN(argSS, resMMP);
     //┴
-  } /* routeMMP() */
 
-  //─────────────────
-  // ルート２：ホスト直下
-  //─────────────────
-  //　➡【該当処理なし】※Webサーバが対象
+    // 処理完了後、フレームをクリア
+    ctx.strFrame = "";
+
+} /* routeMMP() */
+
 
 //========================================================
 // Ｇ．初期化・ポーリング
 //========================================================
+  // BLEイベントコールバック用クラス
+  class ServerCallbacks : public BLEServerCallbacks {
+
+    void onConnect(BLEServer* pServer) override {
+      SS_ATTACH_SLOT(0, devBLE::BLE_TX);
+    } /* onConnect() */
+
+    void onDisconnect(BLEServer* pServer) override {
+      if (devBLE::MY_SRV != nullptr) {
+        devBLE::MY_SRV->startAdvertising();
+      }
+    } /* onDisconnect() */
+  }; /* ServerCallbacks */
+
+  class CharacteristicCallbacks : public BLECharacteristicCallbacks {
+
+    void onWrite(BLECharacteristic *pCharacteristic) override {
+
+      String rxValue = pCharacteristic->getValue();
+
+      if (rxValue.length() > 0) {
+
+        // 現在有効なスロットに対して受信データを流し込む（単一/マルチ対応）
+        for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
+
+          if (ssTBL[slotID].used && ssTBL[slotID].isConnected) {
+
+            P0_SETUP_CTX(ROUTE_ID, slotID);
+
+            if (P21_RECEIVE(ssTBL[slotID], rxValue)) {
+              routeMMP(ssTBL[slotID]);
+              ctx.strFrame = "";
+              break;
+            } /* END-if  */
+          } /* END-if  */
+        } /* END-for */
+      } /* END-if  */
+    } /* onWrite() */
+  }; /* CharacteristicCallbacks */
+
+  static ServerCallbacks srvCallbacks;
+  static CharacteristicCallbacks chrCallbacks;
+
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //----------------------------------
-  // 実行元：iniSerial.h - InitSerial()
+  // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
   void start() {
     //┬
     //○１．前準備の完了状態を確認
-    if (ssTBL) {
-    //│ ＼（接続管理TBLが存在する場合）
+    if (!devBLE::ENABLED) devBLE::start();
+    if (!devBLE::ENABLED || !devBLE::MY_SRV) {
+    //│ ＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
         //▼異常終了
-        Serial.println("　　Serial   : シリアル通信の開始に失敗 ");
-        ENABLED = false; // 無効
-        return;
+      Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
+      ENABLED = false;
+      return;
     } /* END-if */
     //│
     //○２．サーバ資源生成
-    //　➡【該当処理なし】※セットアップ処理で事前に初期化済み
     //│
     //○３．接続情報TBLを作成
-    CREATE_SS_TBL()       ; // 領域確保
-    ATTACH_SS_SLOT()      ; // 常時接続スロットを登録
+    SS_CREATE_TBL();
     //│
     //○４．ルーティング登録
-    //　➡【該当処理なし】※Webサーバが対象
+    // ➡【該当処理なし】※Webサーバが対象
     //│
     //○５．サーバ開始
-    //　➡【該当処理なし】※ネットワーク系が対象
+    devBLE::MY_SRV->setCallbacks(&srvCallbacks);
+    if (devBLE::BLE_RX != nullptr) {
+      devBLE::BLE_RX->setCallbacks(&chrCallbacks);
+    };
     //│
     //○┐６．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　Serial     : OK"));
-      ENABLED = true; // 有効
-      //┴
+      Serial.println(" BLE Bridge : OK");
+      ENABLED = true;
     //┴
   } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
   //━━━━━━━━━━━━━━━━━
-  void handle(){
-    //┬
-    //○１．起動チェック
+  void handle() {
     if (!ENABLED) return;
-    if (!ssTBL  ) return; // 接続情報TBLの状況を評価
-    //│
-    //○２．新規接続のスロットを登録
-    //　➡【該当処理なし】※start()で登録済み
-    //│
-    //◎┐３．ルーティング処理
-    for (int slotID = 0; slotID < PORTS_SERIAL; slotID++) {
-      //│＼（最終うスロットに達した場合）
-      //│ ▼ルーティングを終了
-      //│
-      //●コンテクストをセットアップ
-      //●スロット処理を指示
-      P0_SETUP_CTX(ROUTE_ID, slotID);
-      routeMMP(ssTBL[slotID])        ; // MMPコマンドへルーティング
-      //┴
-      } /* END-for */
-    //┴
+    // BLEはイベント駆動のため定期ポーリングでの処理は不要
   } /* handle() */
 
-} /* namespace adpSerial */
+} /* namespace adpBLE */

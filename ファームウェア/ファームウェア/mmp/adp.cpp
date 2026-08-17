@@ -384,6 +384,7 @@
     case ROUTE_ID_SERIAL: offsetNum = 0                            ; break;
     case ROUTE_ID_TCP   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0; break;
     case ROUTE_ID_HTTP  : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1; break;
+    case ROUTE_ID_BLE   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 2; break;
     }
     //│
     //○アクセスIDをセット（オフセット ＋ スロットID ＋ 認証ID）
@@ -408,8 +409,9 @@
     //│
     //●通信アダプタ
     adpSerial::start();
-    adpHttp  ::start();
     adpTcp   ::start();
+    adpBLE   ::start();
+    adpHttp  ::start();
     //│
     //●ＷＥＢアダプタ
     adpAdmin ::start();
@@ -423,5 +425,6 @@
     adpSerial::handle();
     adpTcp   ::handle();
     adpHttp  ::handle();
+    adpBLE   ::handle();
     adpAdmin ::handle();
   } /* kickHandle() */

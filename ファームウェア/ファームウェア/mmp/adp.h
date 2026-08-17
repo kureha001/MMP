@@ -34,6 +34,7 @@
   static const int ROUTE_ID_SERIAL = 0 ; // シリアル用
   static const int ROUTE_ID_TCP    = 1 ; // TCPブリッジ用
   static const int ROUTE_ID_HTTP   = 2 ; // WebAPI用
+  static const int ROUTE_ID_BLE    = 3 ; // BLE用
 
 
 //========================================================
@@ -209,6 +210,13 @@
   //【通信アダプタ：ＷＥＢ ＡＰＩ】
   namespace adpHttp{     
     extern int  SRV_PORT; // サーバのポート
+    extern bool ENABLED ; // 有効性
+    void start()        ; // サービス開始の指示
+    void handle()       ; // ポーリングのハンドル
+  }
+
+  //【通信アダプタ：Bluetoothブリッジ】
+  namespace adpBLE{
     extern bool ENABLED ; // 有効性
     void start()        ; // サービス開始の指示
     void handle()       ; // ポーリングのハンドル

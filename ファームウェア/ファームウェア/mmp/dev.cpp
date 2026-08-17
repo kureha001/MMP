@@ -28,6 +28,7 @@ void InitDevice() {
   //○通信デバイスを初期化
   devSerial ::start(); // シリアル
   devNetwork::start(); // ネットワーク
+  devBLE    ::start(); // Bluetooth
   //│
   //○終了表示
   // ➡【初期化順序制約】

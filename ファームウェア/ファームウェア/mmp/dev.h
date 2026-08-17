@@ -5,13 +5,16 @@
 // MMPシステムの初期化処理を公開する
 //・シリアル通信の初期化
 //・ネットワーク通信の初期化
+//・Bluetooth通信の初期化
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/15) α版
-//・新規
+// Ver 1.2.0 (2026/08/17) α版
 //========================================================
 #pragma once//┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <BLEDevice.h>
+  #include <BLEServer.h>
+  #include <BLEUtils.h>
   //│
   //■ＭＭＰシステム
 //┴
@@ -29,6 +32,15 @@
   namespace devNetwork{
     extern bool ENABLED ; // 有効性
     void start()        ; // デバイス開始の指示
+  }
+
+  //【Bluetooth】
+  namespace devBLE{
+    extern bool ENABLED             ; // 有効性
+    extern BLEServer*         MY_SRV; // BLEサーバー実体
+    extern BLECharacteristic* BLE_RX; // 受信用キャラクタリスティック
+    extern BLECharacteristic* BLE_TX; // 送信用キャラクタリスティック
+    void start()                    ; // デバイス開始の指示
   }
 
 //━━━━━━━━━━━━━━━━━

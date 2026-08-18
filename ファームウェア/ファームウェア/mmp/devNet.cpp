@@ -514,7 +514,7 @@ typeConnect g_WIFI;
     if (isErr) isErr = InitNet_RUN_ALTERNATIVE();
     //│
     //○終了表示
-    Serial.println(String(" ３．Wi-Fiの起動に") + String(isErr ? "失敗" : "成功"));
+    if (!isErr) Serial.println("  [OK] 初期化が完了");
     Serial.println("");
     //│
     //○有効性セット

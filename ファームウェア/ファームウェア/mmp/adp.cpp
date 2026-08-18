@@ -162,6 +162,32 @@
 // 処理プロセス
 //========================================================
 //━━━━━━━━━━━━━━━━━
+// デバッグログ表示
+//━━━━━━━━━━━━━━━━━
+  void LOG_PRINT(String argMsg){
+    Serial.println(String("============================"));
+    Serial.println(String("version  :") + String(ctx.version));
+
+    Serial.println(String("----------------------------"));
+    Serial.println(String("strFrame : ") + String(ctx.strFrame));
+    Serial.println(String("cmdPath  : ") + String(ctx.cmdPath));
+    Serial.println(String("authCD   : ") + String(ctx.authCD));
+
+    Serial.println(String("----------------------------"));
+    Serial.println(String("routeID  : ") + String(ctx.routeID));
+    Serial.println(String("slotID   : ") + String(ctx.slotID));
+    Serial.println(String("authID   : ") + String(ctx.authID));
+
+    Serial.println(String("----------------------------"));
+    Serial.println(String("accID    : ") + String(ctx.accID));
+    Serial.println(String("accIDS   : ") + String(ctx.accIDS));
+
+    Serial.println(String("----------------------------"));
+    Serial.println(String("vStream  : ") + String(ctx.vStream.str()));
+    Serial.println(String("response : ") + String(argMsg));
+  } /* LOG_PRINT() */
+
+//━━━━━━━━━━━━━━━━━
 // ０．ポーリング ハンドル
 //─────────────────
 // 接続スロットごとに行う前処理
@@ -379,12 +405,15 @@
   String P5_RUN(){
     //┬
     //◇オフセットを求める
-    int offsetNum = 0;
+    int offsetNum = PORTS_SERIAL + PORTS_BLE;
     switch(ctx.routeID){
-    case ROUTE_ID_SERIAL: offsetNum = 0                            ; break;
-    case ROUTE_ID_TCP   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 0; break;
-    case ROUTE_ID_HTTP  : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 1; break;
-    case ROUTE_ID_BLE   : offsetNum = PORTS_SERIAL + AUTH_SLOTS * 2; break;
+    case ROUTE_ID_SERIAL: offsetNum = 0 ; break;
+    case ROUTE_ID_BLE   :                 break;
+    case ROUTE_ID_TCP   : 
+    case ROUTE_ID_HTTP  :
+      offsetNum += AUTH_SLOTS * (ctx.routeID - ROUTE_ID_BLE -1);
+      break;
+    default             : offsetNum = -1; break;
     }
     //│
     //○アクセスIDをセット（オフセット ＋ スロットID ＋ 認証ID）
@@ -397,6 +426,7 @@
     return RUN_COMMAND();
     //┴
   } /* P5_RUN() */
+
 
 //========================================================
 // サービス・アダプタ

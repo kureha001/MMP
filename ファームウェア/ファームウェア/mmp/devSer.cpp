@@ -127,6 +127,7 @@ namespace devSerial {
     Serial.println(" [Serial device]"  );
     Serial.println("　USB (CDC)      : OK");
     Serial.println("　UART(#01)      : OK");
+    Serial.println("  [OK] 初期化が完了");
     Serial.println("");
 
     //○有効性セット

@@ -59,8 +59,9 @@ class StringStream : public Stream {
 //──────────────────────────────────────────────
 struct MmpContext {
 
-  //■ファームウェア情報
+  //■システム情報
   const char*  version  = ""; // バージョン
+  int          logLevel = -1; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
 
   //■機能モジュールのレスポンス
   StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム

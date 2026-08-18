@@ -160,12 +160,11 @@ namespace adpHttp {
     WebServer&    argSrv , // 送信先
     const String& argJSON
   ) {
-    ADD_CROSS(argSrv);
-    argSrv.send(
-        200,
-        "application/json; charset=utf-8",
-        argJSON
-    );
+    if (ctx.logLevel >= 0) { LOG_PRINT(argJSON); }
+    else {
+      ADD_CROSS(argSrv);
+      argSrv.send(200, "application/json; charset=utf-8", argJSON);
+    }; /* END-if */
   } /* SEND_JSON() */
 
   //─────────────────

@@ -30,11 +30,13 @@
   //━━━━━━━━━━━━━━━━━
   // 通信経路：この種類ごとにアダプタがある
   //━━━━━━━━━━━━━━━━━
-  static const int PORTS_SERIAL    = 2 ; // シリアル系経路の総数
   static const int ROUTE_ID_SERIAL = 0 ; // シリアル用
-  static const int ROUTE_ID_TCP    = 1 ; // TCPブリッジ用
-  static const int ROUTE_ID_HTTP   = 2 ; // WebAPI用
-  static const int ROUTE_ID_BLE    = 3 ; // BLE用
+  static const int ROUTE_ID_BLE    = 1 ; // BLE用
+  static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ用
+  static const int ROUTE_ID_HTTP   = 3 ; // WebAPI用
+  //─────────────────
+  static const int PORTS_SERIAL    = 2 ; // シリアル系経路の総数
+  static const int PORTS_BLE       = 1 ; // シリアル系経路の総数
 
 
 //========================================================
@@ -115,6 +117,11 @@
 // 処理プロセス
 //========================================================
   //━━━━━━━━━━━━━━━━━
+  // デバッグログ表示
+  //━━━━━━━━━━━━━━━━━
+  void LOG_PRINT(String Msg);
+
+  //━━━━━━━━━━━━━━━━━
   // ０．ポーリング ハンドル
   //─────────────────
   // 接続スロットごとに行う前処理
@@ -186,8 +193,7 @@
   // コンテクストの内容を用いてアクセスIDを求める。
   // コマンド管理にＭＭＰコマンドの実行を指示する。
   //━━━━━━━━━━━━━━━━━
-    String P5_RUN();
-
+  String P5_RUN();
 
 //━━━━━━━━━━━━━━━━━
 // アダプタの公開情報

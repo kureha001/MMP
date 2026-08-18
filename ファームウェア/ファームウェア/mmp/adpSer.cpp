@@ -140,7 +140,10 @@ namespace adpSerial {
   ){
     //┬
     //○メッセージをレスポンス
-    argSS.conn->print(argMSG);
+    if (ctx.logLevel >= 0) { LOG_PRINT(argMSG); }
+    else {
+      argSS.conn->print(argMSG);
+    };
     //┴
   } /* SEND_CONN() */
 

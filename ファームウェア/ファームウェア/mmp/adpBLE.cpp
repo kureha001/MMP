@@ -40,8 +40,12 @@ namespace adpBLE {
 //========================================================
   //─────────────────
   // スロット
+  //----------------------------------
+  // 戻り値：なし
   //─────────────────
+  void AU_CREATE_TBL(){
   // ➡【該当処理なし】※常時接続は対象外
+  } /* AU_CREATE_TBL() */
 
 //========================================================
 // Ｃ．接続情報
@@ -62,7 +66,8 @@ namespace adpBLE {
       String             conn_rx   = ""     ; // 受信（onWriteイベントでフレーム上書）
       BLECharacteristic* conn_tx   = nullptr; // 送信（参照）
     };
-    static T_SS_SLOT* ssTBL = nullptr;
+    static T_SS_SLOT* ssTBL = nullptr; // 領域確保
+    int    SS_SLOTS         = 0      ; // 確保する領域サイズ
 
     //─────────────────
     // スロット初期化：関数の派生
@@ -70,7 +75,7 @@ namespace adpBLE {
     void INI_SS_SLOT(T_SS_SLOT& argSlot){
       INI_SS_SLOT_BASE(argSlot);
       argSlot.connected = false  ; // 接続判定フラグを切断
-      argSlot.conn_rx   = ""      ; // 受信をクリア
+      argSlot.conn_rx   = ""     ; // 受信をクリア
       argSlot.conn_tx   = nullptr; // 送信の参照解除
     } /* INI_SS_SLOT */
 
@@ -79,10 +84,11 @@ namespace adpBLE {
   //----------------------------------
   void SS_CREATE_TBL(){
     //┬
+    //●確保する領域サイズを取得
+    SS_SLOTS = GET_SS_SLOTS();
+    //│
     //○領域を確保
-    // ※シングルスロット運用のためサイズは 1 に固定
-    ssTBL = new T_SS_SLOT[1]; 
-    INI_SS_SLOT(ssTBL[0]);
+    ssTBL = new T_SS_SLOT[SS_SLOTS]; 
     //┴
   } /* SS_CREATE_TBL() */
 

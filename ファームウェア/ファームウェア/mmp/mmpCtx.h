@@ -77,7 +77,7 @@ struct MmpContext {
   int          authID   = -1; // 認証ID（0：常時接続）
 
   //■ユーザメモリ管理のアドレス情報
-  int          accID    = -1; // アクセスID
+  int          accID    = -1; // アクセスID(MMP全体の一意な番号)
   int          accIDS   = -1; // アクセスIDの総数
 };
 

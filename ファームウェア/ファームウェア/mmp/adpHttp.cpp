@@ -40,11 +40,26 @@ namespace adpHttp {
   //─────────────────
   // テーブルを領域確保
   //─────────────────
-  static T_AUTH_SLOT auTBL[SS_SLOTS]; 
+  static T_AUTH_SLOT* auTBL = nullptr; // 領域確保
+  int    AU_SLOTS         = 0      ; // 確保する領域サイズ
 
+  //─────────────────
+  // 認証情報TBLを作る
+  //----------------------------------
+  // 戻り値：なし
+  //─────────────────
+  void AU_CREATE_TBL(){
+    //┬
+    //●確保する領域サイズを取得
+    AU_SLOTS = GET_AUTH_SLOTS();
+    //│
+    //○TBL全体を初期化
+    auTBL = new T_AUTH_SLOT[AU_SLOTS];
+    //┴
+  } /* AU_CREATE_TBL() */
 
 //========================================================
-// Ｃ．接続情報
+// Ｃ．接続管理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // スロット
@@ -59,7 +74,8 @@ namespace adpHttp {
     // 領域確保：構造体の派生→実体化
     //─────────────────
     struct T_SS_SLOT : T_SS_BASE{ WebServer* conn = nullptr; };
-    static T_SS_SLOT* ssTBL = nullptr;
+    static T_SS_SLOT* ssTBL = nullptr; // 領域確保
+    int    SS_SLOTS         = 0      ; // 確保する領域サイズ
 
     //─────────────────
     // スロット初期化：関数の派生
@@ -70,15 +86,17 @@ namespace adpHttp {
     }
 
   //─────────────────
-  // 接続情報TBLを作る
+  // 接続管理TBLを作る
   //----------------------------------
   // 戻り値：なし
   //─────────────────
   void SS_CREATE_TBL(){
     //┬
-    //○領域を確保
+    //●確保する領域サイズを取得
+    SS_SLOTS = GET_SS_SLOTS();
+    //│
     //○TBL全体を初期化
-    ssTBL = new T_SS_SLOT[1]; // 容量：一時データ1個
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
     INI_SS_SLOT(ssTBL[0]);
     //┴
   } /* SS_CREATE_TBL() */
@@ -465,7 +483,7 @@ namespace adpHttp {
   // WebServerのリスナーが自動的に呼び出す
   //----------------------------------
   // 引数：
-  // (参)接続情報スロット
+  // (参)接続管理スロット
   //─────────────────
   void routeMMP(T_SS_SLOT& argSS){
     //┬
@@ -582,17 +600,20 @@ namespace adpHttp {
     //○２．サーバ資源生成
     ns_ACCEPTOR = new WebServer(SRV_PORT); // WebServer
     //│
-    //○３．接続情報TBLを作成
+    //○３．認証管理TBLを作成
+    AU_CREATE_TBL()                  ; // 領域確保
+    //│
+    //○４．接続管理TBLを作成
     SS_CREATE_TBL()                  ; // 領域確保
     SS_ATTACH_SLOT()                 ; // 一時スロットを登録
     //│
-    //○４．ルーティング登録
+    //○５．ルーティング登録
     registRoutes(*ns_ACCEPTOR);
     //│
-    //○５．サーバ開始
+    //○６．サーバ開始
     ns_ACCEPTOR->begin();
     //│
-    //○┐６．成功終了
+    //○┐７．成功終了
       //○成功メッセージ
       //○有効化
       Serial.println(String("　WEB API    : OK -> port ") + String(SRV_PORT));

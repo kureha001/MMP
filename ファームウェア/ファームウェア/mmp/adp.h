@@ -28,16 +28,34 @@
 // 基本情報
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // 通信経路：この種類ごとにアダプタがある
+  // 通信経路
   //━━━━━━━━━━━━━━━━━
-  static const int ROUTE_ID_SERIAL = 0 ; // シリアル用
-  static const int ROUTE_ID_BLE    = 1 ; // BLE用
-  static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ用
-  static const int ROUTE_ID_HTTP   = 3 ; // WebAPI用
-  //─────────────────
-  static const int PORTS_SERIAL    = 2 ; // シリアル系経路の総数
-  static const int PORTS_BLE       = 1 ; // シリアル系経路の総数
+    //─────────────────
+    // 経路ID
+    //─────────────────
+    static const int ROUTE_ID_SERIAL = 0 ; // シリアル
+    static const int ROUTE_ID_BLE    = 1 ; // BLE
+    static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ
+    static const int ROUTE_ID_HTTP   = 3 ; // WebAPI
 
+    //─────────────────
+    // 経路仕様
+    //----------------------------------
+    //（注意事項）
+    //   ROUTE_TBL[]の登録順は、
+    //   経路ID値の昇順で登録すること
+    //─────────────────
+    struct T_ROUTE {
+      int  id;      // 経路ID
+      int  slots;   // 接続数（スロット数）
+      int  useAuth; // ユーザ認証 {0:認証なし | n:認証ユーザ数}
+    };
+    static T_ROUTE ROUTE_TBL[] = { // ※経路ID値の昇順で登録のこと
+      {ROUTE_ID_SERIAL, 2,  0},    // 物理ポート毎に1接続      、ユーザ認証なし
+      {ROUTE_ID_BLE,    1,  0},    // 1接続(使いまわし)        、ユーザ認証なし
+      {ROUTE_ID_TCP,    5,  0},    // TCP接続で1接続(同時5接続)、ユーザ認証なし
+      {ROUTE_ID_HTTP,   1, 10}     // 1接続(使いまわし)        、ユーザ認証10人
+    };
 
 //========================================================
 // 接続情報：接続ごとの受信状態を管理
@@ -69,6 +87,10 @@
     //─────────────────
     void INI_SS_SLOT_BASE(T_SS_BASE& argSlot);
 
+    //─────────────────
+    // スロット数取得
+    //─────────────────
+    int GET_SS_SLOTS();
 
 //========================================================
 // ユーザ認証
@@ -76,8 +98,6 @@
   //━━━━━━━━━━━━━━━━━
   // 基本情報
   //━━━━━━━━━━━━━━━━━
-  static const int AUTH_SLOTS      = 15     ; // 認証情報総数
-  static const int AUTH_ROUTES     = 2      ; // 認証を用いる通信経路の総数
   const  uint32_t  AUTH_TIME_LIMIT = 100000 ; // タイムアウト閾値
 
   //━━━━━━━━━━━━━━━━━
@@ -93,6 +113,11 @@
       String   authCD     = ""    ; // 認証コード
       uint32_t lastActive = 0     ; // 最終更新時刻 ※単位：ms
     };
+
+    //─────────────────
+    // スロット数取得
+    //─────────────────
+    int GET_AUTH_SLOTS();
 
     //─────────────────
     // 初期化

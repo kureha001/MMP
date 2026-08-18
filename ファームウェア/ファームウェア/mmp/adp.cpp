@@ -26,8 +26,14 @@
   //─────────────────
   extern String RUN_COMMAND(); // 所在：parser.h
 
+
 //========================================================
-// 基本情報
+// 経路情報
+//========================================================
+
+
+//========================================================
+// 接続管理
 //========================================================
     //─────────────────
     // スロット初期化
@@ -40,6 +46,18 @@
       argSlot.rx.reserve(SS_RX_SIZE); // 受信バッファ容量を事前確保
       argSlot.isOverflow = false    ; // 容量超過フラグをクリア
     } /* INI_SS_SLOT_BASE */
+
+    //─────────────────
+    // スロット数取得
+    //----------------------------------
+    // TBL作成やスロットのループ走査で利用
+    //─────────────────
+    int GET_SS_SLOTS(){
+      for (int id = 0; id < sizeof(ROUTE_TBL) / sizeof(ROUTE_TBL[0]); id++){
+        if (ROUTE_TBL[id].id == ctx.routeID) return ROUTE_TBL[id].slots;
+      }
+      return 0;
+    }
 
 //========================================================
 // ユーザ認証
@@ -58,6 +76,17 @@
       argSlot.lastActive = 0     ; // 最終更新時刻をリセット
     } /* INIT_SLOT_AUTH */
 
+    //─────────────────
+    // スロット数取得
+    //----------------------------------
+    // TBL作成やスロットのループ走査で利用
+    //─────────────────
+    int GET_AUTH_SLOTS(){
+      for (int id = 0; id < sizeof(ROUTE_TBL) / sizeof(ROUTE_TBL[0]); id++){
+        if (ROUTE_TBL[id].id == ctx.routeID) return ROUTE_TBL[id].useAuth;
+      }
+      return 0;
+    }
   //─────────────────
   // 認証コード定義
   //─────────────────
@@ -139,7 +168,8 @@
   int AUTH_GET_ID_OLD(T_AUTH_SLOT* pTBL) {
     //┬
     //◎┐先頭から走査
-    for (int id = 0; id < AUTH_SLOTS; id++) {
+    int loopMax = GET_AUTH_SLOTS();
+    for (int id = 0; id < loopMax; id++) {
       //○次データの捜査を開始
       // ＼（全スロットを走査し終えた場合）
       //▼ループ処理を中断
@@ -317,7 +347,8 @@
   ){
     //┬
     //◎┐認証情報全体を照合
-    for (int id = 0; id < AUTH_SLOTS; id++){
+    int loopMax = GET_AUTH_SLOTS();
+    for (int id = 0; id < loopMax; id++){
       //○現在の認証情報と照合
       if (pTBL[id].used && pTBL[id].authCD == pKeyCD) {
         // ＼（認証コードが一致)
@@ -354,7 +385,8 @@
     String newCD = "" ; // 新しい認証コード
     //│
     //◎┐新たな認証情報を登録
-    for (int freeID = 0; freeID < AUTH_SLOTS; freeID++){
+    int loopMax = GET_AUTH_SLOTS();
+    for (int freeID = 0; freeID < loopMax; freeID++){
       //◇┐空きスロットに登録
       if (!pTBL[freeID].used){
         //├┐（スロットが未使用の場合)
@@ -397,32 +429,45 @@
 // コマンド管理にＭＭＰコマンドの実行を指示する。
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // フレームから第2トークン以降を取り出す
+  // アクセスIDを求めてからコマンドを実行
   //----------------------------------
   // 戻り値：文字列
   // ・正常：コマンド管理のレスポンス
   //─────────────────
   String P5_RUN(){
     //┬
-    //◇オフセットを求める
-    int offsetNum = PORTS_SERIAL + PORTS_BLE;
-    switch(ctx.routeID){
-    case ROUTE_ID_SERIAL: offsetNum = 0 ; break;
-    case ROUTE_ID_BLE   :                 break;
-    case ROUTE_ID_TCP   : 
-    case ROUTE_ID_HTTP  :
-      offsetNum += AUTH_SLOTS * (ctx.routeID - ROUTE_ID_BLE -1);
-      break;
-    default             : offsetNum = -1; break;
-    }
+    //◎┐アクセスIDの総数をセット
+    ctx.accIDS = 0;
+    for (int id = 0; id < sizeof(ROUTE_TBL) / sizeof(ROUTE_TBL[0]); id++){
+      // ＼（走査を完了した場合）
+        //▼これまでに加算した領域が当該経路のオフセット
+      //○当該経路のスロット数またはユーザ数を加算
+      ctx.accIDS += (ROUTE_TBL[id].useAuth > 0)
+        ? ROUTE_TBL[id].useAuth // 認証あり：ユーザ認証総数を加算
+        : ROUTE_TBL[id].slots;  // 認証なし：接続数（スロット数）を加算
+    } /* END-for */
     //│
-    //○アクセスIDをセット（オフセット ＋ スロットID ＋ 認証ID）
-    ctx.accID = offsetNum + ctx.slotID + ctx.authID;
+    //◎┐アクセスIDのオフセットを求める
+    int offsetNum = 0;
+    for (int id = 0; id < sizeof(ROUTE_TBL) / sizeof(ROUTE_TBL[0]); id++){
+    if (ROUTE_TBL[id].id == ctx.routeID) break;
+      // ＼（[走査を完了した]または[当該経路]の場合）
+        //▼これまでに加算した領域が当該経路のオフセット
+      //│
+      //○当該経路より前のアクセスID領域を加算
+      offsetNum += (ROUTE_TBL[id].useAuth > 0)
+        ? ROUTE_TBL[id].useAuth // 認証あり：ユーザ認証総数を加算
+        : ROUTE_TBL[id].slots;  // 認証なし：接続数（スロット数）を加算
+      //┴
+    } /* END-for */
     //│
-    //○アクセスIDの総数
-    ctx.accIDS = (AUTH_SLOTS * AUTH_ROUTES) + PORTS_SERIAL;
+    //○アクセスID(MMP全体の一意な番号)を取得
+    ctx.accID = offsetNum
+      + ((ROUTE_TBL[ctx.routeID].useAuth > 0)
+        ? ctx.authID    // 認証あり：認証IDを加算
+        : ctx.slotID);  // 認証なし：スロットIDを加算
     //│
-    //●ＭＭＰコマンドを実行→リターン
+    //▼RETURN:ＭＭＰコマンドを実行→リターン
     return RUN_COMMAND();
     //┴
   } /* P5_RUN() */

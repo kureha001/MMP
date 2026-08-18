@@ -135,10 +135,15 @@ namespace adpBLE {
   ){
     //┬
     //○メッセージをレスポンス
-    if (argSS.connected && argSS.conn_tx != nullptr) {
-      argSS.conn_tx->setValue(argMSG.c_str());
-      argSS.conn_tx->notify();
-    } /* END-if */
+    if (ctx.logLevel >= 0) { LOG_PRINT(argMSG); }
+    else {
+      if (argSS.connected && argSS.conn_tx != nullptr) {
+        argSS.conn_tx->setValue(argMSG.c_str());
+        argSS.conn_tx->notify();
+      } /* END-if */
+    };
+    //│
+    //○フレームをクリア
     ctx.strFrame = "";
     //┴
   } /* SEND_CONN() */

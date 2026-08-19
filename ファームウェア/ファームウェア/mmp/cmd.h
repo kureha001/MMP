@@ -75,7 +75,7 @@
   namespace MMP_MOD {
 
     //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
-    static const T_MOD INF    = { "INF"    ,  5,  5,  5 };
+    static const T_MOD INF    = { "INFO"    ,  5,  5,  5 };
     static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
     static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
     static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
@@ -245,7 +245,7 @@ public:
       } /* END-for */
     //│
     //○エラーメッセージを返却
-    return "#CMD!"; //コマンド名不正
+    return "#NOM!"; //モジュール不在
     //┴
   } /* RunCommand() */
 }; /* class CmdManager */

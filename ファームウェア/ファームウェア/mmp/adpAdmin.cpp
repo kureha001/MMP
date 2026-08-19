@@ -8,6 +8,7 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
+  #include <WiFi.h>
   #include <WebServer.h>
   #include <LittleFS.h>
   //│
@@ -109,8 +110,13 @@ namespace adpAdmin {
     html += "    document.getElementById('configViewer').value = content;";
     html += "    fetch('/upload', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: content })";
     html += "    .then(res => res.text().then(text => {";
-    html += "      if (res.ok) { statusDiv.style.color = 'green'; statusDiv.textContent = '成功: ' + text; }";
-    html += "      else { statusDiv.style.color = 'red'; statusDiv.textContent = '失敗: ' + text; }";
+    html += "      if (res.ok) {";
+    html += "        statusDiv.style.color = 'green';";
+    html += "        statusDiv.textContent = '成功: ' + text + ' 再起動します...';";
+    html += "        window.location.href = '/reboot';";
+    html += "      } else {";
+    html += "        statusDiv.style.color = 'red'; statusDiv.textContent = '失敗: ' + text;";
+    html += "      }";
     html += "    })).catch(err => { statusDiv.style.color = 'red'; statusDiv.textContent = '通信エラー: ' + err; });";
     html += "  };";
     html += "  reader.readAsText(file);";
@@ -147,13 +153,31 @@ namespace adpAdmin {
     configFile.close();
     //│
     //○正常終了
-    ns_ACCEPTOR->send(200, "text/plain", "Config updated successfully");
-    Serial.println(" -> [Upload] 設定ファイルを受信し、/config.json を上書きしました");
+    ns_ACCEPTOR->send(200, "text/plain", "設定ファイルを保存しました。");
     //┴
   } /* routeUpload() */
 
+  //─────────────────
+  // ルート３：再起動
+  //─────────────────
+  static void routeReboot() {
+    String html = "<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\"><title>Rebooting...</title></head>";
+    html += "<body style=\"font-family:sans-serif; text-align:center; padding-top:50px;\">";
+    html += "<h2>MMPを再起動しています...</h2>";
+    html += "<p>しばらくお待ちいただいた後、トップページへ戻ってください。</p>";
+    html += "<p><a href=\"/\">トップ画面へ戻る</a></p>";
+    html += "</body></html>";
+    ns_ACCEPTOR->send(200, "text/html", html);
 
-//========================================================
+    // レスポンスの送信完了を確実にするため少し待ってから再起動
+    delay(3000);
+    WiFi.disconnect(false, false);
+    WiFi.mode(WIFI_OFF);
+    delay(500);
+    ESP.restart();
+} /* routeReboot() */
+
+  //========================================================
 // Ｇ．初期化・ポーリング
 //========================================================
   //━━━━━━━━━━━━━━━━━
@@ -161,7 +185,8 @@ namespace adpAdmin {
   //━━━━━━━━━━━━━━━━━
   static void registRoutes(WebServer& server) {
     server.on("/"      , HTTP_GET , routeRoot  ); // アクセスで管理画面
-    server.on("/upload", HTTP_POST, routeUpload); // 設定フィルアップロード
+    server.on("/upload", HTTP_POST, routeUpload); // 設定ファイルアップロード
+    server.on("/reboot", routeReboot);            // 再起動画面（GET/POST両対応）
   }
 
   //━━━━━━━━━━━━━━━━━

@@ -6,10 +6,10 @@
 //--------------------------------------------------------
 //【障害対策】
 //・ 設定ファイル読込：失敗すると緊急ＡＰモードで起動
-//・ Wi-Fi設定　　　 ：失敗すると緊急ＡＰモードで起動
+//・ Wi-Fi設定    ：失敗すると緊急ＡＰモードで起動
 //・ サービス起動    ：軌道に失敗したサービスが使えない
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/15) α版 
+// Ver 1.1.1 (2026/08/20) α版修正 
 //========================================================
 #pragma once
 //┬
@@ -35,8 +35,21 @@ namespace devNetwork {
 //========================================================
 // 共通資源
 //========================================================
+  //─────────────────
+  // 設定ファイル
+  //─────────────────
   constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
   constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
+  String        g_FILE_PATH = "/config.json";  // SSID接続待ち時間ms(間隔)
+
+  //─────────────────
+  // 接続条件
+  //─────────────────
+  IPAddress g_IP = IPAddress(192,168,99,3); // APモードのデフォルトIP
+  constexpr int g_WAIT      = 12000;        // SSID接続待ち時間ms
+  constexpr int g_WAIT_INT  = g_WAIT / 10;  // SSID接続待ち時間ms(間隔)
+  constexpr int g_WAIT_DIS  = 500 ;         // 切断後の待ち時間ms
+
 
 //━━━━━━━━━━━━━━━━━
 // 設定ファイル情報
@@ -98,182 +111,29 @@ typeConnect g_WIFI;
     const String& argBase, // 評価対象
     uint8_t&      argVal   // デフォルト値をセット→正常時はargBaseで上書き
   ) {
-    //○空文字チェック
-    if (argBase.length()==0) return false;
-
-    //○数字チェック
-    for (char c: argBase) if (c<'0'||c>'9') return false;
-
-    //○10進数に変換
-    long v = strtol(argBase.c_str(), nullptr, 10);
-
-    //○数値範囲チェック
-    if (v<0 || v>254) return false;
-
+    if (argBase.length()==0) return false               ; //空文字チェック
+    for (char c: argBase) if (c<'0'||c>'9') return false; //○数字チェック
+    long v = strtol(argBase.c_str(), nullptr, 10)       ; //○10進数に変換
+    if (v<0 || v>254) return false                      ; //○数値範囲チェック
     argVal = (uint8_t)v;
     return true;
   } /* IS_OCTET() */
 
 
 //========================================================
-// サブ処理
+// 設定ファイル
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // IPアドレスを作成
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // ＳＴＡモード用
-    //----------------------------------
-    //・DHCPで得たIPアドレス[第1〜3オクテット]+指定の第4オクテット
-    //・どの方法でも作成できない場合は[0.0.0.0]
-    //─────────────────
-    static IPAddress GET_IP_STA(
-      const IPAddress&  argIP,  // DHCP発行のIPアドレス
-      const String&     argOct4 // 置き換えたい第4オクテット値(空の場合あり)
-    ) {
-     //┬
-      //○ワーク変数を用意
-      uint8_t oct4 = 0; // 失敗した場合のデフォルト値
-      //│
-      //◇┐ＩＰアドレスを作成
-      if (IS_OCTET(argOct4, oct4)) {
-        //├┐（引数が単一オクテットの場合）
-          //▼RETURN:第4オクテットで置換
-        return IPAddress(argIP[0], argIP[1], argIP[2], oct4);
-        //└┐（その他）
-          //┴
-      } /* END-if */
-      //│
-      //▼RETURN:エラー時は[0.0.0.0]
-      return IPAddress();
-      //┴
-    } /* GET_IP_STA() */
-
-    //─────────────────
-    // ＡＰモード用
-    //----------------------------------
-    //・フル書式[x.x.x.x]ならそのまま
-    //・上記でなければ第4オクテットを差替[x.x.x.0]
-    //─────────────────
-    static IPAddress GET_IP_AP(
-        const String& argIP // ホストリストのIPアドレス または 第4オクテット
-    ) {
-      //┬
-      //○ワーク変数を用意
-      IPAddress ip;       // フル書式チェック用
-      uint8_t   oct4 = 0; // 失敗した場合のデフォルト値
-      //│
-      //◇┐ＩＰアドレスを作成
-      if (ip.fromString(argIP)) {
-        //├┐（フル表記["x.x.x.x"]の場合）
-          //▼RETURN:引数そのまま
-          return ip;
-        //│
-      } else if (IS_OCTET(argIP, oct4)) {
-        //├┐（末尾だけの場合）
-          //▼RETURN:第4オクテットで置換
-          return IPAddress(192,168,254,oct4);
-        //└┐（その他）
-          //┴
-        } /* END-if */
-      //│
-      //▼RETURN:エラー時は[0.0.0.0]
-      return IPAddress();
-      //┴
-    } /* GET_IP_AP() */
-
-  //━━━━━━━━━━━━━━━━━
-  // Wifi接続
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // ＡＰモード用
-    //----------------------------------
-    //─────────────────
-    //　➡【該当処理なし】※ＡＰモードは対象外
-
-    //─────────────────
-    // ＳＴＡモード用
-    //----------------------------------
-    // DHCP → 必要なら静的IPへ再接続
-    // 要件：hList.ipが空ならDHCPのまま採用
-    //─────────────────
-    static bool CONNECT_STA(const typeRouter& argWifi)
-    {
-      if (argWifi.ssid.isEmpty()) return false;
-
-      //○STA ホスト情報を JSON から取得（無ければデフォルト）
-      const typeHost* hList = GET_HOST("sta");
-      String hostName       = hList ? hList->name : String("mmp-sta-mode");
-      String oct4           = hList ? hList->ip   : String("");  // 第4オクテット or 空
-      //│
-      //○DHCPで接続（第三オクテット把握のため）
-      WiFi.mode(WIFI_STA);
-      WiFi.setHostname(hostName.c_str());
-      WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
-      //│
-      //◎8秒間接続トライ
-      uint32_t t0 = millis();
-      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
-      if (WiFi.status() != WL_CONNECTED) {
-      //│ ＼（タイムアウトの場合）
-      //│  ▼RETURN:失敗
-            WiFi.disconnect(true, true);
-            delay(200);
-            return false;
-      } /* END-if */
-      //│
-      //○DHCP情報を退避
-      IPAddress dhcpIP     = WiFi.localIP();
-      IPAddress gatewayIP  = WiFi.gatewayIP();
-      IPAddress subnetMask = WiFi.subnetMask();
-      IPAddress dnsIP1     = WiFi.dnsIP(0);
-      IPAddress dnsIP2     = WiFi.dnsIP(1);
-      //│
-      //○hList.ip が空なら DHCP のまま採用
-      if (oct4.length() == 0) return true;
-      //│
-      //○新たに静的IPを作成(DHCP発行のIPアドレスの第4オクテットを変更)
-      IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
-      if (!newIP) return true;
-      // →（失敗なら DHCP のまま）
-      //│
-      // サブネットは固定 /24
-      // GW は DHCP 優先・無ければ x.y.z.1、DNS 未取得なら GW
-      subnetMask = IPAddress(255,255,255,0);
-      if (!gatewayIP) gatewayIP = IPAddress(newIP[0], newIP[1], newIP[2], 1);
-      if (!dnsIP1   ) dnsIP1 = gatewayIP;
-      //│
-      //○静的IPで再接続
-      WiFi.disconnect(false, false);
-      delay(100);
-      WiFi.config(newIP, gatewayIP, subnetMask, dnsIP1, dnsIP2);
-      WiFi.begin(argWifi.ssid.c_str(), argWifi.pass.c_str());
-      //│
-      //◎8秒間接続トライ
-      t0 = millis();
-      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < 8000){delay(200);}
-      if (WiFi.status() == WL_CONNECTED) return true;
-      //│ ＼（タイムアウトの場合）
-      //│  ▼RETURN:失敗
-      //│
-      //○
-      WiFi.disconnect(true, true);
-      delay(200);
-      return false;
-      //┴
-    } /* CONNECT_STA() */
-
   //━━━━━━━━━━━━━━━
   // 設定ファイル読込
   //----------------------------------
-  //【戻り値】実行結果（論理値）
-  //・成功：false
-  //・失敗：true
+  //【戻り値】読込結果（論理値）
+  //・true ：読込に成功
+  //・false：読込に失敗
   //━━━━━━━━━━━━━━━
-  bool InitNet_JsonMain() {
+  bool READ_JSON() {
     // jsonファイル読取を開始
-    File f = LittleFS.open("/config.json", "r");
-    if (!f) return true;
+    File f = LittleFS.open(g_FILE_PATH, "r");
+    if (!f) return false;
 
     // ファイルサイズに応じた余裕ある容量で
     size_t sz  = f.size();
@@ -284,7 +144,7 @@ typeConnect g_WIFI;
     DynamicJsonDocument doc(cap);
     DeserializationError iniErr = deserializeJson(doc, f);
     f.close();
-    if (iniErr) { return true; }
+    if (iniErr) { return false; }
 
     // 情報読取：サーバー
     //g_SRV_TCP.maxClients  = doc["server"]["max_clients"   ] | 4;
@@ -348,8 +208,227 @@ typeConnect g_WIFI;
     }
 
     // 正常でリターン
-    return false;
-  } /* InitNet_JsonMain() */
+    return true;
+  } /* READ_JSON() */
+
+
+//========================================================
+// IPアドレスを作成
+//========================================================
+    //─────────────────
+    // ＳＴＡモード用
+    //----------------------------------
+    //・DHCPで得たIPアドレス[第1〜3オクテット]+指定の第4オクテット
+    //・どの方法でも作成できない場合は[0.0.0.0]
+    //─────────────────
+    static IPAddress GET_IP_STA(
+      const IPAddress&  argIP,  // DHCP発行のIPアドレス
+      const String&     argOct4 // 置き換えたい第4オクテット値(空の場合あり)
+    ) {
+     //┬
+      //○ワーク変数を用意
+      uint8_t oct4 = 0; // 失敗した場合のデフォルト値
+      //│
+      //◇┐ＩＰアドレスを作成
+      if (IS_OCTET(argOct4, oct4)) {
+        //├┐（引数が単一オクテットの場合）
+          //▼RETURN:第4オクテットで置換
+        return IPAddress(argIP[0], argIP[1], argIP[2], oct4);
+        //└┐（その他）
+          //┴
+      } /* END-if */
+      //│
+      //▼RETURN:エラー時は[0.0.0.0]
+      return IPAddress();
+      //┴
+    } /* GET_IP_STA() */
+
+    //─────────────────
+    // ＡＰモード用
+    //----------------------------------
+    //・フル書式[x.x.x.x]ならそのまま
+    //・上記でなければ第4オクテットを差替[x.x.x.0]
+    //─────────────────
+    static IPAddress GET_IP_AP(
+        const String& argIP // ホストリストのIPアドレス または 第4オクテット
+    ) {
+      //┬
+      //○ワーク変数を用意
+      IPAddress ip;       // フル書式チェック用
+      uint8_t   oct4 = 0; // 失敗した場合のデフォルト値
+      //│
+      //◇┐ＩＰアドレスを作成
+      if (ip.fromString(argIP)) {
+        //├┐（フル表記["x.x.x.x"]の場合）
+          //▼RETURN:引数そのまま
+          return ip;
+        //│
+      } else if (IS_OCTET(argIP, oct4)) {
+        //├┐（末尾だけの場合）
+          //▼RETURN:デフォルトを第4オクテットで置換
+          return IPAddress(g_IP[0], g_IP[1], g_IP[2],oct4);
+        //└┐（その他）
+          //┴
+        } /* END-if */
+      //│
+      //▼RETURN:エラー時は[0.0.0.0]
+      return g_IP;
+      //┴
+    } /* GET_IP_AP() */
+
+
+//========================================================
+// Wifi接続を実施
+//========================================================
+  void RUN_INFO(String pSSID, String pName, String pIP) {
+    Serial.println(String("      [OK] SSID: ") + pSSID.c_str());
+    Serial.println(String("      [OK] HOST: ") + pName.c_str());
+    Serial.println(String("      [OK] IP  : ") + pIP.c_str()  );
+  }
+
+  //─────────────────
+  // ＳＴＡモード用
+  //----------------------------------
+  // DHCP → 必要なら静的IPへ再接続
+  // 要件：hList.ipが空ならDHCPのまま採用
+  //----------------------------------
+  //【戻り値】接続結果（論理値）
+  //・true ：接続に成功
+  //・false：接続に失敗
+  //─────────────────
+  static bool RUN_STA(String pLabel, String pSSID, String pPass)
+  {
+    if (pSSID.isEmpty()) return false;
+    //│
+    //○┐事前準備
+      //○STA ホスト情報を JSON から取得（無ければデフォルト）
+      const typeHost* hList = GET_HOST("sta");
+      String pName  = hList ? hList->name : String("MMP_STA");
+      String oct4   = hList ? hList->ip   : String("");  // 第4オクテット or 空
+      //┴
+    //│
+    //○ヘッダ表示(ラベル名、SSID)
+    Serial.print(String("    <<") + pLabel.c_str() + String(">> ") + pSSID.c_str() + String(" "));
+    //│
+    //○┐仮接続
+      //○切断して少し待つ
+      WiFi.disconnect(false, false); delay(g_WAIT_DIS);
+      //│
+      //○パラメータをセット
+      WiFi.mode(WIFI_STA);             // STAモード
+      WiFi.setHostname(pName.c_str()); // ホスト名
+      //│
+      //○WiFiサーバを起動（DHCP）
+      WiFi.begin(pSSID.c_str(), pPass.c_str()); // SSID,パスワード
+      //│
+      //○接続を確認
+      uint32_t t0 = millis();
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < g_WAIT){Serial.print("."); delay(g_WAIT_INT);}
+      if    (WiFi.status() != WL_CONNECTED) {
+      //│ ＼（しばらく待っても接続できない場合）
+          //○接続を切断
+          //▼RETURN:接続に失敗
+          Serial.println(" [NG] (DHCP IP) status");
+          return false;
+      } /* END-if */
+      //┴
+    //│
+    //○┐本接続の準備
+      //○DHCP情報を退避
+      IPAddress dhcpIP     = WiFi.localIP();    // IPアドレス
+      IPAddress gatewayIP  = WiFi.gatewayIP();  // ゲートウェイアドレス
+      IPAddress subnetMask = WiFi.subnetMask(); // サブネットマスク
+      IPAddress dnsIP1     = WiFi.dnsIP(0);     // DNSサーバ１
+      IPAddress dnsIP2     = WiFi.dnsIP(1);     // DNSサーバ２
+      //│
+      //○第4オクテット(JSON)を確認
+      if (oct4.length() == 0) {
+      //│ ＼（指定がない場合）
+      //│  ▼RETURN：接続に成功(DHCPのまま採用)
+            Serial.println(" [OK] IP Address [1:DHCP IP]");
+            RUN_INFO(pSSID, pName, WiFi.localIP().toString());
+            return true;
+      } /* END-if */
+      //│
+      //○静的IPを取得(DHCP発行のIPアドレスの第4オクテットを変更)
+      IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
+      if (!newIP) {
+      //│ ＼（取得できない場合）
+      //│  ▼RETURN：接続に成功(DHCPのまま採用)
+            Serial.println(" [OK] IP Address [2:DHCP IP]");
+            RUN_INFO(pSSID, pName, WiFi.localIP().toString());
+            return true;
+      } /* END-if */
+      //│
+      //○サブネットは固定 /24
+      // GW は DHCP 優先・無ければ x.y.z.1、DNS 未取得なら GW
+      subnetMask = IPAddress(255,255,255,0);
+      if (!gatewayIP) gatewayIP = IPAddress(newIP[0], newIP[1], newIP[2], 1);
+      if (!dnsIP1   ) dnsIP1 = gatewayIP;
+      //┴
+    //│
+    //○┐本接続
+      //○切断して少し待つ
+      WiFi.disconnect(false, false); delay(g_WAIT_DIS);
+      //│
+      //○WiFiサーバを起動（静的IP）
+      WiFi.config(newIP, gatewayIP, subnetMask, dnsIP1, dnsIP2);
+      WiFi.begin(pSSID.c_str(), pPass.c_str());
+      //│
+    //○接続を確認
+      t0 = millis();
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < g_WAIT){Serial.print("."); delay(g_WAIT_INT);}
+      if    (WiFi.status() != WL_CONNECTED) {
+      //│ ＼（しばらく待っても接続できない場合）
+      //│  ▼RETURN:接続に成功
+            Serial.println(" [NG] (STATIC IP) status");
+            return false;
+      } /* END-if */
+      //┴
+    //│
+    //○接続情報を画面に表示
+    Serial.println(" Connected.");
+    RUN_INFO(pSSID, pName, WiFi.localIP().toString());
+    //│
+    //▼RETURN:接続成功
+    return true;
+    //┴
+  } /* RUN_STA() */
+
+  //─────────────────
+  // ＡＰモード用
+  //----------------------------------
+  //【戻り値】接続結果（論理値）
+  //・true ：接続に成功
+  //・false：接続に失敗
+  //─────────────────
+  bool RUN_AP(String pSSID, String pName,IPAddress pIP) {
+    //┬
+    //○切断して少し待つ
+    WiFi.disconnect(false, false); delay(g_WAIT_DIS);
+    //│
+    //○パラメータをセット
+    WiFi.mode(WIFI_AP);                                    // APモード
+    WiFi.setHostname(pName.c_str());                       // ホスト名(JSON)
+    WiFi.softAPConfig(pIP, pIP, IPAddress(255,255,255,0)); // SSID,パスワードなし
+    //│
+    //○WiFiサーバを起動（AP）
+    if (!WiFi.softAP(pSSID.c_str())) {
+    //│ ＼（起動に失敗した場合）
+    //│  ▼RETURN:起動に失敗
+          Serial.println("      [NG] softAP");
+          return false;
+    } /* END-if*/
+    //│
+    //○接続を確認 (APモードではWL_CONNECTEDにならない)
+    //│
+    //○接続情報を画面に表示
+    RUN_INFO(pSSID, pName, WiFi.softAPIP().toString());
+    //│
+    //▼RETURN:接続成功
+    return true;
+    //┴
+  }
 
 
 //========================================================
@@ -358,122 +437,84 @@ typeConnect g_WIFI;
   //─────────────────
   // P1.設定ファイル読込
   //----------------------------------
-  //【戻り値】実行結果（論理値）
-  //・成功：false
-  //・失敗：true
+  //【戻り値】読込結果（論理値）
+  //・true ：読込に成功
+  //・false：読込に失敗
   //─────────────────
-  bool InitNet_Json(){
-    if (!LittleFS.begin(true)           ){Serial.println("　[NG] 初期化に失敗"  );return true;}
-    if (!LittleFS.exists("/config.json")){Serial.println("　[NG] ファイルが無い");return true;}
-    if (InitNet_JsonMain()              ){Serial.println("　[NG] 読込に失敗"    );return true;}
-    return false;
-} /* InitNet_Json() */
+  bool P1_ReadConfig(){
+    if (!LittleFS.begin(true)        ){Serial.println("    [NG] 初期化に失敗"  );return false;}
+    if (!LittleFS.exists(g_FILE_PATH)){Serial.println("    [NG] ファイルが無い");return false;}
+    if (!READ_JSON()                 ){Serial.println("    [NG] 読込に失敗"    );return false;}
+    return true;
+} /* P1_ReadConfig() */
 
   
   //─────────────────
   // P2-1.Wifi起動(STAモード)
+  //----------------------------------
+  //【戻り値】接続結果（論理値）
+  //・true ：接続に成功
+  //・false：接続に失敗
   //─────────────────
-  bool InitNet_RUN_STA(){
+  bool P21_MODE_STA(){
     //┬
-    //◎┐STAホスト情報から、候補を順に試行（仮実装：isDefault優先は後で統合時に実装）
+    //◎┐WiFi情報の候補を順に試行
     bool isRun = false;
     for (int i=0; i < g_WIFI.candNum && !isRun; i++){
       //│ ＼（[最後まで走査し終えた]または[起動できた]の場合）
       //│  ▼走査を終了する
       //│
-      //○SSIDを表示
-      Serial.println(String("　Try SSID=") + g_WIFI.candList[i].ssid.c_str());
-      //│
-      //○[ＳＴＡモード]で起動
-      isRun = CONNECT_STA(g_WIFI.candList[i]);
+      //●WiFiサーバを起動
+      String pLabel = g_WIFI.candList[i].label.c_str();
+      String pSSID  = g_WIFI.candList[i].ssid.c_str();
+      String pPass  = g_WIFI.candList[i].pass.c_str();
+      isRun = RUN_STA(pLabel, pSSID, pPass);
+      //┴
     } /* END-for */
     //│
-    //○起動状態を確認
-    if (!isRun) {
-    //│ ＼（起動していない場合）
-    //│  ▼RETURN:起動に失敗
-          Serial.println("　　[NG] STAモードの起動に失敗");
-          return true;
-    } /* END-if*/
-    //│
-    //○状況を画面に表示
-    Serial.println("　　・STAモード");
-    Serial.println(String("　- SSID: ") + WiFi.SSID().c_str());
-    Serial.println(String("　- IP  : ") + WiFi.localIP().toString().c_str());
-    //│
-    //▼リターン
-    return false;
+    //▼RETRUN:成功でリターン
+    return isRun;
     //┴
-  } /* InitNet_RUN_STA() */
-
+  } /* P21_MODE_STA() */
 
   //─────────────────
   // P2-2.Wifi起動(APモード)
+  //----------------------------------
+  //【戻り値】接続結果（論理値）
+  //・true ：接続に成功
+  //・false：接続に失敗
   //─────────────────
-  bool InitNet_RUN_AP(){
+  bool P22_MODE_AP(){
     //┬
-    //○┐事前準備
-      //○APホスト情報をJSONから取得（無ければデフォルト）
-      const typeHost* hList = GET_HOST("ap");
-      String    pSSID       = hList ? hList->name          : String("mmp-ap-mode");
-      IPAddress pIP         = hList ? GET_IP_AP(hList->ip) : IPAddress(192,168,254,254);
-      if (!pIP) pIP         = IPAddress(192,168,254,254);
-      //│
-      //○パラメータをセット
-      WiFi.mode(WIFI_AP);
-      WiFi.softAPConfig(pIP, pIP, IPAddress(255,255,255,0));
-      //┴
+    //○APホスト情報をJSONから取得（無ければデフォルト）
+    const typeHost* hList = GET_HOST("ap");
+    String    pName = hList ? hList->name : String("MMP_AP");
+    String    pSSID = String("MMP_AP-MODE");
+    IPAddress pIP   = hList ? GET_IP_AP(hList->ip) : g_IP;
     //│
-    //○[ＡＰモード]で起動
-    if (!WiFi.softAP(pSSID.c_str())) {
-    //│ ＼（起動に失敗した場合）
-    //│  ▼RETURN:起動に失敗
-          Serial.println("　　[NG] APモードの起動に失敗");
-          return true;
-    } /* END-if*/
-    //│
-    //○状況を画面に表示
-    Serial.println("　　・APモード");
-    Serial.println(String("　　- SSID: ") + pSSID.c_str());
-    Serial.println(String("　　- IP  : ") + WiFi.softAPIP().toString().c_str());
-    //│
-    //▼正常でリターン
-    return false;
+    //●ＡＰモードで起動
+    return RUN_AP(pSSID,pName,pIP);
     //┴
-  } /* InitNet_RUN_AP() */
+  } /* P22_MODE_AP() */
 
   //─────────────────
   // P3.Wifi起動(緊急APモード)
+  //----------------------------------
+  //【戻り値】接続結果（論理値）
+  //・true ：接続に成功
+  //・false：接続に失敗
   //─────────────────
-  bool InitNet_RUN_ALTERNATIVE(){
+  bool P3_MODE__ALTERNATIVE(){
     //┬
-    //○┐事前準備
-      //○APモード固定でパラメータ値を用意
-      String    pSSID = String("mmp-ap-mode");
-      IPAddress pIP   = IPAddress(111,111,111,111);
-      //│
-      //○パラメータをセット
-      WiFi.mode(WIFI_AP);
-      WiFi.softAPConfig(pIP, pIP, IPAddress(255,255,255,0));
-      //┴
+    //○パラメータ値を用意 ※固定IPアドレス
+    String    pName = String("MMP");
+    String    pSSID = String("MMP_ALT-MODE");
+    IPAddress pIP   = g_IP;
     //│
-    //○[ＡＰモード]で起動
-    if (!WiFi.softAP(pSSID.c_str())) {
-    //│ ＼（起動に失敗した場合）
-    //│  ▼RETURN:起動に失敗
-          Serial.println("　　[NG] 緊急モードの起動に失敗");
-          return true;
-    } /* END-if*/
-    //│
-    //○状況を画面に表示
-    Serial.println("　・緊急モード");
-    Serial.println(String("　　- SSID: ") + pSSID.c_str());
-    Serial.println(String("　　- IP  : ") + WiFi.softAPIP().toString().c_str());
-    //│
-    //▼正常でリターン
-    return false;
+    //●ＡＰモードで起動
+    return RUN_AP(pSSID,pName,pIP);
     //┴
-  } /* InitNet_RUN_AP() */
+  } /* P3_MODE__ALTERNATIVE() */
 
 
 //########################################################
@@ -481,44 +522,48 @@ typeConnect g_WIFI;
 //########################################################
   //─────────────────
   // 初期化処理
-  //----------------------------------
-  // 戻り値：処理結果（論理値）
-  // ・true ：失敗
-  // ・false：成功
   //─────────────────
   void start(){
     //┬
     //○開始表示
     Serial.println(" [Wi-Fi Network device]");
+    bool isOK = false;
     //│
     //●P1.設定ファイル読込
     // 【前提条件】無条件
-     Serial.println(" １．設定ファイルの読込");
-    bool isErr = InitNet_Json();
+    Serial.println(" １．設定ファイルの読込");
+    isOK = P1_ReadConfig();
     //│
     //◇┐P2.設定ファイルに従い起動
-    Serial.println("  ２．Wifiを起動設定");
-    if (!isErr) {
-      //├┐（エラーが残っいない場合）
+    if (isOK) {
+      //├┐（設定ファイルが読み込めた場合）
+        Serial.println(" ２．設定ファイルに従い起動します");
+        //│
         //●P2-1.ＳＴＡモードでを起動
-        isErr = InitNet_RUN_STA();
+        Serial.println("   [STA mode]");
+        isOK = P21_MODE_STA();
         //│
         //●P2-2.ＡＰモードで起動
-        // 【前提条件】エラーが残っいない
-        if (isErr) isErr = InitNet_RUN_AP();
+        // 【前提条件】STAモードの起動に失敗
+        if (!isOK) {
+          Serial.println("   [AP mode]");
+          isOK = P22_MODE_AP();
+        }
         //┴
     } /* END-if */
     //│
     //●P3.緊急モードで起動
-    // 【前提条件】エラーが残ってる
-    if (isErr) isErr = InitNet_RUN_ALTERNATIVE();
+    // 【前提条件】設定ファイルの内容での起動に失敗
+    if (!isOK) {
+        Serial.println(" ３．緊急モードで起動します");
+        isOK = P3_MODE__ALTERNATIVE();
+    } /* END-if */
     //│
     //○終了表示
-    if (!isErr) Serial.println("  [OK] 初期化が完了");
     Serial.println("");
     //│
     //○有効性セット
-    ENABLED = !isErr;
+    ENABLED = isOK;
     //┴
   } /* start() */
 } /* namespace devNetwork */

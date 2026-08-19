@@ -6,6 +6,10 @@
 //  - ESP32S3 Dev Module
 //  - USB CDC ON Boot: Enabled
 //  - Flash Size: 4MB (32Mb)
+//  - WiFiの設定ファイルの格納方法：
+//   1. プロジェクトフォルダに/data/config.json を置く
+//   2. Arduino IDE で[Ctrl][Shift][P]を同時押し
+//   3. [Upload LittleFS to Pico/ESP8266/ESP32]を実行
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/16) α版 
 //========================================================
@@ -90,7 +94,7 @@ void setup(){
   //○アダプタを初期化
   InitAdapter();
   //│
-  //○モジュールを初期化
+  //○モジュール管理を初期化
   INO_CMD->Init();
   //│
   //○開始メッセージ出力

@@ -179,10 +179,8 @@ namespace adpTcp {
   ){
     //┬
     //○メッセージをレスポンス
-    if (ctx.logLevel >= 0) { LOG_PRINT(argMSG); }
-    else {
-      argSS.conn.print(argMSG);
-    };
+    if (ctx.logLevel >= 0) LOG_PRINT(argMSG);
+    argSS.conn.print(argMSG);
     //┴
   } /* SEND_CONN() */
 
@@ -392,8 +390,6 @@ namespace adpTcp {
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
-  //----------------------------------
-  // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
   void start(){
     //┬
@@ -408,23 +404,26 @@ namespace adpTcp {
         return;
     } /* END-if */
     //│
-    //○２．サーバ資源生成
+    //○２．対象の通信経路を宣言
+    ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
+    //│
+    //○３．サーバ資源生成
     ns_ACCEPTOR = new WiFiServer(SRV_PORT) ; // WiFiServer
     //│
-    //○３．認証管理TBLを作成
+    //○４．認証管理TBLを作成
     //　➡【該当処理なし】※認証機能なし
     //│
-    //○４．接続管理TBLを作成
+    //○５．接続管理TBLを作成
     SS_CREATE_TBL()                    ; // 領域確保
     //│
-    //○５．ルーティング登録
+    //○６．ルーティング登録
     //　➡【該当処理なし】※handle()で明示的にルーティング
     //│
-    //○６．サーバ開始
+    //○７．サーバ開始
     ns_ACCEPTOR->setNoDelay(true)      ; // TCPの遅延を抑制
     ns_ACCEPTOR->begin();
     //│
-    //○┐７．成功終了
+    //○┐８．成功終了
       //○成功メッセージ
       //○有効化
       Serial.println(String("　TCP Bridge : OK -> port ") + String(SRV_PORT));
@@ -441,10 +440,13 @@ namespace adpTcp {
     if (!ENABLED    ) return;
     if (!ns_ACCEPTOR) return; // サーバの実体化有無を評価
     //│
-    //○２．新規接続のスロットを登録
+    //○２．対象の通信経路を宣言
+    ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
+    //│
+    //○３．新規接続のスロットを登録
     SS_ATTACH_SLOT();
     //│
-    //◎┐３．ルーティング処理
+    //◎┐４．ルーティング処理
     for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
       //│＼（最終スロットに達した場合）
       //│ ▼ルーティングを終了

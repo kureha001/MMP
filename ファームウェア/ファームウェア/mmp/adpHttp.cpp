@@ -178,11 +178,9 @@ namespace adpHttp {
     WebServer&    argSrv , // 送信先
     const String& argJSON
   ) {
-    if (ctx.logLevel >= 0) { LOG_PRINT(argJSON); }
-    else {
-      ADD_CROSS(argSrv);
-      argSrv.send(200, "application/json; charset=utf-8", argJSON);
-    }; /* END-if */
+    if (ctx.logLevel >= 0) LOG_PRINT(argJSON);
+    ADD_CROSS(argSrv);
+    argSrv.send(200, "application/json; charset=utf-8", argJSON);
   } /* SEND_JSON() */
 
   //─────────────────
@@ -221,6 +219,7 @@ namespace adpHttp {
     if (argID == "#FIL!") return "NG:ファイル操作が異常終了";
     if (argID == "#NOD!") return "NG:データ項目名が不正"    ;
     if (argID == "#VAL!") return "NG:数値が基底範囲外"      ;
+    if (argID == "#NOM!") return "NG:機能モジュールが無い"  ;
 
     // アダプタ独自のコード
     if (argID == "!VAL!") return "OK:数値"                  ;
@@ -581,8 +580,6 @@ namespace adpHttp {
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
-  //----------------------------------
-  // 実行元：iniNet.h - InitNet_Service()
   //━━━━━━━━━━━━━━━━━
   void start() {
     //┬
@@ -597,23 +594,26 @@ namespace adpHttp {
         return;
     } /* END-if */
     //│
-    //○２．サーバ資源生成
+    //○２．対象の通信経路を宣言
+    ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
+    //│
+    //○３．サーバ資源生成
     ns_ACCEPTOR = new WebServer(SRV_PORT); // WebServer
     //│
-    //○３．認証管理TBLを作成
+    //○４．認証管理TBLを作成
     AU_CREATE_TBL()                  ; // 領域確保
     //│
-    //○４．接続管理TBLを作成
+    //○５．接続管理TBLを作成
     SS_CREATE_TBL()                  ; // 領域確保
     SS_ATTACH_SLOT()                 ; // 一時スロットを登録
     //│
-    //○５．ルーティング登録
+    //○６．ルーティング登録
     registRoutes(*ns_ACCEPTOR);
     //│
-    //○６．サーバ開始
+    //○７．サーバ開始
     ns_ACCEPTOR->begin();
     //│
-    //○┐７．成功終了
+    //○┐８．成功終了
       //○成功メッセージ
       //○有効化
       Serial.println(String("　WEB API    : OK -> port ") + String(SRV_PORT));
@@ -626,7 +626,7 @@ namespace adpHttp {
   // ハンドラ入口（ポーリング入口）
   //----------------------------------
   // 明示的にルーティング指示しない
-  // サーバ(リスナー)がにルーティング登録した内容に従う
+  // サーバ(リスナー)へルーティング登録した内容に従う
   //━━━━━━━━━━━━━━━━━
   void handle() {
     //┬
@@ -635,9 +635,12 @@ namespace adpHttp {
     if (!ns_ACCEPTOR) return; // サーバの実体化有無を評価
     //│
     //○２．新規接続のスロットを登録
+    SS_ATTACH_SLOT();
+    //│
+    //○３．新規接続のスロットを登録
     //　➡【該当処理なし】※start()で登録済み
     //│
-    //○┐３．ルーティング処理
+    //○┐４．ルーティング処理
       //●コンテクストをセットアップ
       P0_SETUP_CTX(ROUTE_ID, 0)  ; // コンテクストをセットアップ
       //│

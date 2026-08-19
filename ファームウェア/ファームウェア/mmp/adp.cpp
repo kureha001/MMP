@@ -195,7 +195,7 @@
 // デバッグログ表示
 //━━━━━━━━━━━━━━━━━
   void LOG_PRINT(String argMsg){
-    Serial.println(String("============================"));
+    Serial.println(String("\n============================"));
     Serial.println(String("version  :") + String(ctx.version));
 
     Serial.println(String("----------------------------"));
@@ -215,6 +215,7 @@
     Serial.println(String("----------------------------"));
     Serial.println(String("vStream  : ") + String(ctx.vStream.str()));
     Serial.println(String("response : ") + String(argMsg));
+    Serial.println(String("============================\n"));
   } /* LOG_PRINT() */
 
 //━━━━━━━━━━━━━━━━━
@@ -497,9 +498,14 @@
   } /* InitAdapter() */
 
   void kickHandle(){
+    //┬
+    //●通信アダプタ
     adpSerial::handle();
     adpTcp   ::handle();
     adpHttp  ::handle();
-    //adpBLE ::handle(); ※割込み処理されるので実行不要
+    //adpBLE   ::handle(); ※割込み処理されるので実行不要
+    //│
+    //●ＷＥＢアダプタ
     adpAdmin ::handle();
+    //┴
   } /* kickHandle() */

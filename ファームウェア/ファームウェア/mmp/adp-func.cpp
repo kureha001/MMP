@@ -40,12 +40,23 @@
   // 受信バッファをURI形式に変換
   //----------------------------------
   //・先頭/末尾の不要文字を除去
-  //・エスケープ文字処理 ※予定
-  //・URI書式へ整形　　　※予定
   //─────────────────
   void P2_FORMAT_URI(String &str){
-    while (str.startsWith("/")){str.remove(0, 1);            } // 先頭の'/' をすべて削除
-    while (str.endsWith("/")  ){str.remove(str.length() - 1);} // 末尾の'/'をすべて削除
+    //┬
+    //○先頭の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(0);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(0, 1);} else {break;}
+      } /* END-while */ 
+    //│
+    //○末尾の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(str.length() - 1);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(str.length()-1);} else {break;}
+      } /* END-while */ 
+    //┴
   }
 
 //━━━━━━━━━━━━━━━━━
@@ -135,6 +146,9 @@
         //○コマンドパスにフレーム全体(認証コード無し)をセット
          ctx.cmdPath = tmpFrame;
         //┴
+    //│
+    //○コマンドパスを大文字に置換
+    ctx.cmdPath.toUpperCase();
     } /* END-if */
     //┴
   } /* P3_SET_ACD_CPATH() */

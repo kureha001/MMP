@@ -82,7 +82,7 @@ struct MmpContext {
   //│
   //■ユーザメモリ管理のアドレス情報
   int          accID    = -1; // アクセスID(MMP全体の一意な番号)
-  const int    accIDS   = 30; // アクセスIDの総数
+  const int    accIDS   = 30; // アクセスIDの総数(ユーザ認証スロット数)
   //┴
 };
 

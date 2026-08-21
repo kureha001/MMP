@@ -20,9 +20,9 @@
   #include "mmpCtx.h" // 全体利用（実体）
   #include "dev.h"    // setup()
   #include "adp.h"    // setup(), loop()
-#if   defined(MMP_TYPE_MAIN)
+#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
   #include "cmd.h"    // 全体利用（参照）
-#endif
+#endif // ----------------------------------------┘
   //┴
 //┴
 
@@ -73,10 +73,10 @@
   //─────────────────
   // 定義元：cmdMgr.h
   //━━━━━━━━━━━━━━━━━
-#if defined(MMP_TYPE_MAIN)
+#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
   CmdManager OBJ_CMD(ctx)       ; // 本体(依存性注入)
   CmdManager* INO_CMD = &OBJ_CMD; // 外部公開ポインタ
-#endif
+#endif // ----------------------------------------┘
 
 //========================================================
 // セットアップ

@@ -19,8 +19,8 @@
 // ・必要：コメントアウト「しない」
 // ・不要：コメントアウト「する」
 //─────────────────
-//#define ADP_COM_TCP  // TCPブリッジ
-//#define ADP_COM_HTTP // WEB-API
+#define ADP_COM_TCP  // TCPブリッジ
+#define ADP_COM_HTTP // WEB-API
 //#define ADP_COM_BLE  // BLE
 
 //─────────────────

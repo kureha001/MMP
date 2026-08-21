@@ -6,10 +6,6 @@
 //  - ESP32S3 Dev Module
 //  - USB CDC ON Boot: Enabled
 //  - Flash Size: 4MB (32Mb)
-//  - WiFiの設定ファイルの格納方法：
-//   1. プロジェクトフォルダに/data/config.json を置く
-//   2. Arduino IDE で[Ctrl][Shift][P]を同時押し
-//   3. [Upload LittleFS to Pico/ESP8266/ESP32]を実行
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/16) α版 
 //========================================================
@@ -20,10 +16,13 @@
   #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
+  #include "conf.h"   // 各種設定
   #include "mmpCtx.h" // 全体利用（実体）
-  #include "cmd.h"    // 全体利用（参照）
   #include "dev.h"    // setup()
   #include "adp.h"    // setup(), loop()
+#if   defined(MMP_TYPE_MAIN)
+  #include "cmd.h"    // 全体利用（参照）
+#endif
   //┴
 //┴
 
@@ -56,27 +55,28 @@
   //・用途等：
   //  - 通信アダプタ  ：受信データ・処理状態の共有領域
   //  - コマンド管理  ：コマンド実行情報の共有領域
-  //  - 機能モジュール：レスポンス生成領域(仮想ストリーム)、ユーザメモリ管理
+  //  - 機能モジュール：レスポンス生成領域、ユーザメモリ管理
   //─────────────────
   // 定義元：mmpCtx.h
   //━━━━━━━━━━━━━━━━━
-  const char* INO_VERSION = "V10a!";
-  MmpContext ctx  = {.version = INO_VERSION};
+  const String INO_SYS_VERSION = "V10a!";
+  MmpContext ctx = {.sysVer = INO_SYS_VERSION};
 
   //━━━━━━━━━━━━━━━━━
   //【コマンド管理】
-  // 通信アダプタと機能モジュールの共通I/F
+  // 機能モジュールの共通API
   //─────────────────
   //・所有者：スケッチ
-  //・利用者：通信アダプタ、管理内部の特定機能
+  //・利用者：コマンド管理
   //・利用法：公開ポインタ経由でアクセス
   //・用途等：所有権を保持したまま依存方向を制御
   //─────────────────
   // 定義元：cmdMgr.h
   //━━━━━━━━━━━━━━━━━
+#if defined(MMP_TYPE_MAIN)
   CmdManager OBJ_CMD(ctx)       ; // 本体(依存性注入)
   CmdManager* INO_CMD = &OBJ_CMD; // 外部公開ポインタ
-
+#endif
 
 //========================================================
 // セットアップ
@@ -94,17 +94,18 @@ void setup(){
   //○アダプタを初期化
   InitAdapter();
   //│
+#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
   //○モジュール管理を初期化
   INO_CMD->Init();
+#endif // ----------------------------------------┘
   //│
   //○開始メッセージ出力
   Serial.println("---------------------------");
-  Serial.print  ("Running... MMP Ver");
-  Serial.println(String(ctx.version));
+  Serial.print  (String(ctx.sysName));
+  Serial.println(String(" Ver.") + String(ctx.sysVer ));
   Serial.println("---------------------------");
   //┴
 } /* setup() */
-
 
 //========================================================
 // ポーリング
@@ -114,7 +115,7 @@ void setup(){
 //========================================================
 void loop(){
   //┬
-  //○サービス・アダプタのハンドルをキック
+  //○各アダプタのハンドルをキック
   kickHandle();
   //┴
 } /* loop() */

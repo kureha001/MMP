@@ -14,7 +14,7 @@
   #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
-  #include "cmdAPI.h"  // 抽象基底クラス
+  #include "cmdAPI.h" // 抽象基底クラス
   //│
   //★★★ コマンド・モジュール保守の対応箇所(1/4) ★★★
   //■コマンド・モジュール

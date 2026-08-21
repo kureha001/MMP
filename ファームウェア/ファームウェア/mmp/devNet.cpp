@@ -1,15 +1,13 @@
 // filename : devNet.cpp
 //========================================================
-// 資源初期化：ネットワーク系
+// 通信デバイス初期化：ＷｉＦｉサーバ
 //--------------------------------------------------------
-// ネットワーク通信が利用可能な状態にする
+//【WiFiの設定ファイルの格納方法】
+//  1. プロジェクトフォルダに/data/config.json を置く
+//  2. Arduino IDE で[Ctrl][Shift][P]を同時押し
+//  3. [Upload LittleFS to Pico/ESP8266/ESP32]を実行
 //--------------------------------------------------------
-//【障害対策】
-//・ 設定ファイル読込：失敗すると緊急ＡＰモードで起動
-//・ Wi-Fi設定    ：失敗すると緊急ＡＰモードで起動
-//・ サービス起動    ：軌道に失敗したサービスが使えない
-//--------------------------------------------------------
-// Ver 1.1.1 (2026/08/20) α版修正 
+// 2026/08/21 : 大幅リファクタリング 
 //========================================================
 #pragma once
 //┬
@@ -46,7 +44,7 @@ namespace devNetwork {
   // 接続条件
   //─────────────────
   IPAddress g_IP = IPAddress(192,168,99,3); // APモードのデフォルトIP
-  constexpr int g_WAIT      = 12000;        // SSID接続待ち時間ms
+  constexpr int g_WAIT      = 15000;        // SSID接続待ち時間ms
   constexpr int g_WAIT_INT  = g_WAIT / 10;  // SSID接続待ち時間ms(間隔)
   constexpr int g_WAIT_DIS  = 500 ;         // 切断後の待ち時間ms
 
@@ -328,7 +326,7 @@ typeConnect g_WIFI;
       //│ ＼（しばらく待っても接続できない場合）
           //○接続を切断
           //▼RETURN:接続に失敗
-          Serial.println(" [NG] (DHCP IP) status");
+          Serial.println(" [NG] DHCP");
           return false;
       } /* END-if */
       //┴
@@ -345,7 +343,7 @@ typeConnect g_WIFI;
       if (oct4.length() == 0) {
       //│ ＼（指定がない場合）
       //│  ▼RETURN：接続に成功(DHCPのまま採用)
-            Serial.println(" [OK] IP Address [1:DHCP IP]");
+            Serial.println(" [OK] useing DHCP-IP(1)]");
             RUN_INFO(pSSID, pName, WiFi.localIP().toString());
             return true;
       } /* END-if */
@@ -355,7 +353,7 @@ typeConnect g_WIFI;
       if (!newIP) {
       //│ ＼（取得できない場合）
       //│  ▼RETURN：接続に成功(DHCPのまま採用)
-            Serial.println(" [OK] IP Address [2:DHCP IP]");
+            Serial.println(" [OK] useing DHCP-IP(2)");
             RUN_INFO(pSSID, pName, WiFi.localIP().toString());
             return true;
       } /* END-if */
@@ -381,7 +379,7 @@ typeConnect g_WIFI;
       if    (WiFi.status() != WL_CONNECTED) {
       //│ ＼（しばらく待っても接続できない場合）
       //│  ▼RETURN:接続に成功
-            Serial.println(" [NG] (STATIC IP) status");
+            Serial.println(" [NG] STA-IP");
             return false;
       } /* END-if */
       //┴

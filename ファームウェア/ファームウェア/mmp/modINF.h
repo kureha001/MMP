@@ -48,7 +48,7 @@ public:
       if (dat_cnt != 1){_ResChkErr(sp); return; }
 
       // ２．バージョン(文字列)を返す
-      sp.print(ctx.version);
+      sp.print(ctx.sysVer);
 
       // ３．後処理：
       return;
@@ -89,7 +89,7 @@ public:
         if (!_Str2Int(dat[1], intLv, -1, 5)){_ResChkErr(sp); return;}
 
       // ２．出力レベルをセット
-      ctx.logLevel = intLv;
+      ctx.sysLog = intLv;
 
       // ３．後処理：
       _ResOK(sp);

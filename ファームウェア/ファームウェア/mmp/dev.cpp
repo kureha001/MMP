@@ -12,6 +12,7 @@
   //■Arduinoシステム
   //│
   //■ＭＭＰシステム
+  #include "conf.h"   // 各種設定
   #include "dev.h"
 //┴
 
@@ -25,10 +26,19 @@ void InitDevice() {
   //    ログ出力機能が未起動のため、
   //    Serial初期化完了後にdevSerial::start()内で通知する
   //│
-  //○通信デバイスを初期化
-  devSerial ::start(); // シリアル
-  devNetwork::start(); // ネットワーク
-  devBLE    ::start(); // Bluetooth
+  //●通信デバイスを初期化（シリアル）
+  devSerial ::start();
+  //│
+// -----┨ＴＣＰ通信｜WebAPI通信｜ＷＥＢ画面┠----┐
+#if defined(ADP_COM_TCP) || defined(ADP_COM_HTTP) || defined(ADP_WEB)
+  //●通信デバイスを初期化（WiFi）
+  devNetwork::start();
+#endif // ----------------------------------------┘
+  //│
+#if defined(ADP_COM_BLE  ) // --┨ＢＬＥ通信┨----┐
+  //●通信デバイスを初期化（BLE）
+  devBLE    ::start();
+#endif // ----------------------------------------┘
   //│
   //○終了表示
   // ➡【初期化順序制約】

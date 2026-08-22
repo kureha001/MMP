@@ -44,7 +44,7 @@ class MmpClient:
     #━━━━━━━━━━━━━━━
     # 使用モジュール
     #━━━━━━━━━━━━━━━
-    from mmp_core_INF import _Info
+    from mmp_core_SYS import _System
     from mmp_core_ANA import _Analog
     from mmp_core_DIG import _Digital
     from mmp_core_PWM import _Pwm
@@ -66,7 +66,7 @@ class MmpClient:
         self.Settings   = Settings()
 
         # 機能モジュールを実装する
-        self.INFO    = self._Info   (self, self.Settings.TimeoutGeneral)
+        self.SYS     = self._System (self, self.Settings.TimeoutGeneral)
         self.ANALOG  = self._Analog (self, self.Settings.TimeoutAnalog )
         self.DIGITAL = self._Digital(self, self.Settings.TimeoutDigital)
         self.PWM     = self._Pwm    (self, self.Settings.TimeoutPWM    )
@@ -180,7 +180,7 @@ class MmpClient:
         # 通信速度切替で不安定になるので、最初にダミーのコマンドを送信
         t    = self.Settings.TimeoutVerify
         resp = self._send_command("!"            , t)
-        resp = self._send_command("INFO/VERSION!", t)
+        resp = self._send_command("SYS/VERSION!", t)
 
         # レスポンスをチェック
         if len(resp)    != RES_LENGTH   : return

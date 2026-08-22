@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# filename : mmp_core_INF.py
+# filename : mmp_core_SYS.py
 #============================================================
 # ＭＭＰコマンド：システム情報
 # バージョン：0.5
@@ -9,7 +9,7 @@
 # ・マイコン：[LIB]
 # ・プロジェクトと同一ディレクトリ
 #============================================================
-class _Info:
+class _System:
 #━━━━━━━━━━━━━━━
 # コンストラクタ
 #━━━━━━━━━━━━━━━
@@ -21,7 +21,22 @@ class _Info:
 # コマンド
 #━━━━━━━━━━━━━━━
     #─────────────
-    # バージョン
+    # バージョン取得
     #─────────────
     def VERSION(self) -> str:
-        return self._p._send_command("INFO/VERSION!", self.TimeOut)
+        return self._p._send_command("SYS/VERSION!", self.TimeOut)
+
+    #─────────────
+    # ＭＭＰ再起動
+    #─────────────
+    def BOOT(self) -> bool:
+        res = self._p._send_command("SYS/BOOT!", self.TimeOut)
+        return res == "!!!!!"
+
+    #─────────────
+    # ログレベル設定
+    #─────────────
+    def LOG(self, val:int) -> bool:
+        cmd = f"SYS/SET_LOG:{val}!"
+        res = self._p._send_command(cmd, self.TimeOut)
+        return res == "!!!!!"

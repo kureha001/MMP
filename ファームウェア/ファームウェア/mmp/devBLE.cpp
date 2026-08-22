@@ -79,7 +79,7 @@ namespace devBLE {
     // このサーバがBLE接続を受け付ける本体となる。
     MY_SRV = BLEDevice::createServer();
     if (MY_SRV == nullptr) {
-    //│ ＼（失敗した場合）
+    //│＼（失敗した場合）
         //○エラーメッセージを表示
         //○無効化
         //▼RETURN：処理を中断
@@ -92,7 +92,7 @@ namespace devBLE {
     //○MMP用BLEサービスを生成
     BLEService *pService = MY_SRV->createService(UUID_SERVICE);
     if (pService == nullptr) {
-    //│ ＼（失敗した場合）
+    //│＼（失敗した場合）
         //○エラーメッセージを表示
         //○無効化
         //▼RETURN：処理を中断
@@ -131,7 +131,7 @@ namespace devBLE {
       // Advertising資源への参照を取得する。
       BLEAdvertising *BLE_ADV = BLEDevice::getAdvertising();
       if (BLE_ADV == nullptr) {
-      //│ ＼（認失敗した場合）
+      //│＼（認失敗した場合）
           //○エラーメッセージを表示
           //○無効化
           //▼RETURN：処理を中断

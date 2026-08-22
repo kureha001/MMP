@@ -43,8 +43,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModuleAnalog(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
 
-    Serial.println("---------------------------");
-    Serial.println("[HC4067 buffer initialize]");
+    Serial.println(" [HC4067]");
 
     // クライアント別データのメモリ確保
     void* p = calloc(ctx.accIDS, sizeof(AnaClientData)); // 全要素0で初期化して確保
@@ -57,8 +56,9 @@ public:
         g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
     }
 
-    Serial.println(String("　Device  ID : 0 ～ 3 "));
-    Serial.println(String("　Channel ID : 0 ～ 16"));
+    Serial.println(String("　- Device  ID : 0 ～ 3 "));
+    Serial.println(String("　- Channel ID : 0 ～ 16"));
+    Serial.println("");
   }
 
   //========================================================

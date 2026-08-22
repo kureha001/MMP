@@ -323,7 +323,7 @@ typeConnect g_WIFI;
       uint32_t t0 = millis();
       while (WiFi.status() != WL_CONNECTED && (millis()-t0) < g_WAIT){Serial.print("."); delay(g_WAIT_INT);}
       if    (WiFi.status() != WL_CONNECTED) {
-      //│ ＼（しばらく待っても接続できない場合）
+      //│＼（しばらく待っても接続できない場合）
           //○接続を切断
           //▼RETURN:接続に失敗
           Serial.println(" [NG] DHCP");
@@ -342,17 +342,19 @@ typeConnect g_WIFI;
       //○第4オクテット(JSON)を確認
       if (oct4.length() == 0) {
       //│ ＼（指定がない場合）
-      //│  ▼RETURN：接続に成功(DHCPのまま採用)
-            Serial.println(" [OK] useing DHCP-IP(1)]");
-            RUN_INFO(pSSID, pName, WiFi.localIP().toString());
-            return true;
+          //○正常処理を表示
+          //●ステータスを表示
+          //▼RETURN：接続に成功(DHCPのまま採用)
+          Serial.println(" [OK] useing DHCP-IP(1)]");
+          RUN_INFO(pSSID, pName, WiFi.localIP().toString());
+          return true;
       } /* END-if */
       //│
       //○静的IPを取得(DHCP発行のIPアドレスの第4オクテットを変更)
       IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
       if (!newIP) {
-      //│ ＼（取得できない場合）
-      //│  ▼RETURN：接続に成功(DHCPのまま採用)
+      //│＼（取得できない場合）
+      //│ ▼RETURN：接続に成功(DHCPのまま採用)
             Serial.println(" [OK] useing DHCP-IP(2)");
             RUN_INFO(pSSID, pName, WiFi.localIP().toString());
             return true;
@@ -378,13 +380,14 @@ typeConnect g_WIFI;
       while (WiFi.status() != WL_CONNECTED && (millis()-t0) < g_WAIT){Serial.print("."); delay(g_WAIT_INT);}
       if    (WiFi.status() != WL_CONNECTED) {
       //│ ＼（しばらく待っても接続できない場合）
-      //│  ▼RETURN:接続に成功
-            Serial.println(" [NG] STA-IP");
-            return false;
+          //○エラーを表示
+          //▼RETURN:接続に成功
+          Serial.println(" [NG] STA-IP");
+          return false;
       } /* END-if */
       //┴
     //│
-    //○接続情報を画面に表示
+    //○接続情報を表示
     Serial.println(" Connected.");
     RUN_INFO(pSSID, pName, WiFi.localIP().toString());
     //│
@@ -413,14 +416,13 @@ typeConnect g_WIFI;
     //○WiFiサーバを起動（AP）
     if (!WiFi.softAP(pSSID.c_str())) {
     //│ ＼（起動に失敗した場合）
-    //│  ▼RETURN:起動に失敗
-          Serial.println("      [NG] softAP");
-          return false;
+        //○エラーを表示
+        //▼RETURN:起動に失敗
+        Serial.println("      [NG] softAP");
+        return false;
     } /* END-if*/
     //│
-    //○接続を確認 (APモードではWL_CONNECTEDにならない)
-    //│
-    //○接続情報を画面に表示
+    //○接続情報を表示
     RUN_INFO(pSSID, pName, WiFi.softAPIP().toString());
     //│
     //▼RETURN:接続成功
@@ -459,8 +461,8 @@ typeConnect g_WIFI;
     //◎┐WiFi情報の候補を順に試行
     bool isRun = false;
     for (int i=0; i < g_WIFI.candNum && !isRun; i++){
-      //│ ＼（[最後まで走査し終えた]または[起動できた]の場合）
-      //│  ▼走査を終了する
+      //│＼（[最後まで走査し終えた]または[起動できた]の場合）
+      //│ ▼走査を終了する
       //│
       //●WiFiサーバを起動
       String pLabel = g_WIFI.candList[i].label.c_str();

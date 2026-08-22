@@ -38,7 +38,7 @@ namespace adpHttp {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{ // ※共通テンプレートから派生
+  struct T_SS_SLOT : SS_SLOT_TYPE{
     WebServer*      conn  = nullptr; // アクセス資源(参照)
   };
   static T_SS_SLOT* ssTBL = nullptr; // 事前予約
@@ -49,16 +49,20 @@ namespace adpHttp {
   //─────────────────
   // 初期化
   //----------------------------------
-  // ➡【該当処理なし】※固定スロット
+  // 引数：(参照)接続管理スロット
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){}
+  // ➡【該当処理なし】※固定スロット
 
   //─────────────────
   // 空きSID取得
   //----------------------------------
-  // ➡【該当処理なし】※固定スロット
+  // 戻り値：スロットID
+  // ・0,1,2...：空きスロットのID
+  // ・-1：空きスロットが無い
   //─────────────────
-  int SS_GET_FREE_ID(){}
+  int SS_GET_FREE_ID(){return -1;}
+  // ➡【該当処理なし】※固定スロット
 
   //─────────────────
   // 登録
@@ -112,7 +116,7 @@ namespace adpHttp {
   ) {
     //┬
     //●ログ出力
-    if (ctx.sysLog >= 0) LOG_PRINT(argJSON);
+    if (ctx.sysLog >= 0) F_SHOW_LOG(argJSON);
     //│
     //○JSONをレスポンス
     ADD_CROSS(argSrv);
@@ -255,69 +259,86 @@ namespace adpHttp {
   //─────────────────
   // １．接続状態を確認
   //----------------------------------
-  // ➡【該当処理なし】
+  // 戻り値：接続状態（論理値）
+  // ・false：良好
+  // ・true ：不良
   //─────────────────
   bool P1_CONNECT(T_SS_SLOT& argSS){return false;}
+  // ➡【該当処理なし】
 
   //─────────────────
   // ２．フレームを取得
   //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
-  // ・true ：フレームが「未完成」
-  // ・false：フレームが「完成」
+  // ・true ：未完成
+  // ・false：完成
   //----------------------------------
   //【データ受信方式】
-  // ・取得単位：パケット
-  // ・取得対象：サーバ(参照) argSS.conn->uri()
+  // ・取得単位  ：パケット
+  // ・データ受信：サーバ(参照) argSS.conn->uri()
   //─────────────────
-  bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
+  bool P2_MAKE_FRAME(T_SS_SLOT& argSS){
     //┬
     //○受信データからフレームを作成
     ctx.strFrame = argSS.conn->uri();
     //│
     //●フレームをURI形式に変換
-    P2_FORMAT_URI(ctx.strFrame);
+    F2_FORMAT_URI(ctx.strFrame);
     //│
-    //▼RETURN:フレームの作成状況
+    //▼RETURN：フレームの作成状況
     return (ctx.strFrame == "" ? true : false);
     //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
-  // ３．基本情報を取得（MMP本体のみ）
-  //----------------------------------
-  //【詳細】
-  // フレーム書式    ：{認証コード}/{コマンドパス}!
+  // ３．基本情報を取得
   //─────────────────
   void P3_MAKE_INFO(){
     //┬
     //〇フレームの内容をもとに認証CD・コマンドパスにセット
-    P3_SET_ACD_CPATH();
+    F3_SET_ACD_CPATH();
     //┴
   } /* P3_MAKE_INFO() */
 
   //─────────────────
-  // ４．認証を実施（MMP本体のみ）
+  // ４．認証を実施
   //----------------------------------
-  //【詳細】
-  // 常時接続のため、認証は行わない
+  // 引数：(参照)接続管理スロット
   //----------------------------------
-  // 戻り値：論理値
-  // ・false：認証に成功、認証が不要
-  // ・true ：認証に失敗
+  // 戻り値：認証後の指針(論理値)
+  // ・false： 処理継続が可能
+  // ・true ： 処理継続が不可
   //─────────────────
-  bool P4_AUTH(T_SS_SLOT&  argSS){
+  bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
-    //○認証処理をおこなう
-    String strRes = P4_CHECK_AUTH();
-    if (strRes != "") {SEND_CONN(argSS, strRes); return true;}
-    //│ ＼（レスポンスメッセージがある場合）
-        //▼RETURN:処理の継続不可
+    //●認証処理を実施
+    String strRes = F4_CHECK_AUTH();
+    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
+    //│＼（メッセージがある場合）
+        //●エラーをレスポンス
+        //▼RETURN：処理継続が不可
     //│
-    //▼RETURN:処理の継続可能
+    //▼RETURN：処理継続が可能
     return false;
     //┴
   } /* P4_AUTH() */
+
+  //─────────────────
+  // ５．MMPコマンドを実行
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //─────────────────
+  void P5_RUN_COMMAND(T_SS_SLOT& argSS){
+    //┬
+    //●MMPコマンドを実行
+    String resMMP = F5_RUN();
+    //│
+    //●実行結果をレスポンス
+    SEND_CONN(argSS, resMMP);
+    //┴
+  } /* P5_RUN_COMMAND() */
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
@@ -335,29 +356,26 @@ namespace adpHttp {
     //┬
     //○１．接続状態を確認
     if (P1_CONNECT(argSS)) return;
-    //│ ＼（接続状態が「不良」の場合）
-        //▼RETURN：早期リターン
+    //│＼（不良の場合）
+    //│ ▼RETURN：早期リターン
     //│
     //●２．フレームを取得
     if (P2_MAKE_FRAME(argSS)) return;
-    //│ ＼（フレームが「未完成」の場合）
-        //▼RETURN：早期リターン
+    //│＼（未完成の場合）
+    //│ ▼RETURN：早期リターン
     //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
     //○３．基本情報を取得
     P3_MAKE_INFO();
     //│
-    //○４．ユーザ認証を実施（MMP本体のみ）
+    //○４．ユーザ認証を実施
     if (P4_AUTH(argSS)) return;
-    //│ ＼（処理続行の判定が「不許可」の場合）
-        //▼RETURN：早期リターン
+    //│＼（処理継続が不可の場合）
+    //│ ▼RETURN：早期リターン
 #endif // ----------------------------------------┘
     //│
     //●５．MMPコマンドを実行
-    String resMMP = P5_RUN();
-    //│
-    //●６．実行結果をレスポンス
-    SEND_CONN(argSS, resMMP);
+    P5_RUN_COMMAND(argSS);
     //┴
   } /* routeMMP() */
 
@@ -412,15 +430,15 @@ namespace adpHttp {
     server.onNotFound( [&server](){ // NotFound("/"以外)が処理対象
       //○ＭＭＰ処理へ渡す要求であるかを確認
       if (server.method() == HTTP_OPTIONS){
-      //│ ＼（HTTP層で完結している）
+      //│＼（HTTP層で完結している）
           //●CORS事前確認へ応答
+          //▼RETURN：対象外
           route204(server);
-          //▼RETURN
           return;
       }   /* if */
       //│
-      //●コンテクストをセットアップ
-      SETUP_CTX(ROUTE_ID, 0);
+      //●対象スロットをセット
+      F0_SETUP(ROUTE_ID, 0);
       //│
       //●ＭＭＰコマンドへの応答
       routeMMP(ssTBL[0]);
@@ -437,10 +455,10 @@ namespace adpHttp {
     //┬
     //○１．前準備の完了状態を確認
     if (ADP_SRV) {
-    //│ ＼（通信デバイスが起動していない場合）
+    //│＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼異常終了
+        //▼RETURN：早期リターン
         Serial.println("　WEB API    : ＷＥＢサーバが起動していません ");
         ENABLED = false; // 無効
         return;
@@ -478,8 +496,8 @@ namespace adpHttp {
     //┬
     //○１．起動チェック
     if (!ENABLED) return; // 初期化済み
-    //│ ＼（このアダプタが無効の場合）
-    //│  ▼RETURN：早期リターン
+    //│＼（このアダプタが無効の場合）
+    //│ ▼RETURN：早期リターン
     //│
     //○２．新規接続のスロットを登録
     // ➡【該当処理なし】※固定スロット

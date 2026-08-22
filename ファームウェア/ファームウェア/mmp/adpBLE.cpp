@@ -44,9 +44,9 @@ namespace adpBLE {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{ // ※共通テンプレートから派生
-    String             conn_rx  = ""     ; // 受信バッファ（文字列ワーク）
-    BLECharacteristic* conn_tx  = nullptr; // 送信資源（参照）
+  struct T_SS_SLOT : SS_SLOT_TYPE{
+    String             connRX  = ""     ; // 受信バッファ（文字列ワーク）
+    BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
   };
   static T_SS_SLOT*    ssTBL    = nullptr; // 事前予約
 
@@ -55,19 +55,24 @@ namespace adpBLE {
 //========================================================
   //─────────────────
   // 初期化
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
-    SS_INI_SLOT_BASE(argSlot) ; // 共通メンバを初期化
-    argSlot.conn_rx = ""      ; // 受信バッファをクリア
-    argSlot.conn_tx = nullptr ; // 送信資源の参照解除
+    SS_INI_SLOT_BASE(argSlot); // 共通メンバを初期化
+    argSlot.connRX = ""      ; // 受信バッファをクリア
+    argSlot.connTX = nullptr ; // 送信資源の参照解除
   } /* SS_INI_SLOT */
 
   //─────────────────
   // 空きSID取得
   //----------------------------------
-  // ➡【該当処理なし】※固定スロット
+  // 戻り値：スロットID
+  // ・0,1,2...：空きスロットのID
+  // ・-1：空きスロットが無い
   //─────────────────
-  int SS_GET_FREE_ID(){}
+  int SS_GET_FREE_ID(){return -1;}
+  // ➡【該当処理なし】※固定スロット
 
   //─────────────────
   // 登録
@@ -78,8 +83,8 @@ namespace adpBLE {
     SS_INI_SLOT(ssTBL[0]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[0].used    = true          ; // 使用中
-    ssTBL[0].conn_tx = devBLE::BLE_TX; // 参照先を登録
+    ssTBL[0].used   = true          ; // 使用中
+    ssTBL[0].connTX = devBLE::BLE_TX; // 参照先を登録
     //┴
   } /* SS_ATTACH_SLOT() */
 
@@ -95,12 +100,12 @@ namespace adpBLE {
   ){
     //┬
     //●ログ出力
-    if (ctx.sysLog >= 0) LOG_PRINT(argMSG);
+    if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
     //│
     //○メッセージをレスポンス
-    if (argSS.conn_tx != nullptr) {
-      argSS.conn_tx->setValue(argMSG.c_str());
-      argSS.conn_tx->notify();
+    if (argSS.connTX != nullptr) {
+      argSS.connTX->setValue(argMSG.c_str());
+      argSS.connTX->notify();
     } /* END-if */
     //┴
   } /* SEND_CONN() */
@@ -111,9 +116,11 @@ namespace adpBLE {
   //─────────────────
   // １．接続状態を確認
   //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //----------------------------------
   // 戻り値：接続状態（論理値）
-  // ・false：接続状態が「良好」
-  // ・true ：接続状態が「不良」
+  // ・false：良好
+  // ・true ：不良
   //----------------------------------
   //【詳細】不正の場合：スロットを保持
   //─────────────────
@@ -121,14 +128,14 @@ namespace adpBLE {
     //┬
     //○接続状態を確認
     if (!argSS.used) {
-    //│ ＼（[未使用]の場合）
+    //│＼（[未使用]の場合）
         //●スロットを初期化
-        //▼RETURN：接続状態が「不良」
+        //▼RETURN：不良
         SS_INI_SLOT(argSS);
         return true;
     } // END-if */
     //│
-    //▼RETURN：接続状態が「良好」
+    //▼RETURN：良好
     return false;
     //┴
   } /* P1_CONNECT() */
@@ -136,37 +143,36 @@ namespace adpBLE {
   //─────────────────
   // ２．フレームを取得
   //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
-  // ・true ：フレームが「未完成」
-  // ・false：フレームが「完成」
+  // ・true ：未完成
+  // ・false：完成
   //----------------------------------
   //【データ受信方式】
-  // ・取得単位：パケット
-  // ・取得対象：サーバ(参照) pCharacteristic->getValue()
+  // ・取得単位  ：パケット
+  // ・データ受信：サーバ(参照) pCharacteristic->getValue()
   //─────────────────
-  bool P2_MAKE_FRAME(T_SS_SLOT&  argSS){
+  bool P2_MAKE_FRAME(T_SS_SLOT& argSS){
     //┬
     //○受信データからフレームを作成
-    ctx.strFrame = argSS.conn_rx;
+    ctx.strFrame = argSS.connRX;
     //│
     //●フレームをURI形式に変換
-    P2_FORMAT_URI(ctx.strFrame);
+    F2_FORMAT_URI(ctx.strFrame);
     //│
-    //▼RETURN:フレームの作成状況
+    //▼RETURN：フレームの作成状況
     return (ctx.strFrame == "" ? true : false);
     //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
   // ３．基本情報を取得
-  //----------------------------------
-  //【詳細】
-  // フレーム書式    ：{コマンドパス}!
   //─────────────────
   void P3_MAKE_INFO(){
     //┬
     //〇フレームの内容をもとに認証CD・コマンドパスにセット
-    P3_SET_ACD_CPATH();
+    F3_SET_ACD_CPATH();
     //┴
   } /* P3_MAKE_INFO() */
 
@@ -174,21 +180,37 @@ namespace adpBLE {
   // ４．認証を実施
   //----------------------------------
   // 戻り値：認証結果（論理値）
-  // ・false： 処理続行の判定が「許可」
-  // ・true ： 処理続行の判定が「不許可」
+  // ・false： 処理継続が可能
+  // ・true ： 処理継続が不可
   //─────────────────
-  bool P4_AUTH(T_SS_SLOT&  argSS){
+  bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
-    //○認証処理をおこなう
-    String strRes = P4_CHECK_AUTH();
-    if (strRes != "") {SEND_CONN(argSS, strRes); return true;}
-    //│ ＼（レスポンスメッセージがある場合）
-        //▼RETURN：処理続行の判定が「不許可」
+    //●認証処理を実施
+    String strRes = F4_CHECK_AUTH();
+    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
+    //│＼（メッセージがある場合）
+        //●エラーをレスポンス
+        //▼RETURN：処理継続が不可
     //│
-    //▼RETURN：処理続行の判定が「不許可」
+    //▼RETURN：処理継続が可能
     return false;
     //┴
   } /* P4_AUTH() */
+
+  //─────────────────
+  // ５．MMPコマンドを実行
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //─────────────────
+  void P5_RUN_COMMAND(T_SS_SLOT& argSS){
+    //┬
+    //●MMPコマンドを実行
+    String resMMP = F5_RUN();
+    //│
+    //●実行結果をレスポンス
+    SEND_CONN(argSS, resMMP);
+    //┴
+  } /* P5_RUN_COMMAND() */
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
@@ -199,13 +221,13 @@ namespace adpBLE {
     //┬
     //○１．接続状態を確認
     if (P1_CONNECT(argSS)) return;
-    //│ ＼（接続状態が「不良」の場合）
-        //▼RETURN：早期リターン
+    //│＼（不良の場合）
+    //│ ▼RETURN：早期リターン
     //│
     //●２．フレームを取得
     if (P2_MAKE_FRAME(argSS)) return;
-    //│ ＼（フレームが「未完成」の場合）
-        //▼RETURN：早期リターン
+    //│＼（未完成の場合）
+    //│ ▼RETURN：早期リターン
     //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
     //○３．基本情報を取得
@@ -213,15 +235,12 @@ namespace adpBLE {
     //│
     //○４．ユーザ認証を実施
     if (P4_AUTH(argSS)) return;
-    //│ ＼（処理続行の判定が「不許可」の場合）
-        //▼RETURN：早期リターン
+    //│＼（処理継続が不可の場合）
+    //│ ▼RETURN：早期リターン
 #endif // ----------------------------------------┘
     //│
     //●５．MMPコマンドを実行
-    String resMMP = P5_RUN();
-    //│
-    //●６．実行結果をレスポンス
-    SEND_CONN(argSS, resMMP);
+    P5_RUN_COMMAND(argSS);
     //┴
   } /* routeMMP() */
 
@@ -240,8 +259,8 @@ namespace adpBLE {
       //┬
       //○接続状況を確認
       if (ssTBL[0].used) return;
-      //│ ＼（既に参加している場合）
-          //▼RETURN：これ以上は参加させない
+      //│＼（既に参加している場合）
+      //│ ▼RETURN：これ以上は参加させない
       //│
       //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
@@ -275,23 +294,24 @@ namespace adpBLE {
     void onWrite(BLECharacteristic *pCharacteristic) override {
       //┬
       //○未取り込みデータを受信（getValue()参照後は消費されない）
-      ssTBL[0].conn_rx = pCharacteristic->getValue();
-      if (ssTBL[0].conn_rx.length() < 1) return;
-      //│ ＼（空の場合）
-          //▼RETURN：早期リターン
+      ssTBL[0].connRX = pCharacteristic->getValue();
+      if (ssTBL[0].connRX.length() < 1) return;
+      //│＼（空の場合）
+      //│ ▼RETURN：早期リターン
       //│
       //○１．起動チェック
       if (!ENABLED) return;
-      //│ ＼（無効の場合）
-          //▼RETURN：早期リターン
+      //│＼（無効の場合）
+      //│ ▼RETURN：早期リターン
       //│
       //○２．新規接続のスロットを登録
       // ➡【該当処理なし】※start()で登録済み
       //│
       //○┐３．ルーティング処理
-        //●コンテクストをセットアップ
+        //●対象スロットをセット
+        F0_SETUP(ROUTE_ID, 0);
+        //│
         //●MMPコマンドへルーティング
-        SETUP_CTX(ROUTE_ID, 0);
         routeMMP(ssTBL[0]);
         //┴
       //┴
@@ -311,13 +331,13 @@ namespace adpBLE {
     //○１．前準備の完了状態を確認
     if (!devBLE::ENABLED) devBLE::start();
     if (!devBLE::ENABLED || !devBLE::MY_SRV) {
-    //│ ＼（通信デバイスが起動していない場合）
+    //│＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼異常終了
-      Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
-      ENABLED = false;
-      return;
+        //▼RETURN：早期リターン
+        Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
+        ENABLED = false;
+        return;
     } /* END-if */
     //│
     //○２．対象の通信経路を宣言

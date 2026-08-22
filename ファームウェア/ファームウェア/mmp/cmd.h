@@ -18,7 +18,7 @@
   //│
   //★★★ コマンド・モジュール保守の対応箇所(1/4) ★★★
   //■コマンド・モジュール
-  #include "modINF.h" // システム情報
+  #include "modSYS.h" // システム
   #include "modANA.h" // アナログ入力
   #include "modDIG.h" // デジタル入出力
   #include "modPWM.h" // PWM出力
@@ -75,7 +75,7 @@
   namespace MMP_MOD {
 
     //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
-    static const T_MOD INF    = { "INFO"    ,  5,  5,  5 };
+    static const T_MOD SYS    = { "SYS"    ,  5,  5,  5 };
     static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
     static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
     static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
@@ -84,7 +84,7 @@
 
     //★★★ コマンド・モジュール保守の対応箇所(3/4) ★★★
     static const T_MOD* const LIST[] = {
-      &INF,
+      &SYS,
       &ANA_I,
       &DIG_IO,
       &PWM,
@@ -120,26 +120,26 @@ public:
   //─────────────────
   void Init(){
     //┬
+    //○開始表示
+    Serial.println("---------------------------");
+    Serial.println("<<ハードウェアの初期化>>");
+    //│
     //○コマンド・モジュールを登録
     //★★★ コマンド・モジュール保守の対応箇所(4/4) ★★★
-    mods.push_back(new ModuleInfo   (ctxRef, MMP_MOD::INF.name   ));
+    mods.push_back(new ModuleSystem (ctxRef, MMP_MOD::SYS.name   ));
     mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
     mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
     mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
     mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
     mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
     //│
-    //○開始表示
-    Serial.println("---------------------------");
-    Serial.println("<<コマンド・モジュールの初期化>>");
-    //│
-    //◎┐ログを表示
+    //◎┐登録名を表示
     for (auto* m : mods){
       //│＼（全モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
       //●モジュール名を表示
-      Serial.println(String("　installed  : ") + String(m->getModName()));
+      Serial.print(String(" [") + String(m->getModName() + String("]")));
       //┴
     } /* END-for */
     //│

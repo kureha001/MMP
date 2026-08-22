@@ -24,10 +24,10 @@
     // 通信アダプタの名前空間で派生(名称:INIT_SLOT)
     //─────────────────
     void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot){
-      argSlot.used       = false    ; // スロット有効性をクリア
-      argSlot.rx         = ""       ; // 受信バッファをクリア
-      argSlot.rx.reserve(SS_RX_SIZE); // 受信バッファ容量を事前確保
-      argSlot.isOverflow = false    ; // 容量超過フラグをクリア
+      argSlot.used   = false; // スロット有効性を「無効」
+      argSlot.isOver = false; // 容量超過フラグを「OFF」
+      argSlot.rx     = ""   ; // 受信バッファをクリア
+      argSlot.rx.reserve(SS_RX_SIZE); // 容量確保
     } /* SS_INI_SLOT_BASE */
 
 //========================================================
@@ -38,7 +38,7 @@
   //─────────────────
   // 接続スロットごとに行う前処理
   //━━━━━━━━━━━━━━━━━
-  void SETUP_CTX(int argRID, int argSID){
+  void F0_SETUP(int argRID, int argSID){
     // ---フレームデータ---
     ctx.strFrame = ""    ; // フレーム
     ctx.cmdPath  = ""    ; // コマンドパス
@@ -48,13 +48,13 @@
     ctx.slotID   = argSID; // スロットID
     // ---アクセスID---
     ctx.accID    = -1   ; // アクセスID
-  } /* SETUP_CTX() */
+  } /* F0_SETUP() */
 
   //━━━━━━━━━━━━━━━━━
   // デバッグログ表示
   //━━━━━━━━━━━━━━━━━
-  void LOG_PRINT(String argMsg){
-    Serial.println(String("\n======================================"));
+  void F_SHOW_LOG(String argMsg){
+    Serial.println(String("======================================"));
     Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
     Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
     Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
@@ -63,16 +63,13 @@
     Serial.print  (String("accID["      ) + String(ctx.accID   ));
     Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
     Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
-    Serial.println(String("--------------------------------------"));
-    Serial.println(String(argMsg));
-    Serial.println(String("======================================\n"));
-  } /* LOG_PRINT() */
-
+    Serial.println(String("======================================"));
+  } /* F_SHOW_LOG() */
 
 //========================================================
 // サービス・アダプタの登録
 //========================================================
-  void InitAdapter() {
+  void INIT_ADAPTER() {
     //┬
     //○開始表示
     Serial.println("---------------------------");
@@ -104,13 +101,13 @@
     //○終了表示
     Serial.println("");
     //┴
-  } /* InitAdapter() */
+  } /* INIT_ADAPTER() */
 
 
  //========================================================
 // アダプタ起動のポーリング用ハンドル
 //========================================================
-  void kickHandle(){
+  void KICK_HANDLE(){
     //┬
     //●通信アダプタ（シリアル）
     adpSerial::handle();
@@ -130,4 +127,4 @@
     adpWEB   ::handle();
 #endif // ----------------------------------------┘
     //┴
-  } /* kickHandle() */
+  } /* KICK_HANDLE() */

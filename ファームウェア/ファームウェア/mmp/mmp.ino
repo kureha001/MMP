@@ -89,10 +89,10 @@
 void setup(){
   //┬
   //○通信デバイスを初期化
-  InitDevice();
+  INIT_DEVICE();
   //│
   //○アダプタを初期化
-  InitAdapter();
+  INIT_ADAPTER();
   //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
   //○モジュール管理を初期化
@@ -116,6 +116,6 @@ void setup(){
 void loop(){
   //┬
   //○各アダプタのハンドルをキック
-  kickHandle();
+  KICK_HANDLE();
   //┴
 } /* loop() */

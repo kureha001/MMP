@@ -61,9 +61,9 @@
     // 通信アダプタの名前空間で派生(名称:T_SLOT)し実体化(名称:ssTBL)
     //─────────────────
     struct SS_SLOT_TYPE {
-      bool    used       = false ; // スロット有効性
-      String  rx         = ""    ; // 受信バッファ
-      bool    isOverflow = false ; // 容量超過フラグ
+      bool    used   = false ; // スロット有効性
+      String  rx     = ""    ; // 受信バッファ
+      bool    isOver = false ; // 容量超過フラグ
     };
 
     //─────────────────
@@ -78,36 +78,39 @@
 // 処理プロセス
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // ポーリング ハンドル
-  //─────────────────
-  // 接続スロットごとに行う前処理
+  // ０．ハンドル
   //━━━━━━━━━━━━━━━━━
-  void SETUP_CTX(int argRID, int argSID);
-
-  //━━━━━━━━━━━━━━━━━
-  // デバッグログ表示
-  //━━━━━━━━━━━━━━━━━
-  void LOG_PRINT(String Msg);
+  void F0_SETUP(int argRID, int argSID);
 
   //━━━━━━━━━━━━━━━━━
   // ２．フレームを取得
   //━━━━━━━━━━━━━━━━━
-  void P2_FORMAT_URI(String &str);
+  void F2_FORMAT_URI(String &str);
+  bool F2_STREAM(
+    String &argRx   , // 受信バッファ
+    bool   &argOver , // オーバーフローフラグ
+    String &argMsg    // エラーメッセージ
+    );
 
   //━━━━━━━━━━━━━━━━━
   // ３．基本情報を取得
   //━━━━━━━━━━━━━━━━━
-  void P3_SET_ACD_CPATH();
+  void F3_SET_ACD_CPATH();
 
   //━━━━━━━━━━━━━━━━━
   // ４．認証を実施
   //━━━━━━━━━━━━━━━━━
-  String P4_CHECK_AUTH();
+  String F4_CHECK_AUTH();
 
   //━━━━━━━━━━━━━━━━━
   // ５．MMPコマンドを実行
   //━━━━━━━━━━━━━━━━━
-  String P5_RUN();
+  String F5_RUN();
+
+  //━━━━━━━━━━━━━━━━━
+  // デバッグログ表示
+  //━━━━━━━━━━━━━━━━━
+   void F_SHOW_LOG(String Msg);
 
 
 //========================================================
@@ -159,5 +162,5 @@
 //========================================================
 // アダプタのトリガ
 //========================================================
-  void InitAdapter(); // 初期化
-  void kickHandle() ; // ハンドルをキック
+  void INIT_ADAPTER(); // 初期化
+  void KICK_HANDLE() ; // ハンドルをキック

@@ -35,8 +35,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModuleMP3(MmpContext& ctx, const char* name): ModuleBase(ctx, name) {
 
-    Serial.println("---------------------------");
-    Serial.println("[DFPlayer mini initialize]");
+    Serial.println(" [DFPlayer mini]");
 
     g_MP3STATUS[0] = false;
     g_MP3STATUS[1] = false;
@@ -49,7 +48,8 @@ public:
         g_MP3STATUS[0] = true;    // Global変数：状況を接続済
     }
 
-    Serial.println(String("　Device ID : 1"));
+    Serial.println(String("　- Device ID : 1"));
+    Serial.println("");
   }
 
   //========================================================
@@ -291,11 +291,11 @@ public:
         // ２．コマンド実行 ※エラーならリトライ
         int res = -1;
         for (int tries = 0; tries < 50 && res == -1; ++tries) {
-          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = g_MP3[idx].readState();res = g_MP3[idx].readState();} 
-          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = g_MP3[idx].readVolume();res = g_MP3[idx].readVolume();}
-          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = g_MP3[idx].readEQ();res = g_MP3[idx].readEQ();}
-          else if (strcmp(Cmd,"INFO/FILEID" ) == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
-          else if (strcmp(Cmd,"INFO/FILES") == 0){res = g_MP3[idx].readFileCounts();res = g_MP3[idx].readFileCounts();}
+          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = g_MP3[idx].readState()            ;res = g_MP3[idx].readState()            ;} 
+          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = g_MP3[idx].readVolume()           ;res = g_MP3[idx].readVolume()           ;}
+          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = g_MP3[idx].readEQ()               ;res = g_MP3[idx].readEQ()               ;}
+          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
+          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = g_MP3[idx].readFileCounts()       ;res = g_MP3[idx].readFileCounts()       ;}
           if (res != -1) break;
         }
 

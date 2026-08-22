@@ -8,33 +8,33 @@
   "host": [
     {
       "type": "sta",
-      "name": "mmp-sta-mode",
-      "ip": "254"
+      "name": "MMP_STA-JSON",
+      "ip": "99"
     },
     {
       "type": "ap",
-      "name": "mmp-ap-mode",
-      "ip": "192.168.254.254"
+      "name": "MMP_AP-JSON",
+      "ip": "192.168.99.2"
     }
   ],
 
   "wifi": [
     {
-      "label": "home",
-      "ssid": "Buffalo-G-C0F0",
-      "pass": "6shkfa53dk8ks",
-      "default": true
-    },
-    {
-      "label": "mbph",
-      "ssid": "kureha",
-      "pass": "09017390454",
+      "label": "ROOM_G",
+      "ssid": "Buffalo-G-7050",
+      "pass": "etnxhurnecbs7",
       "default": false
     },
     {
-      "label": "mbrt",
-      "ssid": "Kureha",
-      "pass": "090173904541012",
+      "label": "HOME_G",
+      "ssid": "Buffalo-G-C0F0",
+      "pass": "6shkfa53dk8ks",
+      "default": false
+    },
+    {
+      "label": "Mobile Phone",
+      "ssid": "kureha_Redme",
+      "pass": "09017390454",
       "default": false
     }
   ]

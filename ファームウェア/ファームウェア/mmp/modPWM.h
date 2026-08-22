@@ -76,8 +76,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModulePwm(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
 
-    Serial.println("---------------------------");
-    Serial.println("[PCA9685 initialize]");
+    Serial.println(" [PCA9685]");
 
     // ｉ２ｃ通信を開始
     Wire.begin(16, 15);
@@ -131,11 +130,12 @@ public:
       }
     }
 
-    if (g_MAX_DEVICE_ID < 0) Serial.println(String("　Device  ID : Not Found"));
-    else                     Serial.println(String("　Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
+    if (g_MAX_DEVICE_ID  < 0) Serial.println(String("　- Device  ID : Not Found"));
+    else                      Serial.println(String("　- Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
 
-    if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　Channel ID : Not Found"));
-    else                      Serial.println(String("　Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
+    if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　- Channel ID : Not Found"));
+    else                      Serial.println(String("　- Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
+    Serial.println("");
   }
 
   //========================================================

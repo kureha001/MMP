@@ -35,6 +35,13 @@
   static const int ROUTE_ID_BLE    = 1 ; // BLE
   static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ
   static const int ROUTE_ID_HTTP   = 3 ; // WebAPI
+  static const int ROUTE_ID_WEB    = 9 ; // WEB画面
+
+  //─────────────────
+  // 経路制御
+  //─────────────────
+  //static int  ACTIVE_RID; // 活動中の経路ID
+  //static bool ACTIVE_BLE; // BLE活動状況
 
 //========================================================
 // ユーザ認証

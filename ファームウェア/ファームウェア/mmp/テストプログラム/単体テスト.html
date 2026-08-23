@@ -17,18 +17,18 @@
 </style>
 
 <header>
-  <strong>MMP 単体テスト Ver0.5</strong>
+  <strong>MMP 単体テスト Ver1.1.0α</strong>
 </header>
 <hr>
 <div class="row">
   <label class="inline">ホスト/IP:
-    <input id="host" placeholder="例: 192.168.2.254">
+    <input id="host" placeholder="例: 192.168.2.99">
   </label>
   <label class="inline">ポート:
     <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
   </label>>>
-<button id="btnRoot"   >WEB-API             </button>
-<button id="btnInfoVer">バージョン          </button>
+<button id="btnRoot"  >WEB-API             </button>
+<button id="btnSysVer">バージョン          </button>
 </div>
 
 <fieldset>
@@ -133,7 +133,7 @@
   const hostEl=$('#host'), portEl=$('#port');
   const preReq=$('#req'), preHdrs=$('#hdrs'), preRaw=$('#raw'), preJson=$('#json');
 
-  hostEl.value = location.hostname || '192.168.2.254';
+  hostEl.value = location.hostname || '192.168.2.99';
 
   function clearLogs(){ preReq.textContent=preHdrs.textContent=preRaw.textContent=preJson.textContent=''; }
   function url(path){
@@ -177,8 +177,9 @@ function encDat(a){
 }
 
   // 基本
-  $('#btnRoot'   ).onclick = () => run(`/`              );
-  $('#btnInfoVer').onclick = () => run(`/SYS/VERSION`  );
+  $('#btnRoot'   ).onclick = () => run(`/`           );
+  $('#btnSysVer' ).onclick = () => run(`/SYS/VERSION`);
+  $('#btnSysBoot').onclick = () => run(`/SYS/BOOT`   );
 
   // デジタル入出力
   $('#btnDigInp').onclick = () => run(`/DIGITAL/INPUT:${encDat('#din_id')}`);

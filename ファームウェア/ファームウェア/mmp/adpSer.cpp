@@ -313,7 +313,8 @@ namespace adpSerial {
       //●MMPコマンドへルーティング
       routeMMP(ssTBL[slotID]);
       //┴
-      } /* END-for */
+    } /* END-for */
     //┴
   } /* handle() */
+
 } /* namespace adpSerial */

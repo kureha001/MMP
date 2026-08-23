@@ -19,9 +19,10 @@
 // ・必要：コメントアウト「しない」
 // ・不要：コメントアウト「する」
 //─────────────────
-#define ADP_COM_TCP  // TCPブリッジ
-#define ADP_COM_HTTP // WEB-API
-//#define ADP_COM_BLE  // BLE
+#define ADP_COM_Serial // Serial
+#define ADP_COM_TCP    // TCPブリッジ
+#define ADP_COM_HTTP   // WEB-API
+#define ADP_COM_BLE    // BLE
 
 //─────────────────
 // WEBアダプタ選択

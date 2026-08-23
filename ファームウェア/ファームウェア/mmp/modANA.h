@@ -26,15 +26,15 @@ private:
     const int g_DATA_PINS[4] = { 4, 3, 2, 1}; // データ・バス
 
 //━━━━━━━━━━━━━━━━━
-// クライアント別データ
+// ユーザ別データ
 //━━━━━━━━━━━━━━━━━
-    struct AnaClientData {
-        int Values[16*4];   // チャンネル別の入力信号
-        int SwitchCnt;      // 使用範囲(スイッチ数;デバイス数)
-        int PlayerCnt;      // 使用範囲(プレイヤ数;チャンネル数)
+    struct UserData {
+        int Values[16*4]; // チャンネル別の入力信号
+        int SwitchCnt   ; // 使用範囲(スイッチ数;デバイス数)
+        int PlayerCnt   ; // 使用範囲(プレイヤ数;チャンネル数)
     };
     //────────────────
-    AnaClientData* g_ANA_DAT = nullptr;
+    UserData* g_USR_DAT = nullptr;
 
 //--------------------------------------------------------
 public:
@@ -45,19 +45,22 @@ public:
 
     Serial.println(" [HC4067]");
 
-    // クライアント別データのメモリ確保
-    void* p = calloc(ctx.accIDS, sizeof(AnaClientData)); // 全要素0で初期化して確保
-    if (!p) { return; }
-    g_ANA_DAT = static_cast<AnaClientData*>(p);
+    // ユーザ別データのメモリ確保
+    void* p = calloc(ctx.accIDS, sizeof(UserData)); // 全要素0で初期化して確保
+    if (!p) {
+      Serial.println(String("　[NG] メモリ不足です"));
+      return;
+    }
+    g_USR_DAT = static_cast<UserData*>(p);
 
     // 既定設定
     for (int i = 0; i < ctx.accIDS; ++i) {
-        g_ANA_DAT[i].SwitchCnt = 4;   // 使用範囲(スイッチ数;デバイス数)
-        g_ANA_DAT[i].PlayerCnt = 1;   // 使用範囲(プレイヤ数;チャンネル数)
+      g_USR_DAT[i].SwitchCnt = 4; // 使用範囲(スイッチ数;デバイス数)
+      g_USR_DAT[i].PlayerCnt = 1; // 使用範囲(プレイヤ数;チャンネル数)
     }
 
-    Serial.println(String("　- Device  ID : 0 ～ 3 "));
-    Serial.println(String("　- Channel ID : 0 ～ 16"));
+    Serial.println(String("　[OK] Device  ID : 0 ～ 3 "));
+    Serial.println(String("　[OK] Channel ID : 0 ～ 16"));
     Serial.println("");
   }
 
@@ -71,6 +74,12 @@ public:
     //━━━━━━━━━━━━━━━━━
     Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
+
+    //━━━━━━━━━━━━━━━━━
+    // ユーザデータのスロットを特定
+    //━━━━━━━━━━━━━━━━━
+    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(sp); return;}
+    UserData& SLOT = g_USR_DAT[ctx.accID];
 
     // ───────────────────────────────
     // 機能 : セットアップ
@@ -91,9 +100,8 @@ public:
             !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accID;
-      g_ANA_DAT[ID].PlayerCnt = plCnt;
-      g_ANA_DAT[ID].SwitchCnt = swCnt;
+      SLOT.PlayerCnt = plCnt;
+      SLOT.SwitchCnt = swCnt;
 
       // ３．応答
       _ResOK(sp);
@@ -113,8 +121,7 @@ public:
         if (dat_cnt != 1){_ResChkErr(sp); return;}
 
       // ２．処理
-      int ID = ctx.accID;
-      for (int ch = 0; ch < g_ANA_DAT[ID].PlayerCnt; ch++) {
+      for (int ch = 0; ch < SLOT.PlayerCnt; ch++) {
 
         // アドレスバスをセット
         for (int i = 0; i < 4; i++) {
@@ -125,9 +132,9 @@ public:
         delayMicroseconds(10); //時間調整
 
         // データバスから読取り
-        for (int dev = 0; dev < g_ANA_DAT[ID].SwitchCnt; dev++) {
+        for (int dev = 0; dev < SLOT.SwitchCnt; dev++) {
           const int pin = g_DATA_PINS[dev];
-          g_ANA_DAT[ID].Values[ch*4 + dev] = analogRead(pin);
+          SLOT.Values[ch*4 + dev] = analogRead(pin);
         }
       }
 
@@ -151,17 +158,16 @@ public:
 
         // 1.2. 単項目チェック
         int pl, sw;
-        int ID = ctx.accID;
-        if (!_Str2Int(dat[1], pl, 0, g_ANA_DAT[ID].PlayerCnt - 1) ||
-            !_Str2Int(dat[2], sw, 0, g_ANA_DAT[ID].SwitchCnt - 1) )
+        if (!_Str2Int(dat[1], pl, 0, SLOT.PlayerCnt - 1) ||
+            !_Str2Int(dat[2], sw, 0, SLOT.SwitchCnt - 1) )
             {_ResChkErr(sp); return;}
 
         // 1.4.機能チェック
-        if (pl >= g_ANA_DAT[ID].PlayerCnt || sw >= g_ANA_DAT[ID].SwitchCnt){_ResChkErr(sp); return;}
+        if (pl >= SLOT.PlayerCnt || sw >= SLOT.SwitchCnt){_ResChkErr(sp); return;}
 
       // ２．処理
       const int idx = pl * 4 + sw;        // 値のデータ位置
-      int res = g_ANA_DAT[ID].Values[idx];
+      int res = SLOT.Values[idx];
 
       // ３．後処理：
       _ResValue(sp, res);

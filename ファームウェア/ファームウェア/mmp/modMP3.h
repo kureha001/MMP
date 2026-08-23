@@ -48,7 +48,7 @@ public:
         g_MP3STATUS[0] = true;    // Global変数：状況を接続済
     }
 
-    Serial.println(String("　- Device ID : 1"));
+    Serial.println(String("　[OK] Device ID : 1"));
     Serial.println("");
   }
 

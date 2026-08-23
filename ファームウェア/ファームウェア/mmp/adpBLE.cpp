@@ -7,11 +7,18 @@
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  #include <BLEDevice.h> // ユーザ受付資源を
-  #include <BLEServer.h> // ユーザ受付資源
-  #include <BLEUtils.h > // ユーザ受付資源
-  #include <BLE2902.h  > // ユーザ受付資源
+  //■┐Arduinoシステム
+    //■BLE関連
+    #include <BLEDevice.h> // ユーザ受付資源を
+    #include <BLEServer.h> // ユーザ受付資源
+    #include <BLEUtils.h > // ユーザ受付資源
+    #include <BLE2902.h  > // ユーザ受付資源
+    //│
+    //■キューイング関連
+    #include <Arduino.h>
+    #include <queue>
+    #include <mutex>
+    //┴
   //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
@@ -48,7 +55,14 @@ namespace adpBLE {
     String             connRX  = ""     ; // 受信バッファ（文字列ワーク）
     BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
   };
-  static T_SS_SLOT*    ssTBL    = nullptr; // 事前予約
+  static T_SS_SLOT*    ssTBL   = nullptr; // 事前予約
+
+  //─────────────────
+  // キューイング
+  //─────────────────
+  const int WAIT_MS = 15       ; // BLEの受信タイムラグ
+  std::queue<String> BLE_QUEUE ; // キューバッファ
+  std::mutex BLE_QUEUE_MUTEX   ; // 別スレッドとの衝突回避用のロック
 
 //========================================================
 // Ｂ．接続管理
@@ -294,32 +308,52 @@ namespace adpBLE {
     void onWrite(BLECharacteristic *pCharacteristic) override {
       //┬
       //○未取り込みデータを受信（getValue()参照後は消費されない）
-      ssTBL[0].connRX = pCharacteristic->getValue();
-      if (ssTBL[0].connRX.length() < 1) return;
+      delay(WAIT_MS);
+      String rxData = pCharacteristic->getValue(); // データ複製
+      if (rxData.length() < 1) return;
       //│＼（空の場合）
       //│ ▼RETURN：早期リターン
       //│
-      //○１．起動チェック
-      if (!ENABLED) return;
-      //│＼（無効の場合）
-      //│ ▼RETURN：早期リターン
-      //│
-      //○２．新規接続のスロットを登録
-      // ➡【該当処理なし】※start()で登録済み
-      //│
-      //○┐３．ルーティング処理
-        //●対象スロットをセット
-        F0_SETUP(ROUTE_ID, 0);
-        //│
-        //●MMPコマンドへルーティング
-        routeMMP(ssTBL[0]);
-        //┴
+      //○受信データをキューに追加
+      std::lock_guard<std::mutex> lock(BLE_QUEUE_MUTEX);
+      BLE_QUEUE.push(rxData);
       //┴
     }; /* onWrite() */
   }; /* Callback_Client */
 
   static Callback_Server ON_CONNECTION; // 接続・切断
   static Callback_Client ON_RECIVE    ; // データ受信
+
+  //─────────────────
+  // キューを1つ抽出
+  //----------------------------------
+  // 引数：
+  // ・キュー受取用の変数
+  //----------------------------------
+  // 戻り値：キューの有無（論理値）
+  // ・true ：あり
+  // ・false：なし
+  //─────────────────
+  bool popQueue(String &rxData) {
+    //┬
+    //○別スレッドとの衝突回避用のロック
+    std::lock_guard<std::mutex> lock(BLE_QUEUE_MUTEX);
+    //│
+    //○キューの容量を確認
+    if (BLE_QUEUE.empty()) return false;
+    //│＼（通信デバイスが起動していない場合）
+    //│ ▼RETURN：なし
+    //│
+    //○先頭を抽出
+    rxData = BLE_QUEUE.front();
+    //│
+    //○先頭を削除
+    BLE_QUEUE.pop();
+    //│
+    //▼RETURN：あり
+     return true;
+    //┴
+  } /* popQueue() */
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
@@ -359,14 +393,41 @@ namespace adpBLE {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(" BLE Bridge : OK");
+      Serial.println("  Bluetooth  : OK");
       ENABLED = true;
     //┴
   } /* start() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
-  // ➡【該当処理なし】※イベント駆動
   //━━━━━━━━━━━━━━━━━
+  void handle(){
+    //┬
+    //○１．起動チェック
+    if (!ENABLED) return; // 初期化済み
+    //│＼（このアダプタが無効の場合）
+    //│ ▼RETURN：早期リターン
+    //│
+    //○２．新規接続のスロットを登録
+    // ➡【該当処理なし】※固定スロット
+    //│
+    //◎┐３．ルーティング処理
+    String rxData;
+    while (popQueue(rxData)) {
+      //│＼（キューがある場合）
+      //│ ▼BREAK：ルーティングを終了
+      //│
+      //●対象スロットをセット
+      F0_SETUP(ROUTE_ID, 0);
+      //│
+      //○キューデータを受信バッファにセット
+      ssTBL[0].connRX = rxData;
+      //│
+      //●MMPコマンドへルーティング
+      routeMMP(ssTBL[0]);
+      //┴
+    } /* END-while */
+    //┴
+  } /* handle() */
 
 } /* namespace adpBLE */

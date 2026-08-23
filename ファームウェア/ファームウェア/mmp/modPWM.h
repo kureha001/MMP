@@ -27,23 +27,23 @@ private:
     //─────────────────
     // 基本
     //─────────────────
-    static constexpr uint8_t PWM_COUNT = 8; // 走査デバイス数
-    PCA9685 g_PWM[PWM_COUNT];               // コンテナ
+    static constexpr uint8_t PWM_DEV_IDs = 2; // 走査デバイス数(1～64)
+    PCA9685 g_PWM[PWM_DEV_IDs];               // コンテナ
 
     //─────────────────
     // チャネル上限（理論最大値）
-    // 実際に使うのは 0 ～ g_MAX_CHANNEL_ID まで
+    // 実際に使うのは 0 ～ g_CH_IDs まで
     //─────────────────
-    static constexpr int MAX_PWM_CHANNEL = PWM_COUNT * 16;
+    static constexpr int PWM_CH_IDs = PWM_DEV_IDs * 16;
 
     //─────────────────
     // 最大IDは今まで通り物理から算出
     //─────────────────
-    int g_MAX_DEVICE_ID  = 0;
-    int g_MAX_CHANNEL_ID = 0;
+    int g_DEV_IDs = 0;
+    int g_CH_IDs  = 0;
 
 //━━━━━━━━━━━━━━━━━
-// クライアント別データ
+// ユーザ別データ
 //━━━━━━━━━━━━━━━━━
     typedef struct {
         int min;
@@ -62,12 +62,12 @@ private:
         typePreset_Base left  ; // 左回り用
     } typePresetPwm;
     //────────────────
-    struct PwmClientData {
-        typePresetAngle angle [ MAX_PWM_CHANNEL ];
-        typePresetPwm   rotate[ MAX_PWM_CHANNEL ];
+    struct UserData {
+        typePresetAngle angle [ PWM_CH_IDs ];
+        typePresetPwm   rotate[ PWM_CH_IDs ];
     };
     //────────────────
-    PwmClientData* g_PWM_DAT = nullptr;
+    UserData* g_USR_DAT = nullptr;
 
 //--------------------------------------------------------
 public:
@@ -76,17 +76,18 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModulePwm(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
 
-    Serial.println(" [PCA9685]");
+    Serial.println(" [PCA9685 initialize]");
 
     // ｉ２ｃ通信を開始
     Wire.begin(16, 15);
 
     // ちょっと待つ
-    delay(50);
+    delay(200);
 
     // I2Cアドレス0x40から接続走査
+    // ※最大64(i2cアドレス：0x40～0x7F)
     int count = 0;
-    for (int i = 0; i < PWM_COUNT; i++){
+    for (int i = 0; i < PWM_DEV_IDs; i++){
       
       // 接続開始
       uint8_t addr = 0x40 + i;
@@ -102,26 +103,29 @@ public:
     }
 
     // 最大IDを求める
-    g_MAX_DEVICE_ID  = count - 1;       // デバイスID
-    g_MAX_CHANNEL_ID = count * 16 - 1;  // チャンネルID
+    g_DEV_IDs = count - 1;       // デバイスID
+    g_CH_IDs  = count * 16 - 1;  // チャンネルID
 
-    // クライアント別データのメモリ確保
-    const int datCount = ctx.accIDS;                   // クライアント数
-    void* p = calloc(datCount, sizeof(PwmClientData)); // 全要素 0 で確保
-    if (!p) { return; }
-    g_PWM_DAT = static_cast<PwmClientData*>(p);
+    // ユーザ別データのメモリ確保
+    const int datCount = ctx.accIDS;              // ユーザ数
+    void* p = calloc(datCount, sizeof(UserData)); // 全要素 0 で確保
+    if (!p) {
+      Serial.println(String("　[NG] メモリ不足です"));
+      return;
+    }
+    g_USR_DAT = static_cast<UserData*>(p);
 
     // 既定設定
-    for   (int cid = 0; cid <  datCount        ; ++cid) {
-      for (int ch  = 0; ch  <= g_MAX_CHANNEL_ID; ++ch ) {
+    for   (int cid = 0; cid <  datCount; ++cid) {
+      for (int ch  = 0; ch  <= g_CH_IDs; ++ch ) {
 
-        auto& a = g_PWM_DAT[cid].angle[ch];
+        auto& a = g_USR_DAT[cid].angle[ch];
         a.enable    = 0;
         a.deg       = 0;
         a.pwm.min   = 0;
         a.pwm.max   = 0;
 
-        auto& r = g_PWM_DAT[cid].rotate[ch];
+        auto& r = g_USR_DAT[cid].rotate[ch];
         r.enable    = 0;
         r.right.min = 0;
         r.right.max = 0;
@@ -130,11 +134,10 @@ public:
       }
     }
 
-    if (g_MAX_DEVICE_ID  < 0) Serial.println(String("　- Device  ID : Not Found"));
-    else                      Serial.println(String("　- Device  ID : 0 ～ ") + String(g_MAX_DEVICE_ID));
-
-    if (g_MAX_CHANNEL_ID < 0) Serial.println(String("　- Channel ID : Not Found"));
-    else                      Serial.println(String("　- Channel ID : 0 ～ ") + String(g_MAX_CHANNEL_ID));
+    if (g_DEV_IDs < 0) Serial.println(String("　[NG] Device  ID : Not Found"));
+    else               Serial.println(String("　[OK] Device  ID : 0 ～ ") + String(g_DEV_IDs));
+    if (g_CH_IDs < 0 ) Serial.println(String("　[NG] Channel ID : Not Found"));
+    else               Serial.println(String("　[OK] Channel ID : 0 ～ ") + String(g_CH_IDs));
     Serial.println("");
   }
 
@@ -149,12 +152,11 @@ public:
     Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
-    const int ID = ctx.accID;
-    if (!g_PWM_DAT || ID < 0 || ID >= ctx.accIDS) {
-      _ResIniErr(sp);  // 安全策
-      return;
-    }
-    PwmClientData& cli = g_PWM_DAT[ID];
+    //━━━━━━━━━━━━━━━━━
+    // ユーザデータのスロットを特定
+    //━━━━━━━━━━━━━━━━━
+    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(sp); return;}
+    UserData& SLOT = g_USR_DAT[ctx.accID];
 
     // ───────────────────────────────
     // 機能 : モジュールの接続確認
@@ -169,7 +171,7 @@ public:
         if(dat_cnt != 1){_ResChkErr(sp); return;}
   
       // ２．値取得：
-      int res = (g_MAX_DEVICE_ID < 0) ? 0 : (g_MAX_DEVICE_ID + 1);
+      int res = (g_DEV_IDs < 0) ? 0 : (g_DEV_IDs + 1);
 
       // ３．後処理：
       _ResValue(sp, res);
@@ -231,8 +233,8 @@ public:
         if(!comChannel(dat[1], from, false  ) ||  // チャンネルID：開始
            !comChannel(dat[2], to,   true   ) ||  //　　　　　　 ：終了
            !_Str2Int  (dat[3], deg,  0, 360 ) ||  // 最大角度
-           !_Str2Int  (dat[4], ps, 0, 4095  ) ||  // PWM値：0度
-           !_Str2Int  (dat[5], pe, 0, 4095  )     //　　　：最大角度
+           !_Str2Int  (dat[4], ps,   0, 4095) ||  // PWM値：0度
+           !_Str2Int  (dat[5], pe,   0, 4095)     //　　　：最大角度
           ){_ResChkErr(sp); return;}
 
         // 1.3.データ補正
@@ -243,7 +245,7 @@ public:
 
       // ３．プリセット登録：
       for (int ch = from; ch <= to; ++ch){
-        typePresetAngle &tbl = cli.angle[ch];
+        typePresetAngle &tbl = SLOT.angle[ch];
         tbl.enable  = 1   ; // 有効性判定
         tbl.deg     = deg ; // 最大角度
         tbl.pwm.min = ps  ; // PWM値：0度
@@ -276,7 +278,7 @@ public:
           ){_ResChkErr(sp); return;}
 
         // 1.3.機能チェック
-        typePresetAngle &tbl = cli.angle[ch];
+        typePresetAngle &tbl = SLOT.angle[ch];
         if(!tbl.enable ){_ResIniErr(sp); return;}   // 有効性判定
 
         // 1.4.相関チェック
@@ -338,7 +340,7 @@ public:
 
       // ２．プリセット登録：
       for (int ch =from; ch <= to; ++ch){
-        typePresetPwm &tbl   = cli.rotate[ch];
+        typePresetPwm &tbl   = SLOT.rotate[ch];
         tbl.enable    = 1 ; // 有効性判定
         tbl.right.min = rs; // PWM値：右回り：0%
         tbl.right.max = re; //　　　　　　　：100%
@@ -372,7 +374,7 @@ public:
            ){_ResChkErr(sp); return;}
 
         // 1.3.機能チェック
-        typePresetPwm &tbl = cli.rotate[ch];
+        typePresetPwm &tbl = SLOT.rotate[ch];
         if(!tbl.enable){_ResIniErr(sp); return;}    // 有効性判定
 
       // ２．主要データ取得：
@@ -428,7 +430,7 @@ public:
       // ２．プリセット削除：
       if(strcmp(Cmd,"ANGLE/RESET") == 0){
         for (int ch = from; ch <= to; ch++){
-          typePresetAngle &T = cli.angle[ch];
+          typePresetAngle &T = SLOT.angle[ch];
           T.enable    = 0; // 有効性判定
           T.deg       = 0; // 最大角度
           T.pwm.min   = 0; // PWM値：0度
@@ -436,7 +438,7 @@ public:
         }
       } else {
         for (int ch = from; ch <= to; ch++){
-          typePresetPwm &T   = cli.rotate[ch];
+          typePresetPwm &T   = SLOT.rotate[ch];
           T.enable    = 0; // 有効性判定
           T.right.min = 0; // PWM値：右回り：0%
           T.right.max = 0; //　　　　　　　：100%
@@ -475,6 +477,6 @@ public:
   ){
     int min = 0;
     if(argZero) min = -1;
-    return _Str2Int(argVal, argOut, min, g_MAX_CHANNEL_ID);
+    return _Str2Int(argVal, argOut, min, g_CH_IDs);
   }
 };

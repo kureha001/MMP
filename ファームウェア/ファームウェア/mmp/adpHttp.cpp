@@ -137,6 +137,15 @@ namespace adpHttp {
   } /* SEND_IS_VALUE() */
 
   //─────────────────
+  // コマンド管理の戻り値が文字列型であるか判定
+  //─────────────────
+  static bool SEND_IS_STRING(const String& argBody){
+    if (argBody.startsWith("#")) return false;
+    if (argBody.startsWith("!")) return false;
+    return true;
+  } /* SEND_IS_STRING() */
+
+  //─────────────────
   // コマンド管理の戻り値を数値に変換
   //─────────────────
   static int SEND_CONV_VALUE(const String& argBody){
@@ -164,6 +173,7 @@ namespace adpHttp {
 
     // アダプタ独自のコード
     if (argID == "!VAL!") return "OK:数値"                  ;
+    if (argID == "!STR!") return "OK:文字列"                ;
     if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
     if (argID == "!SS0!") return "OK:ユーザ認証に成功"      ;
     if (argID == "#SS1!") return "NG:認証管理の開始に失敗"  ;
@@ -218,21 +228,32 @@ namespace adpHttp {
         //◇┐データ型に応じて編集
         String body = argMSG.substring(0, argMSG.length()-1);
         if (SEND_IS_VALUE(body)) {
-        //├┐（戻り値が数値型の場合）
-          //○MSGIDを独自IDに書き換え
-          //○処理結果をセット
-          //●取得値を数値型にセット
-          msgID = "!VAL!"                  ; // 数値型
-          jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
-          jsDat.Res = true                 ; // 正常
-          //┴
+          //├┐（戻り値が数値型の場合）
+            //○MSGIDを独自IDに書き換え
+            //○処理結果をセット
+            //●取得値を数値型にセット
+            msgID = "!VAL!"                  ; // 数値型
+            jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
+            jsDat.Res = true                 ; // 正常
+            //┴
+
+        } else if (SEND_IS_STRING(argMSG)) {
+          //├┐（戻り値が文字列型の場合）
+            //○MSGIDを独自IDに書き換え
+            //○処理結果をセット
+            //●取得値を数値型にセット
+            msgID = "!STR!"                  ; // 文字列型
+            jsDat.Str = argMSG               ; // 取得値(文字列)
+            jsDat.Res = true                 ; // 正常
+            //┴
 
         } else {
-        //└┐（その他）
-          //○処理結果をセット
-          jsDat.Res = false                 ; // 異常
-          //┴
+          //└┐（その他）
+            //○処理結果をセット
+            jsDat.Res = false                 ; // 異常
+            //┴
         } /* END-if */
+        //┴
     } /* END-if */
     //│
     //○メッセージを取得
@@ -241,11 +262,12 @@ namespace adpHttp {
     //○JSON形式に編集
     js.reserve(160) ; // 予備確保
     js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
+    js += F(",\"source\":\"" ); js += msgID.c_str(); js += '"'      ; // MMPの戻り値
     js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
     js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
     js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）
     js += F(",\"string\":\"" ); js += jsDat.Str                     ; // 戻値（文字列）
-    js += "\"}"              ;
+    js += "\"}"               ;
     //│
     //○通信経路にJSON形式でレスポンス
     SEND_JSON(*argSS.conn, js);

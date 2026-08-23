@@ -2,6 +2,18 @@
 //========================================================
 // 通信デバイス初期化：ＷｉＦｉサーバ
 //--------------------------------------------------------
+//【目的】
+// ＷｉＦｉサーバを初期化する
+//--------------------------------------------------------
+//【公開資源】
+//・ENABLE ：このデバイスの有効性
+//・START()：WiFiサーバを起動する
+//--------------------------------------------------------
+//【処理機能】
+//・設定ファイルに応じたモードでWiFiサーバーを起動する
+//・どのモードでも起動できない場合、緊急ＡＰモードで起動する
+//・初期化の状況をシリアルに表示する
+//--------------------------------------------------------
 //【WiFiの設定ファイルの格納方法】
 //  1. プロジェクトフォルダに/data/config.json を置く
 //  2. Arduino IDE で[Ctrl][Shift][P]を同時押し
@@ -223,22 +235,21 @@ typeConnect g_WIFI;
       const IPAddress&  argIP,  // DHCP発行のIPアドレス
       const String&     argOct4 // 置き換えたい第4オクテット値(空の場合あり)
     ) {
-     //┬
+      //┬
       //○ワーク変数を用意
       uint8_t oct4 = 0; // 失敗した場合のデフォルト値
       //│
       //◇┐ＩＰアドレスを作成
       if (IS_OCTET(argOct4, oct4)) {
         //├┐（引数が単一オクテットの場合）
-          //▼RETURN:第4オクテットで置換
+          //▼返却:第4オクテットで置換
         return IPAddress(argIP[0], argIP[1], argIP[2], oct4);
         //└┐（その他）
           //┴
       } /* END-if */
       //│
-      //▼RETURN:エラー時は[0.0.0.0]
+      //▼返却：エラー時は[0.0.0.0]
       return IPAddress();
-      //┴
     } /* GET_IP_STA() */
 
     //─────────────────
@@ -258,20 +269,19 @@ typeConnect g_WIFI;
       //◇┐ＩＰアドレスを作成
       if (ip.fromString(argIP)) {
         //├┐（フル表記["x.x.x.x"]の場合）
-          //▼RETURN:引数そのまま
+          //▼返却:引数そのまま
           return ip;
         //│
       } else if (IS_OCTET(argIP, oct4)) {
         //├┐（末尾だけの場合）
-          //▼RETURN:デフォルトを第4オクテットで置換
+          //▼返却:デフォルトを第4オクテットで置換
           return IPAddress(g_IP[0], g_IP[1], g_IP[2],oct4);
         //└┐（その他）
           //┴
         } /* END-if */
       //│
-      //▼RETURN:エラー時は[0.0.0.0]
+      //▼返却:エラー時は[0.0.0.0]
       return g_IP;
-      //┴
     } /* GET_IP_AP() */
 
 
@@ -296,6 +306,7 @@ typeConnect g_WIFI;
   //─────────────────
   static bool RUN_STA(String pLabel, String pSSID, String pPass)
   {
+    //┬
     if (pSSID.isEmpty()) return false;
     //│
     //○┐事前準備
@@ -325,7 +336,7 @@ typeConnect g_WIFI;
       if    (WiFi.status() != WL_CONNECTED) {
       //│＼（しばらく待っても接続できない場合）
           //○接続を切断
-          //▼RETURN:接続に失敗
+          //▼返却:接続に失敗
           Serial.println(" [NG] DHCP");
           return false;
       } /* END-if */
@@ -344,7 +355,7 @@ typeConnect g_WIFI;
       //│ ＼（指定がない場合）
           //○正常処理を表示
           //●ステータスを表示
-          //▼RETURN：接続に成功(DHCPのまま採用)
+          //▼返却：接続に成功(DHCPのまま採用)
           Serial.println(" [OK] useing DHCP-IP(1)]");
           RUN_INFO(pSSID, pName, WiFi.localIP().toString());
           return true;
@@ -354,10 +365,12 @@ typeConnect g_WIFI;
       IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
       if (!newIP) {
       //│＼（取得できない場合）
-      //│ ▼RETURN：接続に成功(DHCPのまま採用)
-            Serial.println(" [OK] useing DHCP-IP(2)");
-            RUN_INFO(pSSID, pName, WiFi.localIP().toString());
-            return true;
+          //○正常処理を表示
+          //●ステータスを表示
+          //▼返却：接続に成功(DHCPのまま採用)
+          Serial.println(" [OK] useing DHCP-IP(2)");
+          RUN_INFO(pSSID, pName, WiFi.localIP().toString());
+          return true;
       } /* END-if */
       //│
       //○サブネットは固定 /24
@@ -381,7 +394,7 @@ typeConnect g_WIFI;
       if    (WiFi.status() != WL_CONNECTED) {
       //│ ＼（しばらく待っても接続できない場合）
           //○エラーを表示
-          //▼RETURN:接続に成功
+          //▼返却:接続に成功
           Serial.println(" [NG] STA-IP");
           return false;
       } /* END-if */
@@ -391,9 +404,8 @@ typeConnect g_WIFI;
     Serial.println(" Connected.");
     RUN_INFO(pSSID, pName, WiFi.localIP().toString());
     //│
-    //▼RETURN:接続成功
+    //▼返却:接続成功
     return true;
-    //┴
   } /* RUN_STA() */
 
   //─────────────────
@@ -417,7 +429,7 @@ typeConnect g_WIFI;
     if (!WiFi.softAP(pSSID.c_str())) {
     //│ ＼（起動に失敗した場合）
         //○エラーを表示
-        //▼RETURN:起動に失敗
+        //▼返却:起動に失敗
         Serial.println("      [NG] softAP");
         return false;
     } /* END-if*/
@@ -425,9 +437,8 @@ typeConnect g_WIFI;
     //○接続情報を表示
     RUN_INFO(pSSID, pName, WiFi.softAPIP().toString());
     //│
-    //▼RETURN:接続成功
+    //▼返却:接続成功
     return true;
-    //┴
   }
 
 
@@ -461,8 +472,8 @@ typeConnect g_WIFI;
     //◎┐WiFi情報の候補を順に試行
     bool isRun = false;
     for (int i=0; i < g_WIFI.candNum && !isRun; i++){
-      //│＼（[最後まで走査し終えた]または[起動できた]の場合）
-      //│ ▼走査を終了する
+      //│＼（[SSIDリストの最後に達した]または[起動できた]の場合）
+      //│ ▽完了：走査終了
       //│
       //●WiFiサーバを起動
       String pLabel = g_WIFI.candList[i].label.c_str();
@@ -474,7 +485,6 @@ typeConnect g_WIFI;
     //│
     //▼RETRUN:成功でリターン
     return isRun;
-    //┴
   } /* P21_MODE_STA() */
 
   //─────────────────
@@ -493,8 +503,8 @@ typeConnect g_WIFI;
     IPAddress pIP   = hList ? GET_IP_AP(hList->ip) : g_IP;
     //│
     //●ＡＰモードで起動
+    //▼返却：接続結果
     return RUN_AP(pSSID,pName,pIP);
-    //┴
   } /* P22_MODE_AP() */
 
   //─────────────────
@@ -511,9 +521,9 @@ typeConnect g_WIFI;
     String    pSSID = String("MMP_ALT-MODE");
     IPAddress pIP   = g_IP;
     //│
-    //●ＡＰモードで起動
+    //●緊急モードで起動
+    //▼返却：接続結果
     return RUN_AP(pSSID,pName,pIP);
-    //┴
   } /* P3_MODE__ALTERNATIVE() */
 
 

@@ -3,9 +3,10 @@
 //  MMP Firmware
 //--------------------------------------------------------
 // ボード情報：Waveshare ESP32-S3-tiny用
-//  - ESP32S3 Dev Module
-//  - USB CDC ON Boot: Enabled
-//  - Flash Size: 4MB (32Mb)
+//  - ボート          : ESP32S3 Dev Module
+//  - USB CDC ON Boot : Enabled
+//  - Flash Size      : 4MB (32Mb)
+//  - Patition Scheme : Huge APP(3MB No OTA/1MB SPIFFS)
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================

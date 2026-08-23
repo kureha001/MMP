@@ -2,6 +2,11 @@
 //========================================================
 // ＷＥＢアダプタ：管理用画面
 //--------------------------------------------------------
+//【目的】
+// ・現在のWiFi設定ファイルを表示する
+// ・WiFi設定ファイルをドラック＆ドロップでアップロードする
+//   （アップロード後は再起動する）
+//--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
 #pragma once
@@ -31,8 +36,8 @@ namespace adpWEB {
   //─────────────────
   // アクセス資源を提供するサービス
   //─────────────────
-  static WebServer* ns_ACCEPTOR = nullptr;
-  int  SRV_PORT = 8082 ; // サーバのポート
+  static WebServer* ADP_SRV  = nullptr; // WEBサーバ
+  int               SRV_PORT = 8082   ; // ポート番号
 
 //========================================================
 // Ｂ．ルーティング処理（プロセス）
@@ -83,7 +88,7 @@ namespace adpWEB {
       //└┐（その他）
         //┴
     //└┐（その他）
-    //○HTMLバッファに「エラーメッセージ」を追加
+      //○HTMLバッファに「エラーメッセージ」を追加
     } else { html += "config.json が存在しません"; }
       //┴
     //│
@@ -129,7 +134,7 @@ namespace adpWEB {
     html += "</script></body></html>";
     //│
     //○HTMLバッファをレスポンス
-    ns_ACCEPTOR->send(200, "text/html", html);
+    ADP_SRV->send(200, "text/html", html);
     //┴
   } /* routeRoot() */
 
@@ -144,13 +149,13 @@ namespace adpWEB {
     //○新規ファイルを開く
     File configFile = LittleFS.open("/config.json", FILE_WRITE);
     if (!configFile) {
-      ns_ACCEPTOR->send(500, "text/plain", "Failed to open config file for writing");
+      ADP_SRV->send(500, "text/plain", "Failed to open config file for writing");
       return;
     }
     //│
     //○新規ファイルを作成
-    if (ns_ACCEPTOR->hasArg("plain")) {
-      String body = ns_ACCEPTOR->arg("plain");
+    if (ADP_SRV->hasArg("plain")) {
+      String body = ADP_SRV->arg("plain");
       configFile.print(body);
     }
     //│
@@ -158,7 +163,7 @@ namespace adpWEB {
     configFile.close();
     //│
     //○正常終了
-    ns_ACCEPTOR->send(200, "text/plain", "設定ファイルを保存しました。");
+    ADP_SRV->send(200, "text/plain", "設定ファイルを保存しました。");
     //┴
   } /* routeUpload() */
 
@@ -172,7 +177,7 @@ namespace adpWEB {
     html += "<p>しばらくお待ちいただいた後、トップページへ戻ってください。</p>";
     html += "<p><a href=\"/\">トップ画面へ戻る</a></p>";
     html += "</body></html>";
-    ns_ACCEPTOR->send(200, "text/html", html);
+    ADP_SRV->send(200, "text/html", html);
 
     // レスポンスの送信完了を確実にするため少し待ってから再起動
     delay(3000);
@@ -200,11 +205,11 @@ namespace adpWEB {
   void START() {
     //┬
     //○１．前準備の完了状態を確認
-    if (ns_ACCEPTOR ) {
+    if (ADP_SRV ) {
     //│ ＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼異常終了
+        //▼終了：異常終了
         Serial.println("　WEB       : ＷＥＢサーバが起動していません ");
         ENABLED = false; // 無効
         return;
@@ -214,22 +219,23 @@ namespace adpWEB {
     //　➡【該当処理なし】
     //│
     //○３．サーバ資源生成
-    ns_ACCEPTOR = new WebServer(SRV_PORT); // WebServer
+    ADP_SRV = new WebServer(SRV_PORT); // WebServer
     //│
     //○４．接続管理TBLを作成
     //　➡【該当処理なし】
     //│
     //○５．ルーティング登録
-    registRoutes(*ns_ACCEPTOR);
+    registRoutes(*ADP_SRV);
     //│
     //○６．サーバ開始
-    ns_ACCEPTOR->begin();
+    ADP_SRV->begin();
     //│
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
       Serial.println(String("　WEB       : OK -> port ") + String(SRV_PORT));
       ENABLED = true; // 有効
+      //┴
     //┴
   } /* START() */
 
@@ -239,14 +245,16 @@ namespace adpWEB {
   void HANDLE() {
    //┬
     //○１．起動チェック
-    if (!ENABLED    ) return;
-    if (!ns_ACCEPTOR) return;
+    if (!ENABLED) return;
+    if (!ADP_SRV) return;
+    //│＼（このアダプタが無効の場合）
+    //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
     //　➡【該当処理なし】※通信アダプタが対象
     //│
     //○３．ルーティング処理
-    ns_ACCEPTOR->handleClient();
+    ADP_SRV->handleClient();
     //┴
   } /* HANDLE() */
 } //* namespace adpWEB */

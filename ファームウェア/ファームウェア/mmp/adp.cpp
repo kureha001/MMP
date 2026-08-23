@@ -1,6 +1,19 @@
 // filename : adp.cpp
 //========================================================
-// 通信アダプタ共通
+// アダプタ共通
+//--------------------------------------------------------
+//【目的】
+// ・アダプタのトリガを実行する
+// ・各プロセスの共通処理を提供する
+//--------------------------------------------------------
+//【アダプタのトリガ】
+//・INIT_ADAPTER()：アダプタを初期化
+//・KICK_HANDLE() ：ダプタをポーリング
+//--------------------------------------------------------
+//【共通資源】
+//・SS_INI_SLOT_BASE()：接続管理スロット(ベース)を初期化する関数
+//・F_SHOW_LOG()      ：デバッグ表示する関数
+//・F0_SETUP()        ：コンテクストを初期化する関数
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
@@ -34,6 +47,22 @@
 // 処理プロセス
 //========================================================
   //━━━━━━━━━━━━━━━━━
+  // デバッグログ表示
+  //━━━━━━━━━━━━━━━━━
+  void F_SHOW_LOG(String argMsg){
+    Serial.println(String("======================================"));
+    Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
+    Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
+    Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
+    Serial.print  (String("routeID["    ) + String(ctx.routeID ));
+    Serial.println(String("]   slotID[" ) + String(ctx.slotID  ) + String("]"));
+    Serial.print  (String("accID["      ) + String(ctx.accID   ));
+    Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
+    Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
+    Serial.println(String("======================================"));
+  } /* F_SHOW_LOG() */
+
+  //━━━━━━━━━━━━━━━━━
   // ポーリング ハンドル
   //─────────────────
   // 接続スロットごとに行う前処理
@@ -50,22 +79,6 @@
     //----アクセスID---
     ctx.accID    = -1   ; // アクセスID
   } /* F0_SETUP() */
-
-  //━━━━━━━━━━━━━━━━━
-  // デバッグログ表示
-  //━━━━━━━━━━━━━━━━━
-  void F_SHOW_LOG(String argMsg){
-    Serial.println(String("======================================"));
-    Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
-    Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
-    Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
-    Serial.print  (String("routeID["    ) + String(ctx.routeID ));
-    Serial.println(String("]   slotID[" ) + String(ctx.slotID  ) + String("]"));
-    Serial.print  (String("accID["      ) + String(ctx.accID   ));
-    Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
-    Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
-    Serial.println(String("======================================"));
-  } /* F_SHOW_LOG() */
 
 //========================================================
 // サービス・アダプタの登録

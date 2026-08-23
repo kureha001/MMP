@@ -2,6 +2,25 @@
 //========================================================
 // 通信デバイス初期化：ＢＬＥサーバ
 //--------------------------------------------------------
+//【目的】
+// ＢＬＥサーバを初期化する
+// 通信アダプタ向けのサービスを提供する
+//--------------------------------------------------------
+//【公開資源】
+//・ENABLE ：このデバイスの有効性
+//・MY_SRV ：BLEサーバのサービス   ※通信アダプタで必要
+//・BLE_RX ：受信用Characteristic  ※通信アダプタで必要
+//・BLE_TX ：送信用Characteristic  ※通信アダプタで必要
+//・START()：BLEサーバを起動する
+//--------------------------------------------------------
+//【処理機能】
+//・BLEサーバのサービスを開始する
+//・受信用Characteristicを生成する
+//・送信用Characteristicを生成する
+//・スキャン応答を有効にする
+//・アドバタイジングを有効にする
+//・初期化の状況をシリアルに表示する
+//--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
 #pragma once
@@ -70,13 +89,12 @@ namespace devBLE {
     BLEDevice::init(MY_NAME.c_str());
     //│
     //○BLEサーバを生成
-    // このサーバがBLE接続を受け付ける本体となる。
     MY_SRV = BLEDevice::createServer();
     if (MY_SRV == nullptr) {
-    //│＼（失敗した場合）
+    //│＼（サーバ生成に失敗した場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼RETURN：処理を中断
+        //▼終了：早期リターン
         Serial.println("  [NG] サーバ生成に失敗");
         Serial.println("");
         ENABLED = false;
@@ -86,10 +104,10 @@ namespace devBLE {
     //○MMP用BLEサービスを生成
     BLEService *pService = MY_SRV->createService(UUID_SERVICE);
     if (pService == nullptr) {
-    //│＼（失敗した場合）
+    //│＼（サービス生成に失敗した場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼RETURN：処理を中断
+        //▼終了：早期リターン
         Serial.println("  [NG] サービス生成に失敗");
         Serial.println("");
         ENABLED = false;
@@ -125,10 +143,10 @@ namespace devBLE {
       // Advertising資源への参照を取得する。
       BLEAdvertising *BLE_ADV = BLEDevice::getAdvertising();
       if (BLE_ADV == nullptr) {
-      //│＼（認失敗した場合）
+      //│＼（資源取得に失敗した場合）
           //○エラーメッセージを表示
           //○無効化
-          //▼RETURN：処理を中断
+          //▼終了：早期リターン
           Serial.println("  [NG] ペアリング準備に失敗");
           Serial.println("");
           ENABLED = false;

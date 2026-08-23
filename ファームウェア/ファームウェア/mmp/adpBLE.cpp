@@ -3,6 +3,22 @@
 // 通信アダプタ：ＢＬＥブリッジ
 //（イベント・コールバック型の通信）
 //--------------------------------------------------------
+//【目的】
+// リクエストに従い、ＭＭＰコマンドを実行して、
+// 結果をレスポンスする。
+//--------------------------------------------------------
+//【処理機能】
+//・キュー内の「全リクエスト」を順次処理する
+//・リクエストを取得する
+//  - コールバック時にキューへ格納
+//  - ポーリング時にキューからリクエストを取得
+//  - キューがない場合は何も行われない
+//・リクエストを基に共通情報(コンテクスト)を纏める
+//・必要に応じてユーザ認証を実施する
+//・MMPコマンドを実行する
+//・MMPコマンドの実行結果をレスポンする
+//・処理中にエラーなどがあれば適宜レスポンスする
+//--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
 #pragma once
@@ -146,14 +162,13 @@ namespace adpBLE {
     if (!argSS.used) {
     //│＼（[未使用]の場合）
         //●スロットを初期化
-        //▼RETURN：不良
+        //▼返却：不良
         SS_INI_SLOT(argSS);
         return true;
     } // END-if */
     //│
-    //▼RETURN：良好
+    //▼返却：良好
     return false;
-    //┴
   } /* P1_CONNECT() */
 
   //─────────────────
@@ -177,9 +192,8 @@ namespace adpBLE {
     //●フレームをURI形式に変換
     F2_FORMAT_URI(ctx.strFrame);
     //│
-    //▼RETURN：フレームの作成状況
+    //▼返却：フレームの作成状況
     return (ctx.strFrame == "" ? true : false);
-    //┴
   } /* P2_MAKE_FRAME() */
 
   //─────────────────
@@ -206,11 +220,10 @@ namespace adpBLE {
     if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
     //│＼（メッセージがある場合）
         //●エラーをレスポンス
-        //▼RETURN：処理継続が不可
+        //▼返却：処理継続が不可
     //│
-    //▼RETURN：処理継続が可能
+    //▼返却：処理継続が可能
     return false;
-    //┴
   } /* P4_AUTH() */
 
   //─────────────────
@@ -238,12 +251,12 @@ namespace adpBLE {
     //○１．接続状態を確認
     if (P1_CONNECT(argSS)) return;
     //│＼（不良の場合）
-    //│ ▼RETURN：早期リターン
+    //│ ▼終了：早期リターン
     //│
     //●２．フレームを取得
     if (P2_MAKE_FRAME(argSS)) return;
     //│＼（未完成の場合）
-    //│ ▼RETURN：早期リターン
+    //│ ▼終了：早期リターン
     //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
     //○３．基本情報を取得
@@ -252,7 +265,7 @@ namespace adpBLE {
     //○４．ユーザ認証を実施
     if (P4_AUTH(argSS)) return;
     //│＼（処理継続が不可の場合）
-    //│ ▼RETURN：早期リターン
+    //│ ▼終了：早期リターン
 #endif // ----------------------------------------┘
     //│
     //●５．MMPコマンドを実行
@@ -276,7 +289,7 @@ namespace adpBLE {
       //○接続状況を確認
       if (ssTBL[0].used) return;
       //│＼（既に参加している場合）
-      //│ ▼RETURN：これ以上は参加させない
+      //│ ▼終了：これ以上は参加させない
       //│
       //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
@@ -314,7 +327,7 @@ namespace adpBLE {
       String rxData = pCharacteristic->getValue(); // データ複製
       if (rxData.length() < 1) return;
       //│＼（空の場合）
-      //│ ▼RETURN：早期リターン
+      //│ ▼終了：早期リターン
       //│
       //○受信データをキューに追加
       std::lock_guard<std::mutex> lock(BLE_QUEUE_MUTEX);
@@ -344,7 +357,7 @@ namespace adpBLE {
     //○キューの容量を確認
     if (BLE_QUEUE.empty()) return false;
     //│＼（通信デバイスが起動していない場合）
-    //│ ▼RETURN：なし
+    //│ ▼返却：なし
     //│
     //○先頭を抽出
     rxData = BLE_QUEUE.front();
@@ -352,9 +365,8 @@ namespace adpBLE {
     //○先頭を削除
     BLE_QUEUE.pop();
     //│
-    //▼RETURN：あり
+    //▼返却：あり
      return true;
-    //┴
   } /* popQueue() */
 
   //━━━━━━━━━━━━━━━━━
@@ -367,7 +379,7 @@ namespace adpBLE {
     //│＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
-        //▼RETURN：早期リターン
+        //▼終了：早期リターン
         Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
         ENABLED = false;
         return;
@@ -405,7 +417,7 @@ namespace adpBLE {
     //○１．起動チェック
     if (!ENABLED) return; // 初期化済み
     //│＼（このアダプタが無効の場合）
-    //│ ▼RETURN：早期リターン
+    //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
     // ➡【該当処理なし】※固定スロット

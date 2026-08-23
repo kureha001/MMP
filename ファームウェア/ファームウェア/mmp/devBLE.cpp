@@ -1,6 +1,6 @@
 // filename : devBLE.cpp
 //========================================================
-// 通信デバイス初期化：Bluetooth
+// 通信デバイス初期化：ＢＬＥサーバ
 //--------------------------------------------------------
 // 2026/08/21 : 新設
 //========================================================
@@ -17,13 +17,6 @@
   #include "dev.h"
   //┴
 //┴
-
-//━━━━━━━━━━━━━━━━━
-// グローバル資源
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  //─────────────────
-
 
 //########################################################
 //# 専用名の前空間
@@ -55,9 +48,10 @@ namespace devBLE {
   // これらはBLE資源そのものを所有するのではなく、
   // devBLEが生成した資源をアダプター層から利用するための公開参照。
   //─────────────────
-  BLEServer*         MY_SRV = nullptr;
-  BLECharacteristic* BLE_RX = nullptr;
-  BLECharacteristic* BLE_TX = nullptr;
+  BLEServer*         MY_SRV  = nullptr;
+  BLECharacteristic* BLE_RX  = nullptr;
+  BLECharacteristic* BLE_TX  = nullptr;
+  const String       MY_NAME = "MMP-ESP32S3";
 
 
   //========================================================
@@ -65,7 +59,7 @@ namespace devBLE {
   //--------------------------------------------------------
   // 戻り値：なし
   //========================================================
-  void start() {
+  void START() {
     //┬
     //○開始メッセージを表示
     Serial.println(" [Bluetooth device]"  );
@@ -73,7 +67,7 @@ namespace devBLE {
     //○BLEデバイスを初期化
     // Bluetoothスタックを起動し、
     // デバイス名を「MMP-ESP32S3」として設定する。
-    BLEDevice::init("MMP-ESP32S3");
+    BLEDevice::init(MY_NAME.c_str());
     //│
     //○BLEサーバを生成
     // このサーバがBLE接続を受け付ける本体となる。
@@ -160,12 +154,15 @@ namespace devBLE {
       //┴
     //│
     //○終了メッセージを表示
-    Serial.println("  [OK] 初期化が完了");
+    Serial.println(String("  [OK] device name : ") + MY_NAME.c_str()     );
+    Serial.println(String("  [OK] service UUID: ") + String(UUID_SERVICE));
+    Serial.println(String("  [OK] recive  UUID: ") + String(UUID_RX)     );
+    Serial.println(String("  [OK] send    UUID: ") + String(UUID_TX)     );
     Serial.println("");
     //│
     //○有効性セット
     ENABLED = true;
     //┴
-  } /* start() */
+  } /* START() */
 
 } /* namespace devBLE */

@@ -1,6 +1,6 @@
-// filename : devSer.cpp
+// filename : devUART.cpp
 //========================================================
-// 通信デバイス初期化：ＷｉＦｉサーバ
+// 通信デバイス初期化：ＵＡＲＴポート
 //--------------------------------------------------------
 // 2026/08/21 : 大幅リファクタリング 
 //========================================================
@@ -22,11 +22,10 @@
   //─────────────────
   extern Adafruit_NeoPixel INO_PIXEL;
 
-
 //########################################################
 //# 専用名の前空間
 //########################################################
-namespace devSerial {
+namespace devUART {
 //========================================================
 // 基本情報
 //========================================================
@@ -82,7 +81,7 @@ namespace devSerial {
   // ・true ：失敗
   // ・false：成功
   //━━━━━━━━━━━━━━━━━
-  void start(){
+  void START(){
 
     // ボーレート設定ボタンのピンを定義
     pinMode(SW_PIN_A, INPUT_PULLUP);
@@ -113,7 +112,7 @@ namespace devSerial {
     INO_PIXEL.setPixelColor(0, INO_PIXEL.Color(c.g, c.r, c.b));
     INO_PIXEL.show();
 
-    // シリアルポートを起動
+    // UARTポートを起動
     Serial.begin(BAUD_PRESETS[id]);                      // USB(CDC)
     Serial.setDebugOutput(false);                        // SDKデバッグ出力を抑止
     Serial1.begin(BAUD_PRESETS[id], SERIAL_8N1, 44, 43); // GPIO Serial
@@ -130,5 +129,5 @@ namespace devSerial {
 
     //○有効性セット
     ENABLED = true;
-  } /* start() */
-} /* namespace devSerial */
+  } /* START() */
+} /* namespace devUART */

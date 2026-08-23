@@ -17,16 +17,16 @@
 //━━━━━━━━━━━━━━━━━
 // デバイスの公開情報
 //━━━━━━━━━━━━━━━━━
-  //【シリアル】
-  namespace devSerial{
+  //【UART】
+  namespace devUART{
     extern bool ENABLED ; // 有効性
-    void start()        ; // デバイス開始の指示
+    void START()        ; // デバイス開始の指示
   }
 
   //【ネットワーク】
   namespace devNetwork{
     extern bool ENABLED ; // 有効性
-    void start()        ; // デバイス開始の指示
+    void START()        ; // デバイス開始の指示
   }
 
   //【Bluetooth】
@@ -35,7 +35,7 @@
     extern BLEServer*         MY_SRV; // BLEサーバー実体
     extern BLECharacteristic* BLE_RX; // 受信用キャラクタリスティック
     extern BLECharacteristic* BLE_TX; // 送信用キャラクタリスティック
-    void start()                    ; // デバイス開始の指示
+    void START()                    ; // デバイス開始の指示
   }
 
 //━━━━━━━━━━━━━━━━━

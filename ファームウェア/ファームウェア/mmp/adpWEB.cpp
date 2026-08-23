@@ -37,7 +37,7 @@ namespace adpWEB {
 //========================================================
 // Ｂ．ルーティング処理（プロセス）
 //--------------------------------------------------------
-// handle()で明示的に呼び出す
+// HANDLE()で明示的に呼び出す
 //========================================================
   //─────────────────
   // １．管理画面
@@ -197,7 +197,7 @@ namespace adpWEB {
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
-  void start() {
+  void START() {
     //┬
     //○１．前準備の完了状態を確認
     if (ns_ACCEPTOR ) {
@@ -231,12 +231,12 @@ namespace adpWEB {
       Serial.println(String("　WEB       : OK -> port ") + String(SRV_PORT));
       ENABLED = true; // 有効
     //┴
-  } /* start() */
+  } /* START() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
   //━━━━━━━━━━━━━━━━━
-  void handle() {
+  void HANDLE() {
    //┬
     //○１．起動チェック
     if (!ENABLED    ) return;
@@ -248,5 +248,5 @@ namespace adpWEB {
     //○３．ルーティング処理
     ns_ACCEPTOR->handleClient();
     //┴
-  } /* handle() */
+  } /* HANDLE() */
 } //* namespace adpWEB */

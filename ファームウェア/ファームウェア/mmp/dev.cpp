@@ -24,20 +24,20 @@ void INIT_DEVICE() {
   //○開始表示
   // ➡【初期化順序制約】
   //    ログ出力機能が未起動のため、
-  //    Serial初期化完了後にdevSerial::start()内で通知する
+  //    Serial初期化完了後にdevUART::START()内で通知する
   //│
-  //●通信デバイスを初期化（シリアル）
-  devSerial ::start();
+  //●通信デバイスを初期化（UART）
+  devUART ::START();
   //│
 // -----┨ＴＣＰ通信｜WebAPI通信｜ＷＥＢ画面┠----┐
 #if defined(ADP_COM_TCP) || defined(ADP_COM_HTTP) || defined(ADP_WEB)
   //●通信デバイスを初期化（WiFi）
-  devNetwork::start();
+  devNetwork::START();
 #endif // ----------------------------------------┘
   //│
 #if defined(ADP_COM_BLE  ) // --┨ＢＬＥ通信┨----┐
   //●通信デバイスを初期化（BLE）
-  devBLE    ::start();
+  devBLE    ::START();
 #endif // ----------------------------------------┘
   //│
   //○終了表示

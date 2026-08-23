@@ -81,26 +81,26 @@
     AUTH_INIT_TBL();
 #endif //-----------------------------------------┘
     //│
-#if defined(ADP_COM_Serial) //--┨Serial通信┠----┐
+#if defined(ADP_COM_UART) //--┨UART通信┠----┐
     //●通信アダプタ
-    adpSerial::start();
+    adpUART::START();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
-    adpTcp   ::start();
+    adpTcp   ::START();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_HTTP  ) //--┨WebAPI通信┠----┐
-    adpHttp  ::start();
+    adpHttp  ::START();
 #endif //-----------------------------------------┘
     //│    
 #if defined(ADP_COM_BLE  ) //---┨ＢＬＥ通信┠----┐
-    adpBLE   ::start();
+    adpBLE   ::START();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_WEB      ) //---┨ＷＥＢ画面┠----┐
     //●ＷＥＢアダプタ
-    adpWEB ::start();
+    adpWEB ::START();
 #endif //-----------------------------------------┘
     //│
     //○終了表示
@@ -113,29 +113,29 @@
 //========================================================
   void KICK_HANDLE(){
     //┬
-#if defined(ADP_COM_Serial) //--┨Serial通信┠----┐
-    //●通信アダプタ（シリアル）
-    adpSerial::handle();
+#if defined(ADP_COM_UART) //--┨UART通信┠----┐
+    //●通信アダプタ（UART）
+    adpUART::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
     //●通信アダプタ（TCPブリッジ）
-    adpTcp   ::handle();
+    adpTcp   ::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_HTTP  ) //--┨WebAPI通信┠----┐
     //●通信アダプタ（WEB-API）
-    adpHttp  ::handle();
+    adpHttp  ::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_BLE   ) //--┨ＢＬＥ通信┠----┐
     //●通信アダプタ（BLE）
-    adpBLE   ::handle();
+    adpBLE   ::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_WEB       ) //--┨ＷＥＢ画面┠----┐
     //●ＷＥＢアダプタ
-    adpWEB   ::handle();
+    adpWEB   ::HANDLE();
 #endif //-----------------------------------------┘
     //┴
   } /* KICK_HANDLE() */

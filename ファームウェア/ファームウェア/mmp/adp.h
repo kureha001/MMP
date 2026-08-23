@@ -31,7 +31,7 @@
   //─────────────────
   // 経路ID
   //─────────────────
-  static const int ROUTE_ID_SERIAL = 0 ; // シリアル
+  static const int ROUTE_ID_SERIAL = 0 ; // UART
   static const int ROUTE_ID_BLE    = 1 ; // BLE
   static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ
   static const int ROUTE_ID_HTTP   = 3 ; // WebAPI
@@ -123,13 +123,13 @@
 //========================================================
 // アダプタの公開情報
 //========================================================
-  //【通信アダプタ：シリアル】
-  namespace adpSerial{
+  //【通信アダプタ：ＵＡＲＴ】
+  namespace adpUART{
     extern const int  ROUTE_ID ; // 経路ID
     extern const int  SS_SLOTS ; // 使用スロット数
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void start()  ; // サービス開始の指示
-    void handle() ; // ポーリングのハンドル
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
   }
 
   //【通信アダプタ：ＴＣＰブリッジ】
@@ -137,8 +137,8 @@
     extern const int  ROUTE_ID ; // 経路ID
     extern const int  SS_SLOTS ; // 使用スロット数
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void start()  ; // サービス開始の指示
-    void handle() ; // ポーリングのハンドル
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
   }
 
   //【通信アダプタ：ＷＥＢ ＡＰＩ】
@@ -146,8 +146,8 @@
     extern const int  ROUTE_ID ; // 経路ID
     extern const int  SS_SLOTS ; // 使用スロット数
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void start()  ; // サービス開始の指示
-    void handle() ; // ポーリングのハンドル
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
   }
 
   //【通信アダプタ：Bluetoothブリッジ】
@@ -155,15 +155,15 @@
     extern const int  ROUTE_ID ; // 経路ID
     extern const int  SS_SLOTS ; // 使用スロット数
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void start()  ; // サービス開始の指示
-    void handle() ; // ポーリングのハンドル
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
   }
 
   //【ＷＥＢアダプタ：ＷＥＢ画面】
   namespace adpWEB{
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void start()  ; // サービス開始の指示
-    void handle() ; // ポーリングのハンドル
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
   }
 
 //========================================================

@@ -1,6 +1,7 @@
 // filename : adpBLE.cpp
 //========================================================
 // 通信アダプタ：ＢＬＥブリッジ
+//（イベント・コールバック型の通信）
 //--------------------------------------------------------
 // 2026/08/21 : 新設
 //========================================================
@@ -43,7 +44,8 @@ namespace adpBLE {
   //─────────────────
   // 使用するサービス
   //─────────────────
-  // dev.hで公開している以下を使用
+  // ※BLEはサービスポートを持たないため、
+  //   dev.hで公開されたBLE固有の受付資源を使用
   // ・MY_SRV：BLEサーバー実体
   // ・BLE_RX：受信用キャラクタリスティック
   // ・BLE_TX：送信用キャラクタリスティック
@@ -52,7 +54,7 @@ namespace adpBLE {
   // 接続スロット
   //─────────────────
   struct T_SS_SLOT : SS_SLOT_TYPE{
-    String             connRX  = ""     ; // 受信バッファ（文字列ワーク）
+    String             connRX  = ""     ; // 受信資源（文字列ワーク）
     BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
   };
   static T_SS_SLOT*    ssTBL   = nullptr; // 事前予約
@@ -357,13 +359,10 @@ namespace adpBLE {
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
-  //----------------------------------
-  // ロジックで明示的に呼び出す ※handle()参照
   //━━━━━━━━━━━━━━━━━
-  void start() {
+  void START() {
     //┬
     //○１．前準備の完了状態を確認
-    if (!devBLE::ENABLED) devBLE::start();
     if (!devBLE::ENABLED || !devBLE::MY_SRV) {
     //│＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
@@ -396,12 +395,12 @@ namespace adpBLE {
       Serial.println("  Bluetooth  : OK");
       ENABLED = true;
     //┴
-  } /* start() */
+  } /* START() */
 
   //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
   //━━━━━━━━━━━━━━━━━
-  void handle(){
+  void HANDLE(){
     //┬
     //○１．起動チェック
     if (!ENABLED) return; // 初期化済み
@@ -428,6 +427,6 @@ namespace adpBLE {
       //┴
     } /* END-while */
     //┴
-  } /* handle() */
+  } /* HANDLE() */
 
 } /* namespace adpBLE */

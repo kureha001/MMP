@@ -523,7 +523,7 @@ typeConnect g_WIFI;
   //─────────────────
   // 初期化処理
   //─────────────────
-  void start(){
+  void START(){
     //┬
     //○開始表示
     Serial.println(" [Wi-Fi Network device]");
@@ -565,5 +565,5 @@ typeConnect g_WIFI;
     //○有効性セット
     ENABLED = isOK;
     //┴
-  } /* start() */
+  } /* START() */
 } /* namespace devNetwork */

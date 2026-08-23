@@ -17,8 +17,8 @@
 //・接続管理スロット(ベース)を初期化する関数
 //・処理プロセスごとの関数
 //・アダプタのインタフェイス（初期化・ポーリング用の関数）
-//・サービスアダプタを初期化する関数
-//・サービスアダプタをポーリングする関数
+//・アダプタを初期化する関数
+//・アダプタをポーリングする関数
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
@@ -48,7 +48,7 @@
   //─────────────────
   static const int ROUTE_ID_SERIAL = 0 ; // UART
   static const int ROUTE_ID_BLE    = 1 ; // BLE
-  static const int ROUTE_ID_TCP    = 2 ; // TCPブリッジ
+  static const int ROUTE_ID_TCP    = 2 ; // TCP
   static const int ROUTE_ID_HTTP   = 3 ; // WebAPI
   static const int ROUTE_ID_WEB    = 9 ; // WEB画面
 
@@ -138,7 +138,7 @@
     void HANDLE() ; // ポーリングのハンドル
   }
 
-  //【通信アダプタ：ＴＣＰブリッジ】
+  //【通信アダプタ：ＴＣＰ】
   namespace adpTcp{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル
@@ -150,7 +150,7 @@
     void HANDLE() ; // ポーリングのハンドル
   }
 
-  //【通信アダプタ：Bluetoothブリッジ】
+  //【通信アダプタ：ＢＬＥ】
   namespace adpBLE{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル

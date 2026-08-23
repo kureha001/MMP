@@ -43,7 +43,7 @@
   // パーサ公開
   //─────────────────
   class  CmdManager         ; // 前方宣言
-  extern CmdManager* INO_CMD; // ※実体の所有者はスケッチ
+  extern CmdManager* INO_CMD; // ※実体の所有者は[adp.cpp]
 
   //─────────────────
   // 各アダプタからの進行移譲先
@@ -117,7 +117,7 @@ public:
   //─────────────────
   // コマンド・モジュールの初期化
   //─────────────────
-  void Init(){
+  void START(){
     //┬
     //○開始表示
     Serial.println("---------------------------");
@@ -145,7 +145,7 @@ public:
     //○終了表示
     Serial.println("");
     //┴
-} /* Init() */
+} /* START() */
 
 private:
   //━━━━━━━━━━━━━━━━━

@@ -20,9 +20,9 @@
 //・不要：コメントアウト「する」
 //─────────────────
 #define ADP_COM_UART // Serial
-#define ADP_COM_TCP    // TCPブリッジ
-#define ADP_COM_HTTP   // WEB-API
-#define ADP_COM_BLE    // BLE
+//#define ADP_COM_TCP    // TCP
+//#define ADP_COM_HTTP   // WebAPI
+//#define ADP_COM_BLE    // BLE
 
 //─────────────────
 // WEBアダプタ選択

@@ -182,7 +182,7 @@ namespace adpBLE {
   bool P1_CONNECT(T_SS_SLOT& argSS){
     //┬
     //○接続状態を確認
-    if (!argSS.used) {SS_INI_SLOT(argSS); return true;}
+    if (!argSS.Base.used) {SS_INI_SLOT(argSS); return true;}
     //│＼（[未使用]の場合）
     //│ ●スロットを初期化
     //│ ▼返却：不良

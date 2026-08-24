@@ -115,9 +115,7 @@ namespace adpUART {
     //○スロットに[UART1]接続を登録
     ssTBL[1].Base.used = true     ; // 使用中
     ssTBL[1].conn      = &Serial1 ; // 参照先を登録
-    //│
-    //▼返却：スロットID
-    return -1;
+    //┴
   } /* SS_ATTACH_STATIC() */
 
 //========================================================

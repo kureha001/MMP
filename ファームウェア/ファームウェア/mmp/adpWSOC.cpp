@@ -12,8 +12,7 @@
 //・キュー内の「全リクエスト」を順次処理する
 //・リクエストを取得する
 //  - コールバック時にキューへ格納
-//  - ポーリング時にキューからリクエストを取得
-//  - キューがない場合は何も行われない
+//  - ポーリング時にキューからリクエストを順次取得
 //・リクエストを基に共通情報(コンテクスト)を纏める
 //・必要に応じてユーザ認証を実施する
 //・MMPコマンドを実行する
@@ -176,7 +175,7 @@ namespace adpWSOC {
     if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
     //│
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argSS.connNum, argMSG);
+    if (ADP_SRV) ADP_SRV->sendTXT(argSS.connNum, argMSG.c_str());
     //┴
   } /* SEND_CONN() */
 

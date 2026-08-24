@@ -1,6 +1,7 @@
 // filename : cmd.h
 //========================================================
 // コマンド管理
+//--------------------------------------------------------
 // - コマンド・モジュールの登録
 // - コマンド・モジュールのルーティング
 //--------------------------------------------------------
@@ -10,13 +11,12 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
   #include "cmdAPI.h" // 抽象基底クラス
   //│
   //★★★ コマンド・モジュール保守の対応箇所(1/4) ★★★
-  //■コマンド・モジュール
+  //■ＭＭＰシステム(モジュール)
   #include "modSYS.h" // システム
   #include "modANA.h" // アナログ入力
   #include "modDIG.h" // デジタル入出力
@@ -31,30 +31,30 @@
 //━━━━━━━━━━━━━━━━━
   //─────────────────
   // RGB-LED
+  //----------------------------------
+  // ※定義・実装：dev.cpp
   //─────────────────
+  #include <Adafruit_NeoPixel.h>
   extern Adafruit_NeoPixel INO_PIXEL;
 
   //─────────────────
-  // コンテクスト
-  //─────────────────
-  extern MmpContext ctx;
-
-  //─────────────────
-  // パーサ公開
+  // コマンド管理
+  //----------------------------------
+  // ※定義：ここ、実装：adp.cpp
   //─────────────────
   class  CmdManager         ; // 前方宣言
-  extern CmdManager* INO_CMD; // ※実体の所有者は[adp.cpp]
+  extern CmdManager* INO_CMD; // 実体を参照
 
   //─────────────────
   // 各アダプタからの進行移譲先
   //─────────────────
-  String RUN_COMMAND(); // 前方宣言
+  String RUN_COMMAND()      ; // 前方宣言
 
   //─────────────────
   // クライアントからのリクエスト条件
   //─────────────────
-  #define REQUEST_LENGTH  96  // リクエスト全体のバッファ長
-  #define DAT_COUNT       10  // コマンド＋引数の個数
+  #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
+  #define DAT_COUNT      10 // コマンド＋引数の個数
 
 
 //========================================================
@@ -71,29 +71,29 @@
 //########################################################
 //# 専用名の前空間
 //########################################################
-  namespace MMP_MOD {
+namespace MMP_MOD {
 
-    //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
-    static const T_MOD SYS    = { "SYS"    ,  5,  5,  5 };
-    static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
-    static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
-    static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
-    static const T_MOD I2C    = { "I2C"    , 10, 10,  0 };
-    static const T_MOD MP3    = { "MP3"    ,  0, 10,  0 };
+  //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
+  static const T_MOD SYS    = { "SYS"    ,  5,  5,  5 };
+  static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
+  static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
+  static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
+  static const T_MOD I2C    = { "I2C"    , 10, 10,  0 };
+  static const T_MOD MP3    = { "MP3"    ,  0, 10,  0 };
 
-    //★★★ コマンド・モジュール保守の対応箇所(3/4) ★★★
-    static const T_MOD* const LIST[] = {
-      &SYS,
-      &ANA_I,
-      &DIG_IO,
-      &PWM,
-      &I2C,
-      &MP3,
-    };
+  //★★★ コマンド・モジュール保守の対応箇所(3/4) ★★★
+  static const T_MOD* const LIST[] = {
+    &SYS,
+    &ANA_I,
+    &DIG_IO,
+    &PWM,
+    &I2C,
+    &MP3,
+  };
 
-    static const size_t COUNT = sizeof(LIST) / sizeof(LIST[0]);
+  static const size_t COUNT = sizeof(LIST) / sizeof(LIST[0]);
 
-  } /* namespace MMP_MOD */
+} /* namespace MMP_MOD */
 
 //========================================================
 // クラス：コマンドパーサ
@@ -120,7 +120,6 @@ public:
   void START(){
     //┬
     //○開始表示
-    Serial.println("---------------------------");
     Serial.println("<<モジュールの初期化>>");
     //│
     //○コマンド・モジュールを登録
@@ -229,7 +228,7 @@ public:
         //│
         //◇┐当該モジュールを実行
         if (m->owns(dat[0])){
-          //├→(コマンドが在籍する場合)
+          //├→(コマンド所有者の場合)
             //●モジュール名を表示
             //○モジュールを実行
             //▼実行結果をリターン

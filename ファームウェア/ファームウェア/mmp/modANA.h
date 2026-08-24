@@ -48,7 +48,7 @@ public:
     // ユーザ別データのメモリ確保
     void* p = calloc(ctx.accIDS, sizeof(UserData)); // 全要素0で初期化して確保
     if (!p) {
-      Serial.println(String("　[NG] メモリ不足です"));
+      Serial.println(String("　 [NG] メモリ不足です"));
       return;
     }
     g_USR_DAT = static_cast<UserData*>(p);
@@ -59,8 +59,8 @@ public:
       g_USR_DAT[i].PlayerCnt = 1; // 使用範囲(プレイヤ数;チャンネル数)
     }
 
-    Serial.println(String("　[OK] Device  ID : 0 ～ 3 "));
-    Serial.println(String("　[OK] Channel ID : 0 ～ 16"));
+    Serial.println(String("　 [OK] Device  ID : 0 ～ 3 "));
+    Serial.println(String("　 [OK] Channel ID : 0 ～ 16"));
     Serial.println("");
   }
 

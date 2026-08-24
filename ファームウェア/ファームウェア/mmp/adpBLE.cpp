@@ -404,7 +404,7 @@ namespace adpBLE {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println("  Bluetooth  : OK");
+      Serial.println("　[OK] Bluetooth");
       ENABLED = true;
     //┴
   } /* START() */

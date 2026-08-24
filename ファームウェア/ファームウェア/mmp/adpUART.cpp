@@ -297,7 +297,7 @@ namespace adpUART {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　Serial     : OK"));
+      Serial.println(String("　[OK] UART    -> 0,1"));
       ENABLED = true; // 有効
       //┴
     //┴

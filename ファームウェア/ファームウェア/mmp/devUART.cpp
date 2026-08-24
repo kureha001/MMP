@@ -1,6 +1,6 @@
 // filename : devUART.cpp
 //========================================================
-// 通信デバイス初期化：ＵＡＲＴポート
+// 通信デバイス初期化：ＵＡＲＴ
 //--------------------------------------------------------
 //【目的】
 // ＵＡＲＴポートを任意のボーレートで初期化する
@@ -22,7 +22,6 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <Adafruit_NeoPixel.h>
   //│
   //■ＭＭＰシステム
   //┴
@@ -33,7 +32,10 @@
 //━━━━━━━━━━━━━━━━━
   //─────────────────
   // RGB-LED
+  //----------------------------------
+  // ※定義・実装：dev.cpp
   //─────────────────
+  #include <Adafruit_NeoPixel.h>
   extern Adafruit_NeoPixel INO_PIXEL;
 
 //########################################################
@@ -133,13 +135,10 @@ namespace devUART {
     delay(3000); // 安定するまで待つ
     
     // 起動メッセージを表示
-    Serial.println("---------------------------");
     Serial.println("<<通信デバイスの初期化>>");
     Serial.println(" [Serial device]"  );
-    Serial.println("　USB (CDC)      : OK");
-    Serial.println("　UART(#01)      : OK");
-    Serial.println("  [OK] 初期化が完了");
-    Serial.println("");
+    Serial.println("　 [OK] USB (CDC)");
+    Serial.println("　 [OK] UART(#01)");
 
     //○有効性セット
     ENABLED = true;

@@ -110,7 +110,7 @@ public:
     const int datCount = ctx.accIDS;              // ユーザ数
     void* p = calloc(datCount, sizeof(UserData)); // 全要素 0 で確保
     if (!p) {
-      Serial.println(String("　[NG] メモリ不足です"));
+      Serial.println(String("　 [NG] メモリ不足です"));
       return;
     }
     g_USR_DAT = static_cast<UserData*>(p);
@@ -134,10 +134,10 @@ public:
       }
     }
 
-    if (g_DEV_IDs < 0) Serial.println(String("　[NG] Device  ID : Not Found"));
-    else               Serial.println(String("　[OK] Device  ID : 0 ～ ") + String(g_DEV_IDs));
-    if (g_CH_IDs < 0 ) Serial.println(String("　[NG] Channel ID : Not Found"));
-    else               Serial.println(String("　[OK] Channel ID : 0 ～ ") + String(g_CH_IDs));
+    if (g_DEV_IDs < 0) Serial.println(String("　 [NG] Device  ID : Not Found"));
+    else               Serial.println(String("　 [OK] Device  ID : 0 ～ ") + String(g_DEV_IDs));
+    if (g_CH_IDs < 0 ) Serial.println(String("　 [NG] Channel ID : Not Found"));
+    else               Serial.println(String("　 [OK] Channel ID : 0 ～ ") + String(g_CH_IDs));
     Serial.println("");
   }
 

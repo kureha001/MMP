@@ -1,6 +1,7 @@
 // filename : cmdAPI.h
 //========================================================
 // コマンドAPI
+//--------------------------------------------------------
 //  - コンテキストの提供
 //  - 抽象基底クラスの提供
 //  - ユーティリティの提供
@@ -13,7 +14,6 @@
   //■Arduinoシステム
   //│
   //■ＭＭＰシステム
-  #include "mmpCtx.h"
   //┴
 //┴
 
@@ -21,21 +21,15 @@
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト
-  //─────────────────
-  extern MmpContext ctx; // 所在：mmpCtx.h、実装：mmp.ino
-
-  //─────────────────
   // クライアントからのリクエスト条件
   //─────────────────
-  #define DAT_LENGTH 20 // 上記1個あたりの上限バイト数
+  #define DAT_LENGTH 20 // 1トークンあたりの上限バイト数
 
 //========================================================
 // コマンド・モジュールの抽象基底クラス
 //========================================================
 class ModuleBase {
 protected:
-
   //┬
   //□┐メンバ
     //□コンテクスト(参照)
@@ -66,10 +60,10 @@ public:
   //┬
   //□┐共通インタフェイス
     //│
-    //□モジュール名
-    const   char* getModName() const {return modName;}
+    //□モジュール名の参照
+    const char* getModName() const {return modName;}
     //│
-    //□コマンド在籍確認
+    //□コマンド所有者の確認
     bool owns(const char* cmd) const {
       // 空なら早期リターン
       if (!cmd || !modName) return false;
@@ -80,7 +74,7 @@ public:
     }
     //│
     //□コマンド実行(実行結果は仮想ストリームに格納)
-    virtual void  handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
+    virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
     //┴
 }; /* class ModuleBase */
 

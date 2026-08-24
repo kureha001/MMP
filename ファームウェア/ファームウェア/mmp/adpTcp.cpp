@@ -343,7 +343,7 @@ namespace adpTcp {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　TCP Bridge : OK -> port ") + String(SRV_PORT));
+      Serial.println(String("　[OK] TCP     -> port ") + String(SRV_PORT));
       ENABLED = true;
     //┴
   } /* START() */

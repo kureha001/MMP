@@ -1,6 +1,6 @@
 // filename : devNet.cpp
 //========================================================
-// 通信デバイス初期化：ＷｉＦｉサーバ
+// 通信デバイス初期化：ＷｉＦｉ
 //--------------------------------------------------------
 //【目的】
 // ＷｉＦｉサーバを初期化する
@@ -317,7 +317,7 @@ typeConnect g_WIFI;
       //┴
     //│
     //○ヘッダ表示(ラベル名、SSID)
-    Serial.print(String("    <<") + pLabel.c_str() + String(">> ") + pSSID.c_str() + String(" "));
+    Serial.print(String("    ") + pLabel.c_str() + String(" / ") + pSSID.c_str() + String(" "));
     //│
     //○┐仮接続
       //○切断して少し待つ
@@ -430,7 +430,7 @@ typeConnect g_WIFI;
     //│ ＼（起動に失敗した場合）
         //○エラーを表示
         //▼返却:起動に失敗
-        Serial.println("      [NG] softAP");
+        Serial.println("     [NG] softAP");
         return false;
     } /* END-if*/
     //│
@@ -453,9 +453,9 @@ typeConnect g_WIFI;
   //・false：読込に失敗
   //─────────────────
   bool P1_ReadConfig(){
-    if (!LittleFS.begin(true)        ){Serial.println("    [NG] 初期化に失敗"  );return false;}
-    if (!LittleFS.exists(g_FILE_PATH)){Serial.println("    [NG] ファイルが無い");return false;}
-    if (!READ_JSON()                 ){Serial.println("    [NG] 読込に失敗"    );return false;}
+    if (!LittleFS.begin(true)        ){Serial.println("     [NG] 初期化に失敗"  );return false;}
+    if (!LittleFS.exists(g_FILE_PATH)){Serial.println("     [NG] ファイルが無い");return false;}
+    if (!READ_JSON()                 ){Serial.println("     [NG] 読込に失敗"    );return false;}
     return true;
 } /* P1_ReadConfig() */
 
@@ -541,13 +541,13 @@ typeConnect g_WIFI;
     //│
     //●P1.設定ファイル読込
     // 【前提条件】無条件
-    Serial.println(" １．設定ファイルの読込");
+    Serial.println("   1.設定ファイルの読込");
     isOK = P1_ReadConfig();
     //│
     //◇┐P2.設定ファイルに従い起動
     if (isOK) {
       //├┐（設定ファイルが読み込めた場合）
-        Serial.println(" ２．設定ファイルに従い起動します");
+        Serial.println("   2.設定ファイルに従い起動します");
         //│
         //●P2-1.ＳＴＡモードでを起動
         Serial.println("   [STA mode]");
@@ -565,12 +565,9 @@ typeConnect g_WIFI;
     //●P3.緊急モードで起動
     // 【前提条件】設定ファイルの内容での起動に失敗
     if (!isOK) {
-        Serial.println(" ３．緊急モードで起動します");
+        Serial.println("   3.緊急モードで起動します");
         isOK = P3_MODE__ALTERNATIVE();
     } /* END-if */
-    //│
-    //○終了表示
-    Serial.println("");
     //│
     //○有効性セット
     ENABLED = isOK;

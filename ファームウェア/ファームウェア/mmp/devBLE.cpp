@@ -1,6 +1,6 @@
 // filename : devBLE.cpp
 //========================================================
-// 通信デバイス初期化：ＢＬＥサーバ
+// 通信デバイス初期化：ＢＬＥ
 //--------------------------------------------------------
 //【目的】
 // ＢＬＥサーバを初期化する
@@ -95,7 +95,7 @@ namespace devBLE {
         //○エラーメッセージを表示
         //○無効化
         //▼終了：早期リターン
-        Serial.println("  [NG] サーバ生成に失敗");
+        Serial.println("   [NG] サーバ生成に失敗");
         Serial.println("");
         ENABLED = false;
         return;
@@ -108,7 +108,7 @@ namespace devBLE {
         //○エラーメッセージを表示
         //○無効化
         //▼終了：早期リターン
-        Serial.println("  [NG] サービス生成に失敗");
+        Serial.println("   [NG] サービス生成に失敗");
         Serial.println("");
         ENABLED = false;
         return;
@@ -147,7 +147,7 @@ namespace devBLE {
           //○エラーメッセージを表示
           //○無効化
           //▼終了：早期リターン
-          Serial.println("  [NG] ペアリング準備に失敗");
+          Serial.println("   [NG] ペアリング準備に失敗");
           Serial.println("");
           ENABLED = false;
           return;
@@ -172,10 +172,10 @@ namespace devBLE {
       //┴
     //│
     //○終了メッセージを表示
-    Serial.println(String("  [OK] device name : ") + MY_NAME.c_str()     );
-    Serial.println(String("  [OK] service UUID: ") + String(UUID_SERVICE));
-    Serial.println(String("  [OK] recive  UUID: ") + String(UUID_RX)     );
-    Serial.println(String("  [OK] send    UUID: ") + String(UUID_TX)     );
+    Serial.println(String("   [OK] device name : ") + MY_NAME.c_str()     );
+    Serial.println(String("   [OK] service UUID: ") + String(UUID_SERVICE));
+    Serial.println(String("   [OK] recive  UUID: ") + String(UUID_RX)     );
+    Serial.println(String("   [OK] send    UUID: ") + String(UUID_TX)     );
     Serial.println("");
     //│
     //○有効性セット

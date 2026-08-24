@@ -521,7 +521,7 @@ namespace adpHttp {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　WEB API    : OK -> port ") + String(SRV_PORT));
+      Serial.println(String("　[OK] WEB API -> port ") + String(SRV_PORT));
       ENABLED = true; // 有効
       //┴
     //┴

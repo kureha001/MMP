@@ -53,7 +53,7 @@ namespace adpWSOC {
   // 使用するサービス
   //─────────────────
   static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
-  static int               SRV_PORT = 8083  ; // ポート番号
+  static int               SRV_PORT = 8082  ; // ポート番号
 
   //─────────────────
   // 接続スロット
@@ -145,9 +145,9 @@ namespace adpWSOC {
   //─────────────────
   // 登録（自動一括スロット）
   //----------------------------------
-  // 戻り値 ：スロットID（数値）
-  // ・false：成功
-  // ・true ：失敗
+  // 戻り値 ：処理結果（論理値）
+  // ・false：正常
+  // ・true ：異常
   //─────────────────
   bool SS_ATTACH_FOREACH(){return true;}
   // ➡【該当処理なし】

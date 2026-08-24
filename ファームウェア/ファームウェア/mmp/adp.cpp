@@ -108,7 +108,7 @@
     ctx.routeID  = argRID; // 経路ID
     ctx.slotID   = argSID; // スロットID
     //----アクセスID---
-    ctx.accID    = -1    ; // アクセスID
+    ctx.accID    = -1   ; // アクセスID
   } /* F0_SETUP() */
 
 //========================================================
@@ -155,7 +155,6 @@
     Serial.println("");
     //│
 #if defined(MMP_TYPE_MAIN) //---┨ＭＭＰ本体┠----┐
-    //●モジュール管理を初期化
     INO_CMD->START();
 #endif //-----------------------------------------┘
     //┴

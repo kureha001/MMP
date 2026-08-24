@@ -57,10 +57,10 @@ namespace adpUART {
   // 接続スロット
   //─────────────────
   struct T_SS_SLOT{
-    SS_SLOT_TYPE Base          ; // 基本メンバ
-    Stream*      conn = nullptr; // アクセス資源(参照)
+    SS_SLOT_TYPE    Base              ; // 基本メンバ
+    Stream*         conn  = nullptr   ; // アクセス資源(参照)
   };
-  static T_SS_SLOT* ssTBL = nullptr; // 事前予約
+  static T_SS_SLOT* ssTBL = nullptr   ; // 事前予約
 
 //========================================================
 // Ｂ．接続管理
@@ -96,9 +96,9 @@ namespace adpUART {
   //─────────────────
   // 登録（自動一括スロット）
   //----------------------------------
-  // 戻り値 ：スロットID（数値）
-  // ・false：成功
-  // ・true ：失敗
+  // 戻り値 ：処理結果（論理値）
+  // ・false：正常
+  // ・true ：異常
   //─────────────────
   bool SS_ATTACH_FOREACH(){return true;}
   // ➡【該当処理なし】
@@ -139,8 +139,6 @@ namespace adpUART {
 
 //========================================================
 // Ｄ．プロセス部品
-//--------------------------------------------------------
-// HANDLE()で明示的に呼び出す
 //========================================================
   //─────────────────
   // １．接続状態を確認
@@ -262,11 +260,11 @@ namespace adpUART {
     //┬
     //○１．前準備の完了状態を確認
     if (ssTBL) {
-    //│＼（接続管理TBLが存在する場合）
+    //│＼（接続管理TBLが既に存在する場合）
         //○エラーメッセージを表示
         //○無効化
         //▼終了：早期リターン
-        Serial.println("　　Serial   : UART通信の開始に失敗 ");
+        Serial.println("　[OK] USB/UART  -> UART通信の開始に失敗 ");
         ENABLED = false; // 無効
         return;
     } /* END-if */
@@ -290,8 +288,8 @@ namespace adpUART {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　[OK] UART      -> #0,#1"));
-      ENABLED = true; // 有効
+      Serial.println(String("　[OK] USB/UART  -> #0,#1"));
+      ENABLED = true;
       //┴
     //┴
   } /* START() */
@@ -311,8 +309,8 @@ namespace adpUART {
     //│
     //◎┐３．ルーティング処理
     for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
-      //│＼（最終うスロットに達した場合）
-      //│ ▼完了：ルーティングを終了
+      //│＼（最終スロットに達した場合）
+      //│ ▽完了：ルーティングを終了
       //│
       //●対象スロットをセット
       F0_SETUP(ROUTE_ID, slotID);

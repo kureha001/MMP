@@ -57,10 +57,10 @@ namespace adpTCP {
   // 接続スロット
   //─────────────────
   struct T_SS_SLOT{
-    SS_SLOT_TYPE Base; // 基本メンバ
-    WiFiClient   conn; // アクセス資源(TCP接続の実体)
+    SS_SLOT_TYPE    Base              ; // 基本メンバ
+    WiFiClient      conn              ; // アクセス資源(TCP接続の実体)
   };
-  static T_SS_SLOT* ssTBL = nullptr; // 事前予約
+  static T_SS_SLOT* ssTBL = nullptr   ; // 事前予約
 
 //========================================================
 // Ｂ．接続管理
@@ -74,7 +74,7 @@ namespace adpTCP {
     SS_INI_SLOT_BASE(argSlot.Base)       ; // 基本メンバを初期化
     if (argSlot.conn) argSlot.conn.stop(); // アクセス資源を切断
   } /* SS_INI_SLOT() */
-
+  
   //─────────────────
   // 空きSID取得
   //----------------------------------
@@ -85,12 +85,12 @@ namespace adpTCP {
   int SS_GET_FREE_ID() {
     //┬
     //◎┐先頭から走査
-    for (int id = 0; id < SS_SLOTS; id++) {
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
     //│＼（全スロットを走査し終えた場合）
     //│ ▽中断：ループ処理を中断
     //│
     //○スロットを確認
-    if (!ssTBL[id].Base.used) return id;
+    if (!ssTBL[ID].Base.used) return ID;
     //│＼（未使用の場合）
     //│ ▼返却：当該スロットIDを返す
     } /* END-for */
@@ -112,38 +112,35 @@ namespace adpTCP {
   //─────────────────
   // 登録（自動一括スロット）
   //----------------------------------
-  // 戻り値 ：スロットID（数値）
-  // ・false：成功
-  // ・true ：失敗
+  // 戻り値 ：処理結果（論理値）
+  // ・false：正常（あらたな接続がない）
+  // ・true ：異常
   //─────────────────
   bool SS_ATTACH_FOREACH(){
     //┬
     //◎┐未管理のTCP接続をMMP管理対象へ登録する
     while (true) {
       //○新規のTCP接続を取得
-      //  ※受付待ちキュー内のTCP接続管理を取得
-      //  ※取得後、受付待ち状態から管理処理へ移行
       WiFiClient newConn = ADP_SRV->available();
-      if (!newConn) break;
-      //│＼（取得に失敗(待ち接続なし)の場合）
-      //│ ▽中断：ループ処理を中断
+      if (!newConn) return false;
+      //│＼（あらたな接続がない場合）
+      //│ ▼返却：正常
       //│
       //●空きスロットを探す
-      int freeID = SS_GET_FREE_ID();
-      if (freeID < 0) {continue;}
+      int ID = SS_GET_FREE_ID();
+      if (ID < 0) return true;
       //│＼（空きスロットがない）
-      //│ ▽次へ：次を探す
+      //│ ▼返却：異常
       //│
       //●スロットを初期化
-      SS_INI_SLOT(ssTBL[freeID]);
+      SS_INI_SLOT(ssTBL[ID]);
       //│
       //○スロットに新規接続を登録
-      ssTBL[freeID].Base.used = true      ; // 使用中
-      ssTBL[freeID].conn      = newConn   ; // TCP接続(実体)を登録
-      ssTBL[freeID].conn.setNoDelay(true) ; // TCPパケット遅延制御
+      ssTBL[ID].Base.used = true      ; // 使用中
+      ssTBL[ID].conn      = newConn   ; // TCP接続(実体)を登録
+      ssTBL[ID].conn.setNoDelay(true) ; // TCPパケット遅延制御
       //┴
     } //* END-while */
-    //┴
   } /* SS_ATTACH_FOREACH() */
 
   //─────────────────
@@ -248,6 +245,8 @@ namespace adpTCP {
 
   //─────────────────
   // ５．MMPコマンドを実行
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
   //─────────────────
   void P5_RUN_COMMAND(T_SS_SLOT& argSS){
     //┬
@@ -267,8 +266,7 @@ namespace adpTCP {
   //─────────────────
   // ルート１：ＭＭＰコマンド
   //----------------------------------
-  // 引数：
-  // (参)接続管理スロット
+  // 引数：(参照)接続管理スロット
   //─────────────────
   void routeMMP(T_SS_SLOT& argSS){
     //┬
@@ -297,22 +295,21 @@ namespace adpTCP {
     //┴
   } /* routeMMP() */
 
-
 //========================================================
 // Ｆ．初期化・ポーリング用ハンドル
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
-  void START(){
+  void START() {
     //┬
     //○１．前準備の完了状態を確認
     if (ADP_SRV) {
-    //│＼（通信デバイスが起動していない場合）
+    //│＼（通信デバイスが既に起動している場合）
         //○エラーメッセージを表示
         //○無効化
         //▼終了：早期リターン
-        Serial.println("　TCP Bridge : Wi-Fiサーバが起動していません ");
+        Serial.println(     "　[NG ]TCP row   -> Wi-Fiサーバは既に起動しています ");
         ENABLED = false; // 無効
         return;
     } /* END-if */
@@ -324,7 +321,7 @@ namespace adpTCP {
     ADP_SRV = new WiFiServer(SRV_PORT) ; // WiFiServer
     //│
     //○４．接続管理TBLを作成
-    ssTBL   = new T_SS_SLOT[SS_SLOTS];
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
     //○５．ルーティング登録
     // ➡【該当処理なし】※HANDLE()で明示的にルーティング
@@ -336,8 +333,9 @@ namespace adpTCP {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　[OK] TCP       -> port ") + String(SRV_PORT));
+      Serial.println(String("　[OK] TCP row   -> port ") + String(SRV_PORT));
       ENABLED = true;
+      //┴
     //┴
   } /* START() */
 
@@ -348,12 +346,12 @@ namespace adpTCP {
     //┬
     //○１．起動チェック
     if (!ENABLED) return; // 初期化済み
-    if (!ADP_SRV) return;
+    if (!ADP_SRV) return; // サーバが起動済み
     //│＼（このアダプタが無効の場合）
     //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
-    SS_ATTACH_FOREACH();
+    bool Result = SS_ATTACH_FOREACH();
     //│
     //◎┐３．ルーティング処理
     for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
@@ -366,7 +364,7 @@ namespace adpTCP {
       //●MMPコマンドへルーティング
       routeMMP(ssTBL[slotID]);
       //┴
-      } /* END-for */
+    } /* END-for */
     //┴
   } /* HANDLE() */
 

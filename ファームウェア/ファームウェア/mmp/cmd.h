@@ -125,11 +125,11 @@ public:
     //○コマンド・モジュールを登録
     //★★★ コマンド・モジュール保守の対応箇所(4/4) ★★★
     mods.push_back(new ModuleSystem (ctxRef, MMP_MOD::SYS.name   ));
-    mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
-    mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
-    mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
-    mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
-    mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
+    //mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
+    //mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
+    //mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
+    //mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
+    //mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
     //│
     //◎┐登録名を表示
     Serial.print(" ready ->");

@@ -55,8 +55,9 @@ namespace adpHttp {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{
-    WebServer*      conn  = nullptr; // アクセス資源(参照)
+  struct T_SS_SLOT{
+    SS_SLOT_TYPE Base          ; // 基本メンバ
+    WebServer*   conn = nullptr; // アクセス資源(参照)
   };
   static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
@@ -87,8 +88,8 @@ namespace adpHttp {
   void SS_ATTACH_SLOT(){
     //┬
     //○スロットに新規接続を登録
-    ssTBL[0].used = true   ; // 使用中
-    ssTBL[0].conn = ADP_SRV; // 参照先を登録
+    ssTBL[0].Base.used = true   ; // 使用中
+    ssTBL[0].conn      = ADP_SRV; // 参照先を登録
     //┴
   } /* SS_ATTACH_SLOT() */
 
@@ -353,11 +354,10 @@ namespace adpHttp {
   bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    String strRes = F4_CHECK_AUTH();
-    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
-    //│＼（メッセージがある場合）
-        //●エラーをレスポンス
-        //▼返却：処理継続が不可
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    //│＼（処理継続が不可の場合）
+    //│ ●エラーをレスポンス
+    //│ ▼返却：処理継続が不可
     //│
     //▼返却：処理継続が可能
     return false;

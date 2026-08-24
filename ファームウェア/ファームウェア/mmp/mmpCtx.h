@@ -67,6 +67,7 @@ struct MmpContext {
 #endif // ----------------------------------------┘
   const String sysVer  = "V110!"; // バージョン
   int          sysLog  = -1 ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
+  String       errMSG  = "" ; // 早期エラーメッセージ
   //│
   //■機能モジュールのレスポンス
   StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム

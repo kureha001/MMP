@@ -104,11 +104,7 @@
   // ２．フレームを取得
   //━━━━━━━━━━━━━━━━━
   void F2_FORMAT_URI(String &str);
-  bool F2_STREAM(
-    String &argRx   , // 受信バッファ
-    bool   &argOver , // オーバーフローフラグ
-    String &argMsg    // エラーメッセージ
-    );
+  bool F2_STREAM(Stream& argConn, SS_SLOT_TYPE argBASE);
 
   //━━━━━━━━━━━━━━━━━
   // ３．基本情報を取得
@@ -118,7 +114,7 @@
   //━━━━━━━━━━━━━━━━━
   // ４．認証を実施
   //━━━━━━━━━━━━━━━━━
-  String F4_CHECK_AUTH();
+  bool F4_CHECK_AUTH();
 
   //━━━━━━━━━━━━━━━━━
   // ５．MMPコマンドを実行

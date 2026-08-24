@@ -255,38 +255,41 @@
   //─────────────────
   // ４．認証を実施・認証開始コマンド応答
   //----------------------------------
-  // 戻り値：メッセージ（文字列）
-  // ・空  ：処理継続して問題なし
-  // ・あり：レスポンスするべきメッセージ
+  // 戻り値：認証結果（論理値）
+  // ・false： 処理継続が可能
+  // ・true ： 処理継続が不可
+  //----------------------------------
+  // 処理継続が可能の場合、早期エラーメッセージにセット
   //─────────────────
-  String F4_CHECK_AUTH(){
+  bool F4_CHECK_AUTH(){
     //┬
     //◇┐認証開始要求に応答
     if (ctx.cmdPath == "_START_!") {
       //├┐（「接続開始コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()) return "#SS1!";
+        if(NEW_USER()){ctx.errMSG = "#SS1!"; return true;}
         //│＼（失敗した場合）
         //│ ▼返却：[1]認証開始に失敗(要レスポンス)
         //│
         //▼RETURN：[2]認証開始に成功(要レスポンス)
-        return (String("$") + ctx.authCD.c_str() + String("$"));
-      //└┐（その他）
+        ctx.errMSG = String("$") + ctx.authCD.c_str() + String("$");
+        return true;
+        //└┐（その他）
         //┴
     } /* END-if */
     //│
     //○ユーザ認証対象を確認
-    if (ctx.authCD == ""){ctx.accID = 0; return "";}
+    if (ctx.authCD == ""){ctx.accID = 0; return false;}
     //│＼（認証が不要の場合）
     //│ ○ユーザIDを共用IDにセット
     //│ ▼返却：(1)認証が不要
     //│
     //○ユーザ認証を実施
     ctx.accID = GET_EXIST_AID(ctx.authCD);
-    if (ctx.accID < 0) return "#SS2!";
+    if (ctx.accID < 0){ctx.errMSG = "#SS2!"; return true;}
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│
     //▼返却：(2)認証に成功
-    return "";
+    return false;
   } /* F4_CHECK_AUTH() */

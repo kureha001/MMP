@@ -56,8 +56,9 @@ namespace adpTcp {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{
-    WiFiClient conn                ; // アクセス資源(TCP接続の実体)
+  struct T_SS_SLOT{
+    SS_SLOT_TYPE Base; // 基本メンバ
+    WiFiClient   conn; // アクセス資源(TCP接続の実体)
   };
   static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
@@ -70,8 +71,8 @@ namespace adpTcp {
   // 引数：(参照)接続管理スロット
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
-    SS_INI_SLOT_BASE(argSlot)             ; // 基本メンバを初期化
-    if (argSlot.conn) argSlot.conn .stop(); // アクセス資源を切断
+    SS_INI_SLOT_BASE(argSlot.Base)       ; // 基本メンバを初期化
+    if (argSlot.conn) argSlot.conn.stop(); // アクセス資源を切断
   } /* SS_INI_SLOT() */
 
   //─────────────────
@@ -89,7 +90,7 @@ namespace adpTcp {
     //│ ▽中断：ループ処理を中断
     //│
     //○スロットを確認
-    if (!ssTBL[id].used) return id;
+    if (!ssTBL[id].Base.used) return id;
     //│＼（未使用の場合）
     //│ ▼返却：当該スロットIDを返す
     } /* END-for */
@@ -123,8 +124,8 @@ namespace adpTcp {
       SS_INI_SLOT(ssTBL[id]);
       //│
       //○スロットに新規接続を登録
-      ssTBL[id].used   = true         ; // 使用中
-      ssTBL[id].conn   = newConn      ; // TCP接続(実体)を登録
+      ssTBL[id].Base.used = true      ; // 使用中
+      ssTBL[id].conn      = newConn   ; // TCP接続(実体)を登録
       ssTBL[id].conn.setNoDelay(true) ; // TCPパケット遅延制御
       //┴
     } //* END-while */
@@ -167,7 +168,7 @@ namespace adpTcp {
   bool P1_CONNECT(T_SS_SLOT& argSS){
     //┬
     //○接続状態を確認
-    if (!argSS.used || !argSS.conn.connected()) {
+    if (!argSS.Base.used || !argSS.conn.connected()) {
     //│＼（[未使用スロット]または[接続切れ]の場合）
         //●スロットを初期化
         //▼返却：不良
@@ -187,39 +188,12 @@ namespace adpTcp {
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
   // ・false：完成
-  //----------------------------------
-  //【データ受信方式】
-  // ・取得単位  ：ストリーム
-  // ★未取込判定：TCP接続のOBJ(実体) conn.available() 
-  // ★データ受信：TCP接続のOBJ(実体) conn.read()
   //─────────────────
   bool P2_MAKE_FRAME(T_SS_SLOT& argSS){
-    //┬
-    //◎┐受信データからフレームを作成
-    bool   isStop = false;
-    String strMSG = ""   ;
-    while (argSS.conn.available()){        // ★未取込判定
-      //│＼（未取り込みデータが空の場合）
-      //│ ▽完了：取り込みを終了
-      //│
-      //○受信バッファに受信データを加える
-      argSS.rx += (char)argSS.conn.read(); // ★データ受信
-      //│
-      //●受信バッファ処理
-      isStop = F2_STREAM(argSS.rx, argSS.isOver, strMSG);
-      if (strMSG != "") SEND_CONN(argSS, strMSG);
-      //│＼（メッセージがある場合）
-      //│ ●エラーをレスポンス
-      //│ ┴
-     if (isStop) break;
-      //│＼（受信継続が「不要」な場合）
-      //│ ▽中断：取り込みを終了
-      //┴
-    } /* END-while */
-    //│
-    //▼返却：フレームの作成状況
-    return (ctx.strFrame == "" ? true : false);
-  } /* P2_MAKE_FRAME() */
+    bool res = F2_STREAM(argSS.conn, argSS.Base);
+    if (ctx.errMSG != "") SEND_CONN(argSS, ctx.errMSG);
+    return res;
+  } /* P2_MAKE_FRAME */
 
   //─────────────────
   // ３．基本情報を取得
@@ -243,11 +217,10 @@ namespace adpTcp {
   bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    String strRes = F4_CHECK_AUTH();
-    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
-    //│＼（レスポンスメッセージがある場合）
-        //●エラーをレスポンス
-        //▼返却：処理継続が不可
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    //│＼（処理継続が不可の場合）
+    //│ ●エラーをレスポンス
+    //│ ▼返却：処理継続が不可
     //│
     //▼返却：処理継続が可能
     return false;

@@ -56,8 +56,9 @@ namespace adpUART {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{
-    Stream* conn   = nullptr       ; // アクセス資源(参照)
+  struct T_SS_SLOT{
+    SS_SLOT_TYPE Base          ; // 基本メンバ
+    Stream*      conn = nullptr; // アクセス資源(参照)
   };
   static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
@@ -88,12 +89,12 @@ namespace adpUART {
   void SS_ATTACH_SLOT(){
     //┬
     //○スロットに[USB-CDC]接続を登録
-    ssTBL[0].used   = true     ; // 使用中
-    ssTBL[0].conn   = &Serial  ; // 参照先を登録
+    ssTBL[0].Base.used = true     ; // 使用中
+    ssTBL[0].conn      = &Serial  ; // 参照先を登録
     //│
     //○スロットに[UART1]接続を登録
-    ssTBL[1].used   = true     ; // 使用中
-    ssTBL[1].conn   = &Serial1 ; // 参照先を登録
+    ssTBL[1].Base.used = true     ; // 使用中
+    ssTBL[1].conn      = &Serial1 ; // 参照先を登録
     //┴
   } /* SS_ATTACH_SLOT() */
 
@@ -141,39 +142,12 @@ namespace adpUART {
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
   // ・false：完成
-  //----------------------------------
-  //【データ受信方式】
-  // ・取得単位  ：ストリーム
-  // ★未取込判定：UARTのOBJ(参照) conn->available() 
-  // ★データ受信：UARTのOBJ(参照) conn->read()
   //─────────────────
   bool P2_MAKE_FRAME(T_SS_SLOT& argSS){
-    //┬
-    //◎┐受信データからフレームを作成
-    bool   isStop = false;
-    String strMSG = ""   ;
-    while (argSS.conn->available()){        // ★未取込判定
-      //│＼（未取り込みデータが空の場合）
-      //│ ▼完了：取り込みを終了
-      //│
-      //○受信バッファに受信データを加える
-      argSS.rx += (char)argSS.conn->read(); // ★データ受信
-      //│
-      //●受信バッファ処理
-      isStop = F2_STREAM(argSS.rx, argSS.isOver, strMSG);
-      if (strMSG != "") SEND_CONN(argSS, strMSG);
-      //│＼（メッセージがある場合）
-      //│ ●エラーをレスポンス
-      //│ ┴
-     if (isStop) break;
-      //│＼（受信継続が「不要」な場合）
-      //│ ▼中断：取り込みを終了
-      //┴
-    } /* END-while */
-    //│
-    //▼返却：フレームの作成状況
-    return (ctx.strFrame == "" ? true : false);
-  } /* P2_MAKE_FRAME() */
+    bool res = F2_STREAM(*(argSS.conn), argSS.Base);
+    if (ctx.errMSG != "") SEND_CONN(argSS, ctx.errMSG);
+    return res;
+  } /* P2_MAKE_FRAME */
 
   //─────────────────
   // ３．基本情報を取得
@@ -197,11 +171,10 @@ namespace adpUART {
   bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    String strRes = F4_CHECK_AUTH();
-    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
-    //│＼（レスポンスメッセージがある場合）
-        //●エラーをレスポンス
-        //▼返却：処理継続が不可
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    //│＼（処理継続が不可の場合）
+    //│ ●エラーをレスポンス
+    //│ ▼返却：処理継続が不可
     //│
     //▼返却：処理継続が可能
     return false;

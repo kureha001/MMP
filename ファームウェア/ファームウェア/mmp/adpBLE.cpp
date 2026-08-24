@@ -69,7 +69,8 @@ namespace adpBLE {
   //─────────────────
   // 接続スロット
   //─────────────────
-  struct T_SS_SLOT : SS_SLOT_TYPE{
+  struct T_SS_SLOT{
+    SS_SLOT_TYPE       Base             ; // 基本メンバ
     String             connRX  = ""     ; // 受信資源（文字列ワーク）
     BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
   };
@@ -91,9 +92,9 @@ namespace adpBLE {
   // 引数：(参照)接続管理スロット
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
-    SS_INI_SLOT_BASE(argSlot); // 共通メンバを初期化
-    argSlot.connRX = ""      ; // 受信バッファをクリア
-    argSlot.connTX = nullptr ; // 送信資源の参照解除
+    SS_INI_SLOT_BASE(argSlot.Base); // 共通メンバを初期化
+    argSlot.connRX = ""           ; // 受信バッファをクリア
+    argSlot.connTX = nullptr      ; // 送信資源の参照解除
   } /* SS_INI_SLOT */
 
   //─────────────────
@@ -115,8 +116,8 @@ namespace adpBLE {
     SS_INI_SLOT(ssTBL[0]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[0].used   = true          ; // 使用中
-    ssTBL[0].connTX = devBLE::BLE_TX; // 参照先を登録
+    ssTBL[0].Base.used = true          ; // 使用中
+    ssTBL[0].connTX    = devBLE::BLE_TX; // 参照先を登録
     //┴
   } /* SS_ATTACH_SLOT() */
 
@@ -159,7 +160,7 @@ namespace adpBLE {
   bool P1_CONNECT(T_SS_SLOT& argSS){
     //┬
     //○接続状態を確認
-    if (!argSS.used) {
+    if (!argSS.Base.used) {
     //│＼（[未使用]の場合）
         //●スロットを初期化
         //▼返却：不良
@@ -216,11 +217,10 @@ namespace adpBLE {
   bool P4_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    String strRes = F4_CHECK_AUTH();
-    if (strRes != ""){SEND_CONN(argSS, strRes); return true;}
-    //│＼（メッセージがある場合）
-        //●エラーをレスポンス
-        //▼返却：処理継続が不可
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    //│＼（処理継続が不可の場合）
+    //│ ●エラーをレスポンス
+    //│ ▼返却：処理継続が不可
     //│
     //▼返却：処理継続が可能
     return false;
@@ -287,7 +287,7 @@ namespace adpBLE {
     void onConnect(BLEServer* pServer) override {
       //┬
       //○接続状況を確認
-      if (ssTBL[0].used) return;
+      if (ssTBL[0].Base.used) return;
       //│＼（既に参加している場合）
       //│ ▼終了：これ以上は参加させない
       //│

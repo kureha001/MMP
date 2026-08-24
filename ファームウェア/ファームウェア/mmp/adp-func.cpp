@@ -66,7 +66,7 @@
     //┴
   } /* F2_FORMAT_URI() */
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // ストリーム型のデータ処理
   //----------------------------------
   // 引数：
@@ -77,41 +77,35 @@
   // 戻り値：受信継続の要否（論理値）
   // ・true ：受信継続が「不要」
   // ・false：受信継続が「必要」
-  //━━━━━━━━━━━━━━━━━
-  bool F2_STREAM(
-    String &argRx    , // 受信バッファ
-    bool   &argIsOver, // オーバーフローフラグ
-    String &argErrMsg  // エラーメッセージ
-  ){
+  //─────────────────
+  bool P2_STREAM(SS_SLOT_TYPE argBASE){
     //┬
-    argErrMsg  = "";
-    //│
     //○オーバーフロー発生を確認
-    if (argRx.length() > SS_RX_SIZE) {
+    if (argBASE.rx.length() > SS_RX_SIZE) {
     //│＼（発生した場合）
         //○オーバーフロー中へ移行
         //○受信バッファをクリア
         //▼返却：受信継続が「不要」
-        argIsOver = true;
-        argRx     = ""  ;
+        argBASE.isOver = true;
+        argBASE.rx     = ""  ;
         return true;
     } /* END-if */
     //│
     //○取り込み状態を確認
-    if (!argRx.endsWith("!")) return false;
+    if (!argBASE.rx.endsWith("!")) return false;
     //│＼（終端に達していない場合）
     //│ ▼返却：受信継続が「必要」
     //│
     //○オーバーフロー中を確認
-    if (argIsOver) {
+    if (argBASE.isOver) {
     //│＼（オーバーフロー中の場合）
         //○オーバーフロー中を解除
         //○受信バッファをクリア
         //●エラーコードをレスポンス
         //▼返却：受信継続が「不要」
-        argIsOver = false  ;
-        argRx     = ""     ;
-        argErrMsg = "#DFL!";
+        argBASE.isOver = false  ;
+        argBASE.rx     = ""     ;
+        ctx.errMSG     = "#DFL!";
         return true;
     } /* END-if */
     //│
@@ -119,14 +113,36 @@
       //○受信バッファをフレームにセット
       //○受信バッファをクリア
       //●フレームをURI形式に変換
-      ctx.strFrame = argRx;
-      argRx        = ""   ;
+      ctx.strFrame = argBASE.rx;
+      argBASE.rx   = ""        ;
       F2_FORMAT_URI(ctx.strFrame);
       //┴
     //│
     //▼返却：受信継続が「不要」
     return true;
-  } /* F2_STREAM() */
+  } /* P2_STREAM() */
+
+  //━━━━━━━━━━━━━━━━━
+  // ２．ストリームからフレームを取得
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
+  //----------------------------------
+  // 戻り値：フレーム作成状況（論理値）
+  // ・true ：未完成
+  // ・false：完成
+  //━━━━━━━━━━━━━━━━━
+  bool F2_STREAM(
+    Stream& argConn     ,
+    SS_SLOT_TYPE argBASE
+  ){
+    bool isStop = false;
+    while (argConn.available()){        
+      argBASE.rx += (char)argConn.read();
+      isStop = P2_STREAM(argBASE);
+      if (isStop) break;
+    } /* END-while */
+    return (ctx.strFrame == "" ? true : false);
+  }
 
 //━━━━━━━━━━━━━━━━━
 // ３．基本情報を取得

@@ -98,6 +98,7 @@
   // 接続スロットごとに行う前処理
   //━━━━━━━━━━━━━━━━━
   void F0_SETUP(int argRID, int argSID){
+    ctx.errMSG   = ""    ; // エラーメッセージ
     //----フレームデータ---
     ctx.vStream.clear()  ; // 仮想ストリーム
     ctx.strFrame = ""    ; // フレーム

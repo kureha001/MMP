@@ -17,7 +17,7 @@
 </style>
 
 <header>
-  <strong>MMP 単体テスト Ver1.1.0α</strong>
+  <strong>MMP 単体テスト Ver1.1.0</strong>
 </header>
 <hr>
 <div class="row">
@@ -27,7 +27,7 @@
   <label class="inline">ポート:
     <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
   </label>>>
-<button id="btnRoot"  >WEB-API             </button>
+<button id="btnRoot"   >WEB-API             </button>
 <button id="btnSysVer">バージョン          </button>
 </div>
 
@@ -177,9 +177,8 @@ function encDat(a){
 }
 
   // 基本
-  $('#btnRoot'   ).onclick = () => run(`/`           );
-  $('#btnSysVer' ).onclick = () => run(`/SYS/VERSION`);
-  $('#btnSysBoot').onclick = () => run(`/SYS/BOOT`   );
+  $('#btnRoot'  ).onclick = () => run(`/`              );
+  $('#btnSysVer').onclick = () => run(`/SYS/VERSION`  );
 
   // デジタル入出力
   $('#btnDigInp').onclick = () => run(`/DIGITAL/INPUT:${encDat('#din_id')}`);

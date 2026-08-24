@@ -233,7 +233,7 @@ namespace adpWEB {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　WEB       : OK -> port ") + String(SRV_PORT));
+      Serial.println(String("　WEB画面     : OK -> port ") + String(SRV_PORT));
       ENABLED = true; // 有効
       //┴
     //┴

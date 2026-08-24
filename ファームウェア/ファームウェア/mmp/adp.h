@@ -51,7 +51,8 @@
   static const int ROUTE_ID_SERIAL = 0 ; // UART
   static const int ROUTE_ID_BLE    = 1 ; // BLE
   static const int ROUTE_ID_TCP    = 2 ; // TCP
-  static const int ROUTE_ID_HTTP   = 3 ; // WebAPI
+  static const int ROUTE_ID_WAPI   = 3 ; // WebAPI
+  static const int ROUTE_ID_WSOC   = 4 ; // WebAPI
   static const int ROUTE_ID_WEB    = 9 ; // WEB画面
 
 //========================================================
@@ -137,13 +138,19 @@
   }
 
   //【通信アダプタ：ＴＣＰ】
-  namespace adpTcp{
+  namespace adpTCP{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル
   }
 
   //【通信アダプタ：ＷＥＢ ＡＰＩ】
-  namespace adpHttp{     
+  namespace adpWAPI{     
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
+  }
+
+  //【通信アダプタ：ＷｅｂＳｏｃｋｅｔ】
+  namespace adpWSOC{     
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル
   }

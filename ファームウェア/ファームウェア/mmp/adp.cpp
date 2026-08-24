@@ -108,7 +108,7 @@
     ctx.routeID  = argRID; // 経路ID
     ctx.slotID   = argSID; // スロットID
     //----アクセスID---
-    ctx.accID    = -1   ; // アクセスID
+    ctx.accID    = -1    ; // アクセスID
   } /* F0_SETUP() */
 
 //========================================================
@@ -132,19 +132,22 @@
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
-    adpTcp   ::START();
+    adpTCP ::START();
 #endif //-----------------------------------------┘
     //│
-#if defined(ADP_COM_HTTP  ) //--┨WebAPI通信┠----┐
-    adpHttp  ::START();
+#if defined(ADP_COM_WAPI  ) //--┨WebAPI通信┠----┐
+    adpWAPI::START();
+#endif //-----------------------------------------┘
+    //│
+#if defined(ADP_COM_WSOC  ) //--┨WebSoc通信┠----┐
+    adpWSOC::START();
 #endif //-----------------------------------------┘
     //│    
 #if defined(ADP_COM_BLE  ) //---┨ＢＬＥ通信┠----┐
-    adpBLE   ::START();
+    adpBLE ::START();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_WEB      ) //---┨ＷＥＢ画面┠----┐
-    //●ＷＥＢアダプタ
     adpWEB ::START();
 #endif //-----------------------------------------┘
     //│
@@ -164,28 +167,27 @@
   void KICK_HANDLE(){
     //┬
 #if defined(ADP_COM_UART) //--┨UART通信┠----┐
-    //●通信アダプタ（UART）のハンドルをキック
     adpUART::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
-    //●通信アダプタ（TCP）のハンドルをキック
-    adpTcp   ::HANDLE();
+    adpTCP ::HANDLE();
 #endif //-----------------------------------------┘
     //│
-#if defined(ADP_COM_HTTP  ) //--┨WebAPI通信┠----┐
-    //●通信アダプタ（WebAPI）のハンドルをキック
-    adpHttp  ::HANDLE();
+#if defined(ADP_COM_WAPI  ) //--┨WebAPI通信┠----┐
+    adpWAPI::HANDLE();
+#endif //-----------------------------------------┘
+    //│
+#if defined(ADP_COM_WSOC  ) //--┨WebSoc通信┠----┐
+    adpWSOC::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_COM_BLE   ) //--┨ＢＬＥ通信┠----┐
-    //●通信アダプタ（BLE）のハンドルをキック
-    adpBLE   ::HANDLE();
+    adpBLE ::HANDLE();
 #endif //-----------------------------------------┘
     //│
 #if defined(ADP_WEB       ) //--┨ＷＥＢ画面┠----┐
-    //●ＷＥＢアダプタのハンドルをキック
-    adpWEB   ::HANDLE();
+    adpWEB ::HANDLE();
 #endif //-----------------------------------------┘
     //┴
   } /* KICK_HANDLE() */

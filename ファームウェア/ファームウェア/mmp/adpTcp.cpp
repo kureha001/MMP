@@ -1,4 +1,4 @@
-// filename : adpTcp.cpp
+// filename : adpTCP.cpp
 //========================================================
 // 通信アダプタ：ＴＣＰ
 //（接続を維持するネットワーク通信）
@@ -36,7 +36,7 @@
 //########################################################
 //# 専用名の前空間
 //########################################################
-namespace adpTcp {
+namespace adpTCP {
 //========================================================
 // Ａ．基本情報
 //========================================================
@@ -100,9 +100,23 @@ namespace adpTcp {
   } /* SS_GET_FREE_ID() */
 
   //─────────────────
-  // 登録
+  // 登録（自動1スロット）
+  //----------------------------------
+  // 戻り値：スロットID（数値）
+  // ・-1   ：失敗
+  // ・0以上：成功
   //─────────────────
-  void SS_ATTACH_SLOT(){
+  int SS_ATTACH_EACH(){return -1;}
+  // ➡【該当処理なし】
+
+  //─────────────────
+  // 登録（自動一括スロット）
+  //----------------------------------
+  // 戻り値 ：スロットID（数値）
+  // ・false：成功
+  // ・true ：失敗
+  //─────────────────
+  bool SS_ATTACH_FOREACH(){
     //┬
     //◎┐未管理のTCP接続をMMP管理対象へ登録する
     while (true) {
@@ -115,22 +129,28 @@ namespace adpTcp {
       //│ ▽中断：ループ処理を中断
       //│
       //●空きスロットを探す
-      int id = SS_GET_FREE_ID();
-      if (id < 0) {continue;}
+      int freeID = SS_GET_FREE_ID();
+      if (freeID < 0) {continue;}
       //│＼（空きスロットがない）
       //│ ▽次へ：次を探す
       //│
       //●スロットを初期化
-      SS_INI_SLOT(ssTBL[id]);
+      SS_INI_SLOT(ssTBL[freeID]);
       //│
       //○スロットに新規接続を登録
-      ssTBL[id].Base.used = true      ; // 使用中
-      ssTBL[id].conn      = newConn   ; // TCP接続(実体)を登録
-      ssTBL[id].conn.setNoDelay(true) ; // TCPパケット遅延制御
+      ssTBL[freeID].Base.used = true      ; // 使用中
+      ssTBL[freeID].conn      = newConn   ; // TCP接続(実体)を登録
+      ssTBL[freeID].conn.setNoDelay(true) ; // TCPパケット遅延制御
       //┴
     } //* END-while */
     //┴
-  } /* SS_ATTACH_SLOT() */
+  } /* SS_ATTACH_FOREACH() */
+
+  //─────────────────
+  // 登録（固定スロット）
+  //─────────────────
+  void SS_ATTACH_STATIC(){}
+  // ➡【該当処理なし】
 
 //========================================================
 // Ｃ．レスポンス
@@ -304,7 +324,7 @@ namespace adpTcp {
     ADP_SRV = new WiFiServer(SRV_PORT) ; // WiFiServer
     //│
     //○４．接続管理TBLを作成
-    ssTBL       = new T_SS_SLOT[SS_SLOTS];
+    ssTBL   = new T_SS_SLOT[SS_SLOTS];
     //│
     //○５．ルーティング登録
     // ➡【該当処理なし】※HANDLE()で明示的にルーティング
@@ -316,7 +336,7 @@ namespace adpTcp {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　[OK] TCP     -> port ") + String(SRV_PORT));
+      Serial.println(String("　[OK] TCP       -> port ") + String(SRV_PORT));
       ENABLED = true;
     //┴
   } /* START() */
@@ -333,7 +353,7 @@ namespace adpTcp {
     //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
-    SS_ATTACH_SLOT();
+    SS_ATTACH_FOREACH();
     //│
     //◎┐３．ルーティング処理
     for (int slotID = 0; slotID < SS_SLOTS; slotID++) {
@@ -350,4 +370,4 @@ namespace adpTcp {
     //┴
   } /* HANDLE() */
 
-} /* namespace adpTcp */
+} /* namespace adpTCP */

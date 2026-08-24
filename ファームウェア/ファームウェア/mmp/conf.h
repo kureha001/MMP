@@ -21,7 +21,8 @@
 //─────────────────
 #define ADP_COM_UART // Serial
 #define ADP_COM_TCP  // TCP
-#define ADP_COM_HTTP // WebAPI
+#define ADP_COM_WAPI // WebAPI
+#define ADP_COM_WSOC // WebSocket
 #define ADP_COM_BLE  // BLE
 
 //─────────────────

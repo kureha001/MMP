@@ -57,11 +57,11 @@ void INIT_DEVICE() {
   //●通信デバイスを初期化（UART）
   devUART ::START();
   //│
-// -----┨ＴＣＰ通信｜WebAPI通信｜ＷＥＢ画面┠----┐
-#if defined(ADP_COM_TCP) || defined(ADP_COM_HTTP) || defined(ADP_WEB)
+// ┨ＴＣＰ通信｜WebAPI通信｜WebSoc通信｜ＷＥＢ画面┠┐
+#if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_WEB)
   //●通信デバイスを初期化（WiFi）
   devNetwork::START();
-#endif // ----------------------------------------┘
+#endif // -------------------------------------------┘
   //│
 #if defined(ADP_COM_BLE  ) // --┨ＢＬＥ通信┨----┐
   //●通信デバイスを初期化（BLE）

@@ -1,4 +1,4 @@
-// filename : adpHttp.cpp
+// filename : adpWAPI.cpp
 //========================================================
 // 通信アダプタ：ＷｅｂＡＰＩ
 //（リクエスト／レスポンス型の通信）
@@ -35,14 +35,14 @@
 //########################################################
 //# 専用名の前空間
 //########################################################
-namespace adpHttp {
+namespace adpWAPI {
 //========================================================
 // Ａ．基本情報
 //========================================================
   //─────────────────
   // 公開情報
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_HTTP  ; // ＷＥＢ ＡＰＩ
+  const int  ROUTE_ID = ROUTE_ID_WAPI  ; // ＷＥＢ ＡＰＩ
   const int  SS_SLOTS = 1              ; // 固定スロット(1個を使いまわし)
         bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
 
@@ -83,15 +83,35 @@ namespace adpHttp {
   // ➡【該当処理なし】※固定スロット
 
   //─────────────────
-  // 登録
+  // 登録（自動1スロット）
+  //----------------------------------
+  // 戻り値：スロットID（数値）
+  // ・-1   ：失敗
+  // ・0以上：成功
   //─────────────────
-  void SS_ATTACH_SLOT(){
+  int SS_ATTACH_EACH(){return -1;}
+  // ➡【該当処理なし】
+
+  //─────────────────
+  // 登録（自動一括スロット）
+  //----------------------------------
+  // 戻り値 ：スロットID（数値）
+  // ・false：成功
+  // ・true ：失敗
+  //─────────────────
+  bool SS_ATTACH_FOREACH(){return true;}
+  // ➡【該当処理なし】
+
+  //─────────────────
+  // 登録（固定スロット）
+  //─────────────────
+  void SS_ATTACH_STATIC(){
     //┬
     //○スロットに新規接続を登録
     ssTBL[0].Base.used = true   ; // 使用中
     ssTBL[0].conn      = ADP_SRV; // 参照先を登録
     //┴
-  } /* SS_ATTACH_SLOT() */
+  } /* SS_ATTACH_STATIC() */
 
 //━━━━━━━━━━━━━━━━━
 // ヘルパー
@@ -193,6 +213,7 @@ namespace adpHttp {
     if (argID == "!VAL!") return "OK:数値"                  ;
     if (argID == "!STR!") return "OK:文字列"                ;
     if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
+    if (argID == "#SSZ!") return "NG:接続スロット不足"      ;
     if (argID == "!SS0!") return "OK:ユーザ認証に成功"      ;
     if (argID == "#SS1!") return "NG:認証管理の開始に失敗"  ;
     if (argID == "#SS2!") return "NG:認証に失敗"            ;
@@ -510,7 +531,7 @@ namespace adpHttp {
     //│
     //○４．接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
-    SS_ATTACH_SLOT(); // ※固定スロットを事前登録
+    SS_ATTACH_STATIC();
     //│
     //○５．ルーティング登録
     registRoutes(*ADP_SRV);
@@ -521,7 +542,7 @@ namespace adpHttp {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　[OK] WEB API -> port ") + String(SRV_PORT));
+      Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
       ENABLED = true; // 有効
       //┴
     //┴
@@ -545,4 +566,4 @@ namespace adpHttp {
     //┴
   } /* HANDLE() */
 
-} /* namespace adpHttp */
+} /* namespace adpWAPI */

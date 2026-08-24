@@ -84,9 +84,29 @@ namespace adpUART {
   // ➡【該当処理なし】※固定スロット
 
   //─────────────────
-  // 登録
+  // 登録（自動1スロット）
+  //----------------------------------
+  // 戻り値：スロットID（数値）
+  // ・-1   ：失敗
+  // ・0以上：成功
   //─────────────────
-  void SS_ATTACH_SLOT(){
+  int SS_ATTACH_EACH(){return -1;}
+  // ➡【該当処理なし】
+
+  //─────────────────
+  // 登録（自動一括スロット）
+  //----------------------------------
+  // 戻り値 ：スロットID（数値）
+  // ・false：成功
+  // ・true ：失敗
+  //─────────────────
+  bool SS_ATTACH_FOREACH(){return true;}
+  // ➡【該当処理なし】
+
+  //─────────────────
+  // 登録（固定スロット）
+  //─────────────────
+  void SS_ATTACH_STATIC(){
     //┬
     //○スロットに[USB-CDC]接続を登録
     ssTBL[0].Base.used = true     ; // 使用中
@@ -95,8 +115,10 @@ namespace adpUART {
     //○スロットに[UART1]接続を登録
     ssTBL[1].Base.used = true     ; // 使用中
     ssTBL[1].conn      = &Serial1 ; // 参照先を登録
-    //┴
-  } /* SS_ATTACH_SLOT() */
+    //│
+    //▼返却：スロットID
+    return -1;
+  } /* SS_ATTACH_STATIC() */
 
 //========================================================
 // Ｃ．レスポンス
@@ -259,7 +281,7 @@ namespace adpUART {
     //│
     //○４．接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
-    SS_ATTACH_SLOT(); // ※固定スロットを事前登録
+    SS_ATTACH_STATIC();
     //│
     //○５．ルーティング登録
     // ➡【該当処理なし】※HANDLE()で明示的にルーティング
@@ -270,7 +292,7 @@ namespace adpUART {
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println(String("　[OK] UART    -> #0,#1"));
+      Serial.println(String("　[OK] UART      -> #0,#1"));
       ENABLED = true; // 有効
       //┴
     //┴

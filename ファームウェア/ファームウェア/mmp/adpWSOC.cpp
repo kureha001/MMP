@@ -1,13 +1,14 @@
-// filename : adpBLE.cpp
+// filename : adpWSOC.cpp
 //========================================================
-// 通信アダプタ：ＢＬＥ
-//（イベント・コールバック型の通信）
+// 通信アダプタ：ＷｅｂＳｏｃｋｅｔ
 //--------------------------------------------------------
 //【目的】
-// リクエストに従い、ＭＭＰコマンドを実行して、
-// 結果をレスポンスする。
+// WebSocket通信を受け付け、
+// MMPコマンドを実行して、結果をレスポンスする。
 //--------------------------------------------------------
 //【処理機能】
+//・WebSocketサーバを起動する
+//・WebSocketイベントを受信する
 //・キュー内の「全リクエスト」を順次処理する
 //・リクエストを取得する
 //  - コールバック時にキューへ格納
@@ -24,64 +25,56 @@
 #pragma once
 //┬
 //■┐インクルード
-  //■┐Arduinoシステム
-    //■BLE関連
-    #include <BLEDevice.h> // ユーザ受付資源を
-    #include <BLEServer.h> // ユーザ受付資源
-    #include <BLEUtils.h > // ユーザ受付資源
-    #include <BLE2902.h  > // ユーザ受付資源
-    //│
-    //■キューイング関連
-    #include <Arduino.h>
-    #include <queue>
-    #include <mutex>
-    //┴
+  //■Arduinoシステム
+  #include <WebSocketsServer.h>
+  #include <Arduino.h>
+  #include <queue>
+  #include <mutex>
   //│
   //■ＭＭＰシステム
-  #include "adp.h"  // 通信アダプタ共通へ公開
-  #include "dev.h"  // 統合デバイス定義（devBLEの公開資源を含む）
+  #include "adp.h"
   //┴
 //┴
 
 //########################################################
-//# 専用名の前空間
+//# 専用名前空間
 //########################################################
-namespace adpBLE {
+namespace adpWSOC {
 //========================================================
 // Ａ．基本情報
 //========================================================
   //─────────────────
   // 公開情報
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_BLE   ; // ＢＬＥ
-  const int  SS_SLOTS = 1              ; // 固定スロット(1個を使いまわし)
-        bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
+  const int  ROUTE_ID = ROUTE_ID_WSOC; // ルートID
+  const int  SS_SLOTS = 1            ; // 固定スロット(1個を使いまわし)
+        bool ENABLED  = false        ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
   // 使用するサービス
   //─────────────────
-  // ※BLEはサービスポートを持たないため、
-  //   dev.hで公開されたBLE固有の受付資源を使用
-  // ・MY_SRV：BLEサーバー実体
-  // ・BLE_RX：受信用キャラクタリスティック
-  // ・BLE_TX：送信用キャラクタリスティック
+  static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
+  static int               SRV_PORT = 8083  ; // ポート番号
 
   //─────────────────
   // 接続スロット
   //─────────────────
   struct T_SS_SLOT{
-    SS_SLOT_TYPE       Base             ; // 基本メンバ
-    String             connRX  = ""     ; // 受信資源（文字列ワーク）
-    BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
+    SS_SLOT_TYPE Base        ; // 基本メンバ
+    uint8_t      connNum = 0 ; // 接続中のWebSocketクライアント番号
+    String       connRX  = ""; // 受信バッファ
   };
-  static T_SS_SLOT*    ssTBL   = nullptr; // 事前予約
+  static T_SS_SLOT* ssTBL = nullptr;
 
   //─────────────────
   // キューイング
   //─────────────────
-  const int WAIT_MS = 15        ; // 受信タイムラグ
-  std::queue<String> QUEUE      ; // キューバッファ
-  std::mutex         QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  struct myQueue {
+    uint8_t connNum; // クライアント番号
+    String  connRX ; // 受信バッファ
+  };
+  static std::queue<myQueue> QUEUE      ; // キューバッファ
+  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
 //========================================================
 // Ｂ．接続管理
@@ -92,20 +85,34 @@ namespace adpBLE {
   // 引数：(参照)接続管理スロット
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
-    SS_INI_SLOT_BASE(argSlot.Base); // 共通メンバを初期化
-    argSlot.connRX = ""           ; // 受信バッファをクリア
-    argSlot.connTX = nullptr      ; // 送信資源の参照解除
-  } /* SS_INI_SLOT */
+    SS_INI_SLOT_BASE(argSlot.Base);
+    argSlot.connNum = 0 ; // クライアント番号
+    argSlot.connRX  = ""; // 受信バッファ
+  } /* SS_INI_SLOT() */
 
   //─────────────────
   // 空きSID取得
   //----------------------------------
-  // 戻り値：スロットID
-  // ・0,1,2...：空きスロットのID
-  // ・-1：空きスロットが無い
+  // 戻り値：スロットID（数値）
+  // ・-1   ：空き無し
+  // ・0以上：空きスロットID
   //─────────────────
-  int SS_GET_FREE_ID(){return -1;}
-  // ➡【該当処理なし】※固定スロット
+  int SS_GET_FREE_ID() {
+    //┬
+    //◎┐先頭から走査
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
+    //│＼（全スロットを走査し終えた場合）
+    //│ ▽中断：ループ処理を中断
+    //│
+    //○スロットを確認
+    if (!ssTBL[ID].Base.used) return ID;
+    //│＼（未使用の場合）
+    //│ ▼返却：当該スロットIDを返す
+    } /* END-for */
+    //│
+    //▼返却：エラーコード(空きスロットがない)
+    return -1;
+  } /* SS_GET_FREE_ID() */
 
   //─────────────────
   // 登録（自動1スロット）
@@ -114,8 +121,27 @@ namespace adpBLE {
   // ・-1   ：失敗
   // ・0以上：成功
   //─────────────────
-  int SS_ATTACH_EACH(){return -1;}
-  // ➡【該当処理なし】
+  int SS_ATTACH_EACH(){
+    //┬
+    //◎┐未管理のTCP接続をMMP管理対象へ登録する
+    while (true) {
+      //●空きスロットを探す
+      int ID = SS_GET_FREE_ID();
+      if (ID < 0) return -1;
+      //│＼（空きスロットがない）
+      //│ ▽次へ：次を探す
+      //│
+      //●スロットを初期化
+      SS_INI_SLOT(ssTBL[ID]);
+      //│
+      //○スロットに新規接続を登録
+      ssTBL[ID].Base.used = true; // 使用中
+      //│
+      //▼返却：スロットID
+      return ID;
+    } //* END-while */
+    //┴
+  } /* SS_ATTACH_EACH() */
 
   //─────────────────
   // 登録（自動一括スロット）
@@ -130,38 +156,27 @@ namespace adpBLE {
   //─────────────────
   // 登録（固定スロット）
   //─────────────────
-
-  void SS_ATTACH_STATIC(){
-    //┬
-    //●スロットを初期化
-    SS_INI_SLOT(ssTBL[0]);
-    //│
-    //○スロットに新規接続を登録
-    ssTBL[0].Base.used = true          ; // 使用中
-    ssTBL[0].connTX    = devBLE::BLE_TX; // 参照先を登録
-    //┴
-  } /* SS_ATTACH_STATIC() */
-
+  void SS_ATTACH_STATIC(){}
+  // ➡【該当処理なし】
 
 //========================================================
 // Ｃ．レスポンス
 //========================================================
   //─────────────────
-  // スロットの受付資源に送信
+  // WebSocketへ送信
+  //----------------------------------
+  // 引数：(参)接続管理スロット
   //─────────────────
   void SEND_CONN(
-    T_SS_SLOT&    argSS, // 送信先
-    const String& argMSG // 送信メッセージ
+    T_SS_SLOT&    argSS,
+    const String& argMSG
   ){
     //┬
     //●ログ出力
     if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
     //│
     //○メッセージをレスポンス
-    if (argSS.connTX != nullptr) {
-      argSS.connTX->setValue(argMSG.c_str());
-      argSS.connTX->notify();
-    } /* END-if */
+    if (ADP_SRV) ADP_SRV->sendTXT(argSS.connNum, argMSG);
     //┴
   } /* SEND_CONN() */
 
@@ -172,29 +187,22 @@ namespace adpBLE {
   // １．接続状態を確認
   //----------------------------------
   // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：接続状態（論理値）
-  // ・false：良好
-  // ・true ：不良
-  //----------------------------------
-  //【詳細】不正の場合：スロットを保持
   //─────────────────
   bool P1_CONNECT(T_SS_SLOT& argSS){
     //┬
     //○接続状態を確認
-    if (!argSS.used) {SS_INI_SLOT(argSS); return true;}
+    if (!argSS.Base.used) {SS_INI_SLOT(argSS); return true;}
     //│＼（[未使用]の場合）
     //│ ●スロットを初期化
     //│ ▼返却：不良
     //│
-    //▼返却：良好
+    //▼返却：接続状態良好
     return false;
+    //┴
   } /* P1_CONNECT() */
 
   //─────────────────
-  // ２．フレームを取得
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
+  // ２．フレームを作成
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
@@ -247,8 +255,6 @@ namespace adpBLE {
 
   //─────────────────
   // ５．MMPコマンドを実行
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
   //─────────────────
   void P5_RUN_COMMAND(T_SS_SLOT& argSS){
     //┬
@@ -261,10 +267,11 @@ namespace adpBLE {
   } /* P5_RUN_COMMAND() */
 
 //========================================================
-// Ｅ．ルーティング処理（プロセス）
-//--------------------------------------------------------
-// BLEサーバが別プロセスで自動的に実行
+// Ｅ．ルーティング処理
 //========================================================
+  //─────────────────
+  // １．MMPコマンド
+  //─────────────────
   void routeMMP(T_SS_SLOT& argSS){
     //┬
     //○１．接続状態を確認
@@ -296,67 +303,98 @@ namespace adpBLE {
 //========================================================
 // Ｆ．初期化・ポーリング用ハンドル
 //========================================================
-  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // BLEイベントコールバック：サーバ用
-  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  class Callback_Server : public BLEServerCallbacks {
-    //─────────────────
-    // 接続イベント
-    //─────────────────
-    void onConnect(BLEServer* pServer) override {
-      //┬
-      //○接続状況を確認
-      if (ssTBL[0].Base.used) return;
-      //│＼（既に参加している場合）
-      //│ ▼終了：これ以上は参加させない
+  //─────────────────
+  // ヘルパー：クライアント番号をキーにスロットIDを調べる
+  //─────────────────
+  int SEARCH_SID(int argKey) {
+    //◎┐このスロットを初期化
+    for (int ID = 0; ID < SS_SLOTS; ID++){
+      //│＼（最終スロットに達した場合）
+      //│ ▽完了：走査を終える
       //│
-      //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
-      if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
-      //│
-      //●スロットを割り当て
-      SS_ATTACH_STATIC();  // ※一括登録
+      //◇┐クライアント番号が一致するスロットを初期化
+      if (ssTBL[ID].Base.used && ssTBL[ID].connNum == argKey) return ID;
+        //├┐（スロットが未使用の場合)
+        //│▼返却：スロットID
+        //└┐
+          //┴
       //┴
-    } /* onConnect() */
+    } /* END-for */
+    //│
+    //▼終了：早期リターン
+    return -1;
+  } /* SEARCH_SID() */
 
-    //─────────────────
-    // 切断イベント
-    //─────────────────
-    void onDisconnect(BLEServer* pServer) override {
-      //┬
-      //●スロットを初期化
-      if (ssTBL != nullptr) SS_INI_SLOT(ssTBL[0]);
-      //│
-      //○アドバタイジングを再開
-      if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
+  //━━━━━━━━━━━━━━━━━
+  // WebSocketイベントコールバック
+  //━━━━━━━━━━━━━━━━━
+  void webSocketEvent(
+    uint8_t   num,
+    WStype_t  type,
+    uint8_t * payload,
+    size_t    length
+  ){
+    //┬
+    //◇┐イベント駆動
+    switch(type) {
+      //------------------------------------------------------------------
+      case WStype_CONNECTED:
+      //------------------------------------------------------------------
+      {
+      //├┐（接続した場合）
+        //●スロットを割り当て
+        int newID = SS_ATTACH_EACH();
+        if (newID < 0){ADP_SRV->sendTXT(num, "#SSZ!"); return;}
+        //│＼（失敗した場合）
+        //│ ●エラーをレスポンス
+        //│ ▼終了：早期リターン
+        //│
+        //○クライアント番号を付与
+        //▼終了：早期リターン
+        ssTBL[newID].connNum = num;
+        return;
+      }
+
+      //------------------------------------------------------------------
+      case WStype_DISCONNECTED:
+      //------------------------------------------------------------------
+      {
+      //├┐（切断した場合）
+        //●スロットを割り当て
+        int oldID = SEARCH_SID(num);
+        if (oldID < 0) return;
+        //│＼（失敗した場合）
+        //│ ▼終了：早期リターン
+        //│
+        //●スロットを割り当て
+        //▼終了：早期リターン
+        SS_INI_SLOT(ssTBL[oldID]);
+        return;
+      }
+
+      //------------------------------------------------------------------
+      case WStype_TEXT:
+      //------------------------------------------------------------------
+      {
+      //├┐（テキスト受信した場合）
+        //○未取り込みデータを受信
+        if (payload == nullptr || length < 1) return;
+        //│＼（空の場合）
+        //│ ▼終了：早期リターン
+        //│
+        //○受信データをキューに追加
+        std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
+        QUEUE.push({num, String((char*)payload)});
+        //▼終了：早期リターン
+        return;
+      }
+      //------------------------------------------------------------------
+      //└┐
+        //┴
       //┴
-    } /* onDisconnect() */
-  }; /* Callback_Server */
-
-  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // BLEイベントコールバック：クライアント用
-  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  class Callback_Client : public BLECharacteristicCallbacks {
-    //─────────────────
-    // 受信イベント
-    //─────────────────
-    void onWrite(BLECharacteristic *pCharacteristic) override {
-      //┬
-      //○未取り込みデータを受信（getValue()参照後は消費されない）
-      delay(WAIT_MS);
-      String rxData = pCharacteristic->getValue(); // データ複製
-      if (rxData.length() < 1) return;
-      //│＼（空の場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○受信データをキューに追加
-      std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-      QUEUE.push(rxData);
-      //┴
-    }; /* onWrite() */
-  }; /* Callback_Client */
-
-  static Callback_Server ON_CONNECTION; // 接続・切断
-  static Callback_Client ON_RECIVE    ; // データ受信
+    } /* END-switch */
+    //┴
+  } /* webSocketEvent() */
 
   //─────────────────
   // キューを1つ抽出
@@ -368,7 +406,7 @@ namespace adpBLE {
   // ・true ：あり
   // ・false：なし
   //─────────────────
-  bool popQueue(String &rxData) {
+  bool popQueue(myQueue &argData) {
     //┬
     //○別スレッドとの衝突回避用のロック
     std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
@@ -379,7 +417,7 @@ namespace adpBLE {
     //│ ▼返却：なし
     //│
     //○先頭を抽出
-    rxData = QUEUE.front();
+    argData = QUEUE.front();
     //│
     //○先頭を削除
     QUEUE.pop();
@@ -388,49 +426,44 @@ namespace adpBLE {
      return true;
   } /* popQueue() */
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // 初期化処理
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void START() {
     //┬
-    //○１．前準備の完了状態を確認
-    if (!devBLE::ENABLED || !devBLE::MY_SRV) {
+    //○１．対象の通信経路を宣言
+    ctx.routeID = ROUTE_ID;
     //│＼（通信デバイスが起動していない場合）
         //○エラーメッセージを表示
         //○無効化
         //▼終了：早期リターン
-        Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
-        ENABLED = false;
-        return;
-    } /* END-if */
     //│
     //○２．対象の通信経路を宣言
     ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
     //│
     //○３．サーバ資源生成
-    // ➡【該当処理なし】
+    ADP_SRV = new WebSocketsServer(SRV_PORT);
     //│
-    //○４．接続情報TBLを作成
+    //○４．接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
     //○５．ルーティング登録
-    // ➡【該当処理なし】※Webサーバが対象
+    ADP_SRV->onEvent(webSocketEvent);
     //│
     //○６．サーバ開始
-    devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
-    devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // サーバ(接続/切断)
+    ADP_SRV->begin();
     //│
     //○┐７．成功終了
       //○成功メッセージ
       //○有効化
-      Serial.println("　[OK] Bluetooth");
+      Serial.println(String("　[OK] WebSocket -> port ") + String(SRV_PORT));
       ENABLED = true;
     //┴
   } /* START() */
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // ハンドラ入口（ポーリング入口）
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void HANDLE(){
     //┬
     //○１．起動チェック
@@ -439,25 +472,35 @@ namespace adpBLE {
     //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
-    // ➡【該当処理なし】
+    // ➡【該当処理なし】※固定スロット
+
+    //○２．WebSocketサーバの処理を進める
+    ADP_SRV->loop();
     //│
     //◎┐３．ルーティング処理
-    String rxData;
-    while (popQueue(rxData)) {
+    myQueue popDat;
+    while (popQueue(popDat)) {
       //│＼（キューがある場合）
       //│ ▼BREAK：ルーティングを終了
       //│
-      //●対象スロットをセット
-      F0_SETUP(ROUTE_ID, 0);
+      //●クライアント番号に該当するスロットIDを探す
+      int intSID = SEARCH_SID(popDat.connNum);
+      if (intSID < 0) continue;
+      //│＼（失敗した場合）
+      //│ ▼次へ：次のキューを走査
       //│
-      //○キューデータを受信バッファにセット
-      ssTBL[0].connRX = rxData;
+      //●対象スロットをセット
+      F0_SETUP(ROUTE_ID, intSID);
+      //│
+      //○キューデータをスロット反映
+      ssTBL[intSID].connNum = popDat.connNum; // クライアント番号
+      ssTBL[intSID].connRX  = popDat.connRX ; // 受信バッファ
       //│
       //●MMPコマンドへルーティング
-      routeMMP(ssTBL[0]);
+      routeMMP(ssTBL[intSID]);
       //┴
     } /* END-while */
     //┴
   } /* HANDLE() */
 
-} /* namespace adpBLE */
+} /* namespace adpWSOC */

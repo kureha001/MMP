@@ -76,7 +76,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModulePwm(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
 
-    Serial.println(" [PCA9685 initialize]");
+    Serial.println(" [PWM：PCA9685]");
 
     // ｉ２ｃ通信を開始
     Wire.begin(16, 15);

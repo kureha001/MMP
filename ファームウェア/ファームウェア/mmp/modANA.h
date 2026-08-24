@@ -43,7 +43,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModuleAnalog(MmpContext& ctx, const char* name) : ModuleBase(ctx, name) {
 
-    Serial.println(" [HC4067]");
+    Serial.println(" [ANALOG：HC4067]");
 
     // ユーザ別データのメモリ確保
     void* p = calloc(ctx.accIDS, sizeof(UserData)); // 全要素0で初期化して確保

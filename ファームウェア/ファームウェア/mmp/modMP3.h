@@ -35,7 +35,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModuleMP3(MmpContext& ctx, const char* name): ModuleBase(ctx, name) {
 
-    Serial.println(" [DFPlayer mini]");
+    Serial.println(" [MP3：DFPlayer mini]");
 
     g_MP3STATUS[0] = false;
     g_MP3STATUS[1] = false;

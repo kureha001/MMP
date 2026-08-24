@@ -132,6 +132,7 @@ public:
     mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
     //│
     //◎┐登録名を表示
+    Serial.print(" ready ->");
     for (auto* m : mods){
       //│＼（全モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断

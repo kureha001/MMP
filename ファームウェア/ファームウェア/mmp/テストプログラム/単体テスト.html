@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="ja">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MMP 単体テスト</title>
+<title>単体テスト (WebSocket / WebAPI 切替版)</title>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.6;margin:24px}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
@@ -10,193 +11,349 @@
   input{width:18rem;max-width:100%}
   fieldset{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0}
   legend{font-weight:700}
+  /* 折りたたみ用のスタイル調整 */
+  details{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0;background:#fff}
+  summary{font-weight:700;cursor:pointer;padding:4px;outline:none}
+  summary:hover{color:#2563eb}
+  details[open]{background:#fafafa}
+  
   pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap}
   .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
   small{color:#666}
   label.inline{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
+  #connStatus { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+  .disconnected { background: #fee2e2; color: #991b1b; }
+  .connected { background: #dcfce7; color: #166534; }
+  .api-mode-bg { background: #e0f2fe; border: 1px solid #bae6fd; padding: 8px; border-radius: 6px; margin-bottom: 10px; }
 </style>
+</head>
+<body>
 
 <header>
-  <strong>MMP 単体テスト Ver1.1.0</strong>
+  <strong>単体テスト (WebSocket / WebAPI 切替版) Ver1.3.0</strong>
+  <span id="connStatus" class="disconnected">未接続</span>
 </header>
 <hr>
+
+<!-- モード切替エリア -->
+<div class="row api-mode-bg">
+  <label style="font-weight:bold;">通信モード:</label>
+  <label class="inline"><input type="radio" name="commMode" value="ws" checked> WebSocket</label>
+  <label class="inline"><input type="radio" name="commMode" value="api"> WebAPI (HTTP)</label>
+</div>
+
 <div class="row">
-  <label class="inline">ホスト/IP:
+  <label class="inline">ＩＰ:
     <input id="host" placeholder="例: 192.168.2.99">
   </label>
   <label class="inline">ポート:
-    <input id="port" type="number" value="8080" min="1" max="65535" style="width:7rem">
-  </label>>>
-<button id="btnRoot"   >WEB-API             </button>
-<button id="btnSysVer">バージョン          </button>
+    <input id="port" type="number" value="8082" min="1" max="65535" style="width:7rem">
+  </label>
+  <span id="wsControls">
+    <button id="btnConnect">接続</button>
+    <button id="btnDisconnect" disabled>切断</button>
+  </span>
 </div>
 
-<fieldset>
-  <legend>デジタル入出力</legend>
+<!-- システム -->
+<details open>
+  <summary>システム</summary>
+  <div class="row" style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0; margin-top:10px;">
+    <button id="btnStart">認証コード発行</button>：
+    <label class="inline" style="font-weight:bold;">
+      /@<input id="cmd_prefix" style="width:14rem">/コマンド
+    </label>
+  </div>
   <div class="row">
-    <label  class="inline">GPIO ID:     <input id="din_id" value="2" style="width:6rem"></label>
+    <button id="btnRoot">ルート(/) </button>｜
+    <button id="btnSysVer">バージョン</button>｜
+    <button id="btnSysBoot">再起動    </button>｜
+    <label class="inline">ログ表示:</label>
+    <label class="inline"><select id="SysLog_val">
+      <option value="-1" selected>なし</option>
+      <option value="0">あり</option>
+      </select></label>
+    <button id="btnSysLog">セット</button>
+  </div>
+</details>
+
+<details>
+  <summary>デジタル入出力</summary>
+  <div class="row" style="margin-top:10px;">
+    <label class="inline">GPIO ID:<input id="din_id" value="2" style="width:6rem"></label>
     <button id="btnDigInp">デジタル入力 </button>｜
-    <label  class="inline">GPIO ID:     <input id="dout_id" value="3" style="width:6rem"></label>
-    <label  class="inline">値:          <select id="dout_val">
-                                            <option value="0"         >0 (LOW)  </option>
-                                            <option value="1" selected>1 (HIGH) </option>
-                                        </select></label>
+    <label class="inline">GPIO ID:<input id="dout_id" value="3" style="width:6rem"></label>
+    <label class="inline">値:<select id="dout_val">
+                              <option value="0">0 (LOW)  </option>
+                              <option value="1" selected>1 (HIGH) </option>
+                            </select></label>
     <button id="btnDigOut">デジタル出力 </button>
   </div>
-</fieldset>
+</details>
 
-<fieldset>
-  <legend>アナログ入力（HC4067）</legend>
-  <div class="row">
-    <label   class="inline"  >チャンネル数: <input id="an_chTtl"  value="16" style="width:6rem"></label>
-    <label   class="inline"  >機器数:       <input id="an_devTtl" value="2"  style="width:6rem"></label>
-    <button id="btnAnalSetup">範囲セット    </button>>>
+<details>
+  <summary>アナログ入力（HC4067）</summary>
+  <div class="row" style="margin-top:10px;">
+    <label class="inline">チャンネル数: <input id="an_chTtl"  value="16" style="width:6rem"></label>
+    <label class="inline">機器数:       <input id="an_devTtl" value="2"  style="width:6rem"></label>
+    <button id="btnAnalSetup">範囲セット    </button>→
     <button id="btnAnalInput">バッファ取込  </button>
   </div>
   <div class="row">
-    <label  class="inline"  >チャンネルID:  <input id="an_ch"  value="2" style="width:6rem"></label>
-    <label  class="inline"  >機器ID:        <input id="an_dev" value="1" style="width:6rem"></label>
+    <label class="inline">チャンネルID:  <input id="an_ch"  value="2" style="width:6rem"></label>
+    <label class="inline">機器ID:        <input id="an_dev" value="1" style="width:6rem"></label>
     <button id="btnAnalRead">バッファ参照   </button>
   </div>
-</fieldset>
+</details>
 
-<fieldset>
-  <legend>ＰＷＭ出力（PCA9685）</legend>
-  <label class="inline">チャンネルID:<input id="pwm_ch"  value="0"   style="width:6rem"></label>>>
-  <hr>
-  <div class="row">
+<details>
+  <summary>ＰＷＭ出力（PCA9685）</summary>
+  <div class="row" style="margin-top:10px;">
+    <label class="inline">チャンネルID:  <input id="pwm_ch"  value="0"   style="width:6rem"></label>｜
     <label class="inline">出力値(0-4095):<input id="pwm_val" value="600" style="width:8rem"></label>
     <button id="btnPwmOutput">ＰＷＭ出力</button>
   </div>
-</fieldset>
+</details>
 
-<fieldset>
-  <legend>ＭＰ３（DFPlayer）</legend>
-  <label class="inline">機器ID:<input id="mp3_dev"   value="1"  style="width:6rem"></label>>>
-  <hr>
-  <div class="row">
-    <label  class="inline">再生:</label>
-    <label  class="inline"     >ディレクトリID(1-255):<input id="mp3_dir"  value="1" style="width:6rem"></label>
-    <label  class="inline"     >ファイルID(1-255):    <input id="mp3_file" value="1" style="width:6rem"></label>
-    <button id="btnMP3TrkPlay" >演奏    </button>>>
-    <button id="btnMP3TrkStop" >停止    </button>｜
-    <button id="btnMP3TrkPause">一時停止</button>｜
-    <button id="btnMP3TrkStart">再開    </button>｜
-    <select id="mp3_loop"      >
-        <option value="0">0 (OFF)   </option>
-        <option value="1">1 (ON)    </option>
-    </select>
-    <button id="btnMP3TrkLoop" >ループ再生</button>
+<details>
+  <summary>ＭＰ３（DFPlayer）</summary>
+  <div style="margin-top:10px;">
+    <label class="inline">機器ID:               <input id="mp3_dev"  value="1"  style="width:6rem"></label>
+    <label class="inline">ディレクトリID(1-255):<input id="mp3_dir"  value="1" style="width:6rem"></label>
+    <label class="inline">ファイルID(1-255):    <input id="mp3_file" value="1" style="width:6rem"></label>
+    <hr>
+    <div class="row">
+      <button id="btnMP3TrkPlay">演奏    </button>：
+      <button id="btnMP3TrkStop">停止    </button>｜
+      <button id="btnMP3TrkPause">一時停止</button>→
+      <button id="btnMP3TrkStart">再開    </button>｜
+    </div>
+    <hr>
+    <div class="row">
+      <label class="inline">ループ再生:</label>
+      <select id="mp3_loop">
+          <option value="0">0 (OFF)   </option>
+          <option value="1">1 (ON)    </option>
+      </select>
+      <button id="btnMP3TrkLoop">セット</button>
+    </div>
+    <div class="row">
+      <label class="inline">音量(0-30):<input id="mp3_value" value="20" style="width:6rem"></label>
+      <button id="btnMP3Volume">セット</button>
+    </div>
+    <div class="row">
+      <label class="inline">イコライザー(0-5):<input id="mp3_eq"    value="3"  style="width:6rem"></label>
+      <button id="btnMP3EQ">セット</button>
+    </div>
+    <div class="row">
+      <label class="inline">状況:</label>
+      <button id="btnMP3InfTrack">トラック状況</button>
+      <button id="btnMP3InfVolume">音量        </button>
+      <button id="btnMP3InfEQ">イコライザー</button>
+      <button id="btnMP3InfFiles">ファイル総数</button>
+      <button id="btnMP3InfFileID">ファイルID  </button>
+    </div>
   </div>
-  <div class="row">
-    <label  class="inline">設定:</label>
-    <label  class="inline"   >音量(0-30):       <input id="mp3_value" value="20" style="width:6rem"></label>
-    <button id="btnMP3Volume">セット</button>｜
-    <label  class="inline"   >イコライザー(0-5):<input id="mp3_eq"    value="3"  style="width:6rem"></label>
-    <button id="btnMP3EQ"    >セット</button>
-  </div>
-  <div class="row">
-    <label class="inline">状況:</label>
-    <button id="btnMP3InfTrack" >トラック状況</button>
-    <button id="btnMP3InfVolume">音量        </button>
-    <button id="btnMP3InfEQ"    >イコライザー</button>
-    <button id="btnMP3InfFiles" >ファイル総数</button>
-    <button id="btnMP3InfFileID">ファイルID  </button>
-  </div>
-</fieldset>
+</details>
 
-<fieldset>
-  <legend>Ｉ２Ｃ通信</legend>
-<label class="inline">アドレス:<input id="i2c_addr" value="64"  style="width:8rem"></label>>>
-<hr>
-  <div class="row">
+<details>
+  <summary>Ｉ２Ｃ通信</summary>
+  <div class="row" style="margin-top:10px;">
+    <label class="inline">アドレス:<input id="i2c_addr" value="64"  style="width:8rem"></label>｜
     <label class="inline">レジスタ:<input id="i2c_reg"  value="6"   style="width:8rem"></label>
     <label class="inline">値:      <input id="i2c_val"  value="255" style="width:8rem"></label>
     <button id="btnI2cWrite">書込</button>｜
     <label class="inline">レジスタ:<input id="i2c_reg2" value="6"   style="width:8rem"></label>
     <button id="btnI2cRead">読込 </button>
   </div>
-</fieldset>
+</details>
 
 <hr>
 <fieldset>
   <legend>ログ</legend>
-  <label>リクエスト                  <pre id="req"  class="mono"></pre></label>
-  <label>レスポンス（HTTP行とヘッダ）<pre id="hdrs" class="mono"></pre></label>
-  <label>ボディ（生テキスト）        <pre id="raw"  class="mono"></pre></label>
-  <label>ボディ（JSON整形）          <pre id="json" class="mono"></pre></label>
+  <label>送信/リクエスト <pre id="req" class="mono"></pre></label>
+  <label>受信レスポンス / ボディ <pre id="raw" class="mono"></pre></label>
+  <div id="apiLogs" style="display:none;">
+    <label>HTTPヘッダ <pre id="hdrs" class="mono"></pre></label>
+    <label>JSONパース <pre id="json" class="mono"></pre></label>
+  </div>
 </fieldset>
 
 <script>
 (function(){
   const $ = s => document.querySelector(s);
   const hostEl=$('#host'), portEl=$('#port');
-  const preReq=$('#req'), preHdrs=$('#hdrs'), preRaw=$('#raw'), preJson=$('#json');
+  const preReq=$('#req'), preRaw=$('#raw'), preHdrs=$('#hdrs'), preJson=$('#json');
+  const statusEl = $('#connStatus');
+  const wsControls = $('#wsControls');
+  const apiLogsDiv = $('#apiLogs');
 
   hostEl.value = location.hostname || '192.168.2.99';
+  let ws = null;
 
-  function clearLogs(){ preReq.textContent=preHdrs.textContent=preRaw.textContent=preJson.textContent=''; }
-  function url(path){
-    const host=hostEl.value.trim(), port=(portEl.value||'8080').trim();
-    if (!path.startsWith('/')) path = '/' + path;
-    return `http://${host}:${port}${path}`;
-  }
-  async function run(path){
-    const u = url(path);
-    clearLogs();
-    preReq.textContent = `GET ${u}`;
-    try{
-      const res = await fetch(u, { method:'GET', cache:'no-store', credentials:'omit' });
-      let hdr = `HTTP ${res.status} ${res.statusText}\n`;
-      for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
-      preHdrs.textContent = hdr;
-      const text = await res.text();
-      preRaw.textContent = text.length ? text : '(空)';
-      try{ preJson.textContent = JSON.stringify(JSON.parse(text), null, 2); }
-      catch{ preJson.textContent='(JSONとして解釈できません)'; }
-    }catch(e){
-      preHdrs.textContent='リクエストに失敗しました。';
-      preRaw.textContent=String(e?.message||e||'UNKNOWN');
-      preJson.textContent='(取得不可)';
+  function updateModeUI() {
+    const mode = document.querySelector('input[name="commMode"]:checked').value;
+    if (mode === 'ws') {
+      wsControls.style.display = 'inline-block';
+      apiLogsDiv.style.display = 'none';
+      const isConnected = (ws && ws.readyState === WebSocket.OPEN);
+      setConnectedState(isConnected);
+    } else {
+      wsControls.style.display = 'none';
+      apiLogsDiv.style.display = 'block';
+      statusEl.textContent = 'WebAPIモード';
+      statusEl.className = 'connected';
+      setAllButtons(true);
     }
   }
 
-// 文字列/要素/セレクタ どれでもOKにした短縮ヘルパー
-function encDat(a){
-  let v;
-  if (a && typeof a === 'object' && 'value' in a) {
-    v = a.value;                                      // 例: encDat('#din_id'))
-  } else if (typeof a === 'string' &&
-             (a.startsWith('#') || a.startsWith('.') || a.includes('[') || a.includes(' '))) {
-    const el = (typeof $ === 'function') ? $(a) : document.querySelector(a);
-    v = el ? el.value : '';                           // 例: encDat('#din_id')
-  } else {
-    v = a;                                            // 例: encDat('123') / encDat('#id').value)
+  document.querySelectorAll('input[name="commMode"]').forEach(radio => {
+    radio.onchange = updateModeUI;
+  });
+
+  function setConnectedState(connected) {
+    statusEl.textContent = connected ? '接続中' : '未接続';
+    statusEl.className = connected ? 'connected' : 'disconnected';
+    $('#btnConnect').disabled = connected;
+    $('#btnDisconnect').disabled = !connected;
+    setAllButtons(connected);
   }
-  return encodeURIComponent(String(v ?? '').trim());
-}
 
-  // 基本
-  $('#btnRoot'  ).onclick = () => run(`/`              );
-  $('#btnSysVer').onclick = () => run(`/SYS/VERSION`  );
+  function setAllButtons(enabled) {
+    document.querySelectorAll('details button, .row button').forEach(b => {
+      if(b.id !== 'btnConnect' && b.id !== 'btnDisconnect') {
+        b.disabled = !enabled;
+      }
+    });
+  }
 
-  // デジタル入出力
+  function clearLogs(){ 
+    preReq.textContent = preRaw.textContent = preHdrs.textContent = preJson.textContent = ''; 
+  }
+
+  $('#btnConnect').onclick = () => {
+    const host = hostEl.value.trim();
+    const port = portEl.value.trim() || '8082';
+    const wsUrl = `ws://${host}:${port}`;
+    
+    clearLogs();
+    preReq.textContent = `Connecting to ${wsUrl} ...`;
+
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        preReq.textContent = `Connected to ${wsUrl}`;
+        setConnectedState(true);
+      };
+      ws.onmessage = (event) => {
+        const text = event.data;
+        preRaw.textContent = text.length ? text : '(空)';
+      };
+      ws.onerror = () => {
+        preRaw.textContent = 'WebSocketエラーが発生しました。';
+      };
+      ws.onclose = () => {
+        preReq.textContent += '\nDisconnected.';
+        setConnectedState(false);
+        ws = null;
+      };
+    } catch(e) {
+      preRaw.textContent = String(e?.message || e);
+    }
+  };
+
+  $('#btnDisconnect').onclick = () => {
+    if (ws) ws.close();
+  };
+
+  function buildPath(path) {
+    if (!path.startsWith('/')) path = '/' + path;
+    const prefixInput = $('#cmd_prefix').value.trim();
+    if (prefixInput) {
+      let cleanPath = path.startsWith('/') ? path.substring(1) : path;
+      path = `/@${prefixInput}/${cleanPath}`;
+    }
+    return path;
+  }
+
+  async function run(path){
+    const mode = document.querySelector('input[name="commMode"]:checked').value;
+    const finalPath = buildPath(path);
+
+    if (mode === 'ws') {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('WebSocketが接続されていません。');
+        return;
+      }
+      let wsMsg = finalPath;
+      if (!wsMsg.endsWith('!')) wsMsg += '!';
+      
+      clearLogs();
+      preReq.textContent = wsMsg;
+      ws.send(wsMsg);
+
+    } else {
+      const host = hostEl.value.trim();
+      const port = (portEl.value || '8080').trim();
+      const url = `http://${host}:${port}${finalPath}`;
+
+      clearLogs();
+      preReq.textContent = `GET ${url}`;
+
+      try {
+        const res = await fetch(url, { method:'GET', cache:'no-store', credentials:'omit' });
+        let hdr = `HTTP ${res.status} ${res.statusText}\n`;
+        for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
+        preHdrs.textContent = hdr;
+
+        const text = await res.text();
+        preRaw.textContent = text.length ? text : '(空)';
+
+        try {
+          preJson.textContent = JSON.stringify(JSON.parse(text), null, 2);
+        } catch {
+          preJson.textContent = '(JSONとして解釈できません)';
+        }
+      } catch(e) {
+        preHdrs.textContent = 'リクエストに失敗しました。';
+        preRaw.textContent = String(e?.message || e || 'UNKNOWN');
+        preJson.textContent = '(取得不可)';
+      }
+    }
+  }
+
+  function encDat(a){
+    let v;
+    if (a && typeof a === 'object' && 'value' in a) {
+      v = a.value;
+    } else if (typeof a === 'string' &&
+               (a.startsWith('#') || a.startsWith('.') || a.includes('[') || a.includes(' '))) {
+      const el = $(a);
+      v = el ? el.value : '';
+    } else {
+      v = a;
+    }
+    return encodeURIComponent(String(v ?? '').trim());
+  }
+
+  $('#btnRoot'    ).onclick = () => run(`/`           );
+  $('#btnStart'   ).onclick = () => run(`/_START_`    );
+  $('#btnSysVer'  ).onclick = () => run(`/SYS/VERSION`);
+  $('#btnSysBoot' ).onclick = () => run(`/SYS/BOOT`   );
+  $('#btnSysLog'  ).onclick = () => run(`/SYS/SET_LOG:${encDat('#SysLog_val')}`);
+
   $('#btnDigInp').onclick = () => run(`/DIGITAL/INPUT:${encDat('#din_id')}`);
   $('#btnDigOut').onclick = () => run(`/DIGITAL/OUTPUT:${encDat('#dout_id')}:${encDat('#dout_val')}`);
 
-  // アナログ入出力
   $('#btnAnalSetup').onclick = () => run(`/ANALOG/SETUP:${encDat('#an_chTtl')}:${encDat('#an_devTtl')}`);
   $('#btnAnalInput').onclick = () => run(`/ANALOG/INPUT`);
   $('#btnAnalRead' ).onclick = () => run(`/ANALOG/READ:${encDat('#an_ch')}:${encDat('#an_dev')}`);
 
-  // ＰＷＭ出力
   $('#btnPwmOutput').onclick = () => run(`/PWM/OUTPUT:${encDat('#pwm_ch')}:${encDat('#pwm_val')}`);
 
-  // Ｉ２Ｃ通信
   $('#btnI2cWrite').onclick = () => run(`/I2C/WRITE:${encDat('#i2c_addr')}:${encDat('#i2c_reg')}:${encDat('#i2c_val')}`);
   $('#btnI2cRead' ).onclick = () => run(`/I2C/READ:${encDat('#i2c_addr')}:${encDat('#i2c_reg2')}`);
 
-  // ＭＰ３プレイヤー
   $('#btnMP3Volume').onclick = () => run(`/MP3/SET/VOLUME:${encDat('#mp3_dev')}:${encDat('#mp3_value')}`);
   $('#btnMP3EQ'    ).onclick = () => run(`/MP3/SET/EQ:${encDat('#mp3_dev')}:${encDat('#mp3_eq')}`);
 
@@ -211,6 +368,9 @@ function encDat(a){
   $('#btnMP3InfEQ'    ).onclick = () => run(`/MP3/INFO/EQ:${encDat('#mp3_dev')}`);
   $('#btnMP3InfFileID').onclick = () => run(`/MP3/INFO/FILEID:${encDat('#mp3_dev')}`);
   $('#btnMP3InfFiles' ).onclick = () => run(`/MP3/INFO/FILES:${encDat('#mp3_dev')}`);
+
+  updateModeUI();
 })();
 </script>
+</body>
 </html>

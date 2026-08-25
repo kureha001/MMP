@@ -264,8 +264,8 @@
   bool F4_CHECK_AUTH(){
     //┬
     //◇┐認証開始要求に応答
-    if (ctx.cmdPath == "_START_!") {
-      //├┐（「接続開始コマンド」の場合）
+    if (ctx.cmdPath == "_START_!" || ctx.cmdPath == "_START_") {
+      //├┐（「認証コード発行コマンド」の場合）
         //●認証管理に加える
         if(NEW_USER()){ctx.errMSG = "#SS1!"; return true;}
         //│＼（失敗した場合）

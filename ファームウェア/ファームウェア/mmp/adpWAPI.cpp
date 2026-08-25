@@ -242,17 +242,13 @@ namespace adpWAPI {
     //│
     //◇┐JSON内容編集
     String msgID = argMSG;
-    if (
-      argMSG.length() == 7 &&  // 全長7文字
-      argMSG[0] == '$'     &&  // 先頭記号
-      argMSG[6] == '$'         // 末尾記号
-    ){
+    if (ctx.authCD != ""){
       //├┐（認証コード発行の場合）
         //○MSGIDを独自IDに書き換え
         //○取得値を文字列型にセット
         //○処理結果をセット
         msgID     = "!SS0!"              ; // 認証開始
-        jsDat.Str = argMSG.substring(1,6); // 取得値(文字列：認証コード)
+        jsDat.Str = argMSG               ; // 取得値(文字列)
         jsDat.Res = true                 ; // 正常
         //┴
 

@@ -131,7 +131,7 @@
     adpUART::START();
 #endif //-----------------------------------------┘
     //│
-#if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
+#if defined(ADP_COM_TCP   ) //--┨TcpRaw通信┠----┐
     adpTCP ::START();
 #endif //-----------------------------------------┘
     //│
@@ -169,7 +169,7 @@
     adpUART::HANDLE();
 #endif //-----------------------------------------┘
     //│
-#if defined(ADP_COM_TCP   ) //--┨ＴＣＰ通信┠----┐
+#if defined(ADP_COM_TCP   ) //--┨TcpRaw通信┠----┐
     adpTCP ::HANDLE();
 #endif //-----------------------------------------┘
     //│

@@ -20,7 +20,7 @@
 //・アダプタを初期化する関数
 //・アダプタをポーリングする関数
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/08/25) 
 //========================================================
 #pragma once
 //┬
@@ -52,7 +52,8 @@
   static const int ROUTE_ID_BLE    = 1 ; // BLE
   static const int ROUTE_ID_TCP    = 2 ; // TCP
   static const int ROUTE_ID_WAPI   = 3 ; // WebAPI
-  static const int ROUTE_ID_WSOC   = 4 ; // WebAPI
+  static const int ROUTE_ID_WSOC   = 4 ; // WebSocket
+  static const int ROUTE_ID_ESPN   = 5 ; // WebSocket
   static const int ROUTE_ID_WEB    = 9 ; // WEB画面
 
 //========================================================
@@ -157,6 +158,12 @@
 
   //【通信アダプタ：ＢＬＥ】
   namespace adpBLE{
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
+  }
+
+  //【通信アダプタ：ＥＳＰ－ＮＯＷ】
+  namespace adpESPN{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル
   }

@@ -19,7 +19,8 @@
 //・MMPコマンドの実行結果をレスポンする
 //・処理中にエラーなどがあれば適宜レスポンスする
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/08/25) 
+// ・start()のプロセスを簡略化(起動チェック・経路ID登録を廃止)
 //========================================================
 #pragma once
 //┬
@@ -508,39 +509,24 @@ namespace adpWAPI {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．前準備の完了状態を確認
-    if (ADP_SRV) {
-    //│＼（通信デバイスが既に起動している場合）
-        //○エラーメッセージを表示
-        //○無効化
-        //▼返却：早期リターン
-        Serial.println("　WEB API    : ＷＥＢサーバサーバは既に起動しています ");
-        ENABLED = false; // 無効
-        return;
-    } /* END-if */
-    //│
-    //○２．対象の通信経路を宣言
-    ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
-    //│
-    //○３．サーバ資源生成
+    //○１．サーバ資源生成
     ADP_SRV = new WebServer(SRV_PORT); // WebServer
     //│
-    //○４．接続管理TBLを作成
+    //○２．接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     SS_ATTACH_STATIC();
     //│
-    //○５．ルーティング登録
+    //○３．ルーティング登録
     registRoutes(*ADP_SRV);
     //│
-    //○６．サーバ開始
+    //○４．サーバ開始
     ADP_SRV->begin();
     //│
-    //○┐７．成功終了
-      //○成功メッセージ
-      //○有効化
-      Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
-      ENABLED = true; // 有効
-      //┴
+    //○５．起動ログ表示
+    Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
+    //│
+    //○６．有効化
+    ENABLED = true; // 有効
     //┴
   } /* START() */
 

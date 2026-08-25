@@ -13,7 +13,8 @@
 //・RGB-LEDデバイスを提供する
 //・通信デバイスの初期化を指示する
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/08/25) 
+// ・EPS-NOWのプリプロセッサ条件を追加
 //========================================================
 //┬
 //■┐インクルード
@@ -57,8 +58,8 @@ void INIT_DEVICE() {
   //●通信デバイスを初期化（UART）
   devUART ::START();
   //│
-// ┨TcpRaw通信｜WebAPI通信｜WebSoc通信｜ＷＥＢ画面┠┐
-#if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_WEB)
+// ┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
+#if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
   //●通信デバイスを初期化（WiFi）
   devNetwork::START();
 #endif // -------------------------------------------┘

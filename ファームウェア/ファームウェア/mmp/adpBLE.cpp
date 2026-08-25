@@ -19,7 +19,9 @@
 //・MMPコマンドの実行結果をレスポンする
 //・処理中にエラーなどがあれば適宜レスポンスする
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/08/25) 
+// ・start()のプロセスを簡略化(起動チェック・経路ID登録を廃止)
+// ・handle()の変数名を修正(WSOC・ESPNと統一)
 //========================================================
 #pragma once
 //┬
@@ -261,8 +263,6 @@ namespace adpBLE {
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
-//--------------------------------------------------------
-// BLEサーバが別プロセスで自動的に実行
 //========================================================
   void routeMMP(T_SS_SLOT& argSS){
     //┬
@@ -392,38 +392,24 @@ namespace adpBLE {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．前準備の完了状態を確認
-    if (!devBLE::ENABLED || !devBLE::MY_SRV) {
-    //│＼（通信デバイスが起動していない場合）
-        //○エラーメッセージを表示
-        //○無効化
-        //▼終了：早期リターン
-        Serial.println(" BLE Bridge : Bluetoothサーバが起動していません ");
-        ENABLED = false;
-        return;
-    } /* END-if */
-    //│
-    //○２．対象の通信経路を宣言
-    ctx.routeID = ROUTE_ID; // コンテクストにルートIDをセット
-    //│
-    //○３．サーバ資源生成
+    //○１．サーバ資源生成
     // ➡【該当処理なし】
     //│
-    //○４．接続情報TBLを作成
+    //○２．接続情報TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
-    //○５．ルーティング登録
+    //○３．ルーティング登録
     // ➡【該当処理なし】※Webサーバが対象
     //│
-    //○６．サーバ開始
+    //○４．サーバ開始
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // サーバ(接続/切断)
     //│
-    //○┐７．成功終了
-      //○成功メッセージ
-      //○有効化
-      Serial.println("　[OK] Bluetooth");
-      ENABLED = true;
+    //○５．起動ログ表示
+    Serial.println("　[OK] Bluetooth");
+    //│
+    //○６．有効化
+    ENABLED = true;
     //┴
   } /* START() */
 
@@ -441,8 +427,8 @@ namespace adpBLE {
     // ➡【該当処理なし】
     //│
     //◎┐３．ルーティング処理
-    String rxData;
-    while (popQueue(rxData)) {
+    String popDat;
+    while (popQueue(popDat)) {
       //│＼（キューがある場合）
       //│ ▼BREAK：ルーティングを終了
       //│
@@ -450,7 +436,7 @@ namespace adpBLE {
       F0_SETUP(ROUTE_ID, 0);
       //│
       //○キューデータを受信バッファにセット
-      ssTBL[0].connRX = rxData;
+      ssTBL[0].connRX = popDat;
       //│
       //●MMPコマンドへルーティング
       routeMMP(ssTBL[0]);

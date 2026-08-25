@@ -65,7 +65,7 @@ struct MmpContext {
 #else // -----------------------┨ＭＭＰサブ┠----┤
   const String sysName = "MMPサブ";
 #endif // ----------------------------------------┘
-  const String sysVer  = "V110!"; // バージョン
+  const String sysVer  = "V120!"; // バージョン
   int          sysLog  = -1 ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
   String       errMSG  = "" ; // 早期エラーメッセージ
   //│

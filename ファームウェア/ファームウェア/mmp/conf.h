@@ -2,7 +2,8 @@
 //========================================================
 // 各種設定
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/08/25) 
+// ・EPS-NOWのプリプロセッサエントリーを追加
 //========================================================
 
 //─────────────────
@@ -19,10 +20,11 @@
 //・必要：コメントアウト「しない」
 //・不要：コメントアウト「する」
 //─────────────────
-#define ADP_COM_UART // UART通信
-#define ADP_COM_TCP  // TcpRaw通信
-#define ADP_COM_WAPI // WebAPI通信
-#define ADP_COM_WSOC // WebSoc通信
+#define ADP_COM_UART // UART
+#define ADP_COM_TCP  // TcpRaw
+#define ADP_COM_WAPI // WebAPI
+#define ADP_COM_WSOC // WebSocket
+#define ADP_COM_ESPN // ESP-NOW
 #define ADP_COM_BLE  // BLE
 
 //─────────────────

@@ -1,18 +1,18 @@
-// filename : adpWSOC.cpp
+// filename : adpESPN.cpp
 //========================================================
-// 通信アダプタ：ＷｅｂＳｏｃｋｅｔ
+// 通信アダプタ：ＥＳＰ－ＮＯＷ
+//（イベント・コールバック型の通信）
 //--------------------------------------------------------
 //【目的】
-// WebSocket通信を受け付け、
-// MMPコマンドを実行して、結果をレスポンスする。
+// リクエストに従い、ＭＭＰコマンドを実行して、
+// 結果をレスポンスする。
 //--------------------------------------------------------
 //【処理機能】
-//・WebSocketサーバを起動する
-//・WebSocketイベントを受信する
 //・キュー内の「全リクエスト」を順次処理する
 //・リクエストを取得する
 //  - コールバック時にキューへ格納
-//  - ポーリング時にキューからリクエストを順次取得
+//  - ポーリング時にキューからリクエストを取得
+//  - キューがない場合は何も行われない
 //・リクエストを基に共通情報(コンテクスト)を纏める
 //・必要に応じてユーザ認証を実施する
 //・MMPコマンドを実行する
@@ -25,53 +25,57 @@
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  #include <WebSocketsServer.h>
-  #include <Arduino.h>
-  #include <queue>
-  #include <mutex>
+  //■┐Arduinoシステム
+    //■ESP-NOW関連
+    #include <WiFi.h>
+    #include <esp_now.h>
+    //│
+    //■キューイング関連
+    #include <Arduino.h>
+    #include <queue>
+    #include <mutex>
+    //┴
   //│
   //■ＭＭＰシステム
-  #include "adp.h"
+  #include "adp.h"  // 通信アダプタ共通へ公開
   //┴
 //┴
 
 //########################################################
-//# 専用名前空間
+//# 専用名の前空間
 //########################################################
-namespace adpWSOC {
+namespace adpESPN {
 //========================================================
 // Ａ．基本情報
 //========================================================
   //─────────────────
   // 公開情報
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_WSOC; // ルートID
-  const int  SS_SLOTS = 1            ; // 固定スロット(1個を使いまわし)
-        bool ENABLED  = false        ; // 有効性：{有効：true|無効：false}
+  const int  ROUTE_ID = ROUTE_ID_ESPN  ; // ＥＳＰ－ＮＯＷ
+  const int  SS_SLOTS = 1              ; // 固定スロット(1個を使いまわし)
+        bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
   // 使用するサービス
   //─────────────────
-  static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
-  static int               SRV_PORT = 8082  ; // ポート番号
+  // ➡【該当処理なし】
 
   //─────────────────
   // 接続スロット
   //─────────────────
   struct T_SS_SLOT{
     SS_SLOT_TYPE Base        ; // 基本メンバ
-    uint8_t      connNum = 0 ; // 接続中のWebSocketクライアント番号
+    uint8_t      connMAC[6]  ; // MACアドレス
     String       connRX  = ""; // 受信バッファ
   };
-  static T_SS_SLOT* ssTBL = nullptr;
+  static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
   //─────────────────
   // キューイング
   //─────────────────
   struct myQueue {
-    uint8_t connNum; // クライアント番号
-    String  connRX ; // 受信バッファ
+    uint8_t connMAC[6]; // MACアドレス
+    String  connRX    ; // 受信バッファ
   };
   static std::queue<myQueue> QUEUE      ; // キューバッファ
   static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -86,33 +90,19 @@ namespace adpWSOC {
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
     SS_INI_SLOT_BASE(argSlot.Base);
-    argSlot.connNum = 0 ; // クライアント番号
+    memset(argSlot.connMAC, 0, 6); // ★ 6バイトを0クリア
     argSlot.connRX  = ""; // 受信バッファ
-  } /* SS_INI_SLOT() */
+  } /* SS_INI_SLOT */
 
   //─────────────────
   // 空きSID取得
   //----------------------------------
-  // 戻り値：スロットID（数値）
-  // ・-1   ：空き無し
-  // ・0以上：空きスロットID
+  // 戻り値：スロットID
+  // ・0,1,2...：空きスロットのID
+  // ・-1：空きスロットが無い
   //─────────────────
-  int SS_GET_FREE_ID() {
-    //┬
-    //◎┐先頭から走査
-    for (int ID = 0; ID < SS_SLOTS; ID++) {
-    //│＼（全スロットを走査し終えた場合）
-    //│ ▽中断：ループ処理を中断
-    //│
-    //○スロットを確認
-    if (!ssTBL[ID].Base.used) return ID;
-    //│＼（未使用の場合）
-    //│ ▼返却：当該スロットIDを返す
-    } /* END-for */
-    //│
-    //▼返却：エラーコード(空きスロットがない)
-    return -1;
-  } /* SS_GET_FREE_ID() */
+  int SS_GET_FREE_ID(){return -1;}
+  // ➡【該当処理なし】※固定スロット
 
   //─────────────────
   // 登録（自動1スロット）
@@ -121,27 +111,8 @@ namespace adpWSOC {
   // ・-1   ：失敗
   // ・0以上：成功
   //─────────────────
-  int SS_ATTACH_EACH(){
-    //┬
-    //◎┐未管理のTCP接続をMMP管理対象へ登録する
-    while (true) {
-      //●空きスロットを探す
-      int ID = SS_GET_FREE_ID();
-      if (ID < 0) return -1;
-      //│＼（空きスロットがない）
-      //│ ▽次へ：次を探す
-      //│
-      //●スロットを初期化
-      SS_INI_SLOT(ssTBL[ID]);
-      //│
-      //○スロットに新規接続を登録
-      ssTBL[ID].Base.used = true; // 使用中
-      //│
-      //▼返却：スロットID
-      return ID;
-    } //* END-while */
-    //┴
-  } /* SS_ATTACH_EACH() */
+  int SS_ATTACH_EACH(){return -1;}
+  // ➡【該当処理なし】
 
   //─────────────────
   // 登録（自動一括スロット）
@@ -156,27 +127,34 @@ namespace adpWSOC {
   //─────────────────
   // 登録（固定スロット）
   //─────────────────
-  void SS_ATTACH_STATIC(){}
-  // ➡【該当処理なし】
+  void SS_ATTACH_STATIC(){
+    //┬
+    //●スロットを初期化
+    SS_INI_SLOT(ssTBL[0]);
+    //│
+    //○スロットに新規接続を登録
+    ssTBL[0].Base.used = true; // 使用中
+    ssTBL[0].connRX    = ""  ; // 参照先を登録
+    //┴
+  } /* SS_ATTACH_STATIC() */
+
 
 //========================================================
 // Ｃ．レスポンス
 //========================================================
   //─────────────────
-  // WebSocketへ送信
-  //----------------------------------
-  // 引数：(参)接続管理スロット
+  // スロットの受付資源に送信
   //─────────────────
   void SEND_CONN(
-    T_SS_SLOT&    argSS,
-    const String& argMSG
+    T_SS_SLOT&    argSS, // 送信先
+    const String& argMSG // 送信メッセージ
   ){
     //┬
     //●ログ出力
     if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
     //│
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argSS.connNum, argMSG.c_str());
+    esp_now_send(argSS.connMAC, (const uint8_t*)argMSG.c_str(), argMSG.length() + 1);
     //┴
   } /* SEND_CONN() */
 
@@ -187,6 +165,12 @@ namespace adpWSOC {
   // １．接続状態を確認
   //----------------------------------
   // 引数：(参照)接続管理スロット
+  //----------------------------------
+  // 戻り値：接続状態（論理値）
+  // ・false：良好
+  // ・true ：不良
+  //----------------------------------
+  //【詳細】不正の場合：スロットを保持
   //─────────────────
   bool P1_CONNECT(T_SS_SLOT& argSS){
     //┬
@@ -196,13 +180,14 @@ namespace adpWSOC {
     //│ ●スロットを初期化
     //│ ▼返却：不良
     //│
-    //▼返却：接続状態良好
+    //▼返却：良好
     return false;
-    //┴
   } /* P1_CONNECT() */
 
   //─────────────────
-  // ２．フレームを作成
+  // ２．フレームを取得
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
   // ・true ：未完成
@@ -255,6 +240,8 @@ namespace adpWSOC {
 
   //─────────────────
   // ５．MMPコマンドを実行
+  //----------------------------------
+  // 引数：(参照)接続管理スロット
   //─────────────────
   void P5_RUN_COMMAND(T_SS_SLOT& argSS){
     //┬
@@ -267,11 +254,8 @@ namespace adpWSOC {
   } /* P5_RUN_COMMAND() */
 
 //========================================================
-// Ｅ．ルーティング処理
+// Ｅ．ルーティング処理（プロセス）
 //========================================================
-  //─────────────────
-  // １．MMPコマンド
-  //─────────────────
   void routeMMP(T_SS_SLOT& argSS){
     //┬
     //○１．接続状態を確認
@@ -303,98 +287,34 @@ namespace adpWSOC {
 //========================================================
 // Ｆ．初期化・ポーリング用ハンドル
 //========================================================
-  //─────────────────
-  // ヘルパー：クライアント番号をキーにスロットIDを調べる
-  //─────────────────
-  int SEARCH_SID(int argKey) {
-    //◎┐このスロットを初期化
-    for (int ID = 0; ID < SS_SLOTS; ID++){
-      //│＼（最終スロットに達した場合）
-      //│ ▽完了：走査を終える
-      //│
-      //◇┐クライアント番号が一致するスロットを初期化
-      if (ssTBL[ID].Base.used && ssTBL[ID].connNum == argKey) return ID;
-        //├┐（スロットが未使用の場合)
-        //│▼返却：スロットID
-        //└┐
-          //┴
-      //┴
-    } /* END-for */
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // イベントコールバック
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  void OnDataRecv(
+    const esp_now_recv_info_t *recv_info,
+    const uint8_t *payload,
+    int length
+  ) {
+    //┬
+    //○未取り込みデータを受信
+    if (recv_info == nullptr || payload == nullptr || length < 1) return;
+    //│＼（空の場合）
+    //│ ▼終了：早期リターン
+    //│
+    //○送信元MACアドレスを取得
+    uint8_t mac[6];
+    memcpy(mac, recv_info->src_addr, 6);
+    //│
+    //○受信データをキューに追加
+    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
+    myQueue pkt;
+    memcpy(pkt.connMAC, mac, 6);
+    pkt.connRX = String((const char*)payload, length);
+    QUEUE.push(pkt);
     //│
     //▼終了：早期リターン
-    return -1;
-  } /* SEARCH_SID() */
-
-  //━━━━━━━━━━━━━━━━━
-  // WebSocketイベントコールバック
-  //━━━━━━━━━━━━━━━━━
-  void webSocketEvent(
-    uint8_t   num,
-    WStype_t  type,
-    uint8_t * payload,
-    size_t    length
-  ){
-    //┬
-    //◇┐イベント駆動
-    switch(type) {
-      //------------------------------------------------------------------
-      case WStype_CONNECTED:
-      //------------------------------------------------------------------
-      {
-      //├┐（接続した場合）
-        //●スロットを割り当て
-        int newID = SS_ATTACH_EACH();
-        if (newID < 0){ADP_SRV->sendTXT(num, "#SSZ!"); return;}
-        //│＼（失敗した場合）
-        //│ ●エラーをレスポンス
-        //│ ▼終了：早期リターン
-        //│
-        //○クライアント番号を付与
-        //▼終了：早期リターン
-        ssTBL[newID].connNum = num;
-        return;
-      }
-
-      //------------------------------------------------------------------
-      case WStype_DISCONNECTED:
-      //------------------------------------------------------------------
-      {
-      //├┐（切断した場合）
-        //●スロットを割り当て
-        int oldID = SEARCH_SID(num);
-        if (oldID < 0) return;
-        //│＼（失敗した場合）
-        //│ ▼終了：早期リターン
-        //│
-        //●スロットを割り当て
-        //▼終了：早期リターン
-        SS_INI_SLOT(ssTBL[oldID]);
-        return;
-      }
-
-      //------------------------------------------------------------------
-      case WStype_TEXT:
-      //------------------------------------------------------------------
-      {
-      //├┐（テキスト受信した場合）
-        //○未取り込みデータを受信
-        if (payload == nullptr || length < 1) return;
-        //│＼（空の場合）
-        //│ ▼終了：早期リターン
-        //│
-        //○受信データをキューに追加
-        std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-        QUEUE.push({num, String((char*)payload)});
-        //▼終了：早期リターン
-        return;
-      }
-      //------------------------------------------------------------------
-      //└┐
-        //┴
-      //┴
-    //┴
-    } /* END-switch */
-  } /* webSocketEvent() */
+    return;
+  } /* OnDataRecv() */
 
   //─────────────────
   // キューを1つ抽出
@@ -406,7 +326,7 @@ namespace adpWSOC {
   // ・true ：あり
   // ・false：なし
   //─────────────────
-  bool popQueue(myQueue &argData) {
+  bool popQueue(myQueue &popDat) {
     //┬
     //○別スレッドとの衝突回避用のロック
     std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
@@ -417,7 +337,7 @@ namespace adpWSOC {
     //│ ▼返却：なし
     //│
     //○先頭を抽出
-    argData = QUEUE.front();
+    popDat = QUEUE.front();
     //│
     //○先頭を削除
     QUEUE.pop();
@@ -426,34 +346,38 @@ namespace adpWSOC {
      return true;
   } /* popQueue() */
 
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   // 初期化処理
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
     //○１．サーバ資源生成
-    ADP_SRV = new WebSocketsServer(SRV_PORT);
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("　[NG ] ESP-NOW -> 初期化失敗");
+        ENABLED = false;
+        return;
+    }
     //│
-    //○２．接続管理TBLを作成
+    //○２．接続情報TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
     //○３．ルーティング登録
-    ADP_SRV->onEvent(webSocketEvent);
+    // ➡【該当処理なし】※Webサーバが対象
     //│
     //○４．サーバ開始
-    ADP_SRV->begin();
+    esp_now_register_recv_cb(OnDataRecv);
     //│
     //○５．起動ログ表示
-    Serial.println(String("　[OK] WebSocket -> port ") + String(SRV_PORT));
+    Serial.println("　[OK] ESP-NOW");
     //│
     //○６．有効化
     ENABLED = true;
     //┴
   } /* START() */
 
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   // ハンドラ入口（ポーリング入口）
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   void HANDLE(){
     //┬
     //○１．起動チェック
@@ -462,10 +386,7 @@ namespace adpWSOC {
     //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
-    // ➡【該当処理なし】※固定スロット
-
-    //○２．WebSocketサーバの処理を進める
-    ADP_SRV->loop();
+    // ➡【該当処理なし】
     //│
     //◎┐３．ルーティング処理
     myQueue popDat;
@@ -473,24 +394,16 @@ namespace adpWSOC {
       //│＼（キューがある場合）
       //│ ▼BREAK：ルーティングを終了
       //│
-      //●クライアント番号に該当するスロットIDを探す
-      int intSID = SEARCH_SID(popDat.connNum);
-      if (intSID < 0) continue;
-      //│＼（失敗した場合）
-      //│ ▼次へ：次のキューを走査
-      //│
       //●対象スロットをセット
-      F0_SETUP(ROUTE_ID, intSID);
+      F0_SETUP(ROUTE_ID,0);
       //│
       //○キューデータをスロット反映
-      ssTBL[intSID].connNum = popDat.connNum; // クライアント番号
-      ssTBL[intSID].connRX  = popDat.connRX ; // 受信バッファ
+      memcpy(ssTBL[0].connMAC, popDat.connMAC, 6); // クライアント番号（6バイト配列）
+      ssTBL[0].connRX  = popDat.connRX ; // 受信バッファ
       //│
       //●MMPコマンドへルーティング
-      routeMMP(ssTBL[intSID]);
+      routeMMP(ssTBL[0]);
       //┴
     } /* END-while */
-    //┴
   } /* HANDLE() */
-
-} /* namespace adpWSOC */
+} /* namespace adpESPN */

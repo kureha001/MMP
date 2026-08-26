@@ -115,7 +115,7 @@ public:
   CmdManager(MmpContext& c): ctxRef(c) {}
 
   //─────────────────
-  // コマンド・モジュールの初期化
+  // コマンド・モジュールをアドイン
   //─────────────────
   void START(){
     //┬
@@ -132,7 +132,7 @@ public:
     mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
     //│
     //◎┐登録名を表示
-    Serial.print(" ready ->");
+    Serial.print(" Add In ->");
     for (auto* m : mods){
       //│＼（全モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断

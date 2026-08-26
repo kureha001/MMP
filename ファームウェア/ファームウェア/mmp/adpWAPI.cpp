@@ -441,6 +441,7 @@ namespace adpWAPI {
     //│
     //○┐ルート１：ＭＭＰコマンドの登録
     server.onNotFound( [&server](){ // NotFound("/"以外)が処理対象
+      //│
       //○ＭＭＰ処理へ渡す要求であるかを確認
       if (server.method() == HTTP_OPTIONS){
       //│＼（HTTP層で完結している）
@@ -488,7 +489,7 @@ namespace adpWAPI {
     //○６．アダプタを有効化
     ENABLED = true; 
     //│
-    //○７．起動ログ表示
+    //○７．起動ログを表示（正常終了）
     Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -500,6 +501,7 @@ namespace adpWAPI {
     //┬
     //○起動チェック
     if (!ENABLED) return; // 初期化済み
+    if (!ADP_SRV) return; // サーバが起動済み
     //│＼（このアダプタが無効の場合）
     //│ ▼終了：早期リターン
     //│

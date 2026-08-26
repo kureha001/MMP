@@ -110,6 +110,7 @@
     } /* END-if */
     //│
     //○┐フレームを作成
+      //│
       //○受信バッファをフレームにセット
       //○受信バッファをクリア
       //●フレームをURI形式に変換
@@ -214,12 +215,10 @@
     if (tmpFrame.startsWith("@")) {
       //├┐（認証コードの開始文字がある場合）
         //○先頭の'@'を削除
-        tmpFrame.remove(0, 1);
-        //│
         //●第１トークンを[認証CD]にセット
-        ctx.authCD  = GET_TOK1(tmpFrame);
-        //│
         //●第２トークン以降を[コマンドパス]にセット
+        tmpFrame.remove(0, 1);
+        ctx.authCD  = GET_TOK1(tmpFrame);
         ctx.cmdPath = GET_TOK2(tmpFrame);
         //┴
     } else {

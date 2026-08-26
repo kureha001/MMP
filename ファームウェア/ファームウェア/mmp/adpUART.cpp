@@ -234,7 +234,7 @@ namespace adpUART {
     //○６．アダプタを有効化
     ENABLED = true; 
     //│
-    //○７．起動ログ表示
+    //○７．起動ログを表示（正常終了）
     Serial.println(String("　[OK] USB/UART  -> #0,#1"));
     //┴
   } /* START() */

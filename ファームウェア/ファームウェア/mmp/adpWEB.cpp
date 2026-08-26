@@ -76,16 +76,17 @@ namespace adpWEB {
         //◇┐既存ファイルを表示する
         File f = LittleFS.open("/config.json", "r");
         if (f) {
-        //├┐（通常の場合）
-          //○中身をバッファする
-          while (f.available()) { html += (char)f.read(); }
-          //○ファイルを閉じる
-          f.close();
-          //┴
-        //└┐（その他）
-          //○HTMLバッファに「エラーメッセージ」を追加
-          } else { html += "ファイルを開けませんでした"; }
-          //┴
+          //├┐（通常の場合）
+            //○中身をバッファする
+            while (f.available()) { html += (char)f.read(); }
+            //○ファイルを閉じる
+            f.close();
+            //┴
+        } else { html += "ファイルを開けませんでした"; }
+          //└┐（その他）
+            //○HTMLバッファに「エラーメッセージ」を追加
+            //┴
+        //┴
       //└┐（その他）
         //┴
     //└┐（その他）
@@ -205,23 +206,26 @@ namespace adpWEB {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．サーバ資源生成
+    //○１．サービス資源を生成
     ADP_SRV = new WebServer(SRV_PORT); // WebServer
     //│
     //○２．接続管理TBLを作成
     //　➡【該当処理なし】
     //│
-    //○３．ルーティング登録
+    //○３．接続管理スロットを静的アタッチ
+    //　➡【該当処理なし】
+    //│
+    //○４．ルーティングを登録
     registRoutes(*ADP_SRV);
     //│
-    //○４．サーバ開始
+    //○５．サービスを開始
     ADP_SRV->begin();
     //│
-    //○５．起動ログ表示
-    Serial.println(String("　WEB画面     : OK -> port ") + String(SRV_PORT));
-    //│
-    //○６．有効化
+    //○６．アダプタを有効化
     ENABLED = true; // 有効
+    //│
+    //○７．起動ログを表示（正常終了）
+    Serial.println(String("　WEB画面     : OK -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
 
@@ -230,16 +234,16 @@ namespace adpWEB {
   //━━━━━━━━━━━━━━━━━
   void HANDLE() {
    //┬
-    //○１．起動チェック
-    if (!ENABLED) return;
-    if (!ADP_SRV) return;
+    //○起動チェック
+    if (!ENABLED) return; // 初期化済み
+    if (!ADP_SRV) return; // サーバが起動済み
     //│＼（このアダプタが無効の場合）
     //│ ▼終了：早期リターン
     //│
     //○２．新規接続のスロットを登録
     //　➡【該当処理なし】※通信アダプタが対象
     //│
-    //○３．ルーティング処理
+    //○ルーティング処理
     ADP_SRV->handleClient();
     //┴
   } /* HANDLE() */

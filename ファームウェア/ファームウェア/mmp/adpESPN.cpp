@@ -118,7 +118,11 @@ namespace adpESPN {
     if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
     //│
     //○メッセージをレスポンス
-    esp_now_send(argSS.connMAC, (const uint8_t*)argMSG.c_str(), argMSG.length() + 1);
+    esp_now_send(
+        argSS.connMAC                   , // 送信先MACアドレス
+        (const uint8_t*)argMSG.c_str()  , // 送信データ
+        argMSG.length() + 1               // 送信データ長
+    );
     //┴
   } /* SEND_CONN() */
 
@@ -291,10 +295,14 @@ namespace adpESPN {
     //┬
     //○１．サービス資源を生成
     if (esp_now_init() != ESP_OK) {
+    //│＼（通信デバイスが起動していない場合）
+        //○起動ログを表示（異常終了）
+        //○アダプタを無効化
+        //▼終了：早期リターン
         Serial.println("　[NG ] ESP-NOW -> 初期化失敗");
         ENABLED = false;
         return;
-    }
+    } /* END-if */
     //│
     //○２．接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
@@ -311,7 +319,7 @@ namespace adpESPN {
     //○６．アダプタを有効化
     ENABLED = true; 
     //│
-    //○７．起動ログ表示
+    //○７．起動ログを表示（正常終了）
     Serial.println("　[OK] ESP-NOW");
     //┴
   } /* START() */

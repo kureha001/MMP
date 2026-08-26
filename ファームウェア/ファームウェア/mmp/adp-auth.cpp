@@ -177,7 +177,7 @@
       //│
       //○現在の認証情報と照合
       if (auTBL[id].used && auTBL[id].authCD == argACD) {
-        // ＼（認証コードが一致)
+      //│＼（認証コードが一致)
           //○タイムスタンプを更新
           //▼返却：既データあり
           auTBL[id].lastActive = millis();

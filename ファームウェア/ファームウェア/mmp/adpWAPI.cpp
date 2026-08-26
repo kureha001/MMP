@@ -1,16 +1,7 @@
 // filename : adpWAPI.cpp
 //========================================================
 // 通信アダプタ：ＷｅｂＡＰＩ
-//（リクエスト／レスポンス型の通信）
-//--------------------------------------------------------
-//【目的】
-// リクエストに従い、ＭＭＰコマンドを実行して、
-// 結果をレスポンスする。
-//--------------------------------------------------------
-//【処理機能】
-//・パケット処理なので１スロットを使いまわす。
-//・ルーティングの実施判断はWEBサーバ側がおこなう、
-//　このため、事前のルーティングを登録する。
+//（指示後コールバック・リクエスト→レスポンス同期）
 //--------------------------------------------------------
 // Ver 1.2.0 (2026/08/25) 
 // ・全体のロジックをシンプル化
@@ -37,7 +28,6 @@ namespace adpWAPI {
   // 固有データ
   //─────────────────
   const int  ROUTE_ID = ROUTE_ID_WAPI  ; // ＷＥＢ ＡＰＩ
-  const int  SS_SLOTS = 1              ; // 固定スロット(1個を使いまわし)
         bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
@@ -46,63 +36,43 @@ namespace adpWAPI {
   static WebServer* ADP_SRV  = nullptr; // WEBサーバ
   static int        SRV_PORT = 8080   ; // ポート番号
 
-  //─────────────────
-  // 接続スロット
-  //─────────────────
-  struct T_SS_SLOT{
-    SS_SLOT_TYPE Base          ; // 基本メンバ
-    WebServer*   conn = nullptr; // アクセス資源(参照)
-  };
-  static T_SS_SLOT* ssTBL = nullptr; // 事前予約
-
 //========================================================
-// Ｂ．接続管理
-//=======================================================
-// ➡【該当処理なし】
-
-//━━━━━━━━━━━━━━━━━
-// ヘルパー
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // CORS許可用HTTPヘッダ追加
-  //----------------------------------
-  // ブラウザ上のJavaScriptからWeb APIを呼び出すための許可設定
-  // → Webブラウザのセキュリティ制約(CORS)を通過させる
-  //─────────────────
-  inline void ADD_CROSS(WebServer& argSrv) {
-    //┬
-    //○アクセス元Webページの制限
-    //  → 制限なし
-    argSrv.sendHeader("Access-Control-Allow-Origin", "*");
-    //│
-    //○有効なHTTPメソッドを指定
-    //  → データ取得・事前確認
-    argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-    //│
-    //○許可するHTTPリクエストヘッダーを指定
-    //  → データ形式・JavaScript(Ajax)向け識別・認証情報
-    argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
-    //│
-    //○CORS確認結果をブラウザが記憶する時間を指定
-    //  ← 600秒=10分
-    argSrv.sendHeader("Access-Control-Max-Age", "600");
-    //┴
-  } /* ADD_CROSS() */
-
+// Ｂ．レスポンス
 //========================================================
-// Ｃ．レスポンス
-//========================================================
+    //─────────────────
+    // CORS許可用HTTPヘッダ追加
+    //----------------------------------
+    // ブラウザ上のJavaScriptからWeb APIを呼び出すための許可設定
+    // → Webブラウザのセキュリティ制約(CORS)を通過させる
+    //─────────────────
+    inline void ADD_CROSS(WebServer& argSrv) {
+        //┬
+        //○アクセス元Webページの制限
+        //  → 制限なし
+        argSrv.sendHeader("Access-Control-Allow-Origin", "*");
+        //│
+        //○有効なHTTPメソッドを指定
+        //  → データ取得・事前確認
+        argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+        //│
+        //○許可するHTTPリクエストヘッダーを指定
+        //  → データ形式・JavaScript(Ajax)向け識別・認証情報
+        argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
+        //│
+        //○CORS確認結果をブラウザが記憶する時間を指定
+        //  ← 600秒=10分
+        argSrv.sendHeader("Access-Control-Max-Age", "600");
+        //┴
+    } /* ADD_CROSS() */
+
   //─────────────────
   // JSON形式でレスポンス
   //─────────────────
-  inline void SEND_JSON(
-    WebServer&    argSrv , // 送信先
-    const String& argJSON
-  ) {
+  inline void SEND_JSON(const String& argJSON) {
     //┬
     //○JSONをレスポンス
-    ADD_CROSS(argSrv);
-    argSrv.send(200, "application/json; charset=utf-8", argJSON);
+    ADD_CROSS(*ADP_SRV);
+    ADP_SRV->send(200, "application/json; charset=utf-8", argJSON);
     //│
     //●ログ出力
     F_SHOW_LOG();
@@ -178,7 +148,7 @@ namespace adpWAPI {
     String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
   }; /* JSON_DATA */
   //─────────────────
-  void SEND_CONN(T_SS_SLOT& argSS){
+  void SEND_CONN(){
     //┬
     //○前処理
     JSON_DATA jsDat ;
@@ -191,9 +161,9 @@ namespace adpWAPI {
         //○MSGIDを独自IDに書き換え
         //○取得値を文字列型にセット
         //○処理結果をセット
-        msgID     = "!SS0!" ; // 認証開始
-        jsDat.Str = msgID   ; // 取得値(文字列)
-        jsDat.Res = true    ; // 正常
+        msgID     = "!SS0!"   ; // 認証開始
+        jsDat.Str = ctx.resMSG; // 取得値(文字列)
+        jsDat.Res = true      ; // 正常
         //┴
 
     } else if (msgID == "!!!!!") {
@@ -222,7 +192,7 @@ namespace adpWAPI {
             //○処理結果をセット
             //●取得値を数値型にセット
             msgID = "!STR!"                  ; // 文字列型
-            jsDat.Str = msgID               ; // 取得値(文字列)
+            jsDat.Str = ctx.resMSG           ; // 取得値(文字列)
             jsDat.Res = true                 ; // 正常
             //┴
 
@@ -249,206 +219,109 @@ namespace adpWAPI {
     js += "\"}"               ;
     //│
     //○通信経路にJSON形式でレスポンス
-    SEND_JSON(*argSS.conn, js);
+    SEND_JSON(js);
     //┴
   } /* SEND_CONN() */
-  //─────────────────
 
 //========================================================
-// Ｄ．プロセス部品
+// Ｃ．リクエスト管理
 //========================================================
   //─────────────────
-  // １．フレームを取得
+  // リクエストの登録
   //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：フレーム作成状況（論理値）
-  // ・true ：未完成
-  // ・false：完成
-  //----------------------------------
-  //【データ受信方式】
-  // ・取得単位  ：パケット
-  // ・データ受信：サーバ(参照) argSS.conn->uri()
+  // コールバック関数として機能
   //─────────────────
-  bool P1_MAKE_FRAME(T_SS_SLOT& argSS){
-    //┬
-    //○受信データからフレームを作成
-    ctx.strFrame = argSS.conn->uri();
-    //│
-    //●フレームをURI形式に変換
-    F2_FORMAT_URI(ctx.strFrame);
-    //│
-    //▼返却：フレームの作成状況
-    return (ctx.strFrame == "" ? true : false);
-    //┴
-  } /* P1_MAKE_FRAME() */
+    //─────────────────
+    // CORS事前確認
+    //----------------------------------
+    // ブラウザがWeb APIアクセス前に送信するOPTIONS要求(プリフライト)へ応答
+    // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
+    // → 本通信で返すデータはないためHTTPステータス204を返却
+    //─────────────────
+    inline void route204(WebServer& argSrv) {
+        //┬
+        //●CORS許可用HTTPヘッダ追加
+        ADD_CROSS(argSrv);
+        //│
+        //○HTTPステータスを返却
+        //  ※豆知識{200:返すデータあり｜204:返すデータなし}
+        // argSrv.send(204);
+        argSrv.send(204, "text/plain", "");
+        //┴
+    } /* route204() */
 
-  //─────────────────
-  // ２．基本情報を取得
-  //─────────────────
-  void P2_MAKE_INFO(){
-    //┬
-    //〇フレームの内容をもとに認証CD・コマンドパスにセット
-    F3_SET_ACD_CPATH();
-    //┴
-  } /* P2_MAKE_INFO() */
-
-  //─────────────────
-  // ３．認証を実施
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：認証後の指針(論理値)
-  // ・false： 処理継続が可能
-  // ・true ： 処理継続が不可
-  //─────────────────
-  bool P3_AUTH(T_SS_SLOT& argSS){
-    //┬
-    //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
-    //│＼（処理継続が不可の場合）
-    //│ ●エラーをレスポンス
-    //│ ▼返却：処理継続が不可
-    //│
-    //▼返却：処理継続が可能
-    return false;
-  } /* P3_AUTH() */
-
-//========================================================
-// Ｅ．ルーティング処理（プロセス）
-//--------------------------------------------------------
-// HANDLE()で明示的に呼び出す
-// WebServerのリスナーが必要に応じて実行 ※registRoutes()参照
-//========================================================
-  //─────────────────
-  // ルート１：ＭＭＰコマンド
-  //----------------------------------
-  // 引数：
-  // (参)接続管理スロット
-  //─────────────────
-  void routeMMP(T_SS_SLOT& argSS){
-    //┬
-    //●１．フレームを取得
-    if (P1_MAKE_FRAME(argSS)) return;
-    //│＼（未完成の場合）
-    //│ ▼終了：早期リターン
-    //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-    //○２．基本情報を取得
-    P2_MAKE_INFO();
-    //│
-    //○３．ユーザ認証を実施
-    if (P3_AUTH(argSS)) return;
-    //│＼（処理継続が不可の場合）
-    //│ ▼終了：早期リターン
-#endif // ----------------------------------------┘
-    //│
-    //●MMPコマンドを実行
-    F5_RUN();
-    //│
-    //●実行結果をレスポンス
-    SEND_CONN(argSS);
-    //┴
-  } /* routeMMP() */
-
-  //─────────────────
-  // ２．ホスト直下
-  //─────────────────
-  void routeRoot(WebServer& srv){
-    SEND_JSON(srv, F("{"
-      "\"ok\":true,"
-      "\"result\":true,"
-      "\"error\":\"\","
-      "\"value\":-1,"
-      "\"text\":\"MMP WEB API\""
-      "}"));
-  } /* routeRoot() */
-
-  //─────────────────
-  // ３．CORS事前確認
-  //----------------------------------
-  // ブラウザがWeb APIアクセス前に送信するOPTIONS要求(プリフライト)へ応答
-  // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
-  // → 本通信で返すデータはないためHTTPステータス204を返却
-  //─────────────────
-  inline void route204(WebServer& argSrv) {
-    //┬
-    //●CORS許可用HTTPヘッダ追加
-    ADD_CROSS(argSrv);
-    //│
-    //○HTTPステータスを返却
-    //  ※豆知識{200:返すデータあり｜204:返すデータなし}
-    // argSrv.send(204);
-    argSrv.send(204, "text/plain", "");
-    //┴
-  } /* route204() */
-
-//========================================================
-// Ｆ．コールバック・ルーティングの登録
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // ルーティング登録
-  //━━━━━━━━━━━━━━━━━
-  void registRoutes(WebServer& server){
-    //┬
-    //○┐ルート０：ホスト直下の登録
-      //●GETへの応答
-      //●CORS事前確認へ応答
-      server.on("/", HTTP_GET,     [&server](){routeRoot(server);});
-      server.on("/", HTTP_OPTIONS, [&server](){route204(server); });
-      //┴
-    //│
-    //○┐ルート１：ＭＭＰコマンドの登録
-    server.onNotFound( [&server](){ // NotFound("/"以外)が処理対象
-      //│
-      //○ＭＭＰ処理へ渡す要求であるかを確認
-      if (server.method() == HTTP_OPTIONS){
-      //│＼（HTTP層で完結している）
+    //─────────────────
+    // ルート０：ホスト直下
+    //─────────────────
+    void routeRoot(WebServer& srv){
+        SEND_JSON(F("{"
+        "\"ok\":true,"
+        "\"result\":true,"
+        "\"error\":\"\","
+        "\"value\":-1,"
+        "\"text\":\"MMP WEB API\""
+        "}"));
+    }
+    //─────────────────
+    // ルーティング登録
+    //─────────────────
+    void registRoutes(WebServer& server){
+        //┬
+        //○┐ルート０：ホスト直下の登録
+          //●GETへの応答
           //●CORS事前確認へ応答
+          server.on("/", HTTP_GET,     [&server](){routeRoot(server);});
+          server.on("/", HTTP_OPTIONS, [&server](){route204(server); });
+          //┴
+        //│
+        //○┐ルート１：ＭＭＰコマンドの登録
+        server.onNotFound([&server](){
+          //│
+          //○ＭＭＰ処理へ渡す要求であるかを確認
+          if (server.method() == HTTP_OPTIONS){route204(server); return;}
+          //│＼（HTTP層で完結している）
+          //│ ●CORS事前確認へ応答
           //│ ▼終了：早期リターン
-          route204(server);
-          return;
-      }   /* if */
-      //│
-      //●対象スロットをセット
-      F0_SETUP(ROUTE_ID, 0);
-      //│
-      //●ＭＭＰコマンドへの応答
-      routeMMP(ssTBL[0]);
-      //┴
-      } /* [&server]() */
-    );  /* server.onNotFound */
-    //┴
-  }/* registRoutes() */
+          //│
+          //●ＵＲＩをワークにセット
+          F0_SETUP(ADP_SRV->uri());
+          //│
+#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
+          //●リクエストをデータ項目に分解
+          F3_SET_ACD_CPATH();
+          //│
+          //●認証処理を実施
+          if (F4_CHECK_AUTH()){SEND_CONN(); return;}
+          //│＼（処理継続が不可の場合）
+          //│ ●エラーをレスポンス
+          //│ ▼終了：早期リターン
+#endif // ----------------------------------------┘
+          //│
+          //●コマンド実行
+          F5_RUN();
+          //│
+          //●実行結果をレスポンス
+          SEND_CONN();
+          //┴
+        }); /* server.onNotFound */
+        //┴
+    }/* registRoutes() */
 
 //========================================================
-// Ｇ．公開機能
+// Ｄ．公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．サービス資源を生成
-    ADP_SRV = new WebServer(SRV_PORT); // WebServer
+    //○サービスを開始
+    ADP_SRV = new WebServer(SRV_PORT); // サーバ生成
+    registRoutes(*ADP_SRV)           ; // ルーティング登録
+    ADP_SRV->begin()                 ; // サーバ起動
     //│
-    //○２．接続管理TBLを作成
-    ssTBL = new T_SS_SLOT[SS_SLOTS];
-    //│
-    //○３．接続管理スロットを静的アタッチ
-    ssTBL[0].Base.used = true   ; // 使用中
-    ssTBL[0].conn      = ADP_SRV; // サービス資源を登録
-    //│
-    //○４．ルーティングを登録
-    registRoutes(*ADP_SRV);
-    //│
-    //○５．サービスを開始
-    ADP_SRV->begin();
-    //│
-    //○６．アダプタを有効化
+    //○アダプタを有効化
     ENABLED = true; 
-    //│
-    //○７．起動ログを表示（正常終了）
     Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -464,11 +337,8 @@ namespace adpWAPI {
     //│＼（このアダプタが無効の場合）
     //│ ▼終了：早期リターン
     //│
-    //●対象スロットを宣言
-    F0_SETUP(ROUTE_ID, 0);
-    //│
-    //○ルーティングを指示
-    ADP_SRV->handleClient(); // WEBサーバのリスナに処理を移譲
+    //○ルーティングを指示（その後、コールバック処理）
+    ADP_SRV->handleClient();
     //┴
   } /* HANDLE() */
 

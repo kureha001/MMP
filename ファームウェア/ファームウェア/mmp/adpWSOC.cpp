@@ -1,6 +1,7 @@
 // filename : adpWSOC.cpp
 //========================================================
 // 通信アダプタ：ＷｅｂＳｏｃｋｅｔ
+//（コールバック・クライアント追跡あり）
 //--------------------------------------------------------
 // Ver 1.2.0 (2026/08/25) 
 // ・全体のロジックをシンプル化
@@ -39,10 +40,23 @@ namespace adpWSOC {
   static int               SRV_PORT = 8082  ; // ポート番号
 
 //========================================================
-// Ｂ．リクエスト管理
+// Ｂ．レスポンス
+//========================================================
+  void SEND_CONN(uint8_t argClientID){
+    //┬
+    //○メッセージをレスポンス
+    if (ADP_SRV) ADP_SRV->sendTXT(argClientID, ctx.resMSG.c_str());
+    //│
+    //●ログ出力
+    F_SHOW_LOG();
+    //┴
+  } /* SEND_CONN() */
+
+//========================================================
+// Ｃ．リクエスト管理
 //========================================================
   //─────────────────
-  // データストア
+  // 基本情報
   //─────────────────
   struct myQueue {
     uint8_t connNum; // クライアント番号
@@ -84,7 +98,7 @@ namespace adpWSOC {
   //----------------------------------
   // コールバック関数として機能
   //─────────────────
-  void CALLBACK_RECIVE(
+  void ON_RECIVE(
     uint8_t   num    , // クライアント識別子
     WStype_t  type   , // エベント種別
     uint8_t * payload, // 受信データ
@@ -105,23 +119,10 @@ namespace adpWSOC {
     std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
     QUEUE.push({num, String((char*)payload)});
     //┴
-  } /* CALLBACK_RECIVE() */
+  } /* ON_RECIVE() */
 
 //========================================================
-// Ｄ．レスポンス
-//========================================================
-  void SEND_CONN(uint8_t argClientID){
-    //┬
-    //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argClientID, ctx.resMSG.c_str());
-    //│
-    //●ログ出力
-    F_SHOW_LOG();
-    //┴
-  } /* SEND_CONN() */
-
-//========================================================
-// Ｅ．公開機能
+// Ｄ．公開機能
 //========================================================
   //─────────────────
   // 初期化処理
@@ -130,7 +131,7 @@ namespace adpWSOC {
     //┬
     //○サービスを開始
     ADP_SRV = new WebSocketsServer(SRV_PORT); // サーバ生成
-    ADP_SRV->onEvent(CALLBACK_RECIVE)       ; // コールバック関数登録
+    ADP_SRV->onEvent(ON_RECIVE)             ; // コールバック関数登録
     ADP_SRV->begin()                        ; // サーバ起動
     //│
     //○アダプタを有効化
@@ -158,10 +159,8 @@ namespace adpWSOC {
       //│＼（キューが空の場合）
       //│ ▼BREAK：ルーティングを終了
       //│
-      //●キューからリクエストを取得
-      F0_SETUP(ROUTE_ID, 0);
-      ctx.strFrame  = popDat.connRX ; // 受信バッファ
-      F2_FORMAT_URI(ctx.strFrame);
+      //●キュー情報をワークにセット
+      F0_SETUP(popDat.connRX);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解

@@ -85,8 +85,6 @@
     Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
     Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
     Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
-    Serial.print  (String("routeID["    ) + String(ctx.routeID ));
-    Serial.println(String("]   slotID[" ) + String(ctx.slotID  ) + String("]"));
     Serial.print  (String("accID["      ) + String(ctx.accID   ));
     Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
     Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
@@ -98,18 +96,15 @@
   //─────────────────
   // 接続スロットごとに行う前処理
   //━━━━━━━━━━━━━━━━━
-  void F0_SETUP(int argRID, int argSID){
-    //----処理結果--------
+  void F0_SETUP(String argFrame){
+
+    ctx.strFrame = argFrame; // フレーム
+    F2_FORMAT_URI(ctx.strFrame);
+
     ctx.vStream.clear()  ; // 仮想ストリーム
     ctx.resMSG   = ""    ; // レスポンスメッセージ
-    //----フレームデータ---
-    ctx.strFrame = ""    ; // フレーム
     ctx.cmdPath  = ""    ; // コマンドパス
     ctx.authCD   = ""    ; // 認証コード
-    //----グルーピング---
-    ctx.routeID  = argRID; // 経路ID
-    ctx.slotID   = argSID; // スロットID
-    //----アクセスID-----
     ctx.accID    = -1   ; // アクセスID
   } /* F0_SETUP() */
 

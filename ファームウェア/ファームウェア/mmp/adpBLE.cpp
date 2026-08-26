@@ -1,16 +1,7 @@
 // filename : adpBLE.cpp
 //========================================================
 // 通信アダプタ：ＢＬＥ
-//（イベント・コールバック型の通信）
-//--------------------------------------------------------
-//【目的】
-// リクエストに従い、ＭＭＰコマンドを実行して、
-// 結果をレスポンスする。
-//--------------------------------------------------------
-//【処理機能】
-//・パケット処理なので１スロットを使いまわす。
-//・コールバックによるイベントでリクエストをキューイングする。
-//・同時接続数を１つに制限する為、コールバック(接続／切断)時に入場制限を管理する。
+//（コールバック・クライアント追跡なし）
 //--------------------------------------------------------
 // Ver 1.2.0 (2026/08/25) 
 // ・全体のロジックをシンプル化
@@ -45,11 +36,11 @@ namespace adpBLE {
 // Ａ．基本情報
 //========================================================
   //─────────────────
-  // 固有データ
+  // ステータス
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_BLE   ; // ＢＬＥ
-  const int  SS_SLOTS = 1              ; // 固定スロット(1個を使いまわし)
-        bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
+  const int  ROUTE_ID  = ROUTE_ID_BLE; // ＢＬＥ
+        bool ENABLED   = false       ; // 有効性：{有効：true|無効：false}
+        bool CONNECTED = false       ; // 接続中
 
   //─────────────────
   // 使用するサービス
@@ -59,40 +50,18 @@ namespace adpBLE {
   // ・BLE_RX：受信用キャラクタリスティック
   // ・BLE_TX：送信用キャラクタリスティック
 
-  //─────────────────
-  // 接続スロット
-  //─────────────────
-  struct T_SS_SLOT{
-    SS_SLOT_TYPE       Base             ; // 基本メンバ
-    String             connRX  = ""     ; // 受信資源（文字列ワーク）
-    BLECharacteristic* connTX  = nullptr; // 送信資源（参照）
-  };
-  static T_SS_SLOT*    ssTBL   = nullptr; // 事前予約
-
-  //─────────────────
-  // キューイング
-  //─────────────────
-  const int WAIT_MS = 15        ; // 受信タイムラグ
-  std::queue<String> QUEUE      ; // キューバッファ
-  std::mutex         QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
-
 //========================================================
-// Ｂ．接続管理
-//========================================================
-// ➡【該当処理なし】
-
-//========================================================
-// Ｃ．レスポンス
+// Ｂ．レスポンス
 //========================================================
   //─────────────────
   // スロットの受付資源に送信
   //─────────────────
-  void SEND_CONN(T_SS_SLOT& argSS){
+  void SEND_CONN(uint8_t argClientID){
     //┬
     //○メッセージをレスポンス
-    if (argSS.connTX != nullptr) {
-      argSS.connTX->setValue(ctx.resMSG.c_str());
-      argSS.connTX->notify();
+    if (devBLE::BLE_TX != nullptr) {
+      devBLE::BLE_TX->setValue(ctx.resMSG.c_str());
+      devBLE::BLE_TX->notify();
     } /* END-if */
     //│
     //●ログ出力
@@ -101,93 +70,52 @@ namespace adpBLE {
   } /* SEND_CONN() */
 
 //========================================================
-// Ｄ．プロセス部品
+// Ｃ．リクエスト管理
 //========================================================
   //─────────────────
-  // １．フレームを取得
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：フレーム作成状況（論理値）
-  // ・true ：未完成
-  // ・false：完成
-  //----------------------------------
-  //【データ受信方式】
-  // ・取得単位  ：パケット
-  // ・データ受信：サーバ(参照) pCharacteristic->getValue()
+  // 基本情報
   //─────────────────
-  bool P1_MAKE_FRAME(T_SS_SLOT& argSS){
-    //┬
-    //○受信データからフレームを作成
-    ctx.strFrame = argSS.connRX;
-    //│
-    //●フレームをURI形式に変換
-    F2_FORMAT_URI(ctx.strFrame);
-    //│
-    //▼返却：フレームの作成状況
-    return (ctx.strFrame == "" ? true : false);
-  } /* P1_MAKE_FRAME() */
+  const int WAIT_MS = 15        ; // 受信タイムラグ
+  struct myQueue {
+    uint8_t connNum; // クライアント番号
+    String  connRX ; // 受信バッファ
+  };
+  static std::queue<myQueue> QUEUE      ; // キューバッファ
+  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
-  // ２．基本情報を取得
-  //─────────────────
-  void P2_MAKE_INFO(){
-    //┬
-    //〇フレームの内容をもとに認証CD・コマンドパスにセット
-    F3_SET_ACD_CPATH();
-    //┴
-  } /* P2_MAKE_INFO() */
-
-  //─────────────────
-  // ３．認証を実施
+  // キューの取り出し
   //----------------------------------
-  // 戻り値：認証結果（論理値）
-  // ・false： 処理継続が可能
-  // ・true ： 処理継続が不可
+  // 引数：
+  // ・キュー受取用の変数
+  //----------------------------------
+  // 戻り値：キューの有無（論理値）
+  // ・true ：あり
+  // ・false：なし
   //─────────────────
-  bool P3_AUTH(T_SS_SLOT& argSS){
+  bool popQueue(myQueue &argData) {
     //┬
-    //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
-    //│＼（処理継続が不可の場合）
-    //│ ●エラーをレスポンス
-    //│ ▼返却：処理継続が不可
+    //○別スレッドとの衝突回避用のロック
+    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
     //│
-    //▼返却：処理継続が可能
-    return false;
-  } /* P3_AUTH() */
+    //○キューの容量を確認
+    if (QUEUE.empty()) return false;
+    //│＼（通信デバイスが起動していない場合）
+    //│ ▼返却：なし
+    //│
+    //○先頭を抽出
+    //○先頭を削除
+    //▼返却：あり
+    argData = QUEUE.front();
+    QUEUE.pop();
+     return true;
+  } /* popQueue() */
 
-//========================================================
-// Ｅ．ルーティング処理（プロセス）
-//========================================================
-  void routeMMP(T_SS_SLOT& argSS){
-    //┬
-    //●１．フレームを取得
-    if (P1_MAKE_FRAME(argSS)) return;
-    //│＼（未完成の場合）
-    //│ ▼終了：早期リターン
-    //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-    //○２．基本情報を取得
-    P2_MAKE_INFO();
-    //│
-    //○３．ユーザ認証を実施
-    if (P3_AUTH(argSS)) return;
-    //│＼（処理継続が不可の場合）
-    //│ ▼終了：早期リターン
-#endif // ----------------------------------------┘
-    //│
-    //●MMPコマンドを実行
-    F5_RUN();
-    //│
-    //●実行結果をレスポンス
-    SEND_CONN(argSS);
-    //┴
-  } /* routeMMP() */
-
-//========================================================
-// Ｆ．コールバック・ルーティングの登録
-//========================================================
+  //─────────────────
+  // リクエストの登録
+  //----------------------------------
+  // コールバック関数として機能
+  //─────────────────
   //━━━━━━━━━━━━━━━━━
   // コールバック：サーバ用
   //━━━━━━━━━━━━━━━━━
@@ -198,11 +126,13 @@ namespace adpBLE {
     void onConnect(BLEServer* pServer) override {
       //┬
       //○接続状況を確認
-      if (ssTBL[0].Base.used) return;
+      if (CONNECTED) return;
       //│＼（既に参加している場合）
       //│ ▼終了：これ以上は参加させない
       //│
+      //○ステータスを変更（接続済）
       //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
+      CONNECTED = true;
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
       //┴
     } /* onConnect() */
@@ -213,7 +143,9 @@ namespace adpBLE {
     void onDisconnect(BLEServer* pServer) override {
       //┬
       //○アドバタイジングを再開
+      //○ステータスを変更（未接続）
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
+      CONNECTED = false;
       //┴
     } /* onDisconnect() */
   }; /* Callback_Server */
@@ -233,7 +165,7 @@ namespace adpBLE {
       //│
       //○受信データをキューに追加
       std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-      QUEUE.push(rxData);
+      QUEUE.push({0,rxData});
       //┴
     }; /* onWrite() */
   }; /* Callback_Client */
@@ -241,64 +173,20 @@ namespace adpBLE {
   static Callback_Server ON_CONNECTION; // 接続・切断
   static Callback_Client ON_RECIVE    ; // データ受信
 
-  //─────────────────
-  // キューの取り出し
-  //----------------------------------
-  // 引数：
-  // ・キュー受取用の変数
-  //----------------------------------
-  // 戻り値：キューの有無（論理値）
-  // ・true ：あり
-  // ・false：なし
-  //─────────────────
-  bool popQueue(String &rxData) {
-    //┬
-    //○別スレッドとの衝突回避用のロック
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    //│
-    //○キューの容量を確認
-    if (QUEUE.empty()) return false;
-    //│＼（通信デバイスが起動していない場合）
-    //│ ▼返却：なし
-    //│
-    //○先頭を抽出
-    rxData = QUEUE.front();
-    //│
-    //○先頭を削除
-    QUEUE.pop();
-    //│
-    //▼返却：あり
-     return true;
-  } /* popQueue() */
-
 //========================================================
-// Ｇ．公開機能
+// Ｄ．公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．サービス資源を生成
+    //○サービスを開始
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
-    //│
-    //○２．接続管理TBLを作成
-    ssTBL = new T_SS_SLOT[SS_SLOTS];
-    //│
-    //○３．接続管理スロットを静的アタッチ
-    ssTBL[0].Base.used = true          ; // 使用中
-    ssTBL[0].connTX    = devBLE::BLE_TX; // サービス資源を登録
-    //│
-    //○４．ルーティングを登録
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // サーバ(接続/切断)
     //│
-    //○５．サービスを開始
-    // ➡【該当処理なし】
-    //│
-    //○６．アダプタを有効化
+    //○アダプタを有効化
     ENABLED = true; 
-    //│
-    //○７．起動ログを表示（正常終了）
     Serial.println("　[OK] Bluetooth");
     //┴
   } /* START() */
@@ -314,19 +202,30 @@ namespace adpBLE {
     //│ ▼終了：早期リターン
     //│
     //◎┐ルーティングを指示
-    String popDat;
+    myQueue popDat;
     while (popQueue(popDat)) {
       //│＼（キューが空の場合）
       //│ ▼BREAK：ルーティングを終了
       //│
-      //○接続管理スロットを動的アタッチ
-      ssTBL[0].connRX = popDat;
+      //●キュー情報をワークにセット
+      F0_SETUP(popDat.connRX);
       //│
-      //●対象スロットを宣言
-      F0_SETUP(ROUTE_ID, 0);
+#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
+      //○リクエストをデータ項目に分解
+      F3_SET_ACD_CPATH();
       //│
-      //●MMPコマンドへルーティング
-      routeMMP(ssTBL[0]);
+      //●認証処理を実施
+      if (F4_CHECK_AUTH()){SEND_CONN(popDat.connNum); continue;}
+      //│＼（処理継続が不可の場合）
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
+#endif // ----------------------------------------┘
+      //│
+      //●コマンド実行
+      F5_RUN();
+      //│
+      //●実行結果をレスポンス
+      SEND_CONN(popDat.connNum);
       //┴
     } /* END-while */
     //┴

@@ -100,7 +100,7 @@
   //━━━━━━━━━━━━━━━━━
   // ０．ハンドル
   //━━━━━━━━━━━━━━━━━
-  void F0_SETUP(int argRID, int argSID);
+  void F0_SETUP(String argFrame);
 
   //━━━━━━━━━━━━━━━━━
   // ２．フレームを取得

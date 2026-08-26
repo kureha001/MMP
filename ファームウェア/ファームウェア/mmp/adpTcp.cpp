@@ -3,14 +3,6 @@
 // 通信アダプタ：ＴｃｐＲＡＷ
 //（接続を維持するネットワーク通信）
 //--------------------------------------------------------
-//【目的】
-// リクエストに従い、ＭＭＰコマンドを実行して、
-// 結果をレスポンスする。
-//--------------------------------------------------------
-//【処理機能】
-//・TCP接続毎に資源の実体をスロットに割り当てる。
-//・ポーリング跨りでストリーム処理するため接続数だけスロットを消費する。
-//--------------------------------------------------------
 // Ver 1.2.1 (2026/08/26) 
 // ・全体のロジックをシンプル化
 // ・ハンドルで切断スロットをパージする処理を追加
@@ -34,11 +26,11 @@ namespace adpTCP {
 // Ａ．基本情報
 //========================================================
   //─────────────────
-  // 固有データ
+  // ステータス
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_TCP   ; // ＴＣＰ
-  const int  SS_SLOTS = 10             ; // 複数スロット(接続タイミングで登録)
-        bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
+  const String ADP_ID  = "TCPR"; // アダプタID
+  const int  SS_SLOTS  = 10    ; // 複数スロット(接続タイミングで登録)
+        bool ENABLED   = false ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
   // 使用するサービス
@@ -140,7 +132,7 @@ namespace adpTCP {
     argSS.conn.print(ctx.resMSG);
     //│
     //●ログ出力
-    F_SHOW_LOG();
+    P9_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -168,7 +160,7 @@ namespace adpTCP {
   void P2_MAKE_INFO(){
     //┬
     //〇フレームの内容をもとに認証CD・コマンドパスにセット
-    F3_SET_ACD_CPATH();
+    P1_SET_ACD_CPATH();
     //┴
   } /* P2_MAKE_INFO() */
 
@@ -184,7 +176,7 @@ namespace adpTCP {
   bool P3_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
+    if (P2_CHECK_AUTH()){SEND_CONN(argSS); return true;}
     //│＼（処理継続が不可の場合）
     //│ ●エラーをレスポンス
     //│ ▼返却：処理継続が不可
@@ -222,7 +214,7 @@ namespace adpTCP {
 #endif // ----------------------------------------┘
     //│
     //●MMPコマンドを実行
-    F5_RUN();
+    P3_RUN();
     //│
     //●実行結果をレスポンス
     SEND_CONN(argSS);
@@ -300,8 +292,8 @@ namespace adpTCP {
         } /* END-if */
         //┴
       //│
-      //●対象スロットを宣言
-      F0_SETUP(ROUTE_ID, ID);
+      //●ワークをセット
+      P0_SETUP_CONTEXT(ADP_ID, "");
       //│
       //●MMPコマンドへルーティング
       routeMMP(ssTBL[ID]);

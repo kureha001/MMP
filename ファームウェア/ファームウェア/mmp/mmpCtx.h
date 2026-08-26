@@ -65,21 +65,19 @@ struct MmpContext {
 #else // -----------------------┨ＭＭＰサブ┠----┤
   const String sysName = "MMPサブ";
 #endif // ----------------------------------------┘
-  const String sysVer  = "V120!"; // バージョン
-  int          sysLog  = 0 ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
+  //■システム
+  const String sysVer  = "V121!"; // バージョン
+  int          sysLog  = 0  ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
   //│
   //■機能モジュールのレスポンス
   StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム
   String       resMSG  = "" ; // レスポンスメッセージ
   //│
   //■リクエスト情報---
+  String       adpID    = ""; // アダプタID
   String       strFrame = ""; // フレーム
   String       cmdPath  = ""; // コマンドパス
   String       authCD   = ""; // 認証コード
-  //│
-  //■ユーザメモリ管理の識別情報
-  int          routeID  = -1; // 経路ID
-  int          slotID   = -1; // スロットID
   //│
   //■ユーザメモリ管理のアドレス情報
   int          accID    = -1; // アクセスID(MMP全体の一意な番号)

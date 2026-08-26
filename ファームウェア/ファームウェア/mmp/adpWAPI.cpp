@@ -25,10 +25,10 @@ namespace adpWAPI {
 // Ａ．基本情報
 //========================================================
   //─────────────────
-  // 固有データ
+  // ステータス
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_WAPI  ; // ＷＥＢ ＡＰＩ
-        bool ENABLED  = false          ; // 有効性：{有効：true|無効：false}
+  const String ADP_ID  = "WAPI"; // アダプタID
+        bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
   // 使用するサービス
@@ -75,7 +75,7 @@ namespace adpWAPI {
     ADP_SRV->send(200, "application/json; charset=utf-8", argJSON);
     //│
     //●ログ出力
-    F_SHOW_LOG();
+    P9_SHOW_LOG();
     //┴
   } /* SEND_JSON() */
 
@@ -284,21 +284,21 @@ namespace adpWAPI {
           //│ ▼終了：早期リターン
           //│
           //●ＵＲＩをワークにセット
-          F0_SETUP(ADP_SRV->uri());
+          P0_SETUP_CONTEXT(ADP_ID, ADP_SRV->uri());
           //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
           //●リクエストをデータ項目に分解
-          F3_SET_ACD_CPATH();
+          P1_SET_ACD_CPATH();
           //│
           //●認証処理を実施
-          if (F4_CHECK_AUTH()){SEND_CONN(); return;}
+          if (P2_CHECK_AUTH()){SEND_CONN(); return;}
           //│＼（処理継続が不可の場合）
           //│ ●エラーをレスポンス
           //│ ▼終了：早期リターン
 #endif // ----------------------------------------┘
           //│
           //●コマンド実行
-          F5_RUN();
+          P3_RUN();
           //│
           //●実行結果をレスポンス
           SEND_CONN();

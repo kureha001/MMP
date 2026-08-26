@@ -30,8 +30,8 @@ namespace adpWSOC {
   //─────────────────
   // ステータス
   //─────────────────
-  const int  ROUTE_ID = ROUTE_ID_WSOC; // ＷＥＢ ＡＰＩ
-        bool ENABLED  = false        ; // 有効性：{有効：true|無効：false}
+  const String ADP_ID  = "WSOC"; // アダプタID
+        bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
 
   //─────────────────
   // 使用するサービス
@@ -48,7 +48,7 @@ namespace adpWSOC {
     if (ADP_SRV) ADP_SRV->sendTXT(argClientID, ctx.resMSG.c_str());
     //│
     //●ログ出力
-    F_SHOW_LOG();
+    P9_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -160,21 +160,21 @@ namespace adpWSOC {
       //│ ▼BREAK：ルーティングを終了
       //│
       //●キュー情報をワークにセット
-      F0_SETUP(popDat.connRX);
+      P0_SETUP_CONTEXT(ADP_ID, popDat.connRX);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
-      F3_SET_ACD_CPATH();
+      P1_SET_ACD_CPATH();
       //│
       //●認証処理を実施
-      if (F4_CHECK_AUTH()){SEND_CONN(popDat.connNum); continue;}
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.connNum); continue;}
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
 #endif // ----------------------------------------┘
       //│
       //●コマンド実行
-      F5_RUN();
+      P3_RUN();
       //│
       //●実行結果をレスポンス
       SEND_CONN(popDat.connNum);

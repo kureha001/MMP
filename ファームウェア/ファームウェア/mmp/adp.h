@@ -43,20 +43,6 @@
   extern MmpContext ctx;
 
 //========================================================
-// 通信経路
-//========================================================
-  //─────────────────
-  // 経路ID
-  //─────────────────
-  static const int ROUTE_ID_SERIAL = 0 ; // UART
-  static const int ROUTE_ID_BLE    = 1 ; // BLE
-  static const int ROUTE_ID_TCP    = 2 ; // TCP
-  static const int ROUTE_ID_WAPI   = 3 ; // WebAPI
-  static const int ROUTE_ID_WSOC   = 4 ; // WebSocket
-  static const int ROUTE_ID_ESPN   = 5 ; // WebSocket
-  static const int ROUTE_ID_WEB    = 9 ; // WEB画面
-
-//========================================================
 // ユーザ認証
 //========================================================
   //─────────────────
@@ -93,41 +79,16 @@
     //─────────────────
     void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
 
-
 //========================================================
 // 処理プロセス
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // ０．ハンドル
-  //━━━━━━━━━━━━━━━━━
-  void F0_SETUP(String argFrame);
-
-  //━━━━━━━━━━━━━━━━━
-  // ２．フレームを取得
-  //━━━━━━━━━━━━━━━━━
-  void F2_FORMAT_URI(String &str);
+  void P0_SETUP_CONTEXT(String argAdpID, String argFrame);
+  void P1_FORMAT_URI(String &str);
   bool F2_STREAM(Stream& argConn, SS_SLOT_TYPE argBASE);
-
-  //━━━━━━━━━━━━━━━━━
-  // ３．基本情報を取得
-  //━━━━━━━━━━━━━━━━━
-  void F3_SET_ACD_CPATH();
-
-  //━━━━━━━━━━━━━━━━━
-  // ４．認証を実施
-  //━━━━━━━━━━━━━━━━━
-  bool F4_CHECK_AUTH();
-
-  //━━━━━━━━━━━━━━━━━
-  // ５．MMPコマンドを実行
-  //━━━━━━━━━━━━━━━━━
-  void F5_RUN();
-
-  //━━━━━━━━━━━━━━━━━
-  // デバッグログ表示
-  //━━━━━━━━━━━━━━━━━
-   void F_SHOW_LOG();
-
+  void P1_SET_ACD_CPATH();
+  bool P2_CHECK_AUTH();
+  void P3_RUN();
+  void P9_SHOW_LOG();
 
 //========================================================
 // アダプタの公開情報

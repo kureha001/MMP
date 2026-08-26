@@ -12,8 +12,9 @@
 //--------------------------------------------------------
 //【共通資源】
 //・SS_INI_SLOT_BASE()：接続管理スロット(ベース)を初期化する関数
-//・F_SHOW_LOG()      ：デバッグ表示する関数
-//・F0_SETUP()        ：コンテクストを初期化する関数
+//・P0_SETUP_CONTEXT()        ：コンテクストを初期化する関数
+//・P1_FORMAT_URI()   ：受信バッファをURI形式に変換
+//・P9_SHOW_LOG()      ：デバッグ表示する関数
 //--------------------------------------------------------
 // Ver 1.2.0 (2026/08/25) 
 //========================================================
@@ -73,15 +74,57 @@
     argSlot.rx.reserve(SS_RX_SIZE); // 容量確保
   } /* SS_INI_SLOT_BASE */
 
+  
 //========================================================
 // 処理プロセス
 //========================================================
   //━━━━━━━━━━━━━━━━━
+  // ポーリング ハンドル
+  //─────────────────
+  // 接続スロットごとに行う前処理
+  //━━━━━━━━━━━━━━━━━
+  void P0_SETUP_CONTEXT(String argAdpID, String argFrame){
+
+    ctx.adpID    = argAdpID; // アダプタID
+    ctx.strFrame = argFrame; // フレーム
+    P1_FORMAT_URI(ctx.strFrame);
+
+    ctx.vStream.clear(); // 仮想ストリーム
+    ctx.resMSG   = ""  ; // レスポンスメッセージ
+    ctx.cmdPath  = ""  ; // コマンドパス
+    ctx.authCD   = ""  ; // 認証コード
+    ctx.accID    = -1  ; // アクセスID
+  } /* P0_SETUP_CONTEXT() */
+
+  //─────────────────
+  // 受信バッファをURI形式に変換
+  //----------------------------------
+  //・先頭/末尾の不要文字を除去
+  //─────────────────
+  void P1_FORMAT_URI(String &str){
+    //┬
+    //○先頭の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(0);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(0, 1);} else {break;}
+      } /* END-while */ 
+    //│
+    //○末尾の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(str.length() - 1);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(str.length()-1);} else {break;}
+      } /* END-while */ 
+    //┴
+  } /* P1_FORMAT_URI() */
+
+  //━━━━━━━━━━━━━━━━━
   // デバッグログ表示
   //━━━━━━━━━━━━━━━━━
-  void F_SHOW_LOG(){
+  void P9_SHOW_LOG(){
     if (ctx.sysLog < 0) return;
-    Serial.println(String("======================================"));
+    Serial.println(String("\n======================================"));
     Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
     Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
     Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
@@ -89,24 +132,8 @@
     Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
     Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
     Serial.println(String("======================================"));
-  } /* F_SHOW_LOG() */
+  } /* P9_SHOW_LOG() */
 
-  //━━━━━━━━━━━━━━━━━
-  // ポーリング ハンドル
-  //─────────────────
-  // 接続スロットごとに行う前処理
-  //━━━━━━━━━━━━━━━━━
-  void F0_SETUP(String argFrame){
-
-    ctx.strFrame = argFrame; // フレーム
-    F2_FORMAT_URI(ctx.strFrame);
-
-    ctx.vStream.clear()  ; // 仮想ストリーム
-    ctx.resMSG   = ""    ; // レスポンスメッセージ
-    ctx.cmdPath  = ""    ; // コマンドパス
-    ctx.authCD   = ""    ; // 認証コード
-    ctx.accID    = -1   ; // アクセスID
-  } /* F0_SETUP() */
 
 //========================================================
 // アダプタの初期化

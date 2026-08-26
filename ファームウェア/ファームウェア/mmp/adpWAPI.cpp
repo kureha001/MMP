@@ -58,33 +58,7 @@ namespace adpWAPI {
 //========================================================
 // Ｂ．接続管理
 //=======================================================
-  //─────────────────
-  // 初期化
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //─────────────────
-  void SS_INI_SLOT(T_SS_SLOT& argSlot){}
-  // ➡【該当処理なし】
-
-  //─────────────────
-  // 空きSID取得
-  //----------------------------------
-  // 戻り値：スロットID
-  // ・0,1,2...：空きスロットのID
-  // ・-1：空きスロットが無い
-  //─────────────────
-  int SS_GET_FREE_ID(){return -1;}
-  // ➡【該当処理なし】
-
-  //─────────────────
-  // 動的アタッチ
-  //----------------------------------
-  // 戻り値 ：処理結果（論理値）
-  // ・false：正常
-  // ・true ：異常
-  //─────────────────
-  bool SS_ATTACH(){return true;}
-  // ➡【該当処理なし】
+// ➡【該当処理なし】
 
 //━━━━━━━━━━━━━━━━━
 // ヘルパー
@@ -126,12 +100,12 @@ namespace adpWAPI {
     const String& argJSON
   ) {
     //┬
-    //●ログ出力
-    if (ctx.sysLog >= 0) F_SHOW_LOG(argJSON);
-    //│
     //○JSONをレスポンス
     ADD_CROSS(argSrv);
     argSrv.send(200, "application/json; charset=utf-8", argJSON);
+    //│
+    //●ログ出力
+    F_SHOW_LOG();
     //┴
   } /* SEND_JSON() */
 
@@ -204,28 +178,25 @@ namespace adpWAPI {
     String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
   }; /* JSON_DATA */
   //─────────────────
-  void SEND_CONN(
-    T_SS_SLOT&    argSS, // 送信先
-    const String& argMSG // 送信メッセージ
-  ){
+  void SEND_CONN(T_SS_SLOT& argSS){
     //┬
     //○前処理
-    JSON_DATA jsDat     ;
-    String    js;
+    JSON_DATA jsDat ;
+    String    js    ;
+    String    msgID = ctx.resMSG;
     //│
     //◇┐JSON内容編集
-    String msgID = argMSG;
-    if (ctx.authCD != ""){
+    if (msgID.startsWith("$") && msgID.endsWith("$")){
       //├┐（認証コード発行の場合）
         //○MSGIDを独自IDに書き換え
         //○取得値を文字列型にセット
         //○処理結果をセット
-        msgID     = "!SS0!"              ; // 認証開始
-        jsDat.Str = argMSG               ; // 取得値(文字列)
-        jsDat.Res = true                 ; // 正常
+        msgID     = "!SS0!" ; // 認証開始
+        jsDat.Str = msgID   ; // 取得値(文字列)
+        jsDat.Res = true    ; // 正常
         //┴
 
-    } else if (argMSG == "!!!!!") {
+    } else if (msgID == "!!!!!") {
       //├┐（正常系：戻り値なし の場合）
         //○処理結果を正常にセット
         jsDat.Res = true ; // 正常
@@ -234,7 +205,7 @@ namespace adpWAPI {
     } else {
       //└┐（その他）
         //◇┐データ型に応じて編集
-        String body = argMSG.substring(0, argMSG.length()-1);
+        String body = msgID.substring(0, msgID.length()-1);
         if (SEND_IS_VALUE(body)) {
           //├┐（戻り値が数値型の場合）
             //○MSGIDを独自IDに書き換え
@@ -245,13 +216,13 @@ namespace adpWAPI {
             jsDat.Res = true                 ; // 正常
             //┴
 
-        } else if (SEND_IS_STRING(argMSG)) {
+        } else if (SEND_IS_STRING(msgID)) {
           //├┐（戻り値が文字列型の場合）
             //○MSGIDを独自IDに書き換え
             //○処理結果をセット
             //●取得値を数値型にセット
             msgID = "!STR!"                  ; // 文字列型
-            jsDat.Str = argMSG               ; // 取得値(文字列)
+            jsDat.Str = msgID               ; // 取得値(文字列)
             jsDat.Res = true                 ; // 正常
             //┴
 
@@ -334,7 +305,7 @@ namespace adpWAPI {
   bool P3_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
     //│＼（処理継続が不可の場合）
     //│ ●エラーをレスポンス
     //│ ▼返却：処理継続が不可
@@ -342,21 +313,6 @@ namespace adpWAPI {
     //▼返却：処理継続が可能
     return false;
   } /* P3_AUTH() */
-
-  //─────────────────
-  // ４．MMPコマンドを実行
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //─────────────────
-  void P4_RUN_COMMAND(T_SS_SLOT& argSS){
-    //┬
-    //●MMPコマンドを実行
-    String resMMP = F5_RUN();
-    //│
-    //●実行結果をレスポンス
-    SEND_CONN(argSS, resMMP);
-    //┴
-  } /* P4_RUN_COMMAND() */
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
@@ -387,8 +343,11 @@ namespace adpWAPI {
     //│ ▼終了：早期リターン
 #endif // ----------------------------------------┘
     //│
-    //●４．MMPコマンドを実行
-    P4_RUN_COMMAND(argSS);
+    //●MMPコマンドを実行
+    F5_RUN();
+    //│
+    //●実行結果をレスポンス
+    SEND_CONN(argSS);
     //┴
   } /* routeMMP() */
 

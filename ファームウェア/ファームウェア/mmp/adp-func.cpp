@@ -105,7 +105,7 @@
         //▼返却：受信継続が「不要」
         argBASE.isOver = false  ;
         argBASE.rx     = ""     ;
-        ctx.errMSG     = "#DFL!";
+        ctx.resMSG     = "#DFL!";
         return true;
     } /* END-if */
     //│
@@ -244,16 +244,16 @@
   //----------------------------------
   // 戻り値：コマンド実行結果(文字列)
   //━━━━━━━━━━━━━━━━━
-  String F5_RUN(){
+  void F5_RUN(){
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
     //┬
     //●ＭＭＰコマンドを実行
-    //▼返却：実行結果
-    return RUN_COMMAND();
+    ctx.resMSG = RUN_COMMAND();
+    //┴
 #else // -----------------------┨ＭＭＰサブ┠----┤
     //┬
     //○コマンドをMMP本体にUART送信
-    Serial1.print(ctx.strFrame); // 
+    Serial1.print(ctx.strFrame);
     //│
     //◎┐受信待ちデータの取り込み
     String strRX = "";
@@ -266,7 +266,8 @@
       //┴
     } /* END-while */
     //│
-    //▼返却：ＭＭＰ本体からのレスポンス
-    return strRX;
+    //○ＭＭＰ本体からのレスポンス
+    ctx.resMSG = strRX;
+    //┴
 #endif // ----------------------------------------┘
   } /* F5_RUN() */

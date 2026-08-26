@@ -79,33 +79,7 @@ namespace adpBLE {
 //========================================================
 // Ｂ．接続管理
 //========================================================
-  //─────────────────
-  // 初期化
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //─────────────────
-  void SS_INI_SLOT(T_SS_SLOT& argSlot){}
-  // ➡【該当処理なし】
-
-  //─────────────────
-  // 空きSID取得
-  //----------------------------------
-  // 戻り値：スロットID
-  // ・0,1,2...：空きスロットのID
-  // ・-1：空きスロットが無い
-  //─────────────────
-  int SS_GET_FREE_ID(){return -1;}
-  // ➡【該当処理なし】
-
-  //─────────────────
-  // 動的アタッチ
-  //----------------------------------
-  // 戻り値 ：処理結果（論理値）
-  // ・false：正常
-  // ・true ：異常
-  //─────────────────
-  bool SS_ATTACH(){return true;}
-  // ➡【該当処理なし】
+// ➡【該当処理なし】
 
 //========================================================
 // Ｃ．レスポンス
@@ -113,19 +87,16 @@ namespace adpBLE {
   //─────────────────
   // スロットの受付資源に送信
   //─────────────────
-  void SEND_CONN(
-    T_SS_SLOT&    argSS, // 送信先
-    const String& argMSG // 送信メッセージ
-  ){
+  void SEND_CONN(T_SS_SLOT& argSS){
     //┬
-    //●ログ出力
-    if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
-    //│
     //○メッセージをレスポンス
     if (argSS.connTX != nullptr) {
-      argSS.connTX->setValue(argMSG.c_str());
+      argSS.connTX->setValue(ctx.resMSG.c_str());
       argSS.connTX->notify();
     } /* END-if */
+    //│
+    //●ログ出力
+    F_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -177,7 +148,7 @@ namespace adpBLE {
   bool P3_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
     //│＼（処理継続が不可の場合）
     //│ ●エラーをレスポンス
     //│ ▼返却：処理継続が不可
@@ -185,21 +156,6 @@ namespace adpBLE {
     //▼返却：処理継続が可能
     return false;
   } /* P3_AUTH() */
-
-  //─────────────────
-  // ４．MMPコマンドを実行
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //─────────────────
-  void P4_RUN_COMMAND(T_SS_SLOT& argSS){
-    //┬
-    //●MMPコマンドを実行
-    String resMMP = F5_RUN();
-    //│
-    //●実行結果をレスポンス
-    SEND_CONN(argSS, resMMP);
-    //┴
-  } /* P4_RUN_COMMAND() */
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
@@ -221,8 +177,11 @@ namespace adpBLE {
     //│ ▼終了：早期リターン
 #endif // ----------------------------------------┘
     //│
-    //●４．MMPコマンドを実行
-    P4_RUN_COMMAND(argSS);
+    //●MMPコマンドを実行
+    F5_RUN();
+    //│
+    //●実行結果をレスポンス
+    SEND_CONN(argSS);
     //┴
   } /* routeMMP() */
 

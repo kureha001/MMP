@@ -66,11 +66,11 @@ struct MmpContext {
   const String sysName = "MMPサブ";
 #endif // ----------------------------------------┘
   const String sysVer  = "V120!"; // バージョン
-  int          sysLog  = -1 ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
-  String       errMSG  = "" ; // 早期エラーメッセージ
+  int          sysLog  = 0 ; // ログレベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
   //│
   //■機能モジュールのレスポンス
   StringStream vStream      ; // 応答データを一時蓄積する仮想ストリーム
+  String       resMSG  = "" ; // レスポンスメッセージ
   //│
   //■リクエスト情報---
   String       strFrame = ""; // フレーム

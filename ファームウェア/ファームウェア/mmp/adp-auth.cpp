@@ -267,12 +267,12 @@
     if (ctx.cmdPath == "_START_!" || ctx.cmdPath == "_START_") {
       //├┐（「認証コード発行コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()){ctx.errMSG = "#SS1!"; return true;}
+        if(NEW_USER()){ctx.resMSG = "#SS1!"; return true;}
         //│＼（失敗した場合）
         //│ ▼返却：[1]認証開始に失敗(要レスポンス)
         //│
         //▼RETURN：[2]認証開始に成功(要レスポンス)
-        ctx.errMSG = String("$") + ctx.authCD.c_str() + String("$");
+        ctx.resMSG = String("$") + ctx.authCD.c_str() + String("$");
         return true;
         //└┐（その他）
         //┴
@@ -286,7 +286,7 @@
     //│
     //○ユーザ認証を実施
     ctx.accID = GET_EXIST_AID(ctx.authCD);
-    if (ctx.accID < 0){ctx.errMSG = "#SS2!"; return true;}
+    if (ctx.accID < 0){ctx.resMSG = "#SS2!"; return true;}
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│

@@ -134,16 +134,13 @@ namespace adpTCP {
   //─────────────────
   // スロットの受付資源に送信
   //─────────────────
-  void SEND_CONN(
-    T_SS_SLOT&    argSS, // 送信先
-    const String& argMSG // 送信メッセージ
-  ){
+  void SEND_CONN(T_SS_SLOT& argSS){
     //┬
-    //●ログ出力
-    if (ctx.sysLog >= 0) F_SHOW_LOG(argMSG);
-    //│
     //○メッセージをレスポンス
-    argSS.conn.print(argMSG);
+    argSS.conn.print(ctx.resMSG);
+    //│
+    //●ログ出力
+    F_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -161,7 +158,7 @@ namespace adpTCP {
   //─────────────────
   bool P1_MAKE_FRAME(T_SS_SLOT& argSS){
     bool res = F2_STREAM(argSS.conn, argSS.Base);
-    if (ctx.errMSG != "") SEND_CONN(argSS, ctx.errMSG);
+    if (ctx.resMSG != "") SEND_CONN(argSS);
     return res;
   } /* P1_MAKE_FRAME */
 
@@ -187,7 +184,7 @@ namespace adpTCP {
   bool P3_AUTH(T_SS_SLOT& argSS){
     //┬
     //●認証処理を実施
-    if (F4_CHECK_AUTH()){SEND_CONN(argSS, ctx.errMSG); return true;}
+    if (F4_CHECK_AUTH()){SEND_CONN(argSS); return true;}
     //│＼（処理継続が不可の場合）
     //│ ●エラーをレスポンス
     //│ ▼返却：処理継続が不可
@@ -196,20 +193,6 @@ namespace adpTCP {
     return false;
   } /* P3_AUTH() */
 
-  //─────────────────
-  // ４．MMPコマンドを実行
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //─────────────────
-  void P4_RUN_COMMAND(T_SS_SLOT& argSS){
-    //┬
-    //●MMPコマンドを実行
-    String resMMP = F5_RUN();
-    //│
-    //●実行結果をレスポンス
-    SEND_CONN(argSS, resMMP);
-    //┴
-  } /* P4_RUN_COMMAND() */
 
 //========================================================
 // Ｅ．ルーティング処理（プロセス）
@@ -238,8 +221,11 @@ namespace adpTCP {
     //│ ▼終了：早期リターン
 #endif // ----------------------------------------┘
     //│
-    //●４．MMPコマンドを実行
-    P4_RUN_COMMAND(argSS);
+    //●MMPコマンドを実行
+    F5_RUN();
+    //│
+    //●実行結果をレスポンス
+    SEND_CONN(argSS);
     //┴
   } /* routeMMP() */
 

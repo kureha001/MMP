@@ -119,6 +119,12 @@
     void HANDLE() ; // ポーリングのハンドル
   }
 
+  //【通信アダプタ：Ｉ２Ｃ】
+  namespace adpI2C{
+    void START()  ; // サービス開始の指示
+    void HANDLE() ; // ポーリングのハンドル
+  }
+
   //【ＷＥＢアダプタ：ＷＥＢ画面】
   namespace adpWEB{
     extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}

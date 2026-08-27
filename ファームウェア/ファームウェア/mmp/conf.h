@@ -24,8 +24,9 @@
 //#define ADP_COM_TCP  // TcpRaw
 //#define ADP_COM_WAPI // WebAPI
 //#define ADP_COM_WSOC // WebSocket
-#define ADP_COM_ESPN // ESP-NOW
+//#define ADP_COM_ESPN // ESP-NOW
 //#define ADP_COM_BLE  // BLE
+#define ADP_COM_I2C  // i2c
 
 //─────────────────
 // WEBアダプタ選択

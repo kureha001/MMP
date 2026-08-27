@@ -90,8 +90,12 @@
 #if defined(ADP_COM_ESPN ) //---┨ESP-NOW┠┐
     adpESPN::START();
 #endif //----------------------------------┘
+    //│    
+#if defined(ADP_COM_I2C ) //-----┨ｉ２ｃ┠┐
+    adpI2C ::START();
+#endif //----------------------------------┘
     //│
-#if defined(ADP_WEB      ) //----┨ＷＥＢ┠┐
+    #if defined(ADP_WEB      ) //----┨ＷＥＢ┠┐
     adpWEB ::START();
 #endif //----------------------------------┘
     //│
@@ -133,6 +137,10 @@
     //│
 #if defined(ADP_COM_ESPN) //┨ESP-NOW┠┐
     adpESPN::HANDLE();
+#endif //------------------------------┘
+    //│
+#if defined(ADP_COM_I2C ) //-┨ｉ２ｃ┠┐
+    adpI2C ::HANDLE();
 #endif //------------------------------┘
     //│
 #if defined(ADP_WEB     ) //-┨ＷＥＢ┠┐

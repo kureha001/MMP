@@ -1,18 +1,8 @@
 // filename : adpESPN.cpp
 //========================================================
 // 通信アダプタ：ＥＳＰ－ＮＯＷ
-//（コールバック・クライアント追跡あり）
 //--------------------------------------------------------
-//【目的】
-// リクエストに従い、ＭＭＰコマンドを実行して、
-// 結果をレスポンスする。
-//--------------------------------------------------------
-//【処理機能】
-//・パケット処理なので１スロットを使いまわす。
-//・コールバックによるイベントでリクエストをキューイングする。
-//--------------------------------------------------------
-// Ver 1.2.0 (2026/08/25) 
-// ・EPSON-NOWを通信アダプタに追加
+// Ver 1.2.1 (2026/08/27) 
 //========================================================
 #pragma once
 //┬
@@ -49,13 +39,24 @@ namespace adpESPN {
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(const uint8_t* argConn){
+void SEND_CONN(const uint8_t* argConn){
     //┬
     //○メッセージをレスポンス
+    
+    // 【対策1】返信相手がピアに未登録なら、ここで自動追加する
+    if (!esp_now_is_peer_exist(argConn)) {
+      esp_now_peer_info_t peerInfo = {};
+      memcpy(peerInfo.peer_addr, argConn, 6);
+      peerInfo.channel = 0; // 現在のチャンネルを使用
+      peerInfo.encrypt = false;
+      esp_now_add_peer(&peerInfo);
+    }
+
+    // 【対策2】データ長から '+ 1' を外し、純粋な文字列の長さにする
     esp_now_send(
-        argConn                           , // 送信先MACアドレス
+        argConn,                          // 送信先MACアドレス
         (const uint8_t*)ctx.resMSG.c_str(), // 送信データ
-        ctx.resMSG.length() + 1             // 送信データ長
+        ctx.resMSG.length()               // 送信データ長（+1 を削除）
     );
     //│
     //●ログ出力
@@ -112,12 +113,13 @@ namespace adpESPN {
   //━━━━━━━━━━━━━━━━━
   void ON_RECIVE(
     const esp_now_recv_info_t *recv_info,
+//    const esp_now_recv_info_t *recv_info,
     const uint8_t *payload,
     int length
   ) {
     //┬
     //○未取り込みデータを受信
-    if (recv_info == nullptr || payload == nullptr || length < 1) return;
+//    if (recv_info == nullptr || payload == nullptr || length < 1) return;
     //│＼（空の場合）
     //│ ▼終了：早期リターン
     //│
@@ -155,7 +157,7 @@ namespace adpESPN {
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
     //○メッセージ表示
-    Serial.println("　[OK] ESP-NOW");
+    Serial.println(String("　[OK] ESP-NOW   -> MAC ") + String(WiFi.macAddress()));
     //┴
   } /* START() */
 

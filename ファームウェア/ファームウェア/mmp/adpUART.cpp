@@ -64,14 +64,11 @@ namespace adpUART {
   } /* SEND_CONN() */
 
 //========================================================
-// Ｃ．リクエスト管理
+// Ｃ．リクエスト・キュー管理
 //========================================================
   //─────────────────
   // 基本情報
   //─────────────────
-    //─────────────────
-    // リクエスト・データストア
-    //─────────────────
     struct myQueue {
       Stream* conn = nullptr; // アクセス資源(参照)
       String  frame        ; // 受信バッファ
@@ -80,49 +77,7 @@ namespace adpUART {
     static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
-  // リクエストの登録
-  //----------------------------------
-  // コールバック関数として機能
-  //─────────────────
-  void ON_RECIVE(){
-    //┬
-    //◎┐スロットを走査
-    for (int ID = 0; ID < SS_SLOTS; ID++) {
-      //│＼（最後のスロットに達した場合）
-      //│ ▼完了：走査を終了
-      //│
-      //○スロットの状態を確認
-      if (ssTBL[ID].conn == nullptr) continue;
-      //│＼（未使用の場合）
-      //│ ▽次へ：次のスロットを走査
-      //│
-      //●ストリームを受信
-      String retFrame = P2_STREAM(*(ssTBL[ID].conn), ssTBL[ID].Base);
-      if (retFrame == "") continue;
-      //│＼（フレームが未完成の場合）
-      //│ ▽次へ：次のスロットを走査
-      //│
-      //○キューに登録
-      std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
-      QUEUE.push({ssTBL[ID].conn, retFrame})       ; // キューを追加(通信資源、フレーム)
-      //┴
-    } /* END-for */
-    //┴
-  } /* ON_RECIVE() */
-
-  // タスクのハンドルを保持する変数
-  static TaskHandle_t TaskHandle = NULL;
-
-  // --- FreeRTOSタスクのエントリポイント ---
-  void StreamQueue(void *pvParameters) {
-    for (;;) {
-      ON_RECIVE();                        // コールバック関数を登録
-      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
-    }
-  } /* StreamQueue() */
-
-  //─────────────────
-  // リクエストの取出
+  // キューの取出
   //----------------------------------
   // 引数：
   // ・キュー受取用の変数
@@ -150,7 +105,54 @@ namespace adpUART {
   } /* popQueue() */
 
 //========================================================
-// Ｄ．公開機能
+// Ｄ．データ受信
+//========================================================
+  //─────────────────
+  // 別タスクとして機能
+  //─────────────────
+  void ON_RECIVE(){
+    //┬
+    //◎┐スロットを走査
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
+      //│＼（最後のスロットに達した場合）
+      //│ ▼完了：走査を終了
+      //│
+      //○スロットの状態を確認
+      if (ssTBL[ID].conn == nullptr) continue;
+      //│＼（未使用の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //●ストリームを受信
+      String retFrame = P2_STREAM(*(ssTBL[ID].conn), ssTBL[ID].Base);
+      if (retFrame == "") continue;
+      //│＼（フレームが未完成の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //○キューに登録
+      std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
+      QUEUE.push({ssTBL[ID].conn, retFrame})       ; // キューを追加(通信資源、フレーム)
+      //┴
+    } /* END-for */
+    //┴
+  } /* ON_RECIVE() */
+
+  //─────────────────
+  // タスクのハンドルを保持する変数
+  //─────────────────
+  static TaskHandle_t TaskHandle = NULL;
+
+  //─────────────────
+  // FreeRTOSタスクのエントリポイント
+  //─────────────────
+  void StreamQueue(void *pvParameters) {
+    for (;;) {
+      ON_RECIVE();                        // コールバック関数を登録
+      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
+    }
+  } /* StreamQueue() */
+
+//========================================================
+// Ｅ．公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 初期化処理

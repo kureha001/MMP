@@ -30,8 +30,7 @@ namespace adpWAPI {
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID  = "WAPI"; // アダプタID
-          bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
+    const String ADP_ID = "WAPI"; // アダプタID
 
     //─────────────────
     // 使用するサービス
@@ -318,13 +317,12 @@ namespace adpWAPI {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○サービスを開始
+    //○サービス資源を生成
     ADP_SRV = new WebServer(SRV_PORT); // サーバ生成
     registRoutes(*ADP_SRV)           ; // ルーティング登録
     ADP_SRV->begin()                 ; // サーバ起動
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○メッセージ表示
     Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -334,13 +332,7 @@ namespace adpWAPI {
   //━━━━━━━━━━━━━━━━━
   void HANDLE() {
     //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    if (!ADP_SRV) return; // サーバが起動済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○ルーティングを指示（その後、コールバック処理）
+    //○ルーティングを指示（その後も同期処理）
     ADP_SRV->handleClient();
     //┴
   } /* HANDLE() */

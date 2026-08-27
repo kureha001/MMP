@@ -17,11 +17,6 @@
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  #include <Arduino.h>
-  #include <queue>
-  #include <mutex>
-  //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
   //┴
@@ -42,8 +37,6 @@ namespace adpUART {
     //─────────────────
     const String ADP_ID   = "UART"; // アダプタID
     const int    SS_SLOTS = 2     ; // 固定スロット(物理ポート毎に1個)
-          bool   ENABLED  = false ; // 有効性：{有効：true|無効：false}
-
 
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -165,29 +158,25 @@ namespace adpUART {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○┐サービスを開始
-      //│
-      //●接続管理TBLを作成
-      ssTBL = new T_SS_SLOT[SS_SLOTS];
-      ssTBL[0].Base.used = true     ; // 使用中
-      ssTBL[0].CONN      = &Serial  ; // 参照先を登録
-      ssTBL[1].Base.used = true     ; // 使用中
-      ssTBL[1].CONN      = &Serial1 ; // 参照先を登録
-      //│
-      //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
-      xTaskCreatePinnedToCore(
-        StreamQueue,    // 実行するタスク関数
-        "UART_ADAPTER", // タスク名（デバッグ用）
-        4096,           // スタックサイズ（バイト単位）
-        NULL,           // パラメータ
-        2,              // 優先度
-        &TaskHandle,    // タスクハンドル
-        0               // 割り当てるコア番号 (0)
-      );
-      //┴
+    //●接続管理TBLを作成
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
+    ssTBL[0].Base.used = true     ; // 使用中
+    ssTBL[0].CONN      = &Serial  ; // 参照先を登録
+    ssTBL[1].Base.used = true     ; // 使用中
+    ssTBL[1].CONN      = &Serial1 ; // 参照先を登録
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
+    xTaskCreatePinnedToCore(
+      StreamQueue,    // 実行するタスク関数
+      ADP_ID.c_str(), // タスク名（デバッグ用）
+      4096,           // スタックサイズ（バイト単位）
+      NULL,           // パラメータ
+      2,              // 優先度
+      &TaskHandle,    // タスクハンドル
+      0               // 割り当てるコア番号 (0)
+    );
+    //│
+    //○メッセージ表示
     Serial.println(String("　[OK] USB/UART  -> #0,#1"));
     //┴
   } /* START() */
@@ -197,11 +186,6 @@ namespace adpUART {
   //━━━━━━━━━━━━━━━━━
   void HANDLE(){
     //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
     //◎┐ルーティングを指示
     myQueue popDat;
     while (popQueue(popDat)) {

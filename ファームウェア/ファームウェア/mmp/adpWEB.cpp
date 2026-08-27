@@ -17,8 +17,6 @@
   #include <WiFi.h     > //
   #include <WebServer.h> // ユーザ受付資源
   #include <LittleFS.h > // 設定ファイル
-  //│
-  //■ＭＭＰシステム
   //┴
 //┴
 
@@ -32,8 +30,7 @@ namespace adpWEB {
   //─────────────────
   // ステータス
   //─────────────────
-  const String ADP_ID  = "WEB "; // アダプタID
-  bool         ENABLED = false ; // 有効性：{有効：true|無効：false}
+  const String ADP_ID = "WEB"; // アダプタID
 
   //─────────────────
   // アクセス資源を提供するサービス
@@ -207,25 +204,12 @@ namespace adpWEB {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○１．サービス資源を生成
+    //○サービス資源を生成
     ADP_SRV = new WebServer(SRV_PORT); // WebServer
-    //│
-    //○２．接続管理TBLを作成
-    //　➡【該当処理なし】
-    //│
-    //○３．接続管理スロットを静的アタッチ
-    //　➡【該当処理なし】
-    //│
-    //○４．ルーティングを登録
     registRoutes(*ADP_SRV);
-    //│
-    //○５．サービスを開始
     ADP_SRV->begin();
     //│
-    //○６．アダプタを有効化
-    ENABLED = true; // 有効
-    //│
-    //○７．起動ログを表示（正常終了）
+    //○メッセージ表示
     Serial.println(String("　WEB画面     : OK -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -234,17 +218,8 @@ namespace adpWEB {
   // ハンドラ入口（ポーリング入口）
   //━━━━━━━━━━━━━━━━━
   void HANDLE() {
-   //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    if (!ADP_SRV) return; // サーバが起動済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○２．新規接続のスロットを登録
-    //　➡【該当処理なし】※通信アダプタが対象
-    //│
-    //○ルーティング処理
+    //┬
+    //○ルーティングを指示（その後も同期処理）
     ADP_SRV->handleClient();
     //┴
   } /* HANDLE() */

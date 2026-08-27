@@ -1,25 +1,13 @@
 // filename : adp-func.cpp
 //========================================================
-// 通信アダプタ共通：処理フロー
-//--------------------------------------------------------
-//【目的】
-// ・各プロセスの共通処理（ユーザ認証以外）を提供する
-//--------------------------------------------------------
-//【共通資源】
-//・F2_STREAM()       ：ストリーム型のデータ処理
-//・P1_SET_ACD_CPATH()：フレームから認証CDとコマンドパスをセット
-//・P3_RUN()          ：コマンドを実行 または ＭＭＰ本体へ移譲
+// 通信アダプタ共通：処理プロセス用
 //--------------------------------------------------------
 // Ver 1.1.0 (2026/08/23) 
 //========================================================
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  #include <string.h>
-  //│
   //■ＭＭＰシステム
-  #include "conf.h" // [P3_RUN()]
   #include "adp.h"  // 通信アダプタ共通へ公開
   //┴
 //┴
@@ -36,92 +24,64 @@
 #endif // ----------------------------------------┘
 
 //========================================================
-// 処理プロセス（ユーザ認証以外）
+// 処理プロセス用の部品
 //========================================================
-//━━━━━━━━━━━━━━━━━
-// ２．フレームを取得
-//━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━
+  // デバッグログ表示
+  //━━━━━━━━━━━━━━━━━
+  void P9_SHOW_LOG(){
+    if (!ctx.sysLog) return;
+    Serial.println(String("\n======================================"));
+    Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
+    Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
+    Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
+    Serial.print  (String("accID["      ) + String(ctx.accID   ));
+    Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
+    Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
+    Serial.println(String("======================================"));
+  } /* P9_SHOW_LOG() */
+
+  //━━━━━━━━━━━━━━━━━
+  // ポーリング ハンドル
   //─────────────────
-  // ストリーム型のデータ処理
-  //----------------------------------
-  // 引数：
-  // ・受信バッファ
-  // ・オーバーフローフラグ
-  // ・エラーメッセージ
-  //----------------------------------
-  // 戻り値：受信継続の要否（論理値）
-  // ・true ：受信継続が「不要」
-  // ・false：受信継続が「必要」
+  // 接続スロットごとに行う前処理
+  //━━━━━━━━━━━━━━━━━
+  void P0_SETUP_CONTEXT(String argAdpID, String argFrame){
+
+    ctx.adpID    = argAdpID; // アダプタID
+    ctx.strFrame = argFrame; // フレーム
+    P1_FORMAT_URI(ctx.strFrame);
+
+    ctx.vStream.clear(); // 仮想ストリーム
+    ctx.resMSG   = ""  ; // レスポンスメッセージ
+    ctx.cmdPath  = ""  ; // コマンドパス
+    ctx.authCD   = ""  ; // 認証コード
+    ctx.accID    = -1  ; // アクセスID
+  } /* P0_SETUP_CONTEXT() */
+
   //─────────────────
-  bool READ_STREAM(
-    SS_SLOT_TYPE argBASE  , // スロット(ベース)
-    String       &argFrame  // エラーMSG返却
-){
+  // 受信バッファをURI形式に変換
+  //----------------------------------
+  //・先頭/末尾の不要文字を除去
+  //─────────────────
+  void P1_FORMAT_URI(String &str){
     //┬
-    //○オーバーフロー発生を確認
-    if (argBASE.rx.length() > SS_RX_SIZE) {
-    //│＼（発生した場合）
-        //○オーバーフロー中へ移行
-        //○受信バッファをクリア
-        //▼返却：受信継続が「不要」
-        argBASE.isOver = true;
-        argBASE.rx     = ""  ;
-        return true;
-    } /* END-if */
+    //○先頭の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(0);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(0, 1);} else {break;}
+      } /* END-while */ 
     //│
-    //○取り込み状態を確認
-    if (!argBASE.rx.endsWith("!")) return false;
-    //│＼（終端に達していない場合）
-    //│ ▼返却：受信継続が「必要」
-    //│
-    //○オーバーフロー中を確認
-    if (argBASE.isOver) {
-    //│＼（オーバーフロー中の場合）
-        //○オーバーフロー中を解除
-        //○受信バッファをクリア
-        //●エラーコードをフレームにセット
-        //▼返却：受信継続が「不要」
-        argBASE.isOver = false  ;
-        argBASE.rx     = ""     ;
-        argFrame       = "#DFL!";
-        return true;
-    } /* END-if */
-    //│
-    //●受信バッファをURI形式に変換
-    P1_FORMAT_URI(argBASE.rx);
-    //│
-    //○フレームを作成
-    argFrame       = argBASE.rx;
-    argBASE.rx     = ""     ;
-    //│
-    //▼返却：受信継続が「不要」
-    return true;
-  } /* READ_STREAM() */
+    //○末尾の不要な文字をすべて削除
+    while (str.length() > 0) {
+      char c = str.charAt(str.length() - 1);
+      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
+      {str.remove(str.length()-1);} else {break;}
+      } /* END-while */ 
+    //┴
+  } /* P1_FORMAT_URI() */
 
-  //━━━━━━━━━━━━━━━━━
-  // ２．ストリームからフレームを取得
-  //----------------------------------
-  // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：フレーム作成状況（論理値）
-  // ・true ：完成
-  // ・false：未完成
-  //━━━━━━━━━━━━━━━━━
-  String P2_STREAM(
-    Stream&      argConn, // 通信資源
-    SS_SLOT_TYPE argBASE  // スロット(ベース)
-  ){
-    String retFrame = "";
-    bool   isStop = false;
-
-    while (argConn.available()){             ; // 受信バッファあり
-      argBASE.rx += (char)argConn.read()     ; // 1バイト受信
-      isStop = READ_STREAM(argBASE, retFrame); // 処理判断
-      if (isStop) break                      ; // 継続無し
-    } /* END-while */
-
-    return retFrame; // フレーム返却(エラーコード含む)
-  }
 
 //━━━━━━━━━━━━━━━━━
 // ３．基本情報を取得

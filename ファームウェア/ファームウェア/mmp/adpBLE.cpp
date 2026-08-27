@@ -10,16 +10,10 @@
 //┬
 //■┐インクルード
   //■┐Arduinoシステム
-    //■BLE関連
     #include <BLEDevice.h> // ユーザ受付資源を
     #include <BLEServer.h> // ユーザ受付資源
     #include <BLEUtils.h > // ユーザ受付資源
     #include <BLE2902.h  > // ユーザ受付資源
-    //│
-    //■キューイング関連
-    #include <Arduino.h>
-    #include <queue>
-    #include <mutex>
     //┴
   //│
   //■ＭＭＰシステム
@@ -42,8 +36,7 @@ namespace adpBLE {
     // ステータス
     //─────────────────
     const String ADP_ID = "BLE"; // アダプタID
-        bool ENABLED    = false; // 有効性：{有効：true|無効：false}
-        bool CONNECTED  = false; // 接続中
+        bool CONNECTED  = false; // 接続状況｛true：接続あり｜false：接続なし｝
 
     //─────────────────
     // 使用するサービス
@@ -185,12 +178,11 @@ namespace adpBLE {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○サービスを開始
+    //○サービス資源を生成
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // サーバ(接続/切断)
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○メッセージ表示
     Serial.println("　[OK] Bluetooth");
     //┴
   } /* START() */
@@ -200,11 +192,6 @@ namespace adpBLE {
   //━━━━━━━━━━━━━━━━━
   void HANDLE(){
     //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
     //◎┐ルーティングを指示
     myQueue popDat;
     while (popQueue(popDat)) {
@@ -220,7 +207,7 @@ namespace adpBLE {
       //●キュー情報をワークにセット
       P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
+#if defined(MMP_TYPE_MAIN) // -----------------┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
@@ -229,7 +216,7 @@ namespace adpBLE {
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
-#endif // ----------------------------------------┘
+#endif // -------------------------------------------------------┘
       //│
       //●コマンド実行
       P3_RUN();

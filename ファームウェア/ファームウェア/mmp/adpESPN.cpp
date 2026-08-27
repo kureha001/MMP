@@ -18,15 +18,8 @@
 //┬
 //■┐インクルード
   //■┐Arduinoシステム
-    //■ESP-NOW関連
-    #include <WiFi.h>
-    #include <esp_now.h>
-    //│
-    //■キューイング関連
-    #include <Arduino.h>
-    #include <queue>
-    #include <mutex>
-    //┴
+  #include <WiFi.h>
+  #include <esp_now.h>
   //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
@@ -46,8 +39,7 @@ namespace adpESPN {
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID  = "ESPN"; // アダプタID
-          bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
+    const String ADP_ID = "ESPN"; // アダプタID
 
     //─────────────────
     // 使用するサービス
@@ -152,20 +144,17 @@ namespace adpESPN {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○サービスを開始
+    //○サービス資源を生成
     if (esp_now_init() != ESP_OK) {
     //│＼（通信デバイスが起動していない場合）
         //○起動ログを表示（異常終了）
-        //○アダプタを無効化
         //▼終了：早期リターン
         Serial.println("　[NG ] ESP-NOW -> 初期化失敗");
-        ENABLED = false;
         return;
     } /* END-if */
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○メッセージ表示
     Serial.println("　[OK] ESP-NOW");
     //┴
   } /* START() */
@@ -175,11 +164,6 @@ namespace adpESPN {
   //━━━━━━━━━━━━━━━━━
   void HANDLE(){
     //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
     //◎┐ルーティングを指示
     myQueue popDat;
     while (popQueue(popDat)) {

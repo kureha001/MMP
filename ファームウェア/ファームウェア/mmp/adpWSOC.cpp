@@ -9,11 +9,8 @@
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
+  //■追加ライブラリ：WebSockets by Markus Sattler
   #include <WebSocketsServer.h>
-  #include <Arduino.h>
-  #include <queue>
-  #include <mutex>
   //│
   //■ＭＭＰシステム
   #include "adp.h"
@@ -34,7 +31,6 @@ namespace adpWSOC {
     // ステータス
     //─────────────────
     const String ADP_ID  = "WSOC"; // アダプタID
-          bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
 
     //─────────────────
     // 使用するサービス
@@ -138,8 +134,7 @@ namespace adpWSOC {
     ADP_SRV->onEvent(ON_RECIVE)             ; // コールバック関数登録
     ADP_SRV->begin()                        ; // サーバ起動
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○メッセージ表示
     Serial.println(String("　[OK] WebSocket -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -149,11 +144,6 @@ namespace adpWSOC {
   //─────────────────
   void HANDLE(){
     //┬
-    //○起動チェック
-    if (!ENABLED) return; // 初期化済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
     //●WebSocketサーバの処理を進める
     ADP_SRV->loop();
     //│

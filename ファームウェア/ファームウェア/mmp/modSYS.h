@@ -86,10 +86,10 @@ public:
 
         // 1.2.単項目チェック
         int intLv;
-        if (!_Str2Int(dat[1], intLv, -1, 5)){_ResChkErr(sp); return;}
+        if (!_Str2Int(dat[1], intLv, 0, 1)){_ResChkErr(sp); return;}
 
       // ２．出力レベルをセット
-      ctx.sysLog = intLv;
+      ctx.sysLog = (intLv == 0 ? false : true);
 
       // ３．後処理：
       _ResOK(sp);

@@ -12,9 +12,6 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <WiFi.h> // ユーザ受付資源
-  #include <Arduino.h>
-  #include <queue>
-  #include <mutex>
   //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
@@ -34,9 +31,9 @@ namespace adpTCP {
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID  = "TCPR"  ; // アダプタID
-    const int    SS_SLOTS  = 10    ; // 複数スロット(接続タイミングで登録)
-          bool   ENABLED   = false ; // 有効性：{有効：true|無効：false}
+    const String ADP_ID   = "TCPR"; // アダプタID
+    const int    SS_SLOTS = 10    ; // 複数スロット(接続タイミングで登録)
+          bool   ENABLED  = false ; // 有効性：{有効：true|無効：false}
 
     //─────────────────
     // 使用するサービス
@@ -249,29 +246,25 @@ namespace adpTCP {
   //━━━━━━━━━━━━━━━━━
   void START() {
     //┬
-    //○┐サービスを開始
-      //│
-      //●接続管理TBLを作成
-      ssTBL = new T_SS_SLOT[SS_SLOTS];
-      //│
-      //○サービス資源を生成
-      ADP_SRV = new WiFiServer(SRV_PORT);
-      ADP_SRV->begin();
-      //│
-      //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
-      xTaskCreatePinnedToCore(
-        StreamQueue,    // 実行するタスク関数
-        "UART_ADAPTER", // タスク名（デバッグ用）
-        4096,           // スタックサイズ（バイト単位）
-        NULL,           // パラメータ
-        2,              // 優先度
-        &TaskHandle,    // タスクハンドル
-        0               // 割り当てるコア番号 (0)
-      );
-      //┴
+    //●接続管理TBLを作成
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
-    //○アダプタを有効化
-    ENABLED = true; 
+    //○サービス資源を生成
+    ADP_SRV = new WiFiServer(SRV_PORT);
+    ADP_SRV->begin();
+    //│
+    //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
+    xTaskCreatePinnedToCore(
+      StreamQueue,    // 実行するタスク関数
+      ADP_ID.c_str(), // タスク名（デバッグ用）
+      4096,           // スタックサイズ（バイト単位）
+      NULL,           // パラメータ
+      2,              // 優先度
+      &TaskHandle,    // タスクハンドル
+      0               // 割り当てるコア番号 (0)
+    );
+    //│
+    //○メッセージ表示
     Serial.println(String("　[OK] TCP Raw   -> port ") + String(SRV_PORT));
     //┴
   } /* START() */
@@ -281,12 +274,6 @@ namespace adpTCP {
   //━━━━━━━━━━━━━━━━━
   void HANDLE(){
     //┬
-    //○１．起動チェック
-    if (!ENABLED) return; // 初期化済み
-    if (!ADP_SRV) return; // サーバが起動済み
-    //│＼（このアダプタが無効の場合）
-    //│ ▼終了：早期リターン
-    //│
     //◎┐ルーティングを指示
     myQueue popDat;
     while (popQueue(popDat)) {

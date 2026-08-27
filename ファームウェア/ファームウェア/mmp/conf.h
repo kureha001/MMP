@@ -20,12 +20,12 @@
 //・必要：コメントアウト「しない」
 //・不要：コメントアウト「する」
 //─────────────────
-//#define ADP_COM_UART // UART
+#define ADP_COM_UART // UART
 #define ADP_COM_TCP  // TcpRaw
-//#define ADP_COM_WAPI // WebAPI
-//#define ADP_COM_WSOC // WebSocket
-//#define ADP_COM_ESPN // ESP-NOW
-//#define ADP_COM_BLE  // BLE
+#define ADP_COM_WAPI // WebAPI
+#define ADP_COM_WSOC // WebSocket
+#define ADP_COM_ESPN // ESP-NOW
+#define ADP_COM_BLE  // BLE
 
 //─────────────────
 // WEBアダプタ選択

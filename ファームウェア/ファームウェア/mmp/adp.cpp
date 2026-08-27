@@ -10,20 +10,11 @@
 //・INIT_ADAPTER()：アダプタを初期化
 //・KICK_HANDLE() ：ダプタをポーリング
 //--------------------------------------------------------
-//【共通資源】
-//・SS_INI_SLOT_BASE()：接続管理スロット(ベース)を初期化する関数
-//・P0_SETUP_CONTEXT()        ：コンテクストを初期化する関数
-//・P1_FORMAT_URI()   ：受信バッファをURI形式に変換
-//・P9_SHOW_LOG()      ：デバッグ表示する関数
-//--------------------------------------------------------
 // Ver 1.2.0 (2026/08/25) 
 //========================================================
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  #include <string.h>
-  //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
   //┴
@@ -44,7 +35,7 @@
   //─────────────────
   MmpContext ctx;
 
- #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
+ #if defined(MMP_TYPE_MAIN) // ------------┨ＭＭＰ本体┠----┐
   //─────────────────
   // コマンド管理
   //----------------------------------
@@ -57,84 +48,9 @@
   #include "cmd.h"                // 定義元ソースファイル
   CmdManager  OBJ_CMD(ctx)      ; // 本体(依存性注入)
   CmdManager* INO_CMD = &OBJ_CMD; // 外部公開ポインタ
-#endif // ----------------------------------------┘
-
-//========================================================
-// 接続管理
-//========================================================
-  //─────────────────
-  // スロット初期化
-  //----------------------------------
-  // 通信アダプタの名前空間で派生(名称:INIT_SLOT)
-  //─────────────────
-  void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot){
-    argSlot.used   = false; // スロット有効性を「無効」
-    argSlot.isOver = false; // 容量超過フラグを「OFF」
-    argSlot.rx     = ""   ; // 受信バッファをクリア
-    argSlot.rx.reserve(SS_RX_SIZE); // 容量確保
-  } /* SS_INI_SLOT_BASE */
+#endif // --------------------------------------------------┘
 
   
-//========================================================
-// 処理プロセス
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // ポーリング ハンドル
-  //─────────────────
-  // 接続スロットごとに行う前処理
-  //━━━━━━━━━━━━━━━━━
-  void P0_SETUP_CONTEXT(String argAdpID, String argFrame){
-
-    ctx.adpID    = argAdpID; // アダプタID
-    ctx.strFrame = argFrame; // フレーム
-    P1_FORMAT_URI(ctx.strFrame);
-
-    ctx.vStream.clear(); // 仮想ストリーム
-    ctx.resMSG   = ""  ; // レスポンスメッセージ
-    ctx.cmdPath  = ""  ; // コマンドパス
-    ctx.authCD   = ""  ; // 認証コード
-    ctx.accID    = -1  ; // アクセスID
-  } /* P0_SETUP_CONTEXT() */
-
-  //─────────────────
-  // 受信バッファをURI形式に変換
-  //----------------------------------
-  //・先頭/末尾の不要文字を除去
-  //─────────────────
-  void P1_FORMAT_URI(String &str){
-    //┬
-    //○先頭の不要な文字をすべて削除
-    while (str.length() > 0) {
-      char c = str.charAt(0);
-      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
-      {str.remove(0, 1);} else {break;}
-      } /* END-while */ 
-    //│
-    //○末尾の不要な文字をすべて削除
-    while (str.length() > 0) {
-      char c = str.charAt(str.length() - 1);
-      if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
-      {str.remove(str.length()-1);} else {break;}
-      } /* END-while */ 
-    //┴
-  } /* P1_FORMAT_URI() */
-
-  //━━━━━━━━━━━━━━━━━
-  // デバッグログ表示
-  //━━━━━━━━━━━━━━━━━
-  void P9_SHOW_LOG(){
-    if (ctx.sysLog < 0) return;
-    Serial.println(String("\n======================================"));
-    Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
-    Serial.print  (String("authCD["     ) + String(ctx.authCD  ));
-    Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
-    Serial.print  (String("accID["      ) + String(ctx.accID   ));
-    Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
-    Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
-    Serial.println(String("======================================"));
-  } /* P9_SHOW_LOG() */
-
-
 //========================================================
 // アダプタの初期化
 //--------------------------------------------------------
@@ -145,46 +61,47 @@
     //○開始表示
     Serial.println("<<アダプタの初期化>>");
     //│
-#if defined(MMP_TYPE_MAIN) //---┨ＭＭＰ本体┠----┐
+#if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
     //●認証情報TBLを初期化
     AUTH_INIT_TBL();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
-#if defined(ADP_COM_UART) //----┨UART通信┠------┐
-    //●通信アダプタ
+    //●通信アダプタを初期化
+#if defined(ADP_COM_UART ) //----┨UART┠--┐
     adpUART::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
-#if defined(ADP_COM_TCP   ) //--┨TcpRaw通信┠----┐
+#if defined(ADP_COM_TCP  ) //----┨TcpRaw┠┐
     adpTCP ::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
-#if defined(ADP_COM_WAPI  ) //--┨WebAPI通信┠----┐
+#if defined(ADP_COM_WAPI ) //----┨WebAPI┠┐
     adpWAPI::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
-#if defined(ADP_COM_WSOC  ) //--┨WebSoc通信┠----┐
+#if defined(ADP_COM_WSOC ) //----┨WebSoc┠┐
     adpWSOC::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│    
-#if defined(ADP_COM_BLE  ) //---┨ＢＬＥ通信┠----┐
+#if defined(ADP_COM_BLE  ) //----┨ＢＬＥ┠┐
     adpBLE ::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│    
-#if defined(ADP_COM_ESPN  ) //--┨ESP-NOW通信┠---┐
+#if defined(ADP_COM_ESPN ) //---┨ESP-NOW┠┐
     adpESPN::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
-#if defined(ADP_WEB      ) //---┨ＷＥＢ画面┠----┐
+#if defined(ADP_WEB      ) //----┨ＷＥＢ┠┐
     adpWEB ::START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //│
     //○終了表示
     Serial.println("");
     //│
-#if defined(MMP_TYPE_MAIN) //---┨ＭＭＰ本体┠----┐
+#if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //●コマンド管理を初期化
     INO_CMD->START();
-#endif //-----------------------------------------┘
+#endif //----------------------------------┘
     //┴
   } /* INIT_ADAPTER() */
 
@@ -193,32 +110,33 @@
 //========================================================
   void KICK_HANDLE(){
     //┬
-#if defined(ADP_COM_UART) //--┨UART通信┠----┐
+    //●ハンドルをキック
+#if defined(ADP_COM_UART) //---┨UART┠┐
     adpUART::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_COM_TCP   ) //--┨TcpRaw通信┠----┐
+#if defined(ADP_COM_TCP ) //-┨TcpRaw┠┐
     adpTCP ::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_COM_WAPI  ) //--┨WebAPI通信┠----┐
+#if defined(ADP_COM_WAPI) //-┨WebAPI┠┐
     adpWAPI::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_COM_WSOC  ) //--┨WebSoc通信┠----┐
+#if defined(ADP_COM_WSOC) //-┨WebSoc┠┐
     adpWSOC::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_COM_BLE   ) //--┨ＢＬＥ通信┠----┐
+#if defined(ADP_COM_BLE ) //-┨ＢＬＥ┠┐
     adpBLE ::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_COM_ESPN  ) //--┨ESP-NOW通信┠---┐
+#if defined(ADP_COM_ESPN) //┨ESP-NOW┠┐
     adpESPN::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //│
-#if defined(ADP_WEB       ) //--┨ＷＥＢ画面┠----┐
+#if defined(ADP_WEB     ) //-┨ＷＥＢ┠┐
     adpWEB ::HANDLE();
-#endif //-----------------------------------------┘
+#endif //------------------------------┘
     //┴
   } /* KICK_HANDLE() */

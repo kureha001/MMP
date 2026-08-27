@@ -53,7 +53,10 @@
   // ・true ：受信継続が「不要」
   // ・false：受信継続が「必要」
   //─────────────────
-  bool P2_STREAM(SS_SLOT_TYPE argBASE){
+  bool READ_STREAM(
+    SS_SLOT_TYPE argBASE  , // スロット(ベース)
+    String       &argFrame  // エラーMSG返却
+){
     //┬
     //○オーバーフロー発生を確認
     if (argBASE.rx.length() > SS_RX_SIZE) {
@@ -76,27 +79,24 @@
     //│＼（オーバーフロー中の場合）
         //○オーバーフロー中を解除
         //○受信バッファをクリア
-        //●エラーコードをレスポンス
+        //●エラーコードをフレームにセット
         //▼返却：受信継続が「不要」
         argBASE.isOver = false  ;
         argBASE.rx     = ""     ;
-        ctx.resMSG     = "#DFL!";
+        argFrame       = "#DFL!";
         return true;
     } /* END-if */
     //│
-    //○┐フレームを作成
-      //│
-      //○受信バッファをフレームにセット
-      //○受信バッファをクリア
-      //●フレームをURI形式に変換
-      ctx.strFrame = argBASE.rx;
-      argBASE.rx   = ""        ;
-      P1_FORMAT_URI(ctx.strFrame);
-      //┴
+    //●受信バッファをURI形式に変換
+    P1_FORMAT_URI(argBASE.rx);
+    //│
+    //○フレームを作成
+    argFrame       = argBASE.rx;
+    argBASE.rx     = ""     ;
     //│
     //▼返却：受信継続が「不要」
     return true;
-  } /* P2_STREAM() */
+  } /* READ_STREAM() */
 
   //━━━━━━━━━━━━━━━━━
   // ２．ストリームからフレームを取得
@@ -104,20 +104,23 @@
   // 引数：(参照)接続管理スロット
   //----------------------------------
   // 戻り値：フレーム作成状況（論理値）
-  // ・true ：未完成
-  // ・false：完成
+  // ・true ：完成
+  // ・false：未完成
   //━━━━━━━━━━━━━━━━━
-  bool F2_STREAM(
-    Stream& argConn     ,
-    SS_SLOT_TYPE argBASE
+  String P2_STREAM(
+    Stream&      argConn, // 通信資源
+    SS_SLOT_TYPE argBASE  // スロット(ベース)
   ){
-    bool isStop = false;
-    while (argConn.available()){        
-      argBASE.rx += (char)argConn.read();
-      isStop = P2_STREAM(argBASE);
-      if (isStop) break;
+    String retFrame = "";
+    bool   isStop = false;
+
+    while (argConn.available()){             ; // 受信バッファあり
+      argBASE.rx += (char)argConn.read()     ; // 1バイト受信
+      isStop = READ_STREAM(argBASE, retFrame); // 処理判断
+      if (isStop) break                      ; // 継続無し
     } /* END-while */
-    return (ctx.strFrame == "" ? true : false);
+
+    return retFrame; // フレーム返却(エラーコード含む)
   }
 
 //━━━━━━━━━━━━━━━━━

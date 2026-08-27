@@ -149,9 +149,11 @@ namespace adpTCP {
   // ・false：完成
   //─────────────────
   bool P1_MAKE_FRAME(T_SS_SLOT& argSS){
-    bool res = F2_STREAM(argSS.conn, argSS.Base);
-    if (ctx.resMSG != "") SEND_CONN(argSS);
-    return res;
+    String strFrame = P2_STREAM(argSS.conn, argSS.Base);
+    if (strFrame == "") return false;
+    if (strFrame.startsWith("#")) {SEND_CONN(argSS); return false;}
+    ctx.strFrame = strFrame;
+    return true;
   } /* P1_MAKE_FRAME */
 
   //─────────────────

@@ -55,11 +55,10 @@ namespace adpUART {
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(T_SS_SLOT& argSS){
+  void SEND_CONN(Stream* argConn){
     //┬
     //○メッセージをレスポンス
-    //●ログ出力
-    argSS.conn->print(ctx.resMSG);
+    if (argConn != nullptr) argConn->print(ctx.resMSG);
     P9_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
@@ -74,8 +73,8 @@ namespace adpUART {
     // リクエスト・データストア
     //─────────────────
     struct myQueue {
-      uint8_t connNum; // クライアント番号
-      String  connRX ; // 受信バッファ
+      Stream* conn = nullptr; // アクセス資源(参照)
+      String  frame        ; // 受信バッファ
     };
     static std::queue<myQueue> QUEUE      ; // キューバッファ
     static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -85,11 +84,42 @@ namespace adpUART {
   //----------------------------------
   // コールバック関数として機能
   //─────────────────
-  bool ON_RECIVE(T_SS_SLOT& argSS){
-    bool res = F2_STREAM(*(argSS.conn), argSS.Base);
-    if (ctx.resMSG != "") SEND_CONN(argSS);
-    return res;
-  } /* MAKE_FRAME */
+  void ON_RECIVE(){
+    //┬
+    //◎┐スロットを走査
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
+      //│＼（最後のスロットに達した場合）
+      //│ ▼完了：走査を終了
+      //│
+      //○スロットの状態を確認
+      if (ssTBL[ID].conn == nullptr) continue;
+      //│＼（未使用の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //●ストリームを受信
+      String retFrame = P2_STREAM(*(ssTBL[ID].conn), ssTBL[ID].Base);
+      if (retFrame == "") continue;
+      //│＼（フレームが未完成の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //○キューに登録
+      std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
+      QUEUE.push({ssTBL[ID].conn, retFrame})       ; // キューを追加(通信資源、フレーム)
+      //┴
+    } /* END-for */
+    //┴
+  } /* ON_RECIVE() */
+
+  // タスクのハンドルを保持する変数
+  static TaskHandle_t TaskHandle = NULL;
+
+  // --- FreeRTOSタスクのエントリポイント ---
+  void StreamQueue(void *pvParameters) {
+    for (;;) {
+      ON_RECIVE();                        // コールバック関数を登録
+      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
+    }
+  } /* StreamQueue() */
 
   //─────────────────
   // リクエストの取出
@@ -136,9 +166,16 @@ namespace adpUART {
       ssTBL[1].Base.used = true     ; // 使用中
       ssTBL[1].conn      = &Serial1 ; // 参照先を登録
       //│
-      //○スレッド登録
-      //○ルーティングを登録
-      //○サービスを開始
+      //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
+      xTaskCreatePinnedToCore(
+        StreamQueue,    // 実行するタスク関数
+        "UART_ADAPTER", // タスク名（デバッグ用）
+        4096,           // スタックサイズ（バイト単位）
+        NULL,           // パラメータ
+        2,              // 優先度
+        &TaskHandle,    // タスクハンドル
+        0               // 割り当てるコア番号 (0)
+      );
       //┴
     //│
     //○アダプタを有効化
@@ -158,35 +195,38 @@ namespace adpUART {
     //│ ▼終了：早期リターン
     //│
     //◎┐ルーティングを指示
-    for (int ID = 0; ID < SS_SLOTS; ID++) {
-      //│＼（最終スロットに達した場合）
-      //│ ▽完了：ルーティングを終了
+    myQueue popDat;
+    while (popQueue(popDat)) {
+      //│＼（キューが空の場合）
+      //│ ▼完了：ルーティングを終了
+      //│
+      //○フレームの状態を確認
+      if (popDat.frame.startsWith("#")){SEND_CONN(popDat.conn); continue;}
+      //│＼（エラーが発生している場合）
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
       //│
       //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, "");
-      //│
-      //●フレームを取得
-      if (ON_RECIVE(ssTBL[ID])) continue;
-      //│＼（未完成の場合）
-      //│ ▽次へ：次のスロットを走査
+      P0_SETUP_CONTEXT(ADP_ID, popDat.frame);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-      //○基本情報を取得
+      //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
-      //○ユーザ認証を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(ssTBL[ID]); continue;}
+      //●認証処理を実施
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.conn); continue;}
       //│＼（処理継続が不可の場合）
-      //│ ▽次へ：次のスロットを走査
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
 #endif // ----------------------------------------┘
       //│
-      //●MMPコマンドを実行
+      //●コマンド実行
       P3_RUN();
       //│
       //●実行結果をレスポンス
-      SEND_CONN(ssTBL[ID]);
-        //┴
-    } /* END-for */
+      SEND_CONN(popDat.conn);
+      //┴
+    } /* END-while */
     //┴
   } /* HANDLE() */
 

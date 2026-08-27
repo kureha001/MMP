@@ -82,13 +82,13 @@
 //========================================================
 // 処理プロセス
 //========================================================
-  void P0_SETUP_CONTEXT(String argAdpID, String argFrame);
-  void P1_FORMAT_URI(String &str);
-  bool F2_STREAM(Stream& argConn, SS_SLOT_TYPE argBASE);
-  void P1_SET_ACD_CPATH();
-  bool P2_CHECK_AUTH();
-  void P3_RUN();
-  void P9_SHOW_LOG();
+  void   P0_SETUP_CONTEXT(String argAdpID, String argFrame);
+  void   P1_FORMAT_URI(String &str);
+  String P2_STREAM(Stream& argConn, SS_SLOT_TYPE argBASES);
+  void   P1_SET_ACD_CPATH();
+  bool   P2_CHECK_AUTH();
+  void   P3_RUN();
+  void   P9_SHOW_LOG();
 
 //========================================================
 // アダプタの公開情報

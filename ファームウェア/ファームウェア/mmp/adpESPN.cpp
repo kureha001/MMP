@@ -38,27 +38,30 @@
 //########################################################
 namespace adpESPN {
 //========================================================
-// Ａ．基本情報
+// Ａ．アダプタの基本
 //========================================================
-  //─────────────────
-  // ステータス
-  //─────────────────
-  const String ADP_ID  = "ESPN"; // アダプタID
-        bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
+  //━━━━━━━━━━━━━━━━━
+  // 基本情報
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // ステータス
+    //─────────────────
+    const String ADP_ID  = "ESPN"; // アダプタID
+          bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
 
-  //─────────────────
-  // 使用するサービス
-  //─────────────────
-  // ・ESP-NOW
+    //─────────────────
+    // 使用するサービス
+    //─────────────────
+    // ・ESP-NOW
 
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(const uint8_t* argClientID){
+  void SEND_CONN(const uint8_t* argConn){
     //┬
     //○メッセージをレスポンス
     esp_now_send(
-        argClientID                       , // 送信先MACアドレス
+        argConn                           , // 送信先MACアドレス
         (const uint8_t*)ctx.resMSG.c_str(), // 送信データ
         ctx.resMSG.length() + 1             // 送信データ長
     );
@@ -75,8 +78,8 @@ namespace adpESPN {
   // 基本情報
   //─────────────────
   struct myQueue {
-    uint8_t connMAC[6]; // MACアドレス
-    String  connRX    ; // 受信バッファ
+    uint8_t CONN[6]; // MACアドレス
+    String  FRAME  ; // 受信バッファ
   };
   static std::queue<myQueue> QUEUE      ; // キューバッファ
   static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -133,8 +136,8 @@ namespace adpESPN {
     //○受信データをキューに追加
     std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
     myQueue pkt;
-    memcpy(pkt.connMAC, mac, 6);
-    pkt.connRX = String((const char*)payload, length);
+    memcpy(pkt.CONN, mac, 6);
+    pkt.FRAME = String((const char*)payload, length);
     QUEUE.push(pkt);
     //│
     //▼終了：早期リターン
@@ -183,15 +186,21 @@ namespace adpESPN {
       //│＼（キューが空の場合）
       //│ ▼BREAK：ルーティングを終了
       //│
+      //○フレームの状態を確認
+      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      //│＼（エラーが発生している場合）
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
+      //│
       //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.connRX);
+      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
       //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.connMAC); continue;}
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
@@ -201,7 +210,7 @@ namespace adpESPN {
       P3_RUN();
       //│
       //●実行結果をレスポンス
-      SEND_CONN(popDat.connMAC);
+      SEND_CONN(popDat.CONN);
       //┴
     } /* END-while */
     //┴

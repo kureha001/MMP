@@ -25,27 +25,30 @@
 //########################################################
 namespace adpWSOC {
 //========================================================
-// Ａ．基本情報
+// Ａ．アダプタの基本
 //========================================================
-  //─────────────────
-  // ステータス
-  //─────────────────
-  const String ADP_ID  = "WSOC"; // アダプタID
-        bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
+  //━━━━━━━━━━━━━━━━━
+  // 基本情報
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // ステータス
+    //─────────────────
+    const String ADP_ID  = "WSOC"; // アダプタID
+          bool   ENABLED = false ; // 有効性：{有効：true|無効：false}
 
-  //─────────────────
-  // 使用するサービス
-  //─────────────────
-  static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
-  static int               SRV_PORT = 8082  ; // ポート番号
+    //─────────────────
+    // 使用するサービス
+    //─────────────────
+    static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
+    static int               SRV_PORT = 8082  ; // ポート番号
 
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(uint8_t argClientID){
+  void SEND_CONN(uint8_t argConn){
     //┬
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argClientID, ctx.resMSG.c_str());
+    if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
     //│
     //●ログ出力
     P9_SHOW_LOG();
@@ -59,8 +62,8 @@ namespace adpWSOC {
   // 基本情報
   //─────────────────
   struct myQueue {
-    uint8_t connNum; // クライアント番号
-    String  connRX ; // 受信バッファ
+    uint8_t CONN ; // アクセス資源(クライアント番号)
+    String  FRAME; // 受信バッファ
   };
   static std::queue<myQueue> QUEUE      ; // キューバッファ
   static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -100,7 +103,7 @@ namespace adpWSOC {
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
   void ON_RECIVE(
-    uint8_t   num    , // クライアント識別子
+    uint8_t   num    , // クライアント番号
     WStype_t  type   , // エベント種別
     uint8_t * payload, // 受信データ
     size_t    length   // 受信データ長
@@ -160,15 +163,21 @@ namespace adpWSOC {
       //│＼（キューが空の場合）
       //│ ▼BREAK：ルーティングを終了
       //│
+      //○フレームの状態を確認
+      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      //│＼（エラーが発生している場合）
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
+      //│
       //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.connRX);
+      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
       //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.connNum); continue;}
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
@@ -178,7 +187,7 @@ namespace adpWSOC {
       P3_RUN();
       //│
       //●実行結果をレスポンス
-      SEND_CONN(popDat.connNum);
+      SEND_CONN(popDat.CONN);
       //┴
     } /* END-while */
     //┴

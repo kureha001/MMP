@@ -33,22 +33,25 @@
 //########################################################
 namespace adpBLE {
 //========================================================
-// Ａ．基本情報
+// Ａ．アダプタの基本
 //========================================================
-  //─────────────────
-  // ステータス
-  //─────────────────
-  const String ADP_ID  = "BLE"; // アダプタID
-        bool ENABLED   = false; // 有効性：{有効：true|無効：false}
-        bool CONNECTED = false; // 接続中
+  //━━━━━━━━━━━━━━━━━
+  // 基本情報
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // ステータス
+    //─────────────────
+    const String ADP_ID = "BLE"; // アダプタID
+        bool ENABLED    = false; // 有効性：{有効：true|無効：false}
+        bool CONNECTED  = false; // 接続中
 
-  //─────────────────
-  // 使用するサービス
-  //─────────────────
-  // ※BLEはサービスポートを持たないため、
-  //   dev.hで公開されたBLE固有の受付資源を使用
-  // ・BLE_RX：受信用キャラクタリスティック
-  // ・BLE_TX：送信用キャラクタリスティック
+    //─────────────────
+    // 使用するサービス
+    //─────────────────
+    // ※BLEはサービスポートを持たないため、
+    //   dev.hで公開されたBLE固有の受付資源を使用
+    // ・BLE_RX：受信用キャラクタリスティック
+    // ・BLE_TX：送信用キャラクタリスティック
 
 //========================================================
 // Ｂ．レスポンス
@@ -56,7 +59,7 @@ namespace adpBLE {
   //─────────────────
   // スロットの受付資源に送信
   //─────────────────
-  void SEND_CONN(uint8_t argClientID){
+  void SEND_CONN(uint8_t argConn){
     //┬
     //○メッセージをレスポンス
     if (devBLE::BLE_TX != nullptr) {
@@ -77,8 +80,8 @@ namespace adpBLE {
   //─────────────────
   const int WAIT_MS = 15        ; // 受信タイムラグ
   struct myQueue {
-    uint8_t connNum; // クライアント番号
-    String  connRX ; // 受信バッファ
+    uint8_t CONN ; // アクセス資源(クライアント番号)
+    String  FRAME; // 受信バッファ
   };
   static std::queue<myQueue> QUEUE      ; // キューバッファ
   static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -208,15 +211,21 @@ namespace adpBLE {
       //│＼（キューが空の場合）
       //│ ▼BREAK：ルーティングを終了
       //│
+      //○フレームの状態を確認
+      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      //│＼（エラーが発生している場合）
+      //│ ●エラーをレスポンス
+      //│ ▽次へ：次のキューを走査
+      //│
       //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.connRX);
+      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
       //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.connNum); continue;}
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
@@ -226,7 +235,7 @@ namespace adpBLE {
       P3_RUN();
       //│
       //●実行結果をレスポンス
-      SEND_CONN(popDat.connNum);
+      SEND_CONN(popDat.CONN);
       //┴
     } /* END-while */
     //┴

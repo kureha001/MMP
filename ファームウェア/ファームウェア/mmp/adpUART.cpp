@@ -32,22 +32,28 @@
 //########################################################
 namespace adpUART {
 //========================================================
-// Ａ．基本情報
+// Ａ．アダプタの基本
 //========================================================
-  //─────────────────
-  // ステータス
-  //─────────────────
-  const String ADP_ID  = "UART"; // アダプタID
-  const int    SS_SLOTS = 2    ; // 固定スロット(物理ポート毎に1個)
-        bool   ENABLED  = false; // 有効性：{有効：true|無効：false}
-
-
+  //━━━━━━━━━━━━━━━━━
+  // 基本情報
+  //━━━━━━━━━━━━━━━━━
     //─────────────────
-    // 接続スロット
+    // ステータス
+    //─────────────────
+    const String ADP_ID   = "UART"; // アダプタID
+    const int    SS_SLOTS = 2     ; // 固定スロット(物理ポート毎に1個)
+          bool   ENABLED  = false ; // 有効性：{有効：true|無効：false}
+
+
+  //━━━━━━━━━━━━━━━━━
+  // 接続管理
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 基本情報
     //─────────────────
     struct T_SS_SLOT{
       SS_SLOT_TYPE Base              ; // 基本メンバ
-      Stream*      conn  = nullptr   ; // アクセス資源(参照)
+      Stream*      CONN  = nullptr   ; // アクセス資源(参照)
     };
     static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
@@ -70,8 +76,8 @@ namespace adpUART {
   // 基本情報
   //─────────────────
     struct myQueue {
-      Stream* conn = nullptr; // アクセス資源(参照)
-      String  frame        ; // 受信バッファ
+      Stream* CONN = nullptr; // アクセス資源(シリアルのオブジェクトを参照)
+      String  FRAME         ; // 受信バッファ
     };
     static std::queue<myQueue> QUEUE      ; // キューバッファ
     static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
@@ -118,19 +124,19 @@ namespace adpUART {
       //│ ▼完了：走査を終了
       //│
       //○スロットの状態を確認
-      if (ssTBL[ID].conn == nullptr) continue;
+      if (ssTBL[ID].CONN == nullptr) continue;
       //│＼（未使用の場合）
       //│ ▽次へ：次のスロットを走査
       //│
       //●ストリームを受信
-      String retFrame = P2_STREAM(*(ssTBL[ID].conn), ssTBL[ID].Base);
+      String retFrame = P2_STREAM(*(ssTBL[ID].CONN), ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録
       std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
-      QUEUE.push({ssTBL[ID].conn, retFrame})       ; // キューを追加(通信資源、フレーム)
+      QUEUE.push({ssTBL[ID].CONN, retFrame})       ; // キューを追加(通信資源、フレーム)
       //┴
     } /* END-for */
     //┴
@@ -164,9 +170,9 @@ namespace adpUART {
       //●接続管理TBLを作成
       ssTBL = new T_SS_SLOT[SS_SLOTS];
       ssTBL[0].Base.used = true     ; // 使用中
-      ssTBL[0].conn      = &Serial  ; // 参照先を登録
+      ssTBL[0].CONN      = &Serial  ; // 参照先を登録
       ssTBL[1].Base.used = true     ; // 使用中
-      ssTBL[1].conn      = &Serial1 ; // 参照先を登録
+      ssTBL[1].CONN      = &Serial1 ; // 参照先を登録
       //│
       //○受信タスクをFreeRTOSの別スレッドとして起動（コア0に割り当て）
       xTaskCreatePinnedToCore(
@@ -203,20 +209,20 @@ namespace adpUART {
       //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.frame.startsWith("#")){SEND_CONN(popDat.conn); continue;}
+      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
       //│＼（エラーが発生している場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
       //│
       //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.frame);
+      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
       //○リクエストをデータ項目に分解
       P1_SET_ACD_CPATH();
       //│
       //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.conn); continue;}
+      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
       //│＼（処理継続が不可の場合）
       //│ ●エラーをレスポンス
       //│ ▽次へ：次のキューを走査
@@ -226,7 +232,7 @@ namespace adpUART {
       P3_RUN();
       //│
       //●実行結果をレスポンス
-      SEND_CONN(popDat.conn);
+      SEND_CONN(popDat.CONN);
       //┴
     } /* END-while */
     //┴

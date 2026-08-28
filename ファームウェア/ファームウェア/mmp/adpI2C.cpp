@@ -29,19 +29,24 @@ namespace adpI2C {
     // ステータス
     //─────────────────
     const String ADP_ID   = "I2C"; // アダプタID
+    
+  //━━━━━━━━━━━━━━━━━
+  // 接続管理
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 基本情報
+    //─────────────────
+    static const uint8_t I2C_ADDR_MIN = 0xA0; // スレーブのI2Cアドレス（先頭）
+    static const uint8_t I2C_ADDR_MAX = 0xA4; // スレーブのI2Cアドレス（末尾）
+    String SEND_MSG[I2C_ADDR_MAX - I2C_ADDR_MIN + 1]; // スレーブへのレスポンスバッファ
 
-//========================================================
+ //========================================================
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(uint8_t argConn){
     //┬
-    //○メッセージをレスポンス
-    Wire.beginTransmission(argConn);
-    Wire.write(
-      (const uint8_t*)ctx.resMSG.c_str(),
-      ctx.resMSG.length()
-    );
-    Wire.endTransmission();
+    //○メッセージを返送バッファにセット
+    SEND_MSG[argConn - I2C_ADDR_MIN] = ctx.resMSG;
     //│
     //●ログ出力
     P9_SHOW_LOG();
@@ -54,9 +59,6 @@ namespace adpI2C {
   //─────────────────
   // 基本情報
   //─────────────────
-    uint8_t I2C_ADDR_MIN = 0xA0;
-    uint8_t I2C_ADDR_MAX = 0xA4;
-
     struct myQueue {
       uint8_t CONN ; // I2C Slaveアドレス
       String  FRAME; // 受信バッファ
@@ -106,22 +108,30 @@ namespace adpI2C {
       //│＼（最後のアドレスに達した場合）
       //│ ▼完了：走査を終了
       //│
-      //○スレーブへREAD要求
-      int size = Wire.requestFrom(ID, SS_RX_SIZE);
-      //│
-      //○受信データを確認
-      if (size < 1) continue;
-      //│＼（リクエストが存在しない場合）
-      //│ ▽次へ：次のスレーブを走査
-      //│
-      //○受信データを文字列化
+      //○前処理
       String retFrame = "";
-      retFrame.reserve(SS_RX_SIZE);
+      int    nowID    = ID - I2C_ADDR_MIN;
+      String msg      = SEND_MSG[nowID] == "" ? "####!" : SEND_MSG[nowID];
+      SEND_MSG[nowID] = "";
+      //│
+      //○レスポンスをスレーブへ返信
+      Wire.beginTransmission(ID);
+      Wire.write((const uint8_t*)msg.c_str(),msg.length());
+      Wire.endTransmission(false);
+      //│
+      //○リクエストをスレーブから取得
+      Wire.requestFrom(ID, SS_RX_SIZE); // 指定サイズ分取得する
       while (Wire.available()) retFrame += (char)Wire.read();
+      //│
+      //○末尾の余分をカット
+      int idx = retFrame.indexOf('!');
+      if (idx < 0) continue;
+      retFrame = retFrame.substring(0, idx + 1);
+      if (retFrame == "!") continue;
       //│
       //○キューに登録
       std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
-      QUEUE.push({(uint8_t)ID, retFrame});             // キューを追加(通信資源、フレーム)
+      QUEUE.push({(uint8_t)ID, retFrame});           // キューを追加(通信資源、フレーム)
       //┴
     } /* END-for */
     //┴

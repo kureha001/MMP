@@ -5,36 +5,35 @@ namespace modeTCP {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool ENABLED = false;
+  bool CONNECT = false;
   WiFiClient tcpClient;
-  const char*    SRV_IP   = "192.168.2.99"; // IPアドレス
   const uint16_t SRV_PORT = 8081          ; // ポート番号
 
 //=====================================================
 // 接続する
 //=====================================================
-bool INIT() {
+bool BEGIN() {
   if (WiFi.status() != WL_CONNECTED) return false;
     
-  Serial.printf("Connecting to TCP server %s:%d...\n", SRV_IP, SRV_PORT);
   tcpClient.setTimeout(2000);
+
   if (tcpClient.connect(SRV_IP, SRV_PORT)) {
-    ENABLED = true;
     Serial.println("TCP connected successfully.");
-    return true;
+    CONNECT = true;
+
   } else {
-    ENABLED = false;
     Serial.println("TCP connection failed.");
-    return false;
+    CONNECT = false;
   }
+  return CONNECT;
 }
 
 //=====================================================
 // 切断する
 //=====================================================
-void DISCONNECT() {
+bool END() {
   tcpClient.stop();
-  ENABLED = false;
+  CONNECT = false;
 }
 
 //=====================================================
@@ -42,7 +41,7 @@ void DISCONNECT() {
 //=====================================================
 String RUN(const char* cmdStr) {
 
-   // WiFi接続を確認する
+  // WiFi接続を確認する
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi not connected.");
     delay(100);
@@ -50,8 +49,8 @@ String RUN(const char* cmdStr) {
   }
 
   // 接続済か確認
-  if (!ENABLED || !tcpClient.connected()) INIT();
-  if (!ENABLED || !tcpClient.connected()) return "FAIL";
+  if (!CONNECT || !tcpClient.connected()) BEGIN();
+  if (!CONNECT || !tcpClient.connected()) return "FAIL";
 
   // コマンドをリクエストする
   Serial.printf("Sending command (TCP RAW): %s\n", cmdStr);

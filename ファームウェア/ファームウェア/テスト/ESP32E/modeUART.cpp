@@ -5,16 +5,24 @@ namespace modeUART {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool ENABLED = false;
+  bool CONNECT = false;
 
 //=====================================================
 // 接続する
 //=====================================================
-bool INIT() {
-  Serial.begin(115200);
+bool BEGIN() {
+  Serial1.begin(115200);
   delay(500);
-  ENABLED = true;
+  CONNECT = true;
   return true;
+}
+
+//=====================================================
+// 切断する
+//=====================================================
+bool END() {
+  Serial1.end();
+  CONNECT = false;
 }
 
 //=====================================================
@@ -23,7 +31,7 @@ bool INIT() {
 String RUN(const char* cmdStr) {
  
   // 接続済か確認
-  if (!ENABLED) INIT();
+  if (!CONNECT) BEGIN();
 
   // コマンドをリクエストする
   Serial.printf("Sending command (UART): %s\n", cmdStr);

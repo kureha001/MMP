@@ -5,16 +5,23 @@ namespace modeWebSoc {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool ENABLED = false;
-  const  char* SRV_IP   = "192.168.2.99"; // IPアドレス
-  static int   SRV_PORT = 8082          ; // ポート番号
+  bool IS_CONNECTED = false;
+  static int SRV_PORT = 8082;
 
 //=====================================================
 // 接続する
 //=====================================================
-bool INIT() {
-  ENABLED = true;
+bool BEGIN() {
+  IS_CONNECTED = true;
   return true;
+}
+
+//=====================================================
+// 切断する
+//=====================================================
+bool END() {
+//  tcpClient.stop();
+  IS_CONNECTED = false;
 }
 
 //=====================================================
@@ -23,8 +30,8 @@ bool INIT() {
 String RUN(const char* cmdStr) {
 return ("-----");
 
-    // 接続済か確認
-  if (!ENABLED) INIT();
+  // 接続済か確認
+  if (!IS_CONNECTED) BEGIN();
 
   // WiFi接続を確認する
   if (WiFi.status() != WL_CONNECTED) {

@@ -4,18 +4,11 @@
 #include <queue>
 #include <mutex>
 
+extern const char* SRV_IP;
 
-namespace modeTCP   {
-  extern const char*    SRV_IP;
-  extern const uint16_t SRV_PORT;
-  extern bool           ENABLED;
-  bool   INIT();
-  String RUN(const char* cmdStr);
-  void   DISCONNECT();
-}
-
-namespace modeUART  { extern bool ENABLED; bool INIT(); String RUN(const char* cmdStr); }
-namespace modeWebAPI{ extern bool ENABLED; bool INIT(); String RUN(const char* cmdStr); }
-namespace modeWebSoc{ extern bool ENABLED; bool INIT(); String RUN(const char* cmdStr); }
-namespace modeBLE   { extern bool ENABLED; bool INIT(); String RUN(const char* cmdStr); }
-namespace modeIIC   { extern bool ENABLED; bool INIT(); String RUN(const char* cmdStr); }
+namespace modeUART  {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeTCP   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeWebAPI{bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeWebSoc{bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeBLE   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeIIC   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}

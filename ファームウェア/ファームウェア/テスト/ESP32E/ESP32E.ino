@@ -4,10 +4,18 @@
 #include "iniWiFi.h"
 #include "mode.h"
 
+
+//=====================================================
+// 基本情報
+//=====================================================
+const char* SRV_IP = "192.168.2.99";
+
 TFT_eSPI tft = TFT_eSPI();
 
 
+//=====================================================
 // ボタンの構造体定義
+//=====================================================
 struct Button {
   int16_t      x, y, w, h;
   uint16_t    baseColor;
@@ -18,22 +26,28 @@ struct Button {
   bool        isPressed;
 };
 
+//----------------------------------------------------
 // トグルボタンの構造体定義（選択状態を持つ）
+//----------------------------------------------------
 struct ToggleButton {
     int16_t x, y, w, h;
     const char* label;
     bool isSelected;
 };
 
+//----------------------------------------------------
 // 右側コントロールパネルのボタン定義
+//----------------------------------------------------
 Button btnUp    = {380, 50,  80, 55, TFT_LIGHTGREY, TFT_DARKGREY, TFT_BLACK, "^", 3, false};
 Button btnDown  = {380, 120, 80, 55, TFT_LIGHTGREY, TFT_DARKGREY, TFT_BLACK, "v", 3, false};
 
 Button* buttons[] = { &btnUp, &btnDown };
 const int numButtons = 2;
 
+//----------------------------------------------------
 // タイトル部（上部バー y:0~30）に配置する6つのトグルボタン定義
-ToggleButton toggleButtons[6] = {
+//----------------------------------------------------
+ToggleButton modeBTN[6] = {
     {10,  4, 45, 22, "UART",   true},   
     {58,  4, 42, 22, "TCP",    false},
     {103, 4, 52, 22, "WebSoc", false},
@@ -43,7 +57,9 @@ ToggleButton toggleButtons[6] = {
 };
 const int numToggles = 6;
 
+//----------------------------------------------------
 // 21件のコマンドリスト
+//----------------------------------------------------
 const char* COMMAND_TBL[24] = {
   "_START_!",
   "SYS/VERSION!",
@@ -74,7 +90,9 @@ const int totalCommands = 21;
 int scrollIndex = 0;             
 const int maxVisibleRows = 8;    // フォントサイズ2（中間：高さ16px）で約8行収まるように調整
 
-void drawButton(Button &btn) {
+//----------------------------------------------------
+//----------------------------------------------------
+void Draw_BTN(Button &btn) {
   uint16_t fillColor = btn.isPressed ? btn.touchColor : btn.baseColor;
   tft.fillRect(btn.x, btn.y, btn.w, btn.h, fillColor);
   tft.drawRect(btn.x, btn.y, btn.w, btn.h, TFT_WHITE);
@@ -93,8 +111,10 @@ void drawButton(Button &btn) {
   tft.print(btn.label);
 }
 
+//----------------------------------------------------
 // トグルボタンを描画する関数
-void drawToggleButton(ToggleButton &btn) {
+//----------------------------------------------------
+void Draw_TglBTN(ToggleButton &btn) {
   uint16_t fillColor = btn.isSelected ? TFT_WHITE : TFT_DARKGREY;
   uint16_t textColor = btn.isSelected ? TFT_BLACK : TFT_WHITE;
   
@@ -112,8 +132,26 @@ void drawToggleButton(ToggleButton &btn) {
   tft.print(btn.label);
 }
 
+//----------------------------------------------------
+// 画面下部に配置する6つのサブカテゴリ切替ボタン定義
+//----------------------------------------------------
+void Draw_BTN(Button &btn) {
+    ToggleButton subModeBTN[6] = {
+        {10,  285, 55, 26, "SYSTEM",  true},   
+        {70,  285, 60, 26, "DIGITAL", false},
+        {135, 285, 60, 26, "ANALOG",  false},
+        {200, 285, 45, 26, "PWM",     false},
+        {250, 285, 45, 26, "MP3",     false},
+        {300, 285, 45, 26, "IIC",     false}
+    };
+    const int numSubToggles = 6;
+}
+
+
+//----------------------------------------------------
 // レスポンス表示エリア
-void drawResponseArea(const char* text) {
+//----------------------------------------------------
+void Draw_Response(const char* text) {
   int16_t x = 380;
   int16_t y = 200;
   int16_t w = 80;
@@ -133,29 +171,10 @@ void drawResponseArea(const char* text) {
   tft.print(text);
 }
 
-// 下部ステータスバー更新
-void updateBottomStatusBar(const char* cmdStr) {
-  tft.fillRect(0, 290, 480, 30, TFT_DARKGREY);
-  tft.setTextSize(1);
-
-  const char* protoName = "UART";
-  for (int i = 0; i < numToggles; i++) {
-    if (toggleButtons[i].isSelected) {
-      protoName = toggleButtons[i].label;
-      break;
-    }
-  }
-
-  tft.setTextColor(TFT_GREEN, TFT_DARKGREY);
-  tft.setCursor(10, 301);
-  
-  char fullReqBuf[90];
-  snprintf(fullReqBuf, sizeof(fullReqBuf), "REQ: %s://%s:%d/%s", protoName, modeTCP::SRV_IP, modeTCP::SRV_PORT, cmdStr);
-  tft.print(fullReqBuf);
-}
-
+//----------------------------------------------------
 // リスト表示エリアを描画（フォントサイズ2：中間サイズを使用、行間29px）
-void drawCommandList() {
+//----------------------------------------------------
+void Draw_CmdList() {
   tft.fillRect(10, 45, 345, 235, TFT_BLACK);
 
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
@@ -172,8 +191,10 @@ void drawCommandList() {
   }
 }
 
+//----------------------------------------------------
 // 指定した行をハイライト描画する関数
-void highlightCommandLine(int clickedRow, bool highlight) {
+//----------------------------------------------------
+void Draw_TapCmd(int clickedRow, bool highlight) {
   if (clickedRow < 0 || clickedRow >= maxVisibleRows) return;
   int idx = scrollIndex + clickedRow;
   if (idx >= totalCommands) return;
@@ -190,10 +211,10 @@ void highlightCommandLine(int clickedRow, bool highlight) {
   tft.print(COMMAND_TBL[idx]);
 }
 
-//=====================================================
+//----------------------------------------------------
 // 接続状態表示
-//=====================================================
-void updateNetStatus(bool isOnline, bool connectedFlag) {
+//----------------------------------------------------
+void Draw_NetStatus(bool isOnline, bool connectedFlag) {
   tft.fillRect(300, 4, 175, 22, TFT_NAVY);
 
   uint16_t connBgColor = connectedFlag ? TFT_GREEN : TFT_DARKGREY;
@@ -219,38 +240,35 @@ void updateNetStatus(bool isOnline, bool connectedFlag) {
 
   tft.print( isOnline ? "ONLINE" : "OFFLIN");
 
-} /* updateNetStatus() */
+} /* Draw_NetStatus() */
 
-//=====================================================
+//----------------------------------------------------
 // 接続状態表示
-//=====================================================
+//----------------------------------------------------
 // 上部タイトルバーの描画
-void drawTitleBar() {
+void Draw_TOP() {
   tft.fillRect(0, 0, 480, 30, TFT_NAVY);
   
   for (int i = 0; i < numToggles; i++) {
-    drawToggleButton(toggleButtons[i]);
+    Draw_TglBTN(modeBTN[i]);
   }
 }
 
-  //---------------------------------------------------
+  //----------------------------------------------------
   // 通常ボタン
-  //---------------------------------------------------
-  void drawUIFrame() {
+  //----------------------------------------------------
+  void DrawUIFrame() {
     tft.fillScreen(TFT_BLACK);
 
-    drawTitleBar();
-    updateNetStatus(false, false);
-    updateBottomStatusBar("-");
+    Draw_TOP();
+    Draw_NetStatus(false, false);
 
     tft.drawFastVLine(360, 30, 260, TFT_DARKGREY);
 
-    for (int i = 0; i < numButtons; i++) {
-        drawButton(*buttons[i]);
-    }
+    for (int i = 0; i < numButtons; i++) Draw_BTN(*buttons[i]);
 
-    drawResponseArea("OK...");
-    drawCommandList();
+    Draw_Response("OK...");
+    Draw_CmdList();
   }
 
 //=====================================================
@@ -266,9 +284,9 @@ void drawTitleBar() {
   //---------------------------------------------------
   // トグルボタン
   //---------------------------------------------------
-  bool isTouchedInsideToggle(ToggleButton &btn, uint16_t x, uint16_t y) {
+  bool CheckTouch(ToggleButton &btn, uint16_t x, uint16_t y) {
     return (x >= btn.x && x <= (btn.x + btn.w) && y >= btn.y && y <= (btn.y + btn.h));
-  } /* isTouchedInsideToggle() */
+  } /* CheckTouch() */
 
 
 //=====================================================
@@ -283,10 +301,10 @@ void setup() {
     tft.init();
     tft.setRotation(1); // 横長 (480x320)
 
-    drawUIFrame();
+    DrawUIFrame();
 
     // Wi-Fiを接続する
-    updateNetStatus(INIT_WiFi(), false);
+    Draw_NetStatus(INIT_WiFi(), false);
 } /* setup() */
 
 
@@ -301,7 +319,7 @@ void loop() {
 
   if (touched) t_y = 320 - t_y; // Y軸反転
 
-  bool prevUpPressed = btnUp.isPressed;
+  bool prevUpPressed   = btnUp.isPressed;
   bool prevDownPressed = btnDown.isPressed;
 
   // ボタンの状態更新
@@ -309,47 +327,63 @@ void loop() {
     bool nextState = touched && isTouchedInside(*buttons[i], t_x, t_y);
     if (buttons[i]->isPressed != nextState) {
       buttons[i]->isPressed = nextState;
-      drawButton(*buttons[i]);
+      Draw_BTN(*buttons[i]);
     } /* END-for */
   } /* END-for */
 
   // ▲ボタンのスクロール
   if (!prevUpPressed && btnUp.isPressed &&  scrollIndex > 0) {
     scrollIndex--;
-    drawCommandList();
+    Draw_CmdList();
   } /* END-if */
 
   // ▼ボタンのスクロール
   if (!prevDownPressed && btnDown.isPressed && scrollIndex < totalCommands - maxVisibleRows) {
     scrollIndex++;
-    drawCommandList();
+    Draw_CmdList();
   } /* END-if */
 
   // タッチ開始時の判定
   if (touched && !lastTouched) {
     if (t_y >= 0 && t_y <= 30) {
-      for (int i = 0; i < numToggles; i++) {
+      for (int modeID = 0; modeID < numToggles; modeID++) {
 
-        if (isTouchedInsideToggle(toggleButtons[i], t_x, t_y)) {
+        if (CheckTouch(modeBTN[modeID], t_x, t_y)) {
 
-          bool wasTcpSelected = toggleButtons[1].isSelected;
+          bool prevStates[numToggles];
 
+          // 画面演出
           for (int j = 0; j < numToggles; j++) {
-            toggleButtons[j].isSelected = (j == i);
-            drawToggleButton(toggleButtons[j]);
+            prevStates[j] = modeBTN[j].isSelected;
+          }
+
+          // 画面演出
+          for (int j = 0; j < numToggles; j++) {
+            modeBTN[j].isSelected = (j == modeID);
+            Draw_TglBTN(modeBTN[j]);
           } /* END-for */
 
-          Serial.printf("Protocol selected: %s\n", toggleButtons[i].label);
 
-          if (i == 1 && !wasTcpSelected) {
-            if (WiFi.status() == WL_CONNECTED) updateNetStatus(true, modeTCP::INIT());
-          } else if (wasTcpSelected) {
-            if (modeTCP::ENABLED) {
-              modeTCP::DISCONNECT();
-              bool isWiFi = (WiFi.status() == WL_CONNECTED);
-              updateNetStatus(isWiFi, false);
-              } /* END-if */
+          // モード切替時のアクション
+          bool modStat = false;
+          if (prevStates[modeID]) {
+            if (modeID ==0) modStat = modeUART  ::END();
+            if (modeID ==1) modStat = modeTCP   ::END();
+            if (modeID ==2) modStat = modeWebSoc::END();
+            if (modeID ==3) modStat = modeWebAPI::END();
+            if (modeID ==4) modStat = modeBLE   ::END();
+            if (modeID ==5) modStat = modeIIC   ::END();
+          } else {
+            if (modeID ==0) modStat = modeUART  ::BEGIN();
+            if (modeID ==1) modStat = modeTCP   ::BEGIN();
+            if (modeID ==2) modStat = modeWebSoc::BEGIN();
+            if (modeID ==3) modStat = modeWebAPI::BEGIN();
+            if (modeID ==4) modStat = modeBLE   ::BEGIN();
+            if (modeID ==5) modStat = modeIIC   ::BEGIN();
           } /* END-if */
+
+          // ネット状況を表示
+          Draw_NetStatus((WiFi.status() == WL_CONNECTED), modStat);
           break;
         } /* END-if */
       } /* END-for */
@@ -361,19 +395,18 @@ void loop() {
 
       if (clickedRow >= 0 && clickedRow < maxVisibleRows && targetIdx < totalCommands) {
 
+        // 画面演出
+        Draw_TapCmd(clickedRow, true);
+
+        // モード切替時のトリガー
         String thisCmd = COMMAND_TBL[targetIdx];
-        Serial.printf("Command list tapped: index %d -> %s\n", targetIdx, thisCmd);
-
-        highlightCommandLine(clickedRow, true);
-        updateBottomStatusBar(thisCmd.c_str());
-
         String retMSG = "";
-        if (toggleButtons[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str());
-        if (toggleButtons[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str());
-        if (toggleButtons[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str());
-        if (toggleButtons[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str());
-        if (toggleButtons[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str());
-        if (toggleButtons[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str());
+        if (modeBTN[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str());
+        if (modeBTN[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str());
+        if (modeBTN[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str());
+        if (modeBTN[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str());
+        if (modeBTN[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str());
+        if (modeBTN[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str());
 
         // 取得結果を確認する
         if (retMSG.length() == 5) {
@@ -384,8 +417,10 @@ void loop() {
         } /* END-if */
 
         delay(80);
-        drawResponseArea(retMSG.c_str());
-        highlightCommandLine(clickedRow, false);
+
+        // 画面演出
+        Draw_Response(retMSG.c_str());
+        Draw_TapCmd(clickedRow, false);
       } /* END-if */
     } /* END-if */
   } /* END-if */

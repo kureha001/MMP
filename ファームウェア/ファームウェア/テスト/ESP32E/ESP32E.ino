@@ -1,17 +1,15 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 
-#include "iniWiFi.h"
-#include "mode.h"
-
+#include "iniWiFi.h" // WiFi初期化
+#include "mode.h"    // 通信モード
+#include "cmd.h"     // コマンド関連
 
 //=====================================================
 // 基本情報
 //=====================================================
 const char* SRV_IP = "192.168.2.99";
-
 TFT_eSPI tft = TFT_eSPI();
-
 
 //=====================================================
 // ボタンの構造体定義
@@ -58,37 +56,60 @@ ToggleButton modeBTN[6] = {
 const int numToggles = 6;
 
 //----------------------------------------------------
-// 21件のコマンドリスト
+// 画面下部に配置する6つのサブカテゴリ切替ボタン定義
 //----------------------------------------------------
-const char* COMMAND_TBL[24] = {
-  "_START_!",
-  "SYS/VERSION!",
-  "SYS/SET_LOG:0!",
-  "SYS/SET_LOG:1!",
-  "SYS/BOOT!",
-  "DIGITAL/OUTPUT:17:1!",
-  "DIGITAL/OUTPUT:17:0!",
-  "PWM/OUTPUT:0:100!",
-  "PWM/OUTPUT:0:600!",
-  "MP3/TRACK/STOP:1!",
-  "MP3/TRACK/PLAY:1:1:1!",
-  "MP3/TRACK/PLAY:1:1:2!",
-  "MP3/TRACK/PLAY:1:1:3!",
-  "MP3/TRACK/PLAY:1:1:101!",
-  "MP3/TRACK/PLAY:1:1:202!",
-  "MP3/TRACK/PLAY:1:2:1!",
-  "MP3/TRACK/PLAY:1:2:2!",
-  "MP3/TRACK/PLAY:1:2:3!",
-  "MP3/TRACK/PLAY:1:3:1!",
-  "MP3/TRACK/PLAY:1:3:2!",
-  "MP3/TRACK/PLAY:1:3:3!",
-  "MP3/TRACK/PLAY:1:4:1!",
-  "MP3/TRACK/PLAY:1:4:2!",
-  "MP3/TRACK/PLAY:1:4:3!"
+ToggleButton subModeBTN[6] = {
+    {10,  285, 55, 26, "SYSTEM",  true},   
+    {70,  285, 60, 26, "DIGITAL", false},
+    {135, 285, 60, 26, "ANALOG",  false},
+    {200, 285, 45, 26, "PWM",     false},
+    {250, 285, 45, 26, "MP3",     false},
+    {300, 285, 45, 26, "IIC",     false}
 };
-const int totalCommands = 21;
+const int numSubToggles = 6;
+
+// フィルタリング後のインデックスを保持する配列
+int filteredIndices[37];
+int filteredCount = 0;
+
 int scrollIndex = 0;             
-const int maxVisibleRows = 8;    // フォントサイズ2（中間：高さ16px）で約8行収まるように調整
+const int maxVisibleRows = 7;    // 下部ボタン配置に伴い表示行数を微調整
+
+//----------------------------------------------------
+// 選択中のサブモードに応じてコマンドをフィルタリングする関数
+//----------------------------------------------------
+void UpdateFilteredCommands() {
+  filteredCount = 0;
+  const char* activeLabel = "SYSTEM";
+  for (int i = 0; i < numSubToggles; i++) {
+    if (subModeBTN[i].isSelected) {
+      activeLabel = subModeBTN[i].label;
+      break;
+    }
+  }
+
+  for (int i = 0; i < TOTAL_CMDs; i++) {
+    const char* cmd = COMMAND_TBL[i];
+    bool match = false;
+
+    if (strcmp(activeLabel, "SYSTEM") == 0) {
+      if (cmd[0] == '_' || strncmp(cmd, "SYS", 3) == 0) {
+        match = true;
+      }
+    } else {
+      if (strncmp(cmd, activeLabel, strlen(activeLabel)) == 0) {
+        match = true;
+      }
+    }
+
+    if (match) {
+      if (filteredCount < 37) {
+        filteredIndices[filteredCount++] = i;
+      }
+    }
+  }
+  scrollIndex = 0;
+}
 
 //----------------------------------------------------
 //----------------------------------------------------
@@ -133,22 +154,6 @@ void Draw_TglBTN(ToggleButton &btn) {
 }
 
 //----------------------------------------------------
-// 画面下部に配置する6つのサブカテゴリ切替ボタン定義
-//----------------------------------------------------
-void Draw_BTN(Button &btn) {
-    ToggleButton subModeBTN[6] = {
-        {10,  285, 55, 26, "SYSTEM",  true},   
-        {70,  285, 60, 26, "DIGITAL", false},
-        {135, 285, 60, 26, "ANALOG",  false},
-        {200, 285, 45, 26, "PWM",     false},
-        {250, 285, 45, 26, "MP3",     false},
-        {300, 285, 45, 26, "IIC",     false}
-    };
-    const int numSubToggles = 6;
-}
-
-
-//----------------------------------------------------
 // レスポンス表示エリア
 //----------------------------------------------------
 void Draw_Response(const char* text) {
@@ -172,7 +177,7 @@ void Draw_Response(const char* text) {
 }
 
 //----------------------------------------------------
-// リスト表示エリアを描画（フォントサイズ2：中間サイズを使用、行間29px）
+// リスト表示エリアを描画
 //----------------------------------------------------
 void Draw_CmdList() {
   tft.fillRect(10, 45, 345, 235, TFT_BLACK);
@@ -183,9 +188,9 @@ void Draw_CmdList() {
   int y = 48;
   for (int i = 0; i < maxVisibleRows; i++) {
     int idx = scrollIndex + i;
-    if (idx < totalCommands) {
+    if (idx < filteredCount) {
       tft.setCursor(15, y);
-      tft.print(COMMAND_TBL[idx]);
+      tft.print(COMMAND_TBL[filteredIndices[idx]]);
     }
     y += 29;
   }
@@ -197,7 +202,7 @@ void Draw_CmdList() {
 void Draw_TapCmd(int clickedRow, bool highlight) {
   if (clickedRow < 0 || clickedRow >= maxVisibleRows) return;
   int idx = scrollIndex + clickedRow;
-  if (idx >= totalCommands) return;
+  if (idx >= filteredCount) return;
 
   int y = 45 + (clickedRow * 29);
   
@@ -208,7 +213,7 @@ void Draw_TapCmd(int clickedRow, bool highlight) {
   tft.setTextColor(fg, bg);
   tft.setTextSize(2);
   tft.setCursor(15, y + 3);
-  tft.print(COMMAND_TBL[idx]);
+  tft.print(COMMAND_TBL[filteredIndices[idx]]);
 }
 
 //----------------------------------------------------
@@ -243,9 +248,8 @@ void Draw_NetStatus(bool isOnline, bool connectedFlag) {
 } /* Draw_NetStatus() */
 
 //----------------------------------------------------
-// 接続状態表示
-//----------------------------------------------------
 // 上部タイトルバーの描画
+//----------------------------------------------------
 void Draw_TOP() {
   tft.fillRect(0, 0, 480, 30, TFT_NAVY);
   
@@ -261,13 +265,20 @@ void Draw_TOP() {
     tft.fillScreen(TFT_BLACK);
 
     Draw_TOP();
+    
+    // 下部サブモードボタンの描画
+    for (int i = 0; i < numSubToggles; i++) {
+      Draw_TglBTN(subModeBTN[i]);
+    }
+
     Draw_NetStatus(false, false);
 
-    tft.drawFastVLine(360, 30, 260, TFT_DARKGREY);
+    tft.drawFastVLine(360, 30, 250, TFT_DARKGREY);
 
     for (int i = 0; i < numButtons; i++) Draw_BTN(*buttons[i]);
 
     Draw_Response("OK...");
+    UpdateFilteredCommands();
     Draw_CmdList();
   }
 
@@ -338,7 +349,7 @@ void loop() {
   } /* END-if */
 
   // ▼ボタンのスクロール
-  if (!prevDownPressed && btnDown.isPressed && scrollIndex < totalCommands - maxVisibleRows) {
+  if (!prevDownPressed && btnDown.isPressed && scrollIndex < filteredCount - maxVisibleRows) {
     scrollIndex++;
     Draw_CmdList();
   } /* END-if */
@@ -388,18 +399,32 @@ void loop() {
         } /* END-if */
       } /* END-for */
 
+    } else if (t_y >= 282 && t_y <= 315) {
+      // 下部サブモードボタンのタッチ判定
+      for (int subID = 0; subID < numSubToggles; subID++) {
+        if (CheckTouch(subModeBTN[subID], t_x, t_y)) {
+          for (int j = 0; j < numSubToggles; j++) {
+            subModeBTN[j].isSelected = (j == subID);
+            Draw_TglBTN(subModeBTN[j]);
+          }
+          UpdateFilteredCommands();
+          Draw_CmdList();
+          break;
+        } /* END-if */
+      } /* END-for */
+
     } else if (t_x >= 10 && t_x <= 355 && t_y >= 45 && t_y <= 270) {
 
       int clickedRow = (t_y - 45) / 29;
       int targetIdx = scrollIndex + clickedRow;
 
-      if (clickedRow >= 0 && clickedRow < maxVisibleRows && targetIdx < totalCommands) {
+      if (clickedRow >= 0 && clickedRow < maxVisibleRows && targetIdx < filteredCount) {
 
         // 画面演出
         Draw_TapCmd(clickedRow, true);
 
         // モード切替時のトリガー
-        String thisCmd = COMMAND_TBL[targetIdx];
+        String thisCmd = COMMAND_TBL[filteredIndices[targetIdx]];
         String retMSG = "";
         if (modeBTN[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str());
         if (modeBTN[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str());

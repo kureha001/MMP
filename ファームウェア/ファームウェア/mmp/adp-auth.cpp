@@ -65,63 +65,50 @@
   // 認証コード生成
   //----------------------------------
   // 仕様:
-  // ・AUTH_GROUPS の各グループを最低1回使用
+  // ・AUTH_GROUPS の各グループから1文字採用
   // ・文字配置はランダム
-  // ・余った桁は全グループからランダム選択
   //----------------------------------
   // 戻り値：認証コード
   //─────────────────
   static const char* AUTH_GROUPS[] = { // 文字グループ
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",      // ・アルファベット大文字
     "abcdefghijklmnopqrstuvwxyz",      // ・アルファベット小文字
-    "0123456789"                       // ・数字
+    "0123456789",                      // ・数字
+    "-+(){}[]$%_^&"                    // ・記号
   };
-  static constexpr int AUTH_CD_LENGTH  = 5; // 文字コード長
   static constexpr int AUTH_CHR_GROUPS = sizeof(AUTH_GROUPS) / sizeof(AUTH_GROUPS[0]);
   //----------------------------------
   String AUTH_CREATE_ACD(){
     //┬
     //○前処理
-    String code = "";
+    String tmpAID = "";
     //│
     //◎┐各グループから最低1文字取得
-    for (int id = 0; id < AUTH_CHR_GROUPS; id++){
+    for (int grpID = 0; grpID < AUTH_CHR_GROUPS; grpID++){
       //○カウンタ(グループID)を判定
       //│＼（全グループ処理が完了した場合）
       //│ ▽完了：走査終了
       //│
       //○当該グループの文字セットからランダムな１文字を追加
-      int len = strlen(AUTH_GROUPS[id])   ; // データセット長
-      code += AUTH_GROUPS[id][random(len)]; // ランダムな１文字を後方マージ
+      int len = strlen(AUTH_GROUPS[grpID])   ; // データセット長
+      tmpAID += AUTH_GROUPS[grpID][random(len)]; // ランダムな１文字を後方マージ
       //┴
-    }   /* for */
-    //│
-    //◎┐不足文字分をランダムに追加
-    while (code.length() < AUTH_CD_LENGTH){
-      //│＼（上限[認証コード長]に達した場合）
-      //│ ▽完了：走査終了
-      //│
-      //○ランダムなグループの文字セットからランダムな１文字を追加
-      int groupID = random(AUTH_CHR_GROUPS)     ; // ランダムなグループ
-      int len     = strlen(AUTH_GROUPS[groupID]); // ランダムな文字
-      code += AUTH_GROUPS[groupID][random(len)] ; // １文字を後方マージ
-      //┴
-    }   /* END-while */
+    } /* END-for */
     //│
     //◎┐文字位置をシャッフル
-    for (int nowID = 0; nowID < code.length(); nowID++){
+    for (int nowID = 0; nowID < tmpAID.length(); nowID++){
       //│＼（最終桁に到達した場合）
       //│ ▽完了：走査終了
       //│
       //○当該桁の文字をランダムな桁の文字と入れ替え
-      int swapID   = random(code.length()); // 移動元桁数をランダムに取得
-      char tmpChar = code[nowID ]         ; // 当該桁の文字を退避
-      code[nowID]  = code[swapID]         ; // 当該桁に移動元桁の文字を移送
-      code[swapID] = tmpChar              ; // 移動元桁に退避した文字を移送
+      int  swapID    = random(tmpAID.length()); // 移動元桁数をランダムに取得
+      char tmpChar   = tmpAID[nowID ]         ; // 当該桁の文字を退避
+      tmpAID[nowID ] = tmpAID[swapID]         ; // 当該桁に移動元桁の文字を移送
+      tmpAID[swapID] = tmpChar                ; // 移動元桁に退避した文字を移送
     }   /* for */
     //│
     //▼認証コードを返す
-    return code;
+    return tmpAID;
   } /* AUTH_CREATE_ACD() */
 
   //─────────────────
@@ -136,13 +123,13 @@
   int AUTH_GET_ID_OLD() {
     //┬
     //◎┐先頭から走査
-    for (int id = 0; id < ctx.accIDS; id++) {
+    for (int oldID = 0; oldID < ctx.accIDS; oldID++) {
       //│＼（スロットの上限に達した場合）
       //│ ▽完了：走査終了
       //│
       //○一致確認
-      if ( auTBL[id].used &&
-        millis() - auTBL[id].lastActive > AUTH_TIME_LIMIT) return id;
+      if ( auTBL[oldID].used &&
+        millis() - auTBL[oldID].lastActive > AUTH_TIME_LIMIT) return oldID;
       //│＼（使用中でタイムアウトしている場合）
       //│ ▼返却：当該スロットID
       //┴
@@ -167,17 +154,17 @@
   int GET_EXIST_AID(String argACD){
     //┬
     //◎┐認証情報全体を照合
-    for (int id = 0; id < ctx.accIDS; id++){
+    for (int extID = 0; extID < ctx.accIDS; extID++){
       //│＼（スロットの上限に達した場合）
       //│ ▽完了：走査終了
       //│
       //○現在の認証情報と照合
-      if (auTBL[id].used && auTBL[id].authCD == argACD) {
+      if (auTBL[extID].used && auTBL[extID].authCD == argACD) {
       //│＼（認証コードが一致)
           //○タイムスタンプを更新
           //▼返却：既データあり
-          auTBL[id].lastActive = millis();
-          return id;
+          auTBL[extID].lastActive = millis();
+          return extID;
       } /* END-if  */
       //┴
     } /* END-for */
@@ -224,8 +211,9 @@
           } /* END-while */
           //│
           //○コンテクストを更新
-          ctx.authCD = newCD;
-          ctx.accID = freeID;
+          ctx.resMSG = newCD + "!"; // レスポンス
+          ctx.authCD = newCD      ; // 認証CD
+          ctx.accID  = freeID     ; // アクセスID
           //│
           //○空きスロットに登録
           auTBL[freeID].authCD     = newCD;
@@ -260,25 +248,23 @@
   bool P2_CHECK_AUTH(){
     //┬
     //◇┐認証開始要求に応答
-    if (ctx.cmdPath == "_START_!" || ctx.cmdPath == "_START_") {
+    if (ctx.cmdPath == SP_CMD_START) {
       //├┐（「認証コード発行コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()){ctx.resMSG = "#SS1!"; return true;}
+        if(NEW_USER()){ctx.resMSG = "#SS1!";}
         //│＼（失敗した場合）
-        //│ ▼返却：[1]認証開始に失敗(要レスポンス)
+        //│ ○レスポンスにエラーIDをセット
+        //│ ┴
         //│
-        //▼RETURN：[2]認証開始に成功(要レスポンス)
-        ctx.resMSG = String("$") + ctx.authCD.c_str() + String("$");
+        //▼返却：認証開始コマンド(要レスポンス)
         return true;
-        //└┐（その他）
-        //┴
     } /* END-if */
     //│
     //○ユーザ認証対象を確認
     if (ctx.authCD == ""){ctx.accID = 0; return false;}
     //│＼（認証が不要の場合）
     //│ ○ユーザIDを共用IDにセット
-    //│ ▼返却：(1)認証が不要
+    //│ ▼返却：認証が不要
     //│
     //○ユーザ認証を実施
     ctx.accID = GET_EXIST_AID(ctx.authCD);
@@ -286,6 +272,6 @@
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│
-    //▼返却：(2)認証に成功
+    //▼返却：認証に成功
     return false;
   } /* P2_CHECK_AUTH() */

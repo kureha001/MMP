@@ -156,7 +156,7 @@ namespace adpWAPI {
     String    msgID = ctx.resMSG;
     //│
     //◇┐JSON内容編集
-    if (msgID.startsWith("$") && msgID.endsWith("$")){
+    if (ctx.cmdPath == SP_CMD_START){
       //├┐（認証コード発行の場合）
         //○MSGIDを独自IDに書き換え
         //○取得値を文字列型にセット

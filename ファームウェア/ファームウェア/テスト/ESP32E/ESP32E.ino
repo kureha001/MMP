@@ -1,37 +1,28 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
-#include <WiFi.h>
+
+#include "iniWiFi.h"
+#include "mode.h"
 
 TFT_eSPI tft = TFT_eSPI();
 
-// Wi-Fi設定
-const char* ssid     = "Buffalo-G-7050";
-const char* password = "etnxhurnecbs7";
-
-// 送信先TCPサーバー設定 (192.168.2.99:8081)
-const char* targetIP = "192.168.2.99";
-const uint16_t targetPort = 8081;
-
-// TCP接続管理用クライアント
-WiFiClient tcpClient;
-bool isTcpConnected = false;
 
 // ボタンの構造体定義
 struct Button {
-  int16_t x, y, w, h;
-  uint16_t baseColor;
-  uint16_t touchColor;
-  uint16_t textColor;
+  int16_t      x, y, w, h;
+  uint16_t    baseColor;
+  uint16_t    touchColor;
+  uint16_t    textColor;
   const char* label;
-  uint8_t textSize;
-  bool isPressed;
+  uint8_t     textSize;
+  bool        isPressed;
 };
 
 // トグルボタンの構造体定義（選択状態を持つ）
 struct ToggleButton {
-  int16_t x, y, w, h;
-  const char* label;
-  bool isSelected;
+    int16_t x, y, w, h;
+    const char* label;
+    bool isSelected;
 };
 
 // 右側コントロールパネルのボタン定義
@@ -43,17 +34,17 @@ const int numButtons = 2;
 
 // タイトル部（上部バー y:0~30）に配置する6つのトグルボタン定義
 ToggleButton toggleButtons[6] = {
-  {10,  4, 45, 22, "UART",   true},   
-  {58,  4, 42, 22, "TCP",    false},
-  {103, 4, 52, 22, "WebSoc", false},
-  {158, 4, 52, 22, "WebAPI", false},
-  {213, 4, 42, 22, "BLE",    false},
-  {258, 4, 42, 22, "IIC",    false}
+    {10,  4, 45, 22, "UART",   true},   
+    {58,  4, 42, 22, "TCP",    false},
+    {103, 4, 52, 22, "WebSoc", false},
+    {158, 4, 52, 22, "WebAPI", false},
+    {213, 4, 42, 22, "BLE",    false},
+    {258, 4, 42, 22, "IIC",    false}
 };
 const int numToggles = 6;
 
 // 21件のコマンドリスト
-const char* commandList[21] = {
+const char* COMMAND_TBL[24] = {
   "_START_!",
   "SYS/VERSION!",
   "SYS/SET_LOG:0!",
@@ -63,6 +54,7 @@ const char* commandList[21] = {
   "DIGITAL/OUTPUT:17:0!",
   "PWM/OUTPUT:0:100!",
   "PWM/OUTPUT:0:600!",
+  "MP3/TRACK/STOP:1!",
   "MP3/TRACK/PLAY:1:1:1!",
   "MP3/TRACK/PLAY:1:1:2!",
   "MP3/TRACK/PLAY:1:1:3!",
@@ -74,7 +66,9 @@ const char* commandList[21] = {
   "MP3/TRACK/PLAY:1:3:1!",
   "MP3/TRACK/PLAY:1:3:2!",
   "MP3/TRACK/PLAY:1:3:3!",
-  "MP3/TRACK/STOP:1!"
+  "MP3/TRACK/PLAY:1:4:1!",
+  "MP3/TRACK/PLAY:1:4:2!",
+  "MP3/TRACK/PLAY:1:4:3!"
 };
 const int totalCommands = 21;
 int scrollIndex = 0;             
@@ -156,7 +150,7 @@ void updateBottomStatusBar(const char* cmdStr) {
   tft.setCursor(10, 301);
   
   char fullReqBuf[90];
-  snprintf(fullReqBuf, sizeof(fullReqBuf), "REQ: %s://%s:%d/%s", protoName, targetIP, targetPort, cmdStr);
+  snprintf(fullReqBuf, sizeof(fullReqBuf), "REQ: %s://%s:%d/%s", protoName, modeTCP::SRV_IP, modeTCP::SRV_PORT, cmdStr);
   tft.print(fullReqBuf);
 }
 
@@ -172,7 +166,7 @@ void drawCommandList() {
     int idx = scrollIndex + i;
     if (idx < totalCommands) {
       tft.setCursor(15, y);
-      tft.print(commandList[idx]);
+      tft.print(COMMAND_TBL[idx]);
     }
     y += 29;
   }
@@ -193,11 +187,13 @@ void highlightCommandLine(int clickedRow, bool highlight) {
   tft.setTextColor(fg, bg);
   tft.setTextSize(2);
   tft.setCursor(15, y + 3);
-  tft.print(commandList[idx]);
+  tft.print(COMMAND_TBL[idx]);
 }
 
+//=====================================================
 // 接続状態表示
-void updateStatusDisplay(bool isOnline, bool connectedFlag) {
+//=====================================================
+void updateNetStatus(bool isOnline, bool connectedFlag) {
   tft.fillRect(300, 4, 175, 22, TFT_NAVY);
 
   uint16_t connBgColor = connectedFlag ? TFT_GREEN : TFT_DARKGREY;
@@ -213,20 +209,21 @@ void updateStatusDisplay(bool isOnline, bool connectedFlag) {
   tft.setCursor(connX + 3, 10);
   tft.print(connStr);
 
-  uint16_t onlineBgColor = isOnline ? TFT_GREEN : TFT_RED;
+  uint16_t onlineBgColor   = isOnline ? TFT_GREEN : TFT_RED;
   uint16_t onlineTextColor = isOnline ? TFT_BLACK : TFT_WHITE;
   
   tft.fillRect(415, 4, 58, 22, onlineBgColor);
   tft.setTextColor(onlineTextColor, onlineBgColor);
   tft.setTextSize(1);
   tft.setCursor(425, 10);
-  if (isOnline) {
-    tft.print("ONLINE");
-  } else {
-    tft.print("OFFLIN");
-  }
-}
 
+  tft.print( isOnline ? "ONLINE" : "OFFLIN");
+
+} /* updateNetStatus() */
+
+//=====================================================
+// 接続状態表示
+//=====================================================
 // 上部タイトルバーの描画
 void drawTitleBar() {
   tft.fillRect(0, 0, 480, 30, TFT_NAVY);
@@ -236,143 +233,73 @@ void drawTitleBar() {
   }
 }
 
-void drawUIFrame() {
-  tft.fillScreen(TFT_BLACK);
+  //---------------------------------------------------
+  // 通常ボタン
+  //---------------------------------------------------
+  void drawUIFrame() {
+    tft.fillScreen(TFT_BLACK);
 
-  drawTitleBar();
-  updateStatusDisplay(false, false);
-  updateBottomStatusBar("-");
+    drawTitleBar();
+    updateNetStatus(false, false);
+    updateBottomStatusBar("-");
 
-  tft.drawFastVLine(360, 30, 260, TFT_DARKGREY);
+    tft.drawFastVLine(360, 30, 260, TFT_DARKGREY);
 
-  for (int i = 0; i < numButtons; i++) {
-    drawButton(*buttons[i]);
-  }
-
-  drawResponseArea("OK...");
-  drawCommandList();
-}
-
-bool isTouchedInside(Button &btn, uint16_t x, uint16_t y) {
-  return (x >= btn.x && x <= (btn.x + btn.w) && y >= btn.y && y <= (btn.y + btn.h));
-}
-
-bool isTouchedInsideToggle(ToggleButton &btn, uint16_t x, uint16_t y) {
-  return (x >= btn.x && x <= (btn.x + btn.w) && y >= btn.y && y <= (btn.y + btn.h));
-}
-
-// TCP接続を試みる関数
-void connectTcpServer() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  
-  Serial.printf("Connecting to TCP server %s:%d...\n", targetIP, targetPort);
-  tcpClient.setTimeout(2000);
-  if (tcpClient.connect(targetIP, targetPort)) {
-    isTcpConnected = true;
-    Serial.println("TCP connected successfully.");
-    updateStatusDisplay(true, true);
-  } else {
-    isTcpConnected = false;
-    Serial.println("TCP connection failed.");
-    updateStatusDisplay(true, false);
-  }
-}
-
-// 指定したコマンドを送信し、5バイトのレスポンスを受信して画面に表示する関数
-void sendCommandViaTcp(const char* cmdStr, int clickedRow) {
-  highlightCommandLine(clickedRow, true);
-  updateBottomStatusBar(cmdStr);
-
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected.");
-    drawResponseArea("ERR");
-    delay(100);
-    highlightCommandLine(clickedRow, false);
-    return;
-  }
-
-  // ★修正：TCPプロトコル（toggleButtons[1]）が選択されている場合のみ自動接続・送信を行なう
-  if (toggleButtons[1].isSelected) {
-    if (!isTcpConnected || !tcpClient.connected()) {
-      connectTcpServer();
+    for (int i = 0; i < numButtons; i++) {
+        drawButton(*buttons[i]);
     }
 
-    if (isTcpConnected && tcpClient.connected()) {
-      Serial.printf("Sending command via TCP: %s\n", cmdStr);
-      tcpClient.print(cmdStr);
-
-      uint8_t rxBuffer[6] = {0};
-      unsigned long startTime = millis();
-      int bytesRead = 0;
-
-      while (bytesRead < 5 && (millis() - startTime) < 2000) {
-        while (tcpClient.available() && bytesRead < 5) {
-          rxBuffer[bytesRead++] = tcpClient.read();
-        }
-        delay(10);
-      }
-
-      if (bytesRead == 5) {
-        rxBuffer[5] = '\0';
-        Serial.printf("Received 5 bytes: %s\n", rxBuffer);
-        drawResponseArea((char*)rxBuffer);
-      } else {
-        Serial.printf("Timeout. Read %d/5 bytes\n", bytesRead);
-        drawResponseArea("TIME");
-      }
-    } else {
-      drawResponseArea("FAIL");
-    }
-  } else {
-    // TCP以外のモード（UART, WebSoc, WebAPI, BLE, IIC）のときはTCP通信を行わずダミー表示
-    Serial.printf("Command tapped on %s mode: %s\n", toggleButtons[1].isSelected ? "TCP" : "Other", cmdStr);
-    drawResponseArea("OK");
+    drawResponseArea("OK...");
+    drawCommandList();
   }
 
-  delay(80);
-  highlightCommandLine(clickedRow, false);
-}
+//=====================================================
+// 初期化処理
+//=====================================================
+  //---------------------------------------------------
+  // 通常ボタン
+  //---------------------------------------------------
+  bool isTouchedInside(Button &btn, uint16_t x, uint16_t y) {
+    return (x >= btn.x && x <= (btn.x + btn.w) && y >= btn.y && y <= (btn.y + btn.h));
+  } /* isTouchedInside() */
 
+  //---------------------------------------------------
+  // トグルボタン
+  //---------------------------------------------------
+  bool isTouchedInsideToggle(ToggleButton &btn, uint16_t x, uint16_t y) {
+    return (x >= btn.x && x <= (btn.x + btn.w) && y >= btn.y && y <= (btn.y + btn.h));
+  } /* isTouchedInsideToggle() */
+
+
+//=====================================================
+// 初期化処理
+//=====================================================
 void setup() {
-  Serial.begin(115200);
-  delay(1000);
+    // ログ出力用にシリアルを初期化
+    Serial.begin(115200);
+    delay(1000);
 
-  tft.init();
-  tft.setRotation(1); // 横長 (480x320)
+    // ログ出力用にシリアルを初期化
+    tft.init();
+    tft.setRotation(1); // 横長 (480x320)
 
-  drawUIFrame();
+    drawUIFrame();
 
-  // Wi-Fi 接続開始
-  Serial.printf("Connecting to %s\n", ssid);
-  WiFi.begin(ssid, password);
+    // Wi-Fiを接続する
+    updateNetStatus(INIT_WiFi(), false);
+} /* setup() */
 
-  int connTimeout = 0;
-  while (WiFi.status() != WL_CONNECTED && connTimeout < 40) {
-    delay(500);
-    Serial.print(".");
-    connTimeout++;
-  }
-  Serial.println("");
 
-  bool connected = (WiFi.status() == WL_CONNECTED);
-  if (connected) {
-    Serial.print("WiFi connected. IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("WiFi connection failed.");
-  }
-
-  updateStatusDisplay(connected, false);
-}
-
+//=====================================================
+// 繰返し処理
+//=====================================================
 void loop() {
+
   uint16_t t_x = 0, t_y = 0;
   static bool lastTouched = false;
   bool touched = tft.getTouch(&t_x, &t_y);
 
-  if (touched) {
-    t_y = 320 - t_y; // Y軸反転
-  }
+  if (touched) t_y = 320 - t_y; // Y軸反転
 
   bool prevUpPressed = btnUp.isPressed;
   bool prevDownPressed = btnDown.isPressed;
@@ -383,65 +310,87 @@ void loop() {
     if (buttons[i]->isPressed != nextState) {
       buttons[i]->isPressed = nextState;
       drawButton(*buttons[i]);
-    }
-  }
+    } /* END-for */
+  } /* END-for */
 
   // ▲ボタンのスクロール
-  if (!prevUpPressed && btnUp.isPressed) {
-    if (scrollIndex > 0) {
-      scrollIndex--;
-      drawCommandList();
-    }
-  }
+  if (!prevUpPressed && btnUp.isPressed &&  scrollIndex > 0) {
+    scrollIndex--;
+    drawCommandList();
+  } /* END-if */
 
   // ▼ボタンのスクロール
-  if (!prevDownPressed && btnDown.isPressed) {
-    if (scrollIndex < totalCommands - maxVisibleRows) {
-      scrollIndex++;
-      drawCommandList();
-    }
-  }
+  if (!prevDownPressed && btnDown.isPressed && scrollIndex < totalCommands - maxVisibleRows) {
+    scrollIndex++;
+    drawCommandList();
+  } /* END-if */
 
   // タッチ開始時の判定
   if (touched && !lastTouched) {
     if (t_y >= 0 && t_y <= 30) {
       for (int i = 0; i < numToggles; i++) {
+
         if (isTouchedInsideToggle(toggleButtons[i], t_x, t_y)) {
+
           bool wasTcpSelected = toggleButtons[1].isSelected;
-          
+
           for (int j = 0; j < numToggles; j++) {
             toggleButtons[j].isSelected = (j == i);
             drawToggleButton(toggleButtons[j]);
-          }
+          } /* END-for */
+
           Serial.printf("Protocol selected: %s\n", toggleButtons[i].label);
 
           if (i == 1 && !wasTcpSelected) {
-            if (WiFi.status() == WL_CONNECTED) {
-              connectTcpServer();
-            }
-          } 
-          else if (wasTcpSelected) {
-            if (isTcpConnected) {
-              tcpClient.stop();
-              isTcpConnected = false;
-              bool wifiOk = (WiFi.status() == WL_CONNECTED);
-              updateStatusDisplay(wifiOk, false);
-            }
-          }
+            if (WiFi.status() == WL_CONNECTED) updateNetStatus(true, modeTCP::INIT());
+          } else if (wasTcpSelected) {
+            if (modeTCP::ENABLED) {
+              modeTCP::DISCONNECT();
+              bool isWiFi = (WiFi.status() == WL_CONNECTED);
+              updateNetStatus(isWiFi, false);
+              } /* END-if */
+          } /* END-if */
           break;
-        }
-      }
-    }
-    else if (t_x >= 10 && t_x <= 355 && t_y >= 45 && t_y <= 270) {
+        } /* END-if */
+      } /* END-for */
+
+    } else if (t_x >= 10 && t_x <= 355 && t_y >= 45 && t_y <= 270) {
+
       int clickedRow = (t_y - 45) / 29;
       int targetIdx = scrollIndex + clickedRow;
-      if (clickedRow >= 0 && clickedRow < maxVisibleRows && targetIdx < totalCommands) {
-        Serial.printf("Command list tapped: index %d -> %s\n", targetIdx, commandList[targetIdx]);
-        sendCommandViaTcp(commandList[targetIdx], clickedRow);
-      }
-    }
-  }
-  lastTouched = touched;
 
+      if (clickedRow >= 0 && clickedRow < maxVisibleRows && targetIdx < totalCommands) {
+
+        String thisCmd = COMMAND_TBL[targetIdx];
+        Serial.printf("Command list tapped: index %d -> %s\n", targetIdx, thisCmd);
+
+        highlightCommandLine(clickedRow, true);
+        updateBottomStatusBar(thisCmd.c_str());
+
+        String retMSG = "";
+        if (toggleButtons[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str());
+        if (toggleButtons[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str());
+        if (toggleButtons[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str());
+        if (toggleButtons[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str());
+        if (toggleButtons[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str());
+        if (toggleButtons[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str());
+
+        // 取得結果を確認する
+        if (retMSG.length() == 5) {
+            Serial.printf("Received 5 bytes: %s\n", retMSG);
+        } else {
+            Serial.printf("Timeout.\n");
+            retMSG = "TIME";
+        } /* END-if */
+
+        delay(80);
+        drawResponseArea(retMSG.c_str());
+        highlightCommandLine(clickedRow, false);
+      } /* END-if */
+    } /* END-if */
+  } /* END-if */
+
+  lastTouched = touched;
   delay(30);
-}
+
+} /* loop() */

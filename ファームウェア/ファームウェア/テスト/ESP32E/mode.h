@@ -6,9 +6,44 @@
 
 extern const char* SRV_IP;
 
-namespace modeUART  {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
-namespace modeTCP   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
-namespace modeWebAPI{bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
-namespace modeWebSoc{bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
-namespace modeBLE   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
-namespace modeIIC   {bool BEGIN(); bool END(); String RUN(const char* cmdStr);}
+namespace modeUART{
+  extern bool IS_CONNECT;
+  bool   BEGIN();
+  bool   END();
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
+}
+
+namespace modeTCP{
+  extern bool IS_CONNECT;
+  bool   BEGIN(uint16_t argPort );
+  bool   END();
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
+}
+
+namespace modeWebAPI{
+  extern bool IS_CONNECT;
+  bool   BEGIN(uint16_t argPort );
+  bool   END();
+  String RUN(const char* cmdStr);
+}
+
+namespace modeWebSoc{
+  extern bool IS_CONNECT;
+  bool   BEGIN(uint16_t argPort );
+  bool   END();
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
+}
+
+namespace modeBLE{
+  extern bool IS_CONNECT;
+  bool   BEGIN(String argDevName);
+  bool   END();
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
+}
+
+namespace modeIIC{
+  extern bool IS_CONNECT;
+  bool   BEGIN();
+  bool   END();
+  String RUN(const char* cmdStr);
+}

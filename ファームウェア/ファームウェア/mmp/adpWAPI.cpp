@@ -211,7 +211,7 @@ namespace adpWAPI {
     //○JSON形式に編集
     js.reserve(160) ; // 予備確保
     js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
-    js += F(",\"source\":\"" ); js += msgID.c_str(); js += '"'      ; // MMPの戻り値
+    js += F(",\"source\":\"" ); js += ctx.resMSG.c_str(); js += '"' ; // MMPの戻り値
     js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
     js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
     js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）

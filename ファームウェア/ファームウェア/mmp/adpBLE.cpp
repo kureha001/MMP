@@ -178,7 +178,7 @@ namespace adpBLE {
     //┬
     //○サービス資源を生成
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
-    devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // サーバ(接続/切断)
+    devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // クライアント(受信)
     //│
     //○メッセージ表示
     Serial.println("　[OK] Bluetooth");

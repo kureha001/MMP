@@ -6,8 +6,8 @@ namespace modeIIC {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool    ENABLED = false;
-  uint8_t CONN; // I2C Masterアドレス
+  bool    IS_CONNECT = false; // 接続状況
+  uint8_t CONN              ; // I2C Masterアドレス
 
 //========================================================
 // 設定
@@ -63,7 +63,7 @@ bool BEGIN() {
   Wire.onReceive(OnReceive);
   //│
   //○I2Cコールバックを登録
-  ENABLED = true;
+  IS_CONNECT = true;
   return true;
 }
 
@@ -72,7 +72,8 @@ bool BEGIN() {
 //=====================================================
 bool END() {
   Wire.end();
-  ENABLED = false;
+  IS_CONNECT = false;
+  return false;  
 }
 
 //=====================================================
@@ -82,7 +83,7 @@ String RUN(const char* cmdStr) {
 return ("-----");
 
     // 接続済か確認
-  if (!ENABLED) BEGIN();
+  if (!IS_CONNECT) BEGIN();
 
   COMMAND_PATH = cmdStr;
 

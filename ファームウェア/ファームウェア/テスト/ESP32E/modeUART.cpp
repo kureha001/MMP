@@ -5,7 +5,7 @@ namespace modeUART {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool CONNECT = false;
+  bool IS_CONNECT = false;
 
 //=====================================================
 // 接続する
@@ -13,7 +13,7 @@ namespace modeUART {
 bool BEGIN() {
   Serial1.begin(115200);
   delay(500);
-  CONNECT = true;
+  IS_CONNECT = true;
   return true;
 }
 
@@ -22,16 +22,19 @@ bool BEGIN() {
 //=====================================================
 bool END() {
   Serial1.end();
-  CONNECT = false;
+  IS_CONNECT = false;
+  return false;
 }
 
 //=====================================================
 // コマンドを実行する
 //=====================================================
-String RUN(const char* cmdStr) {
- 
+String RUN(
+  const    char* cmdStr,
+  unsigned long  argTimeoutMs
+) {
   // 接続済か確認
-  if (!CONNECT) BEGIN();
+  if (!IS_CONNECT) BEGIN();
 
   // コマンドをリクエストする
   Serial.printf("Sending command (UART): %s\n", cmdStr);
@@ -43,7 +46,7 @@ String RUN(const char* cmdStr) {
   int           cntChar  = 0;
 
   // レスポンスを取得する
-  while (cntChar < 5 && (millis() - startMs) < 2000) {
+  while (cntChar < 5 && (millis() - startMs) < argTimeoutMs) {
     strRX[cntChar++] = Serial1.read();
     delay(10);
   } /* END-while */

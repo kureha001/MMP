@@ -219,13 +219,13 @@ void Draw_TapCmd(int clickedRow, bool highlight) {
 //----------------------------------------------------
 // 接続状態表示
 //----------------------------------------------------
-void Draw_NetStatus(bool isOnline, bool connectedFlag) {
+void Draw_NetStatus(bool isWiFi, bool argIsConnect) {
   tft.fillRect(300, 4, 175, 22, TFT_NAVY);
 
-  uint16_t connBgColor = connectedFlag ? TFT_GREEN : TFT_DARKGREY;
-  uint16_t connTextColor = connectedFlag ? TFT_BLACK : TFT_WHITE;
+  uint16_t connBgColor   = argIsConnect ? TFT_GREEN : TFT_RED;
+  uint16_t connTextColor = argIsConnect ? TFT_BLACK : TFT_WHITE;
   
-  const char* connStr = connectedFlag ? "CONNECT" : "DISCONECT";
+  const char* connStr = argIsConnect ? "CONNECT" : "       ";
   int connW = strlen(connStr) * 6 + 6; 
   int connX = 410 - connW;             
   
@@ -235,15 +235,15 @@ void Draw_NetStatus(bool isOnline, bool connectedFlag) {
   tft.setCursor(connX + 3, 10);
   tft.print(connStr);
 
-  uint16_t onlineBgColor   = isOnline ? TFT_GREEN : TFT_RED;
-  uint16_t onlineTextColor = isOnline ? TFT_BLACK : TFT_WHITE;
+  uint16_t onlineBgColor   = isWiFi ? TFT_GREEN : TFT_RED;
+  uint16_t onlineTextColor = isWiFi ? TFT_BLACK : TFT_WHITE;
   
   tft.fillRect(415, 4, 58, 22, onlineBgColor);
   tft.setTextColor(onlineTextColor, onlineBgColor);
   tft.setTextSize(1);
   tft.setCursor(425, 10);
 
-  tft.print( isOnline ? "ONLINE" : "OFFLIN");
+  tft.print( isWiFi ? "WiFi ok" : "WiFi ng");
 
 } /* Draw_NetStatus() */
 
@@ -366,7 +366,7 @@ void loop() {
           // 画面演出
           for (int j = 0; j < numToggles; j++) {
             prevStates[j] = modeBTN[j].isSelected;
-          }
+          } /* END-for */
 
           // 画面演出
           for (int j = 0; j < numToggles; j++) {
@@ -374,9 +374,10 @@ void loop() {
             Draw_TglBTN(modeBTN[j]);
           } /* END-for */
 
-
           // モード切替時のアクション
           bool modStat = false;
+          Draw_NetStatus((WiFi.status() == WL_CONNECTED), modStat);
+
           if (prevStates[modeID]) {
             if (modeID ==0) modStat = modeUART  ::END();
             if (modeID ==1) modStat = modeTCP   ::END();
@@ -385,16 +386,24 @@ void loop() {
             if (modeID ==4) modStat = modeBLE   ::END();
             if (modeID ==5) modStat = modeIIC   ::END();
           } else {
+            if (modeID ==0) modStat = modeUART  ::IS_CONNECT;
+            if (modeID ==1) modStat = modeTCP   ::IS_CONNECT;
+            if (modeID ==2) modStat = modeWebSoc::IS_CONNECT;
+            if (modeID ==3) modStat = modeWebAPI::IS_CONNECT;
+            if (modeID ==4) modStat = modeBLE   ::IS_CONNECT;
+            if (modeID ==5) modStat = modeIIC   ::IS_CONNECT;
+            Draw_NetStatus((WiFi.status() == WL_CONNECTED), modStat);
+
             if (modeID ==0) modStat = modeUART  ::BEGIN();
-            if (modeID ==1) modStat = modeTCP   ::BEGIN();
-            if (modeID ==2) modStat = modeWebSoc::BEGIN();
-            if (modeID ==3) modStat = modeWebAPI::BEGIN();
-            if (modeID ==4) modStat = modeBLE   ::BEGIN();
+            if (modeID ==1) modStat = modeTCP   ::BEGIN(8081);
+            if (modeID ==2) modStat = modeWebSoc::BEGIN(8082);
+            if (modeID ==3) modStat = modeWebAPI::BEGIN(8080);
+            if (modeID ==4) modStat = modeBLE   ::BEGIN("MMP-ESP32S3");
             if (modeID ==5) modStat = modeIIC   ::BEGIN();
           } /* END-if */
 
-          // ネット状況を表示
           Draw_NetStatus((WiFi.status() == WL_CONNECTED), modStat);
+
           break;
         } /* END-if */
       } /* END-for */
@@ -426,12 +435,12 @@ void loop() {
         // モード切替時のトリガー
         String thisCmd = COMMAND_TBL[filteredIndices[targetIdx]];
         String retMSG = "";
-        if (modeBTN[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str());
-        if (modeBTN[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str());
-        if (modeBTN[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str());
-        if (modeBTN[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str());
-        if (modeBTN[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str());
-        if (modeBTN[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str());
+        if (modeBTN[0].isSelected) retMSG = modeUART  ::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str()      );
+        if (modeBTN[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str()      );
 
         // 取得結果を確認する
         if (retMSG.length() == 5) {

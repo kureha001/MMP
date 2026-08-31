@@ -52,10 +52,6 @@ bool BEGIN() {
   else if (CONN_RX != nullptr && CONN_TX != nullptr) errMSG = "[EXIST] Already Exists Rx,Tx";
   if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not ready";}
 
-  // 資源を開放
-  bool retDummy = END();
-  IS_CONNECT = false;
-
   // サービスとキャラクタリスティックの取得
   BLERemoteService* pService = BLE_CLIENT->getService(UUID);
   if (pService == nullptr) {
@@ -93,9 +89,9 @@ bool END() {
   CONN_TX = nullptr;
 
   // 正常終了
-  Serial.println("[OK] Dropped Rx/Tx");
   IS_CONNECT = false;
-  return       true;
+  Serial.println("BLE Disconnected");
+  return IS_CONNECT;
 }
 
 //=====================================================

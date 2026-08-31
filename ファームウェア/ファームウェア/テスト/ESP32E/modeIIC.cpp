@@ -73,7 +73,8 @@ bool BEGIN() {
 bool END() {
   Wire.end();
   IS_CONNECT = false;
-  return false;  
+  Serial.println("IIC Disconnected");
+  return IS_CONNECT;
 }
 
 //=====================================================

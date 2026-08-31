@@ -23,7 +23,8 @@ bool BEGIN() {
 bool END() {
   Serial1.end();
   IS_CONNECT = false;
-  return false;
+  Serial.println("UART Disconnected");
+  return IS_CONNECT;
 }
 
 //=====================================================

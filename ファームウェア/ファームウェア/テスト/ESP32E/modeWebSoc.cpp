@@ -51,7 +51,7 @@ bool BEGIN(uint16_t argPort) {
   CONN.onEvent(OnReceive);
   
   unsigned long startMs = millis();
-  while (!IS_CONNECT && (millis() - startMs) < 1000) {
+  while (!IS_CONNECT && (millis() - startMs) < 2000) {
     CONN.loop();
     delay(10);
   }
@@ -65,7 +65,8 @@ bool BEGIN(uint16_t argPort) {
 bool END() {
   CONN.disconnect();
   IS_CONNECT = false;
-  return false;
+  Serial.println("WEB Socket Disconnected");
+  return IS_CONNECT;
 }
 
 //=====================================================

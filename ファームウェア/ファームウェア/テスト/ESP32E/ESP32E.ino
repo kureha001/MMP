@@ -48,20 +48,23 @@ struct ToggleButton {
     //----------------------------------------------------
     // モード選択ボタン定義
     //----------------------------------------------------
-    ToggleButton modeBTN[6] = {
-      {10,  4, 45, 22, "UART",   true},   
-      {58,  4, 42, 22, "TCP",    false},
-      {103, 4, 52, 22, "WebSoc", false},
-      {158, 4, 52, 22, "WebAPI", false},
-      {213, 4, 42, 22, "BLE",    false},
-      {258, 4, 42, 22, "IIC",    false}
+    const int modeBTN_Y  = 38;
+    const int modeBTN_H  = modeBTN_Y - 8;
+    const int numModeBTN = 6;
+    ToggleButton modeBTN[numModeBTN] = {
+      {10,  4, 45, modeBTN_H, "UART",   true},   
+      {58,  4, 42, modeBTN_H, "TCP",    false},
+      {103, 4, 52, modeBTN_H, "WebSoc", false},
+      {158, 4, 52, modeBTN_H, "WebAPI", false},
+      {213, 4, 42, modeBTN_H, "BLE",    false},
+      {258, 4, 42, modeBTN_H, "IIC",    false}
     };
-    const int numToggles = 6;
 
     //----------------------------------------------------
     // コマンド切替ボタン
     //----------------------------------------------------
-    ToggleButton filterBTN[6] = {
+    const int numFilterBTN = 6;
+    ToggleButton filterBTN[numFilterBTN] = {
       {10,  285, 55, 26, "SYSTEM",  true},   
       {70,  285, 60, 26, "DIGITAL", false},
       {135, 285, 60, 26, "ANALOG",  false},
@@ -69,7 +72,6 @@ struct ToggleButton {
       {250, 285, 45, 26, "MP3",     false},
       {300, 285, 45, 26, "IIC",     false}
     };
-    const int numSubToggles = 6;
 
     // フィルタリング後のインデックスを保持する配列
     int       filteredIndices[37]; //
@@ -88,7 +90,7 @@ struct ToggleButton {
     filteredCount = 0;
     const char* activeLabel = "SYSTEM";
 
-    for (int i = 0; i < numSubToggles; i++) {
+    for (int i = 0; i < numFilterBTN; i++) {
       if (filterBTN[i].isSelected) {
         activeLabel = filterBTN[i].label;
         break;
@@ -127,7 +129,7 @@ struct ToggleButton {
       tft.setTextColor(btn.isPressed ? TFT_BLACK : btn.textColor, fillColor);
       tft.setTextSize(btn.textSize);
       
-      int16_t charWidth = (btn.textSize == 3) ? 18 : 12;
+      int16_t charWidth  = (btn.textSize == 3) ? 18 : 12;
       int16_t charHeight = (btn.textSize == 3) ? 24 : 16;
       int len = strlen(btn.label);
       
@@ -226,31 +228,24 @@ struct ToggleButton {
     //----------------------------------------------------
     // 接続状態表示
     //----------------------------------------------------
-    void Draw_NetStat(bool isWiFi, bool argIsConnect) {
-      tft.fillRect(300, 4, 175, 22, TFT_NAVY);
+    void Draw_NetStat2(int argNo, bool isON, String argMsg) {
+      uint16_t colBG   = (isON) ? TFT_GREEN : TFT_RED;
+      uint16_t colText = (isON) ? TFT_BLACK : TFT_WHITE;
+      tft.setTextSize (1                   ); // フォントサイズ
+      tft.setTextColor(colText, colBG      ); // 配色
+      tft.setCursor   (384,  3 + 11 * argNo); // 表示座標
+      tft.print       (argMsg.c_str()      ); // メッセージ表示
+    } /* Draw_NetStat2() */
+    //----------------------------------------------------
+    void Draw_NetStat(bool argIsConnect) {
+      bool isON = argIsConnect;
+      Draw_NetStat2(0, isON, " CONNECTION  ");
 
-      uint16_t connBgColor   = argIsConnect ? TFT_GREEN : TFT_RED;
-      uint16_t connTextColor = argIsConnect ? TFT_BLACK : TFT_WHITE;
-      
-      const char* connStr = argIsConnect ? "CONNECT" : "       ";
-      int connW = strlen(connStr) * 6 + 6; 
-      int connX = 410 - connW;
-      
-      tft.fillRect(connX, 4, connW, 22, connBgColor);
-      tft.setTextColor(connTextColor, connBgColor);
-      tft.setTextSize(1);
-      tft.setCursor(connX + 3, 10);
-      tft.print(connStr);
+      isON = (WiFi.status() == WL_CONNECTED);
+      Draw_NetStat2(1, isON, " WiFi Server ");
 
-      uint16_t onlineBgColor   = isWiFi ? TFT_GREEN : TFT_RED;
-      uint16_t onlineTextColor = isWiFi ? TFT_BLACK : TFT_WHITE;
-      
-      tft.fillRect(415, 4, 58, 22, onlineBgColor);
-      tft.setTextColor(onlineTextColor, onlineBgColor);
-      tft.setTextSize(1);
-      tft.setCursor(425, 10);
-
-      tft.print( isWiFi ? "WiFi ok" : "WiFi ng");
+      isON = (BLE_CLIENT != nullptr && BLE_CLIENT->isConnected());
+      Draw_NetStat2(2, isON, " BLE  Server ");
     } /* Draw_NetStat() */
 
 
@@ -261,30 +256,25 @@ struct ToggleButton {
     // 上部タイトルバーの描画
     //----------------------------------------------------
     void Draw_TOP() {
-      tft.fillRect(0, 0, 480, 30, TFT_NAVY);
-      for (int i = 0; i < numToggles; i++) Draw_TglBTN(modeBTN[i]);
+      tft.fillRect(0, 0, 480, modeBTN_Y, TFT_NAVY);
+      for (int i = 0; i < numModeBTN; i++) Draw_TglBTN(modeBTN[i]);
     }
 
     //----------------------------------------------------
     // 通常ボタン
     //----------------------------------------------------
     void DrawUIFrame() {
-
       tft.fillScreen(TFT_BLACK);
 
       Draw_TOP();
-      
-      // 下部サブモードボタンの描画
-      for (int i = 0; i < numSubToggles; i++) Draw_TglBTN(filterBTN[i]);
-
-      // 接続状態を画面表示
-      Draw_NetStat(false, false);
+      for (int i = 0; i < numFilterBTN; i++) Draw_TglBTN(filterBTN[i]);
 
       tft.drawFastVLine(360, 30, 250, TFT_DARKGREY);
 
       for (int i = 0; i < numButtons; i++) Draw_BTN(*buttons[i]);
 
-      Draw_Response("OK...");
+      Draw_NetStat(false);
+      Draw_Response("-----");
       CommandFilter();
       Draw_CmdList();
     }
@@ -317,7 +307,7 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
-    // ログ出力用にシリアルを初期化
+    // 画面を初期化
     tft.init();
     tft.setRotation(1); // 横長 (480x320)
 
@@ -330,7 +320,9 @@ void setup() {
     int retBLE  = devBLE::START("MMP-ESP32S3");
 
     // BLEを接続する
-    Serial.println("\n========== READY to Start ==========\n");
+    Serial.println("\n========<< READY to Start >>========\n");
+
+    Draw_NetStat(true);
 
 } /* setup() */
 
@@ -377,31 +369,32 @@ void loop() {
   if (isTouch && !lastTouch) {
 
     // Ｙ軸の範囲を判定
-    if (t_y >= 0 && t_y <= 30) {
+    if (t_y >= 0 && t_y <= modeBTN_Y) {
     //→（モード切替の場合）
 
       // 各ボタンを走査
-      for (int modeID = 0; modeID < numToggles; modeID++) {
+      for (int modeID = 0; modeID < numModeBTN; modeID++) {
 
         // ボタンに触れたかを確認
         if (!CheckTouch(modeBTN[modeID], t_x, t_y)) continue;
 
-        bool prevStates[numToggles];
+        bool prevStates[numModeBTN];
 
         // 各ボタンの選択状態を取得
-        for (int j = 0; j < numToggles; j++) {
+        for (int j = 0; j < numModeBTN; j++) {
           prevStates[j] = modeBTN[j].isSelected;
         } /* END-for */
 
         // 今回のモードボタンを選択済みにセット
-        for (int j = 0; j < numToggles; j++) {
+        for (int j = 0; j < numModeBTN; j++) {
           modeBTN[j].isSelected = (j == modeID);
           Draw_TglBTN(modeBTN[j]); // ボタンを選択済みで表示
         } /* END-for */
 
         // 接続状態を画面表示
         bool modStat = false;
-        Draw_NetStat((WiFi.status() == WL_CONNECTED), modStat);
+        Draw_NetStat(false);
+        delay(500);
 
         // ボタン別にアクション
         if (prevStates[modeID]) {
@@ -414,9 +407,6 @@ void loop() {
           if (modeID ==4) modStat = modeBLE   ::END();
           if (modeID ==5) modStat = modeIIC   ::END();
 
-          // 接続状態を画面表示
-          Draw_NetStat((WiFi.status() == WL_CONNECTED), modStat);
-
         } else {
         // 今回選択したモードの場合
           // ステータスを取得
@@ -426,10 +416,7 @@ void loop() {
           if (modeID ==3) modStat = modeWebAPI::IS_CONNECT;
           if (modeID ==4) modStat = modeBLE   ::IS_CONNECT;
           if (modeID ==5) modStat = modeIIC   ::IS_CONNECT;
-
-          // 接続状態を画面表示
-          Draw_NetStat((WiFi.status() == WL_CONNECTED), modStat);
-          delay(500);
+          Draw_NetStat(modStat);
 
           // 初期化処理を実行
           if (modeID ==0) modStat = modeUART  ::BEGIN();
@@ -438,9 +425,7 @@ void loop() {
           if (modeID ==3) modStat = modeWebAPI::BEGIN(8080);
           if (modeID ==4) modStat = modeBLE   ::BEGIN();
           if (modeID ==5) modStat = modeIIC   ::BEGIN();
-
-          // 接続状態を画面表示
-          Draw_NetStat((WiFi.status() == WL_CONNECTED), modStat);
+          Draw_NetStat(modStat);
         } /* END-if（ボタン別にアクション）*/
       } /* END-for（各ボタンを走査）*/
 
@@ -448,13 +433,13 @@ void loop() {
     //→（コマンド入替の場合）
 
       // 各ボタンを走査
-      for (int subID = 0; subID < numSubToggles; subID++) {
+      for (int subID = 0; subID < numFilterBTN; subID++) {
 
         // ボタンに触れたかを確認
         if (!CheckTouch(filterBTN[subID], t_x, t_y)) continue;
 
         // 各ボタンの選択状態を取得
-        for (int j = 0; j < numSubToggles; j++) {
+        for (int j = 0; j < numFilterBTN; j++) {
           filterBTN[j].isSelected = (j == subID);
           Draw_TglBTN(filterBTN[j]);
         } /* END-for（各ボタンの選択状態を取得）*/
@@ -506,7 +491,6 @@ void loop() {
 
   // 最終タッチを更新
   lastTouch = isTouch;
-
   delay(30);
 
 } /* loop() */

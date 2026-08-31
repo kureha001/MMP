@@ -12,6 +12,7 @@ namespace modeTCP {
 //=====================================================
 //=====================================================
 bool BEGIN(uint16_t argPort) {
+
   if (WiFi.status() != WL_CONNECTED) return false;
 
   CONN_PORT = argPort;   
@@ -34,7 +35,8 @@ bool BEGIN(uint16_t argPort) {
 bool END() {
   CONN.stop();
   IS_CONNECT = false;
-  return false;
+  Serial.println("TCP Disconnected");
+  return IS_CONNECT;
 }
 
 //=====================================================

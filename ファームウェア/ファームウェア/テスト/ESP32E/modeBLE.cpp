@@ -62,7 +62,6 @@ bool BEGIN() {
   // キャラクタリスティックの取得
   CONN_RX = pService->getCharacteristic(UUID_RX);
   CONN_TX = pService->getCharacteristic(UUID_TX);
-
   if (CONN_RX == nullptr || CONN_TX == nullptr) {
     Serial.println("[FAIL] Not Found UUIDs (Rx|Tx)");
     return false;
@@ -132,6 +131,6 @@ String RUN(
   // 正常終了
   return STR_RX;
 
-} /* runTCP() */
+} /* RUN() */
 
 } /* namespace modeBLE */

@@ -34,6 +34,13 @@ namespace modeWebSoc{
   String RUN(const char* cmdStr, unsigned long argTimeoutMs);
 }
 
+namespace modeEspNow{
+  extern bool IS_CONNECT;
+  bool   BEGIN(const uint8_t argMAC[]);
+  bool   END();
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
+}
+
 namespace modeBLE{
   extern bool IS_CONNECT;
   bool   BEGIN();

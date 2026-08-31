@@ -50,14 +50,15 @@ struct ToggleButton {
     //----------------------------------------------------
     const int modeBTN_Y  = 38;
     const int modeBTN_H  = modeBTN_Y - 8;
-    const int numModeBTN = 6;
+    const int numModeBTN = 7;
     ToggleButton modeBTN[numModeBTN] = {
       {10,  4, 45, modeBTN_H, "UART",   true},   
       {58,  4, 42, modeBTN_H, "TCP",    false},
       {103, 4, 52, modeBTN_H, "WebSoc", false},
       {158, 4, 52, modeBTN_H, "WebAPI", false},
-      {213, 4, 42, modeBTN_H, "BLE",    false},
-      {258, 4, 42, modeBTN_H, "IIC",    false}
+      {213, 4, 52, modeBTN_H, "EspNow", false},
+      {268, 4, 42, modeBTN_H, "BLE",    false},
+      {313, 4, 42, modeBTN_H, "IIC",    false}
     };
 
     //----------------------------------------------------
@@ -404,8 +405,9 @@ void loop() {
           if (modeID ==1) modStat = modeTCP   ::END();
           if (modeID ==2) modStat = modeWebSoc::END();
           if (modeID ==3) modStat = modeWebAPI::END();
-          if (modeID ==4) modStat = modeBLE   ::END();
-          if (modeID ==5) modStat = modeIIC   ::END();
+          if (modeID ==4) modStat = modeEspNow::END();
+          if (modeID ==5) modStat = modeBLE   ::END();
+          if (modeID ==6) modStat = modeIIC   ::END();
 
         } else {
         // 今回選択したモードの場合
@@ -414,8 +416,9 @@ void loop() {
           if (modeID ==1) modStat = modeTCP   ::IS_CONNECT;
           if (modeID ==2) modStat = modeWebSoc::IS_CONNECT;
           if (modeID ==3) modStat = modeWebAPI::IS_CONNECT;
-          if (modeID ==4) modStat = modeBLE   ::IS_CONNECT;
-          if (modeID ==5) modStat = modeIIC   ::IS_CONNECT;
+          if (modeID ==4) modStat = modeEspNow::IS_CONNECT;
+          if (modeID ==5) modStat = modeBLE   ::IS_CONNECT;
+          if (modeID ==6) modStat = modeIIC   ::IS_CONNECT;
           Draw_NetStat(modStat);
 
           // 初期化処理を実行
@@ -423,8 +426,12 @@ void loop() {
           if (modeID ==1) modStat = modeTCP   ::BEGIN(8081);
           if (modeID ==2) modStat = modeWebSoc::BEGIN(8082);
           if (modeID ==3) modStat = modeWebAPI::BEGIN(8080);
-          if (modeID ==4) modStat = modeBLE   ::BEGIN();
-          if (modeID ==5) modStat = modeIIC   ::BEGIN();
+          if (modeID ==4) {
+            uint8_t mac[] = {0x50, 0x78, 0x7D, 0x18, 0x51, 0x50};
+            modStat = modeEspNow::BEGIN(mac);
+          }
+          if (modeID ==5) modStat = modeBLE   ::BEGIN();
+          if (modeID ==6) modStat = modeIIC   ::BEGIN();
           Draw_NetStat(modStat);
         } /* END-if（ボタン別にアクション）*/
       } /* END-for（各ボタンを走査）*/
@@ -468,8 +475,9 @@ void loop() {
         if (modeBTN[1].isSelected) retMSG = modeTCP   ::RUN(thisCmd.c_str(), 2000);
         if (modeBTN[2].isSelected) retMSG = modeWebSoc::RUN(thisCmd.c_str(), 2000);
         if (modeBTN[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str()      );
-        if (modeBTN[4].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str(), 2000);
-        if (modeBTN[5].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str()      );
+        if (modeBTN[4].isSelected) retMSG = modeEspNow::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[5].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str(), 2000);
+        if (modeBTN[6].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str()      );
 
         // ログ表示する
         if (retMSG.length() == 5) {

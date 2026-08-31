@@ -422,16 +422,16 @@ void loop() {
           Draw_NetStat(modStat);
 
           // 初期化処理を実行
-          if (modeID ==0) modStat = modeUART  ::BEGIN();
-          if (modeID ==1) modStat = modeTCP   ::BEGIN(8081);
-          if (modeID ==2) modStat = modeWebSoc::BEGIN(8082);
-          if (modeID ==3) modStat = modeWebAPI::BEGIN(8080);
+          if (modeID ==0) modStat = modeUART  ::BEGIN(115200); // ボーレートを指定
+          if (modeID ==1) modStat = modeTCP   ::BEGIN(8081  ); // サービスポートを指定
+          if (modeID ==2) modStat = modeWebSoc::BEGIN(8082  ); // サービスポートを指定
+          if (modeID ==3) modStat = modeWebAPI::BEGIN(8080  ); // サービスポートを指定
           if (modeID ==4) {
-            uint8_t mac[] = {0x50, 0x78, 0x7D, 0x18, 0x51, 0x50};
-            modStat = modeEspNow::BEGIN(mac);
+            uint8_t mac[] = {0x50,0x78,0x7D,0x18,0x51,0x50};
+            modStat = modeEspNow::BEGIN(mac);                // MACアドレスを指定
           }
           if (modeID ==5) modStat = modeBLE   ::BEGIN();
-          if (modeID ==6) modStat = modeIIC   ::BEGIN();
+          if (modeID ==6) modStat = modeIIC   ::BEGIN(0xA0  ); // IICアドレスを指定
           Draw_NetStat(modStat);
         } /* END-if（ボタン別にアクション）*/
       } /* END-for（各ボタンを走査）*/
@@ -477,7 +477,7 @@ void loop() {
         if (modeBTN[3].isSelected) retMSG = modeWebAPI::RUN(thisCmd.c_str()      );
         if (modeBTN[4].isSelected) retMSG = modeEspNow::RUN(thisCmd.c_str(), 2000);
         if (modeBTN[5].isSelected) retMSG = modeBLE   ::RUN(thisCmd.c_str(), 2000);
-        if (modeBTN[6].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str()      );
+        if (modeBTN[6].isSelected) retMSG = modeIIC   ::RUN(thisCmd.c_str(), 2000);
 
         // ログ表示する
         if (retMSG.length() == 5) {

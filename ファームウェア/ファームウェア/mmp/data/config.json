@@ -9,12 +9,12 @@
     {
       "type": "sta",
       "name": "MMP_STA-JSON",
-      "ip": "99"
+      "ip": "98"
     },
     {
       "type": "ap",
       "name": "MMP_AP-JSON",
-      "ip": "192.168.99.2"
+      "ip": "192.168.99.3"
     }
   ],
 

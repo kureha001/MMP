@@ -8,7 +8,7 @@ extern const char* SRV_IP;
 
 namespace modeUART{
   extern bool IS_CONNECT;
-  bool   BEGIN();
+  bool   BEGIN(unsigned long argRate);
   bool   END();
   String RUN(const char* cmdStr, unsigned long argTimeoutMs);
 }
@@ -50,7 +50,7 @@ namespace modeBLE{
 
 namespace modeIIC{
   extern bool IS_CONNECT;
-  bool   BEGIN();
+  bool   BEGIN(uint8_t I2C_ADDR);
   bool   END();
-  String RUN(const char* cmdStr);
+  String RUN(const char* cmdStr, unsigned long argTimeoutMs);
 }

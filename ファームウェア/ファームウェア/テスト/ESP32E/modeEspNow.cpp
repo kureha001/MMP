@@ -80,7 +80,7 @@ bool END() {
   if (esp_now_is_peer_exist(targetMac)) esp_now_del_peer(targetMac);
   esp_now_deinit();
   IS_CONNECT = false;
-  Serial.println("[OK] ESP-NOW Disconnected");
+  Serial.println("ESP-NOW Disconnected");
   return true;
 }
 

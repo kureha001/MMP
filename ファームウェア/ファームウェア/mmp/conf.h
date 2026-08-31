@@ -26,7 +26,7 @@
 #define ADP_COM_WSOC // WebSocket
 #define ADP_COM_ESPN // ESP-NOW
 #define ADP_COM_BLE  // BLE
-//#define ADP_COM_I2C  // i2c
+//#define ADP_COM_I2C  // i2c ※他のi2cデバイスが使えなくなる
 
 //─────────────────
 // WEBアダプタ選択

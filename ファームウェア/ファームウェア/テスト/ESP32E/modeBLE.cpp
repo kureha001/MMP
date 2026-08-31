@@ -102,6 +102,7 @@ String RUN(
 ) {
   Serial.println("---------- [BLE] RUN() ----------");
   Serial.printf (" command : %s\n", cmdStr);
+
   String errMSG = "";
   if      (!IS_CONNECT       ) errMSG = "[NG] No Callback";
   else if (CONN_RX == nullptr) errMSG = "[NG] No Characteristic (Rx)";

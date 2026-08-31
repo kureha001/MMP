@@ -36,7 +36,7 @@ namespace modeWebSoc{
 
 namespace modeBLE{
   extern bool IS_CONNECT;
-  bool   BEGIN(String argDevName);
+  bool   BEGIN();
   bool   END();
   String RUN(const char* cmdStr, unsigned long argTimeoutMs);
 }

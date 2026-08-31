@@ -1,25 +1,21 @@
 #pragma once
 #include "mode.h"
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEClient.h>
-#include <BLEScan.h>
 #include <BLERemoteCharacteristic.h>
+
+extern BLEClient*  BLE_CLIENT; // 初期化済みクライアント
 
 namespace modeBLE {
 //=====================================================
 // 基本情報
 //=====================================================
-  bool                            IS_CONNECT = false  ; // 接続状況
-  static BLEClient*               CONN       = nullptr; // クライアント
-  static BLERemoteCharacteristic* CONN_RX    = nullptr; // 書き込み用キャラクタリスティック
-  static BLERemoteCharacteristic* CONN_TX    = nullptr; // 通知用キャラクタリスティック
-  String                          CONN_DEV   = ""     ; // 接続先デバイス名
+  bool   IS_CONNECT = false; // 接続状況
+  static BLERemoteCharacteristic* CONN_RX = nullptr; // 書き込み用キャラクタリスティック
+  static BLERemoteCharacteristic* CONN_TX = nullptr; // 通知用キャラクタリスティック
 
   // 標準的なUARTサービスのUUID
-  static BLEUUID serviceUUID("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-  static BLEUUID charRxUUID ("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
-  static BLEUUID charTxUUID ("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+  static BLEUUID UUID   ("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+  static BLEUUID UUID_RX("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+  static BLEUUID UUID_TX("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
 
 //=====================================================
 // イベントコールバック
@@ -47,82 +43,59 @@ static void notifyCallback(
 //=====================================================
 // 接続する
 //=====================================================
-bool BEGIN(String argDevName) {
+bool BEGIN() {
 
-  if (IS_CONNECT && CONN != nullptr && CONN->isConnected()) return true;
+  Serial.println("---------- [BLE] BEGIN() ----------");
+  String errMSG = "";
+  if      (BLE_CLIENT == nullptr     ) errMSG = "[NG] No Client (null)";
+  else if (!BLE_CLIENT->isConnected()) errMSG = "[NG] No Client (disconect)";
+  else if (CONN_RX != nullptr && CONN_TX != nullptr) errMSG = "[EXIST] Already Exists Rx,Tx";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not ready";}
 
-  CONN_DEV = argDevName;
-
-if (!BLEDevice::getInitialized()) BLEDevice::init("");
-  if (CONN == nullptr) CONN = BLEDevice::createClient();
-
-  Serial.printf("Scanning for BLE device: %s...\n", CONN_DEV.c_str());
-
-  BLEScan* pBLEScan = BLEDevice::getScan();
-  pBLEScan->setActiveScan(true);
-  BLEScanResults* foundDevices = pBLEScan->start(5, false);
-  BLEAdvertisedDevice* targetDevice = nullptr;
-
-  for (int i = 0; i < foundDevices->getCount(); i++) {
-    BLEAdvertisedDevice device = foundDevices->getDevice(i);
-    if (device.haveName() && device.getName() == CONN_DEV) {
-      targetDevice = new BLEAdvertisedDevice(device);
-      break;
-    }
-  }
-  pBLEScan->clearResults();
-
-  if (targetDevice == nullptr) {
-    Serial.println("Target device not found.");
-    IS_CONNECT = false;
-    return false;
-  }
-
-  Serial.println("Connecting to BLE Server...");
-  if (!CONN->connect(targetDevice)) {
-    Serial.println("Failed to connect to server.");
-    delete targetDevice;
-    IS_CONNECT = false;
-    return false;
-  }
-  delete targetDevice;
-  Serial.println("Connected to server.");
+  // 資源を開放
+  bool retDummy = END();
+  IS_CONNECT = false;
 
   // サービスとキャラクタリスティックの取得
-  BLERemoteService* pRemoteService = CONN->getService(serviceUUID);
-  if (pRemoteService == nullptr) {
-    Serial.println("Failed to find service UUID.");
-    CONN->disconnect();
-    IS_CONNECT = false;
+  BLERemoteService* pService = BLE_CLIENT->getService(UUID);
+  if (pService == nullptr) {
+    Serial.println("[FAIL] Not Found UUID (service)");
     return false;
   }
 
-  CONN_RX = pRemoteService->getCharacteristic(charRxUUID);
-  CONN_TX = pRemoteService->getCharacteristic(charTxUUID);
+  // キャラクタリスティックの取得
+  CONN_RX = pService->getCharacteristic(UUID_RX);
+  CONN_TX = pService->getCharacteristic(UUID_TX);
 
   if (CONN_RX == nullptr || CONN_TX == nullptr) {
-    Serial.println("Failed to find characteristic UUIDs.");
-    CONN->disconnect();
-    IS_CONNECT = false;
+    Serial.println("[FAIL] Not Found UUIDs (Rx|Tx)");
     return false;
   }
 
-  if (CONN_TX->canNotify()) {
-    CONN_TX->registerForNotify(notifyCallback);
-  }
+  // コールバックを登録
+  if (CONN_TX->canNotify()) CONN_TX->registerForNotify(notifyCallback);
 
-  Serial.println("BLE connected and ready successfully.");
+  // 正常終了
+  Serial.println("[OK] Successfully");
   IS_CONNECT = true;
-  return true;
+  return       true;
 }
 
 //=====================================================
 // 切断する
 //=====================================================
 bool END() {
-  if (CONN != nullptr && CONN->isConnected()) CONN->disconnect();
+  // コールバックを破棄
+  if (CONN_TX != nullptr) CONN_TX->registerForNotify(notifyCallback);
+
+  // キャラクタリスティックを破棄
+  CONN_RX = nullptr;
+  CONN_TX = nullptr;
+
+  // 正常終了
+  Serial.println("[OK] Dropped Rx/Tx");
   IS_CONNECT = false;
-  return false;
+  return       true;
 }
 
 //=====================================================
@@ -132,38 +105,36 @@ String RUN(
   const    char* cmdStr,
   unsigned long  argTimeoutMs
 ) {
-  // BLE接続を確認する
-  if (!IS_CONNECT) {
-    Serial.println("BLE not connected.");
-    delay(100);
-    return "FAIL#1";
-  }
+  Serial.println("---------- [BLE] RUN() ----------");
+  Serial.printf (" command : %s\n", cmdStr);
+  String errMSG = "";
+  if      (!IS_CONNECT       ) errMSG = "[NG] No Callback";
+  else if (CONN_RX == nullptr) errMSG = "[NG] No Characteristic (Rx)";
+  else if (CONN_TX == nullptr) errMSG = "[NG] No Characteristic (Tx)";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not Ready.";}
 
   // 前処理
-STR_RX   = "";
-  IS_FRAME = false;
+  STR_RX   = ""   ; // 受信バッファ
+  IS_FRAME = false; // フレーム作成状況
 
-  Serial.printf("Sending command (BLE): %s\n", cmdStr);
-
+  // ＭＭＰへリクエスト
   String sendData = String(cmdStr);
   if (!sendData.endsWith("!")) sendData += "!";
+  CONN_RX->writeValue(sendData.c_str(), sendData.length());
 
-  if (CONN_RX != nullptr) {
-    CONN_RX->writeValue(sendData.c_str(), sendData.length());
-  } else {
-    return "FAIL#2";
-  }
-
+  // レスポンスを受信
   unsigned long startMs = millis();
   while (!IS_FRAME) {
     if (millis() - startMs > argTimeoutMs) {
-      Serial.println("BLE Response Timeout.");
-      break;
+      errMSG = "[FAIL] Timeout";  
+      Serial.println(errMSG);
+      return errMSG;
     }
     delay(5);
   }
 
-  return IS_FRAME ? STR_RX : "FAIL#3";
+  // 正常終了
+  return STR_RX;
 
 } /* runTCP() */
 

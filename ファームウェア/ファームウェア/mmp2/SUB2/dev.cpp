@@ -17,9 +17,9 @@
 //########################################################
 void INIT_DEVICE() {
   //┬
-  //●通信デバイスを初期化（UART）
-  //●通信デバイスを初期化（WiFi）
+  //●通信デバイスを初期化
   devUART   ::START();
   devNetwork::START();
+  //devLoRa::START();
   //┴
 } /* INIT_DEVICE() */

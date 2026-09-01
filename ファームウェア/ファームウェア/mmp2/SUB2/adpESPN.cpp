@@ -39,10 +39,9 @@ namespace adpESPN {
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-void SEND_CONN(const uint8_t* argConn){
+void SEND_CONN(const uint8_t* argConn, String argMSG){
     //┬
     //○メッセージをレスポンス
-    
     // 【対策1】返信相手がピアに未登録なら、ここで自動追加する
     if (!esp_now_is_peer_exist(argConn)) {
       esp_now_peer_info_t peerInfo = {};
@@ -54,13 +53,10 @@ void SEND_CONN(const uint8_t* argConn){
 
     // 【対策2】データ長から '+ 1' を外し、純粋な文字列の長さにする
     esp_now_send(
-        argConn,                          // 送信先MACアドレス
-        (const uint8_t*)ctx.resMSG.c_str(), // 送信データ
-        ctx.resMSG.length()               // 送信データ長（+1 を削除）
+        argConn,                        // 送信先MACアドレス
+        (const uint8_t*)argMSG.c_str(), // 送信データ
+        argMSG.length()                 // 送信データ長（+1 を削除）
     );
-    //│
-    //●ログ出力
-    P9_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -170,33 +166,26 @@ void SEND_CONN(const uint8_t* argConn){
     myQueue popDat;
     while (popQueue(popDat)) {
       //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
+      //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
+          //●エラーをレスポンス
+          //▽次へ：次のキューを走査
+          SEND_CONN(popDat.CONN, popDat.FRAME);
+          continue;
+      }
       //│
-      //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
+      //○フレームをメイン機に転送
+      Serial.print(popDat.FRAME);
       //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-      //○リクエストをデータ項目に分解
-      P1_SET_ACD_CPATH();
+      //○メイン機からのレスポンスを受信
+      String strMSG = "";
+      while (Serial.available()) strMSG += (char)Serial.read();
       //│
-      //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
-      //│＼（処理継続が不可の場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
-#endif // ----------------------------------------┘
-      //│
-      //●コマンド実行
-      P3_RUN();
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      //○レスポンスをクライアントへ返却
+      SEND_CONN(popDat.CONN, strMSG);
       //┴
     } /* END-while */
     //┴

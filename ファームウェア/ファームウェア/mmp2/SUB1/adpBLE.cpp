@@ -205,17 +205,6 @@ namespace adpBLE {
       //●キュー情報をワークにセット
       P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
       //│
-#if defined(MMP_TYPE_MAIN) // -----------------┨ＭＭＰ本体┠----┐
-      //○リクエストをデータ項目に分解
-      P1_SET_ACD_CPATH();
-      //│
-      //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
-      //│＼（処理継続が不可の場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
-#endif // -------------------------------------------------------┘
-      //│
       //●コマンド実行
       P3_RUN();
       //│

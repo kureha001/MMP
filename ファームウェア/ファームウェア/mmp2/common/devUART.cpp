@@ -36,9 +36,6 @@ namespace devUART {
     Serial.println("<<通信デバイスの初期化>>");
     Serial.println(" [Serial device]"  );
     Serial.println("　 [OK] USB (CDC)");
-
-    Serial1.begin(921600, SERIAL_8N1, 44, 43); Serial.println("　 [OK] UART(#01)");
-    Serial2.begin(921600, SERIAL_8N1, 46, 45); Serial.println("　 [OK] UART(#02)");
     
     //○有効性セット
     ENABLED = true;

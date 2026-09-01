@@ -39,13 +39,10 @@ namespace adpWSOC {
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(uint8_t argConn){
+  void SEND_CONN(uint8_t argConn, String argMSG){
     //┬
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
-    //│
-    //●ログ出力
-    P9_SHOW_LOG();
+    if (ADP_SRV) ADP_SRV->sendTXT(argConn, argMSG.c_str());
     //┴
   } /* SEND_CONN() */
 
@@ -149,33 +146,26 @@ namespace adpWSOC {
     myQueue popDat;
     while (popQueue(popDat)) {
       //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
+      //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
+          //●エラーをレスポンス
+          //▽次へ：次のキューを走査
+          SEND_CONN(popDat.CONN, popDat.FRAME);
+          continue;
+      }
       //│
-      //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
+      //○フレームをメイン機に転送
+      Serial.print(popDat.FRAME);
       //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-      //○リクエストをデータ項目に分解
-      P1_SET_ACD_CPATH();
+      //○メイン機からのレスポンスを受信
+      String strMSG = "";
+      while (Serial.available()) strMSG += (char)Serial.read();
       //│
-      //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
-      //│＼（処理継続が不可の場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
-#endif // ----------------------------------------┘
-      //│
-      //●コマンド実行
-      P3_RUN();
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      //○レスポンスをクライアントへ返却
+      SEND_CONN(popDat.CONN, strMSG);
       //┴
     } /* END-while */
     //┴

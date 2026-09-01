@@ -123,12 +123,10 @@ namespace adpTCP {
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(WiFiClient& argConn){
+  void SEND_CONN(WiFiClient& argConn, String argMSG){
     //┬
     //○メッセージをレスポンス
-    //●ログ出力
-    if (argConn.connected()) argConn.print(ctx.resMSG);
-    P9_SHOW_LOG();
+    if (argConn.connected()) argConn.print(argMSG);
     //┴
   } /* SEND_CONN() */
 
@@ -207,7 +205,7 @@ namespace adpTCP {
         //┴
       //│
       //●ストリームを受信
-      String retFrame = P2_STREAM(ssTBL[ID].CONN, ssTBL[ID].Base);
+      String retFrame = RECEIVE_STREAM(ssTBL[ID].CONN, ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査
@@ -277,30 +275,23 @@ namespace adpTCP {
       //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
+          //●エラーをレスポンス
+          //▽次へ：次のキューを走査
+          SEND_CONN(popDat.CONN, popDat.FRAME);
+          continue;
+      }
       //│
-      //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
+      //○フレームをメイン機に転送
+      Serial.print(popDat.FRAME);
       //│
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-      //○リクエストをデータ項目に分解
-      P1_SET_ACD_CPATH();
+      //○メイン機からのレスポンスを受信
+      String strMSG = "";
+      while (Serial.available()) strMSG += (char)Serial.read();
       //│
-      //●認証処理を実施
-      if (P2_CHECK_AUTH()){SEND_CONN(popDat.CONN); continue;}
-      //│＼（処理継続が不可の場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
-#endif // ----------------------------------------┘
-      //│
-      //●コマンド実行
-      P3_RUN();
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      //○レスポンスをクライアントへ返却
+      SEND_CONN(popDat.CONN, strMSG);
       //┴
     } /* END-while */
     //┴

@@ -17,9 +17,9 @@
 //########################################################
 void INIT_DEVICE() {
   //┬
-  //●通信デバイスを初期化（UART）
-  //●通信デバイスを初期化（BLE）
-  devUART ::START();
-  devBLE  ::START();
+  //●通信デバイスを初期化
+  devUART::START();
+  devBLE ::START();
+  //devNRF ::START();
   //┴
 } /* INIT_DEVICE() */

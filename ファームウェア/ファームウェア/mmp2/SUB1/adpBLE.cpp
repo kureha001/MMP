@@ -50,16 +50,13 @@ namespace adpBLE {
   //─────────────────
   // スロットの受付資源に送信
   //─────────────────
-  void SEND_CONN(uint8_t argConn){
+  void SEND_CONN(uint8_t argConn, String argMSG){
     //┬
     //○メッセージをレスポンス
     if (devBLE::BLE_TX != nullptr) {
-      devBLE::BLE_TX->setValue(ctx.resMSG.c_str());
+      devBLE::BLE_TX->setValue(argMSG.c_str());
       devBLE::BLE_TX->notify();
     } /* END-if */
-    //│
-    //●ログ出力
-    P9_SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -194,22 +191,26 @@ namespace adpBLE {
     myQueue popDat;
     while (popQueue(popDat)) {
       //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
+      //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
+          //●エラーをレスポンス
+          //▽次へ：次のキューを走査
+          SEND_CONN(popDat.CONN, popDat.FRAME);
+          continue;
+      }
       //│
-      //●キュー情報をワークにセット
-      P0_SETUP_CONTEXT(ADP_ID, popDat.FRAME);
+      //○フレームをメイン機に転送
+      Serial.print(popDat.FRAME);
       //│
-      //●コマンド実行
-      P3_RUN();
+      //○メイン機からのレスポンスを受信
+      String strMSG = "";
+      while (Serial.available()) strMSG += (char)Serial.read();
       //│
-      //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      //○レスポンスをクライアントへ返却
+      SEND_CONN(popDat.CONN, strMSG);
       //┴
     } /* END-while */
     //┴

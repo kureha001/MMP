@@ -12,6 +12,7 @@
   //┴
 //┴
 
+
 //########################################################
 //# 専用名の前空間
 //########################################################
@@ -40,15 +41,13 @@ namespace adpUART {
     };
     static T_SS_SLOT* ssTBL = nullptr; // 事前予約
 
-
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(Stream* argConn){
+  void SEND_CONN(Stream* argConn, String argMSG){
     //┬
     //○メッセージをレスポンス
-    if (argConn != nullptr) argConn->print(ctx.resMSG);
-    P9_SHOW_LOG();
+    argConn->print(argMSG);
     //┴
   } /* SEND_CONN() */
 
@@ -112,7 +111,7 @@ namespace adpUART {
       //│ ▽次へ：次のスロットを走査
       //│
       //●ストリームを受信
-      String retFrame = P2_STREAM(*(ssTBL[ID].CONN), ssTBL[ID].Base);
+      String retFrame = RECIEVE_STREAM(*(ssTBL[ID].CONN), ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査
@@ -151,9 +150,9 @@ namespace adpUART {
     //●接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     ssTBL[0].Base.used = true     ; // 使用中
-    ssTBL[0].CONN      = &Serial  ; // 参照先を登録
+    ssTBL[0].CONN      = &Serial1  ; // 参照先を登録
     ssTBL[1].Base.used = true     ; // 使用中
-    ssTBL[1].CONN      = &Serial1 ; // 参照先を登録
+    ssTBL[1].CONN      = &Serial2 ; // 参照先を登録
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
@@ -182,16 +181,23 @@ namespace adpUART {
       //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
-      //│ ▽次へ：次のキューを走査
+          //●エラーをレスポンス
+          //▽次へ：次のキューを走査
+          SEND_CONN(popDat.CONN, popDat.FRAME);
+          continue;
+      }
       //│
-      //●キュー情報をメイン機に転送
+      //○フレームをメイン機に転送
       Serial.print(popDat.FRAME);
       //│
-      //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      //○メイン機からのレスポンスを受信
+      String strMSG = "";
+      while (Serial.available()) strMSG += (char)Serial.read();
+      //│
+      //○レスポンスをクライアントへ返却
+      SEND_CONN(popDat.CONN, strMSG);
       //┴
     } /* END-while */
     //┴

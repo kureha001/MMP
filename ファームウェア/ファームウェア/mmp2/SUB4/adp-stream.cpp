@@ -73,12 +73,9 @@
         return true;
     } /* END-if */
     //│
-    //●受信バッファをURI形式に変換
-    P1_FORMAT_URI(argBASE.rx);
-    //│
     //○フレームを作成
     argFrame       = argBASE.rx;
-    argBASE.rx     = ""     ;
+    argBASE.rx     = ""        ;
     //│
     //▼返却：受信継続が「不要」
     return true;
@@ -93,7 +90,7 @@
   // ・true ：完成
   // ・false：未完成
   //━━━━━━━━━━━━━━━━━
-  String P2_STREAM(
+  String RECIEVE_STREAM(
     Stream&      argConn, // 通信資源
     SS_SLOT_TYPE argBASE  // スロット(ベース)
   ){

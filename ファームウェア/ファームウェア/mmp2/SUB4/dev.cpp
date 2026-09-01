@@ -26,9 +26,6 @@ void INIT_DEVICE() {
   //●通信デバイスを初期化（UART）
   devUART ::START();
   //│
-  //●通信デバイスを初期化（WiFi）
-  devNetwork::START();
-  //│
   //○終了表示
   // ➡【初期化順序制約】
   //    ログ出力機能が未起動のため、

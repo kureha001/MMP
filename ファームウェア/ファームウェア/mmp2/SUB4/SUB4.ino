@@ -2,10 +2,9 @@
 //========================================================
 //  MMP Firmware
 //--------------------------------------------------------
-// - ボード情報      : Waveshare ESP32-S3-tiny用
 // - ボート          : ESP32S3 Dev Module
 // - USB CDC ON Boot : Enabled
-// - Flash Size      : 4MB (32Mb)
+// - Flash Size      : ターゲットに合わせる
 // - Patition Scheme : Huge APP(3MB No OTA/1MB SPIFFS)
 //--------------------------------------------------------
 // Ver 2.0.a (2026/09/01) 
@@ -34,7 +33,7 @@ void setup(){
   //│
   //○開始メッセージ出力
   Serial.println("---------------------------");
-  Serial.println(" Ver.2.0.a"                 );
+  Serial.println(" MMP サブ機  Ver.2.0.a"     );
   Serial.println("---------------------------");
   //┴
 } /* setup() */

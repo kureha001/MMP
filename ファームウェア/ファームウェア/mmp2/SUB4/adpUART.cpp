@@ -5,13 +5,7 @@
 // Ver 1.2.1 (2026/08/27) 
 //========================================================
 #pragma once
-//┬
-//■┐インクルード
-  //■ＭＭＰシステム
-  #include "adp.h"  // 通信アダプタ共通へ公開
-  //┴
-//┴
-
+#include "adp.h"  // 通信アダプタ共通へ公開
 
 //########################################################
 //# 専用名の前空間
@@ -111,7 +105,7 @@ namespace adpUART {
       //│ ▽次へ：次のスロットを走査
       //│
       //●ストリームを受信
-      String retFrame = RECIEVE_STREAM(*(ssTBL[ID].CONN), ssTBL[ID].Base);
+      String retFrame = RECEIVE_STREAM(*(ssTBL[ID].CONN), ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査

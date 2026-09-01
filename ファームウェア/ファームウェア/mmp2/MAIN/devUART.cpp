@@ -29,23 +29,19 @@ namespace devUART {
   void START(){
     
     // UARTポートを起動
-    Serial.begin(115200);                      // USB(CDC)
-    Serial.setDebugOutput(false);              // SDKデバッグ出力を抑止
+    Serial.begin(115200)        ; // USB(CDC)
+    Serial.setDebugOutput(false); // SDKデバッグ出力を抑止
+    delay(1000);                  // 安定するまで待つ
 
-    Serial1.begin(921600, SERIAL_8N1, 44, 43); // サブ１用
-//    Serial2.begin(921600, SERIAL_8N1, 46, 45); // サブ２用
-//    Serial3.begin(921600, SERIAL_8N1, 48, 47); // サブ３用
-//    Serial4.begin(921600, SERIAL_8N1, 50, 49); // サブ４用
-    
-    // 起動メッセージを表示
-    delay(3000); // 安定するまで待つ
     Serial.println("<<通信デバイスの初期化>>");
     Serial.println(" [Serial device]"  );
     Serial.println("　 [OK] USB (CDC)");
-    Serial.println("　 [OK] UART(#01)");
-    Serial.println("　 [OK] UART(#02)");
-    Serial.println("　 [OK] UART(#03)");
-    Serial.println("　 [OK] UART(#04)");
+
+    //※(921600, SERIAL_8N1, xx, xx); GPIO番号は後で調査
+    Serial1.begin(921600, SERIAL_8N1); Serial.println("　 [OK] UART(#01)");
+    Serial2.begin(921600, SERIAL_8N1); Serial.println("　 [OK] UART(#02)");
+    Serial3.begin(921600, SERIAL_8N1); Serial.println("　 [OK] UART(#03)");
+    Serial4.begin(921600, SERIAL_8N1); Serial.println("　 [OK] UART(#04)");
 
     //○有効性セット
     ENABLED = true;

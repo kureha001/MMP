@@ -71,10 +71,9 @@
     //┬
     //●ハンドルをキック
     adpUART::HANDLE(&Serial1);
-//    adpUART::HANDLE(&Serial2);
-//    adpUART::HANDLE(&Serial3);
-//    adpUART::HANDLE(&Serial4);
-    //│
+//  adpUART::HANDLE(&Serial2);
+//  adpUART::HANDLE(&Serial3);
+//  adpUART::HANDLE(&Serial4);
     adpWAPI::HANDLE();
     //┴
   } /* KICK_HANDLE() */

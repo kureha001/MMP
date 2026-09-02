@@ -31,7 +31,6 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
@@ -45,10 +44,10 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-      if (dat_cnt != 1){_ResChkErr(sp); return; }
+      if (dat_cnt != 1){_ResChkErr(); return; }
 
       // ２．バージョン(文字列)を返す
-      sp.print(ctx.sysVer);
+      ctx.resMSG = ctx.sysVer;
 
       // ３．後処理：
       return;
@@ -63,10 +62,10 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-      if (dat_cnt != 1){_ResChkErr(sp); return; }
+      if (dat_cnt != 1){_ResChkErr(); return; }
 
       // ２．再起動
-      _ResOK(sp);
+      _ResOK();
       ESP.restart();
 
       // ３．後処理：
@@ -82,24 +81,24 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt != 2){_ResChkErr(sp); return; }
+        if (dat_cnt != 2){_ResChkErr(); return; }
 
         // 1.2.単項目チェック
         int intLv;
-        if (!_Str2Int(dat[1], intLv, 0, 1)){_ResChkErr(sp); return;}
+        if (!_Str2Int(dat[1], intLv, 0, 1)){_ResChkErr(); return;}
 
       // ２．出力レベルをセット
       ctx.sysLog = (intLv == 0 ? false : true);
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  _ResNotCmd(sp);
+  _ResNotCmd();
   return;
   }
 

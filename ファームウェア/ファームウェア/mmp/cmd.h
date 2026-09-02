@@ -39,7 +39,7 @@
   //─────────────────
   // 各アダプタからの進行移譲先
   //─────────────────
-  String RUN_COMMAND()      ; // 前方宣言
+  void RUN_COMMAND()      ; // 前方宣言
 
   //─────────────────
   // クライアントからのリクエスト条件
@@ -163,7 +163,7 @@ public:
   //─────────────────
   // コマンド実行
   //─────────────────
-  String RunCommand(){
+  void RunCommand(){
     //┬
     //①┐コマンドパスを整形
     char pPath[ REQUEST_LENGTH ];
@@ -205,15 +205,15 @@ public:
         //┴
       //│
       //○エラーメッセージを返却
-      if (regCount == 0) return "#CMD!"; // コマンド名不正
+      if (regCount == 0){ctx.resMSG = "#CMD!"; return;}
         // ＼（登録数がゼロの場合）
           //▼エラーメッセージを返却
       //┴
     }   /* ② */
     //│
     //③┐モジュール機能を実行
-      //○仮想出力ストリームを初期化
-      ctx.vStream.clear();
+      //○レスポンスを初期化
+      ctx.resMSG = "";
       //│
       //◎┐モジュールを走査
       for (auto* m : mods){
@@ -230,7 +230,7 @@ public:
             m->handle(dat, regCount);          
             //│
             //▼実行結果をリターン
-            return ctx.vStream.str();
+            return;
         } /* END-if */
           //└┐（その他）
             //┴
@@ -239,7 +239,7 @@ public:
       } /* END-for */
     //│
     //○エラーメッセージを返却
-    return "#NOM!"; //モジュール不在
+    ctx.resMSG = "#NOM!";
     //┴
   } /* RunCommand() */
 }; /* class CmdManager */
@@ -250,9 +250,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   // 各アダプタからの進行移譲先
   //━━━━━━━━━━━━━━━━━
-  inline String RUN_COMMAND(){
+  inline void RUN_COMMAND(){
   //┬
   //○コマンド・パース処理
-  return INO_CMD->RunCommand();
+  INO_CMD->RunCommand();
   //┴
   } /* RUN_COMMAND() */

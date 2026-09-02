@@ -27,7 +27,6 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
@@ -40,18 +39,18 @@ public:
 
       // １．前処理：
       // 1.1.書式チェック
-      if (dat_cnt != 2){_ResChkErr(sp); return;}
+      if (dat_cnt != 2){_ResChkErr(); return;}
 
       // 1.2.単項目チェック
       int port, val;
-      if (!_Str2Int(dat[1], port, 0, 39)){_ResChkErr(sp); return;}
+      if (!_Str2Int(dat[1], port, 0, 39)){_ResChkErr(); return;}
 
       // ２．デジタル入力：
       pinMode(port, INPUT_PULLUP );
       int res = digitalRead(port);
 
       // ３．後処理：
-      _ResValue(sp, res);
+      _ResValue(res);
       return;
     }
 
@@ -66,26 +65,26 @@ public:
 
       // １．前処理：
       // 1.1.書式チェック
-      if (dat_cnt != 3){_ResChkErr(sp); return;}
+      if (dat_cnt != 3){_ResChkErr(); return;}
 
       // 1.2.単項目チェック
       int port, val;
       if  ( !_Str2Int(dat[1], port, 0, 39) ||
-            !_Str2Int(dat[2], val,  0, 1 ) ){_ResChkErr(sp); return;}
+            !_Str2Int(dat[2], val,  0, 1 ) ){_ResChkErr(); return;}
 
       // ２．デジタル出力：
       pinMode(port, OUTPUT);
       digitalWrite(port, val);
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
     //━━━━━━━━━━━━━━━━━
     // コマンド名エラー
     //━━━━━━━━━━━━━━━━━
-    _ResNotCmd(sp);
+    _ResNotCmd();
     return;
   }
 

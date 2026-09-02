@@ -19,8 +19,8 @@
   //─────────────────
   // コマンド管理
   //─────────────────
-  #include "cmd.h" // RUN_COMMAND()
-  extern String RUN_COMMAND(); // 所在：parser.h
+  #include "cmd.h"
+  extern void RUN_COMMAND(); // 所在：parser.h
 #endif // ----------------------------------------┘
 
 //########################################################
@@ -122,7 +122,6 @@ namespace adpBase{
     ctx.strFrame = argFrame; // フレーム
     FORMAT_URI(ctx.strFrame);
 
-    ctx.vStream.clear(); // 仮想ストリーム
     ctx.resMSG   = ""  ; // レスポンスメッセージ
     ctx.cmdPath  = ""  ; // コマンドパス
     ctx.authCD   = ""  ; // 認証コード
@@ -154,7 +153,7 @@ namespace adpBase{
     //│ ▼終了：早期リターン
     //│
     //●ＭＭＰコマンドを実行
-    ctx.resMSG = RUN_COMMAND();
+    RUN_COMMAND();
 
 #else // -----------------------┨ＭＭＰサブ┠----┤
     //○コマンドをMMP本体にUART送信
@@ -189,7 +188,7 @@ namespace adpBase{
     Serial.println(String("]   cmdPath[") + String(ctx.cmdPath ) + String("]"));
     Serial.print  (String("accID["      ) + String(ctx.accID   ));
     Serial.println(String("]   accIDS[" ) + String(ctx.accIDS  ) + String("]"));
-    Serial.println(String("vStream:"    ) + String(ctx.vStream.str()));
+    Serial.println(String("resMSG["     ) + String(ctx.resMSG  ) + String("]"));
     Serial.println(String("======================================"));
   } /* P9_SHOW_LOG() */
 

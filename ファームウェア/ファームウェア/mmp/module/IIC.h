@@ -32,7 +32,6 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     // ───────────────────────────────
@@ -46,23 +45,23 @@ public:
     if (strcmp(Cmd,"READ") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt < 3){_ResChkErr(sp); return;}
+        if (dat_cnt < 3){_ResChkErr(); return;}
 
         // 1.2. 単項目チェック
         int addr, reg;
         if (!_Str2Int(dat[1], addr, 0x00, 0x7F) ||
-            !_Str2Int(dat[2], reg,  0x00, 0xFF)){_ResChkErr(sp); return;}
+            !_Str2Int(dat[2], reg,  0x00, 0xFF)){_ResChkErr(); return;}
 
       // ２．コマンド実行
       Wire.beginTransmission(addr);
       Wire.write(reg);
       Wire.endTransmission(false);
       int n = Wire.requestFrom(addr, 1);
-      if (n != 1){_ResChkErr(sp); return;}
+      if (n != 1){_ResChkErr(); return;}
       int v = Wire.read();
 
       // ３．後処理：
-      _ResValue(sp, v);
+      _ResValue(v);
       return;
     }
 
@@ -78,14 +77,14 @@ public:
     if (strcmp(Cmd,"WRITE") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt < 4){_ResChkErr(sp); return;}
+        if (dat_cnt < 4){_ResChkErr(); return;}
 
         // 1.2. 単項目チェック
       int addr, reg, val;
       if (!_Str2Int(dat[1], addr, 0x00, 0x7F) ||
           !_Str2Int(dat[2], reg,  0x00, 0xFF) ||
           !_Str2Int(dat[3], val,  0x00, 0xFF)
-        ){_ResChkErr(sp); return;}
+        ){_ResChkErr(); return;}
 
       // ２．コマンド実行
       Wire.beginTransmission(addr);
@@ -94,14 +93,14 @@ public:
       Wire.endTransmission();
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  _ResNotCmd(sp);
+  _ResNotCmd();
   return;
   }
 

@@ -57,7 +57,6 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
   //━━━━━━━━━━━━━━━━━
@@ -71,22 +70,22 @@ public:
     if (strcmp(Cmd,"TRACK/PLAY") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt < 4) {_ResChkErr(sp); return;}
+        if (dat_cnt < 4) {_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
         // 1.2. 単項目チェック
         int folder, track;
         if (!_Str2Int(dat[2], folder, 0, 255) ||
-            !_Str2Int(dat[3], track,  0, 255) ){_ResChkErr(sp); return;}
+            !_Str2Int(dat[3], track,  0, 255) ){_ResChkErr(); return;}
 
       // ２．コマンド実行
       g_MP3[idx].playFolder(folder,track);
 
       // ３．後処理：
-      reTrackkState(sp,idx);
+      reTrackkState(idx);
       return;
     }
     
@@ -98,21 +97,21 @@ public:
     if (strcmp(Cmd,"TRACK/LOOP") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt < 3){_ResChkErr(sp); return;}
+        if (dat_cnt < 3){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        int loop; if (!_Str2Int(dat[2], loop, 0, 1)){_ResChkErr(sp); return;}
+        int loop; if (!_Str2Int(dat[2], loop, 0, 1)){_ResChkErr(); return;}
 
       // ２．コマンド実行
       if (loop==1)  g_MP3[idx].enableLoop();
       else          g_MP3[idx].disableLoop();
 
       // ３．後処理：
-      reTrackkState(sp,idx);
+      reTrackkState(idx);
       return;
     }
     
@@ -124,17 +123,17 @@ public:
     if (strcmp(Cmd,"TRACK/STOP") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<2){_ResChkErr(sp); return;}
+        if (dat_cnt<2){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
       // ２．コマンド実行
       g_MP3[idx].stop();
             
       // ３．後処理：
-      reTrackkState(sp,idx);
+      reTrackkState(idx);
       return;
     }
     
@@ -146,17 +145,17 @@ public:
     if (strcmp(Cmd,"TRACK/PAUSE") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt < 2){_ResChkErr(sp); return;}
+        if (dat_cnt < 2){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
       // ２．コマンド実行
       g_MP3[idx].pause();
       
       // ３．後処理：
-      reTrackkState(sp,idx);
+      reTrackkState(idx);
       return;
     }
     
@@ -168,17 +167,17 @@ public:
     if (strcmp(Cmd,"TRACK/START") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<2){_ResChkErr(sp); return;}
+        if (dat_cnt<2){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
       // ２．コマンド実行
       g_MP3[idx].start();
 
       // ３．後処理：
-      reTrackkState(sp,idx);
+      reTrackkState(idx);
       return;
     }
     
@@ -194,20 +193,20 @@ public:
     if (strcmp(Cmd,"SET/VOLUME") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<3){_ResChkErr(sp); return;}
+        if (dat_cnt<3){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        int v; if (!_Str2Int(dat[2], v, 0, 30)){_ResChkErr(sp); return;}
+        int v; if (!_Str2Int(dat[2], v, 0, 30)){_ResChkErr(); return;}
 
       // ２．コマンド実行
       g_MP3[idx].volume(v);
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
     
@@ -221,20 +220,20 @@ public:
     if (strcmp(Cmd,"SET/EQ") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt<3){_ResChkErr(sp); return;}
+        if (dat_cnt<3){_ResChkErr(); return;}
 
         // 1.2. 対象外チェック
         int idx;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
         // 1.3. 単項目チェック
-        int mode; if (!_Str2Int(dat[2], mode, 0, 5)){_ResChkErr(sp); return;}
+        int mode; if (!_Str2Int(dat[2], mode, 0, 5)){_ResChkErr(); return;}
 
       // ２．コマンド実行
       g_MP3[idx].EQ(mode);
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
     
@@ -250,17 +249,17 @@ public:
     if (strcmp(Cmd,"INFO/CONNECT") == 0){
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt != 2){_ResChkErr(sp); return;}
+        if (dat_cnt != 2){_ResChkErr(); return;}
 
         // 1.2. 単項目チェック
         int dev;
-        if (!_Str2Int(dat[1], dev, 1, 2)){_ResChkErr(sp); return;}
+        if (!_Str2Int(dat[1], dev, 1, 2)){_ResChkErr(); return;}
 
       // ２．コマンド実行
       int res = g_MP3STATUS[dev - 1];
 
       // ３．後処理：
-      _ResValue(sp, res);
+      _ResValue(res);
       return;
     }
 
@@ -279,11 +278,11 @@ public:
     {
       // １．前処理：
         // 1.1.書式チェック
-        if (dat_cnt != 2){_ResChkErr(sp); return;}
+        if (dat_cnt != 2){_ResChkErr(); return;}
 
         // 1.3. 対象外チェック
         int idx = 0;
-        if (!checkDev(sp, dat[1], idx)) return;
+        if (!checkDev(dat[1], idx)) return;
 
         // ２．コマンド実行 ※エラーならリトライ
         int res = -1;
@@ -297,14 +296,14 @@ public:
         }
 
         // ３．後処理：
-        _ResValue(sp, res);
+        _ResValue(res);
         return;
       }    
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  _ResNotCmd(sp);
+  _ResNotCmd();
   return;
   }
 
@@ -314,14 +313,14 @@ public:
   // ───────────────
   // デバイス違反チェッカー
   // ───────────────
-  bool checkDev(Stream& sp, const char* s, int idx){
+  bool checkDev(const char* s, int idx){
     // 単項目チェック
     int dev;
-    if (!_Str2Int(s, dev, 1, 2)){_ResChkErr(sp); return false;}
+    if (!_Str2Int(s, dev, 1, 2)){_ResChkErr(); return false;}
 
     // 対象外チェック
     idx = dev - 1;
-    if (!g_MP3STATUS[idx]){_ResDevErr(sp); return false;}
+    if (!g_MP3STATUS[idx]){_ResDevErr(); return false;}
 
     // 後処理
     return true;
@@ -329,7 +328,7 @@ public:
   // ───────────────
   // 対象トラック状況
   // ───────────────
-  void reTrackkState(Stream& sp, int idx){
+  void reTrackkState(int idx){
     // ※エラーならリトライ
     int res = -1;
     for (int tries = 0; tries < 50 && res == -1; ++tries) {
@@ -337,6 +336,6 @@ public:
       res = g_MP3[idx].readState();
       if (res != -1) break;          // 成功したら即終了
     }
-    _ResValue(sp, res);
+    _ResValue(res);
   }
 };

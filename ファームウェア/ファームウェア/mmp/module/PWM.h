@@ -150,13 +150,12 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     //━━━━━━━━━━━━━━━━━
     // ユーザデータのスロットを特定
     //━━━━━━━━━━━━━━━━━
-    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(sp); return;}
+    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(); return;}
     UserData& SLOT = g_USR_DAT[ctx.accID];
 
     // ───────────────────────────────
@@ -169,13 +168,13 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 1){_ResChkErr(sp); return;}
+        if(dat_cnt != 1){_ResChkErr(); return;}
   
       // ２．値取得：
       int res = (g_DEV_IDs < 0) ? 0 : (g_DEV_IDs + 1);
 
       // ３．後処理：
-      _ResValue(sp, res);
+      _ResValue(res);
       return;
     }
 
@@ -191,19 +190,19 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt < 3){_ResChkErr(sp); return;}
+        if(dat_cnt < 3){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int ch, val;
         if(!comChannel(dat[1], ch, false   ) || // チャンネルID
            !_Str2Int  (dat[2], val, 0, 4095)    // PWM値
-          ){_ResChkErr(sp); return;}
+          ){_ResChkErr(); return;}
 
       // ２．ＰＷＭ出力：
       g_PWM[int(ch/16)].setPWM((ch%16), 0, val);
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
@@ -227,7 +226,7 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 6){_ResChkErr(sp); return;}
+        if(dat_cnt != 6){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int from,to, deg, ps,pe;
@@ -236,13 +235,13 @@ public:
            !_Str2Int  (dat[3], deg,  0, 360 ) ||  // 最大角度
            !_Str2Int  (dat[4], ps,   0, 4095) ||  // PWM値：0度
            !_Str2Int  (dat[5], pe,   0, 4095)     //　　　：最大角度
-          ){_ResChkErr(sp); return;}
+          ){_ResChkErr(); return;}
 
         // 1.3.データ補正
         if(to == -1) to = from; // 単一チャンネル(=From)
 
         // 1.4.相関チェック
-        if(from > to || ps >= pe){_ResChkErr(sp); return;}
+        if(from > to || ps >= pe){_ResChkErr(); return;}
 
       // ３．プリセット登録：
       for (int ch = from; ch <= to; ++ch){
@@ -254,7 +253,7 @@ public:
       }
 
       // ４．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
@@ -270,20 +269,20 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 3){_ResChkErr(sp); return;}
+        if(dat_cnt != 3){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int ch, deg;
         if(!comChannel(dat[1], ch, false  ) ||  // チャンネルID
            !_Str2Int  (dat[2], deg, 0, 360)     // 角度
-          ){_ResChkErr(sp); return;}
+          ){_ResChkErr(); return;}
 
         // 1.3.機能チェック
         typePresetAngle &tbl = SLOT.angle[ch];
-        if(!tbl.enable ){_ResIniErr(sp); return;}   // 有効性判定
+        if(!tbl.enable ){_ResIniErr(); return;}   // 有効性判定
 
         // 1.4.相関チェック
-        if(deg > tbl.deg){_ResChkErr(sp); return;}  // 最大角度
+        if(deg > tbl.deg){_ResChkErr(); return;}  // 最大角度
 
       // ２．主要データ取得：
       int val = map(deg, 0, tbl.deg, tbl.pwm.min, tbl.pwm.max);
@@ -292,7 +291,7 @@ public:
       g_PWM[int(ch/16)].setPWM((ch%16), 0, val);
 
       // ４．後処理：
-      _ResValue(sp, val);
+      _ResValue(val);
       return;
     }
 
@@ -317,7 +316,7 @@ public:
     if (strcmp(Cmd,"ROTATE/SETUP") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 7){_ResChkErr(sp); return;}
+        if(dat_cnt != 7){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int from,to, rs,re, ls,le;
@@ -327,7 +326,7 @@ public:
            !_Str2Int  (dat[4], re, 3, 4095) ||  // 　　　　　　 ：100%
            !_Str2Int  (dat[5], ls, 3, 4095) ||  // 　　 ：左回り：0%
            !_Str2Int  (dat[6], le, 3, 4095)     // 　　　　　　 ：100%
-          ){_ResChkErr(sp); return;}
+          ){_ResChkErr(); return;}
 
         // 1.3.データ補正
         if(to == -1) to = from; // 単一チャンネル(=From)
@@ -337,7 +336,7 @@ public:
            rs   >= re ||  // ③④ＰＷＭ値
            le   >= ls ||  // ⑤⑥ＰＷＭ値
            ls   >= rs     // ③⑤ＰＷＭ値
-        ){_ResChkErr(sp); return;}
+        ){_ResChkErr(); return;}
 
       // ２．プリセット登録：
       for (int ch =from; ch <= to; ++ch){
@@ -350,7 +349,7 @@ public:
       }
 
       // ４．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
@@ -366,17 +365,17 @@ public:
 
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 3){_ResChkErr(sp); return;}
+        if(dat_cnt != 3){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int ch, rate;
         if(!comChannel(dat[1], ch, false      ) ||  // チャンネルID
            !_Str2Int  (dat[2], rate, -100, 100)     // 出力比率
-           ){_ResChkErr(sp); return;}
+           ){_ResChkErr(); return;}
 
         // 1.3.機能チェック
         typePresetPwm &tbl = SLOT.rotate[ch];
-        if(!tbl.enable){_ResIniErr(sp); return;}    // 有効性判定
+        if(!tbl.enable){_ResIniErr(); return;}    // 有効性判定
 
       // ２．主要データ取得：
       int val;
@@ -395,7 +394,7 @@ public:
       g_PWM[int(ch/16)].setPWM((ch%16), 0, val);
 
       // ４．後処理：
-      _ResValue(sp, val);
+      _ResValue(val);
       return;
     }
 
@@ -414,19 +413,19 @@ public:
     if (strcmp(Cmd,"ANGLE/RESET") == 0 || strcmp(Cmd,"ROTATE/RESET") == 0){
       // １．前処理：
         // 1.1.書式チェック
-        if(dat_cnt != 3){_ResChkErr(sp); return;}
+        if(dat_cnt != 3){_ResChkErr(); return;}
 
         // 1.2.単項目チェック
         int from, to;
         if(!comChannel(dat[1], from, false) ||
            !comChannel(dat[2], to,   true )
-           ){_ResChkErr(sp); return;}
+           ){_ResChkErr(); return;}
 
         // 1.3.データ補正
         if(to == -1) to = from;
 
         // 1.4.相関チェック
-        if(from > to){_ResChkErr(sp); return;}
+        if(from > to){_ResChkErr(); return;}
       
       // ２．プリセット削除：
       if(strcmp(Cmd,"ANGLE/RESET") == 0){
@@ -449,14 +448,14 @@ public:
       }
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
     //━━━━━━━━━━━━━━━━━
     // コマンド名エラー
     //━━━━━━━━━━━━━━━━━
-    _ResNotCmd(sp);
+    _ResNotCmd();
     return;
   }
 

@@ -69,13 +69,12 @@ public:
     //━━━━━━━━━━━━━━━━━
     // 前処理
     //━━━━━━━━━━━━━━━━━
-    Stream&     sp = ctx.vStream;         // 仮想ストリーム
     const char* Cmd = _Remove1st(dat[0]); // コマンド名を補正
 
     //━━━━━━━━━━━━━━━━━
     // ユーザデータのスロットを特定
     //━━━━━━━━━━━━━━━━━
-    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(sp); return;}
+    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(); return;}
     UserData& SLOT = g_USR_DAT[ctx.accID];
 
     // ───────────────────────────────
@@ -89,19 +88,19 @@ public:
 
       // １．前処理
         // 1.1. 書式
-        if (dat_cnt != 3){_ResChkErr(sp); return;}
+        if (dat_cnt != 3){_ResChkErr(); return;}
 
         // 1.2. 単項目チェック
         int plCnt, swCnt;
         if (!_Str2Int(dat[1], plCnt, 1, 16) ||
-            !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(sp); return;}
+            !_Str2Int(dat[2], swCnt, 1,  4) ){_ResChkErr(); return;}
 
       // ２．処理
       SLOT.PlayerCnt = plCnt;
       SLOT.SwitchCnt = swCnt;
 
       // ３．応答
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
@@ -115,7 +114,7 @@ public:
 
       // １．前処理：
         // 1.1. 書式
-        if (dat_cnt != 1){_ResChkErr(sp); return;}
+        if (dat_cnt != 1){_ResChkErr(); return;}
 
       // ２．処理
       for (int ch = 0; ch < SLOT.PlayerCnt; ch++) {
@@ -136,7 +135,7 @@ public:
       }
 
       // ３．後処理：
-      _ResOK(sp);
+      _ResOK();
       return;
     }
 
@@ -151,30 +150,30 @@ public:
 
       // １．前処理
         // 1.1. 書式（第3引数は任意）
-        if (dat_cnt != 3){_ResChkErr(sp); return;}
+        if (dat_cnt != 3){_ResChkErr(); return;}
 
         // 1.2. 単項目チェック
         int pl, sw;
         if (!_Str2Int(dat[1], pl, 0, SLOT.PlayerCnt - 1) ||
             !_Str2Int(dat[2], sw, 0, SLOT.SwitchCnt - 1) )
-            {_ResChkErr(sp); return;}
+            {_ResChkErr(); return;}
 
         // 1.4.機能チェック
-        if (pl >= SLOT.PlayerCnt || sw >= SLOT.SwitchCnt){_ResChkErr(sp); return;}
+        if (pl >= SLOT.PlayerCnt || sw >= SLOT.SwitchCnt){_ResChkErr(); return;}
 
       // ２．処理
       const int idx = pl * 4 + sw;        // 値のデータ位置
       int res = SLOT.Values[idx];
 
       // ３．後処理：
-      _ResValue(sp, res);
+      _ResValue(res);
       return;
     }
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━
-  _ResNotCmd(sp);
+  _ResNotCmd();
   return;
   }
 

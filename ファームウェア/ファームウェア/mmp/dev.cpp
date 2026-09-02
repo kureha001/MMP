@@ -13,8 +13,7 @@
 //・RGB-LEDデバイスを提供する
 //・通信デバイスの初期化を指示する
 //--------------------------------------------------------
-// Ver 1.2.0 (2026/08/25) 
-// ・EPS-NOWのプリプロセッサ条件を追加
+// Ver 1.2.0 (2026/09/02) 
 //========================================================
 //┬
 //■┐インクルード
@@ -30,18 +29,24 @@
 
 void INIT_DEVICE() {
   //┬
-  //●通信デバイスを初期化（UART）
-  devUART ::START();
+  //○USB(CDC)ポートを起動
+  Serial.begin(115200);          // USB(CDC)
+  Serial.setDebugOutput(false);  // SDKデバッグ出力を抑止
+  delay(2000);                   // 安定するまで待つ
+  Serial.println("<<通信デバイスの初期化>>");
+  Serial.println(" [Serial device]"  );
+  Serial.println("　 [OK] USB (CDC) -> 115,200bps");
   //│
+  //●通信デバイスを初期化
+#if defined(ADP_COM_UART ) //----------------┨UART┠┐
+  devUART::START();
+#endif // -------------------------------------------┘
 // -----------┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
 #if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
-  //●通信デバイスを初期化（WiFi）
   devWiFi::START();
 #endif // -------------------------------------------┘
-  //│
 #if defined(ADP_COM_BLE  ) // ------------┨ＢＬＥ┠-┐
-  //●通信デバイスを初期化（BLE）
-  devBLE    ::START();
+  devBLE::START();
 #endif // -------------------------------------------┘
   //┴
 } /* INIT_DEVICE() */

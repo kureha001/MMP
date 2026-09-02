@@ -25,7 +25,7 @@
 //┴
 
 //########################################################
-//# 専用名の前空間
+//# 前空間
 //########################################################
 namespace devUART {
 //========================================================
@@ -92,22 +92,12 @@ namespace devUART {
     else if (A==1 && B==0 && C==1) id = 6; // ■□■
     else if (A==1 && B==1 && C==1) id = 7; // ■■■
 
-    // USB(CDC)ポートを起動
-    Serial.begin(115200);          // USB(CDC)
-    Serial.setDebugOutput(false);  // SDKデバッグ出力を抑止
-
     // UARTポートを起動
     int intBaud = BAUD_PRESETS[id];
     Serial1.begin(intBaud, SERIAL_8N1, 44, 43); // GPIO Serial
-    delay(3000); // 安定するまで待つ
     
-    // 起動メッセージを表示
-    Serial.println("<<通信デバイスの初期化>>");
-    Serial.println(" [Serial device]"  );
-    Serial.println("　 [OK] USB (CDC) -> 115,200bps");
-    Serial.println("　 [OK] UART(#01) -> " + String(intBaud) + "bps");
-
     //○有効性セット
+    Serial.println("　 [OK] UART(#01) -> " + String(intBaud) + "bps");
     ENABLED = true;
   } /* START() */
 } /* namespace devUART */

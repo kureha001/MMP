@@ -11,6 +11,9 @@
   #include <BLEDevice.h>
   #include <BLEServer.h>
   #include <BLEUtils.h>
+  //│
+  //■ＭＭＰシステム
+  #include "conf.h"
   //┴
 //┴
 

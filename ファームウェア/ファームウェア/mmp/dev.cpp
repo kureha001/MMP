@@ -18,7 +18,6 @@
 //┬
 //■┐インクルード
   //■ＭＭＰシステム
-  #include "conf.h"   // 各種設定
   #include "dev.h"
   //│
   //■ＭＭＰシステム(通信デバイス群）
@@ -28,7 +27,17 @@
 //┴
 
 void INIT_DEVICE() {
-  //┬
+    // --------------------------------------------------
+    // 設定値の整合性チェック（ビルドガード）
+    // --------------------------------------------------
+    #if !defined(MMP_TYPE_MAIN) && !defined(ADP_COM_UART)
+    #error "【設定エラー】サブ構成の場合は ADP_COM_UART の定義が必須です！"
+    #endif
+    #if defined(MMP_TYPE_MAIN) && !defined(ADP_COM_UART)
+    #warning "【確認】サブ機を繋げる場合は UART を有効にしてください。"
+    #endif
+
+ //┬
   //○USB(CDC)ポートを起動
   Serial.begin(115200);          // USB(CDC)
   Serial.setDebugOutput(false);  // SDKデバッグ出力を抑止
@@ -41,10 +50,12 @@ void INIT_DEVICE() {
 #if defined(ADP_COM_UART ) //----------------┨UART┠┐
   devUART::START();
 #endif // -------------------------------------------┘
+
 // -----------┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
 #if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
   devWiFi::START();
 #endif // -------------------------------------------┘
+
 #if defined(ADP_COM_BLE  ) // ------------┨ＢＬＥ┠-┐
   devBLE::START();
 #endif // -------------------------------------------┘

@@ -117,7 +117,6 @@ namespace adpBase{
   // 接続スロットごとの前処理
   //━━━━━━━━━━━━━━━━━
   void SETUP(String argAdpID, String argFrame){
-
     ctx.adpID    = argAdpID; // アダプタID
     ctx.strFrame = argFrame; // フレーム
     FORMAT_URI(ctx.strFrame);
@@ -139,21 +138,22 @@ namespace adpBase{
   //━━━━━━━━━━━━━━━━━
   void RUN(String argAdpID, String argFrame){
     //┬
-    //●セットアップ
+    //●セットアップ（）
     SETUP(argAdpID, argFrame);
     //│
 
 #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-    //○リクエストをデータ項目に分解
+    //○リクエストをデータ項目ごとに分解
     SET_ACD_CPATH();
     //│
-    //●認証処理を実施
+    //●ユーザ認証を実施
     if (adpAUTH::CHECK()) return;
     //│＼（処理継続が不可の場合）
     //│ ▼終了：早期リターン
     //│
     //●ＭＭＰコマンドを実行
     RUN_COMMAND();
+    //┴
 
 #else // -----------------------┨ＭＭＰサブ┠----┤
     //○コマンドをMMP本体にUART送信
@@ -170,11 +170,11 @@ namespace adpBase{
       //┴
     } /* END-while */
     //│
-    //○ＭＭＰ本体からのレスポンス
+    //○ＭＭＰ本体からのレスポンスをコンテクストに反映
     ctx.resMSG = strRX;
+    //┴
 #endif // ----------------------------------------┘
 
-    //┴
   } /* RUN() */
 
   //━━━━━━━━━━━━━━━━━

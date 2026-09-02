@@ -2,41 +2,32 @@
 //========================================================
 // コマンド管理
 //--------------------------------------------------------
-// - コマンド・モジュールの登録
-// - コマンド・モジュールのルーティング
+//【目的】
+// ・コマンド・モジュールの登録
+// ・コマンド・モジュールのルーティング
 //--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.0 (2026/09/02) 
 //========================================================
 #pragma once
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  //│
   //■ＭＭＰシステム
-  #include "cmdAPI.h" // 抽象基底クラス
+  #include "cmd_API.h" // 抽象基底クラス
   //│
   //★★★ コマンド・モジュール保守の対応箇所(1/4) ★★★
-  //■ＭＭＰシステム(モジュール)
-  #include "modSYS.h" // システム
-  #include "modANA.h" // アナログ入力
-  #include "modDIG.h" // デジタル入出力
-  #include "modPWM.h" // PWM出力
-  #include "modI2C.h" // I2C通信
-  #include "modMP3.h" // MP3プレイヤー
+  //■ＭＭＰシステム(モジュール群)
+  #include "module/system.h"  // システム管理
+  #include "module/analog.h"  // アナログ入力
+  #include "module/digital.h" // デジタル入出力
+  #include "module/pwm.h"     // PWM出力
+  #include "module/IIC.h"     // IIC通信
+  #include "module/mp3.h"     // MP3プレイヤー
   //┴
 //┴
 
 //━━━━━━━━━━━━━━━━━
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // RGB-LED
-  //----------------------------------
-  // ※定義・実装：dev.cpp
-  //─────────────────
-  #include <Adafruit_NeoPixel.h>
-  extern Adafruit_NeoPixel INO_PIXEL;
-
   //─────────────────
   // コマンド管理
   //----------------------------------
@@ -61,37 +52,35 @@
 // コマンド・モジュール定義
 //========================================================
   struct T_MOD {
-    const char* name;
-    uint8_t     r;
-    uint8_t     g;
-    uint8_t     b;
+    const char* name; // 名前
+    const char* desc; // 説明
   };
 
 
 //########################################################
-//# 専用名の前空間
+//# 前空間：モジュールのリスト
 //########################################################
 namespace MMP_MOD {
 
-  //★★★ コマンド・モジュール保守の対応箇所(2/4) ★★★
-  static const T_MOD SYS    = { "SYS"    ,  5,  5,  5 };
-  static const T_MOD ANA_I  = { "ANALOG" , 10,  0, 10 };
-  static const T_MOD DIG_IO = { "DIGITAL", 10,  0,  0 };
-  static const T_MOD PWM    = { "PWM"    ,  0,  0, 50 };
-  static const T_MOD I2C    = { "I2C"    , 10, 10,  0 };
-  static const T_MOD MP3    = { "MP3"    ,  0, 10,  0 };
+  // 略名、正式名称を定義
+  static const T_MOD SYS    = {"SYS"    , "System Management"   };
+  static const T_MOD ANA_I  = {"ANALOG" , "Analog Input"        };
+  static const T_MOD DIG_IO = {"DIGITAL", "Digital Input/Output"};
+  static const T_MOD PWM    = {"PWM"    , "PWM Output"          };
+  static const T_MOD IIC    = {"IIC"    , "IIC Read/Write"      };
+  static const T_MOD MP3    = {"MP3"    , "MP3 Player"          };
 
-  //★★★ コマンド・モジュール保守の対応箇所(3/4) ★★★
-  static const T_MOD* const LIST[] = {
+  // モジュールのリストを定義
+  static const T_MOD* const MOD_LIST[] = {
     &SYS,
     &ANA_I,
     &DIG_IO,
     &PWM,
-    &I2C,
+    &IIC,
     &MP3,
   };
 
-  static const size_t COUNT = sizeof(LIST) / sizeof(LIST[0]);
+  static const size_t COUNT = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
 
 } /* namespace MMP_MOD */
 
@@ -104,7 +93,7 @@ class CmdManager {
   MmpContext&               ctxRef;     // ※スケッチで依存注入
   //｜
   //□保有情報
-  std::vector<ModuleBase*>  mods;       // コマンド・モジュール群
+  std::vector<ModuleBase*>  mods;       // 登録モジュール群
   //┴
 
 public:
@@ -123,13 +112,12 @@ public:
     Serial.println("<<モジュールの初期化>>");
     //│
     //○コマンド・モジュールを登録
-    //★★★ コマンド・モジュール保守の対応箇所(4/4) ★★★
-    mods.push_back(new ModuleSystem (ctxRef, MMP_MOD::SYS.name   ));
-    mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name ));
-    mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name));
-    mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   ));
-    mods.push_back(new ModuleI2C    (ctxRef, MMP_MOD::I2C.name   ));
-    mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   ));
+    mods.push_back(new ModuleSystem (ctxRef, MMP_MOD::SYS.name   , MMP_MOD::SYS.desc   ));
+    mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name , MMP_MOD::ANA_I.desc ));
+    mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name, MMP_MOD::DIG_IO.desc));
+    mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   , MMP_MOD::PWM.desc   ));
+    mods.push_back(new ModuleIIC    (ctxRef, MMP_MOD::IIC.name   , MMP_MOD::IIC.desc   ));
+    mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   , MMP_MOD::MP3.desc   ));
     //│
     //◎┐登録名を表示
     Serial.print(" Add In ->");
@@ -151,20 +139,25 @@ private:
   //━━━━━━━━━━━━━━━━━
   // モジュール名を表示
   //━━━━━━━━━━━━━━━━━
-  void SHOW_NAME(const char* argName){
+  void SHOW_DESC(const char* argName){
   //┬
-  //◎┐モジュール名に対応するRGB値を取得
-  T_MOD col = {nullptr, 255, 255, 255}; // 初期値
+  //◎┐略名に対応する正式名称を取得
+  String strDesc = "";
   for (size_t i = 0; i < MMP_MOD::COUNT; ++i){
-    const T_MOD& def = *MMP_MOD::LIST[i];
-    if (strcmp(argName, def.name) == 0){ col = def; break; }
+    //○モジュール定義を取得
+    const T_MOD& thisMod = *MMP_MOD::MOD_LIST[i];
+    //│
+    //○名称を確認
+    if (strcmp(argName, thisMod.name) == 0) {strDesc = thisMod.desc; break;}
+    //│＼（一致した場合）
+    //│  ▼中断：走査を終了
+    //┴
   } /* END-for */
   //│
-  //○LEDを発光
-  INO_PIXEL.setPixelColor(0, INO_PIXEL.Color(col.g, col.r, col.b));
-  INO_PIXEL.show();
+  //○説明を表示
+  Serial.printf("Run : %s\n", (strDesc != "") ? strDesc : "(Unknown)");
   //┴
-  } /* SHOW_NAME() */
+  } /* SHOW_DESC() */
 
 public:
   //─────────────────
@@ -230,11 +223,13 @@ public:
         //◇┐当該モジュールを実行
         if (m->owns(dat[0])){
           //├→(コマンド所有者の場合)
-            //●モジュール名を表示
+            //●モジュール説明を表示
+//          SHOW_DESC(m->getModName());
+            //│
             //○モジュールを実行
-            //▼実行結果をリターン
-            SHOW_NAME(m->getModName());
             m->handle(dat, regCount);          
+            //│
+            //▼実行結果をリターン
             return ctx.vStream.str();
         } /* END-if */
           //└┐（その他）

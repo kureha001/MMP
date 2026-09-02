@@ -7,7 +7,7 @@
 // ・アダプタが利用する共通関数・構造体定義を公開する
 // ・アダプタのインタフェイスを公開する
 //--------------------------------------------------------
-// Ver 1.2.0 (2026/08/25) 
+// Ver 1.2.0 (2026/09/02) 
 //========================================================
 #pragma once
 //┬
@@ -19,7 +19,8 @@
   //│
   //■ＭＭＰシステム
   #include "conf.h"
-  #include "mmpCtx.h"
+  #include "context.h"
+  //┴
 //┴
 
 //━━━━━━━━━━━━━━━━━
@@ -59,8 +60,6 @@
   //━━━━━━━━━━━━━━━━━
     //─────────────────
     // 構造体
-    //----------------------------------
-    // 通信アダプタの名前空間で派生(名称:T_SLOT)し実体化(名称:ssTBL)
     //─────────────────
     struct SS_SLOT_TYPE {
       bool    used   = false ; // スロット有効性
@@ -68,26 +67,33 @@
       bool    isOver = false ; // 容量超過フラグ
     };
 
-    //─────────────────
-    // スロット初期化
-    //----------------------------------
-    // 通信アダプタの名前空間で派生(名称:INIT_SLOT)
-    //─────────────────
+//========================================================
+// 共通部品
+//========================================================
+  //【基本】
+  namespace adpBase{
+    void RUN(String argAdpID, String argFrame);
+    void P9_SHOW_LOG();
+  }
+
+  //【ストリーム処理】
+  namespace adpStream{
     void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
+    String P1_STREAM(Stream& argConn, SS_SLOT_TYPE argBASES);
+  }
+
+  //【認証処理】
+  namespace adpAUTH{
+    void INIT_TBL(); // [adp]で利用
+    bool CHECK()   ; // [adpBase]で利用
+  }
+
+  //【URI整形】
+  void FORMAT_URI(String &str);  // [adpBase][adpStream]で利用
+
 
 //========================================================
-// 処理プロセス
-//========================================================
-  void   P0_SETUP_CONTEXT(String argAdpID, String argFrame);
-  void   P1_FORMAT_URI(String &str);
-  String P2_STREAM(Stream& argConn, SS_SLOT_TYPE argBASES);
-  void   P1_SET_ACD_CPATH();
-  bool   P2_CHECK_AUTH();
-  void   P3_RUN();
-  void   P9_SHOW_LOG();
-
-//========================================================
-// アダプタの公開情報
+// アダプタ
 //========================================================
   //【通信アダプタ：ＵＡＲＴ】
   namespace adpUART{
@@ -125,7 +131,7 @@
     void HANDLE() ; // ポーリングのハンドル
   }
 
-  //【通信アダプタ：Ｉ２Ｃ】
+  //【通信アダプタ：ＩＩＣ】
   namespace adpI2C{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル

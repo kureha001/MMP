@@ -23,55 +23,30 @@
   //■ＭＭＰシステム
   #include "conf.h"   // 各種設定
   #include "dev.h"
+  //│
+  //■デバイス
+  #include "device/UART.cpp"
+  #include "device/WiFi.cpp"
+  #include "device/BLE.cpp"
 //┴
-
-//========================================================
-// グローバル資源
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // RGB-LED(NeoPixel)
-  // 通信デバイス・コマンド管理の処理よりも先に記述
-  //─────────────────
-  //・利用者：通信デバイス(UART)、コマンド管理
-  //・利用法：externで実体を共有参照
-  //・用途等：
-  //  - 通信デバイス：通信速度の可視化
-  //  - コマンド管理：実行機能の可視化
-  //─────────────────
-  // 定義元：Adafruit_NeoPixel.h
-  //━━━━━━━━━━━━━━━━━
-  #include <Adafruit_NeoPixel.h>
-  #define NEOPIXEL_PIN 38 // Waveshare ESP32-S3-Tiny: WS2812 DIN=GPIO38
-  Adafruit_NeoPixel INO_PIXEL(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800); // 1個
-
 
 //########################################################
 //# 専用の名前空間
 //########################################################
 void INIT_DEVICE() {
   //┬
-  //○開始表示
-  // ➡【初期化順序制約】
-  //    ログ出力機能が未起動のため、
-  //    Serial初期化完了後にdevUART::START()内で通知する
-  //│
   //●通信デバイスを初期化（UART）
   devUART ::START();
   //│
 // ┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
 #if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
   //●通信デバイスを初期化（WiFi）
-  devNetwork::START();
+  devWiFi::START();
 #endif // -------------------------------------------┘
   //│
 #if defined(ADP_COM_BLE  ) // --┨ＢＬＥ通信┨----┐
   //●通信デバイスを初期化（BLE）
   devBLE    ::START();
 #endif // ----------------------------------------┘
-  //│
-  //○終了表示
-  // ➡【初期化順序制約】
-  //    ログ出力機能が未起動のため、
-  //    Serial初期化完了後にdevNetwork::start()内で通知する
   //┴
 } /* INIT_DEVICE() */

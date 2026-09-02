@@ -71,8 +71,8 @@
 
   //【ストリーム処理】
   namespace adpStream{
-    void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
-    String P1_STREAM(Stream& argConn, SS_SLOT_TYPE argBASES);
+    void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
+    String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
   }
 
   //【認証処理】

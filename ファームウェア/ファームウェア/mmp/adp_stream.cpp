@@ -101,7 +101,7 @@ namespace adpStream{
   // ・true ：完成
   // ・false：未完成
   //━━━━━━━━━━━━━━━━━
-  String P1_STREAM(
+  String GET_FRAME(
     Stream&      argConn, // 通信資源
     SS_SLOT_TYPE argBASE  // スロット(ベース)
   ){
@@ -115,6 +115,6 @@ namespace adpStream{
     } /* END-while */
 
     return retFrame; // フレーム返却(エラーコード含む)
-  } /* P1_STREAM() */
+  } /* GET_FRAME() */
 
 } /* namespace adpStream */

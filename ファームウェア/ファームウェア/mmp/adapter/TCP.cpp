@@ -205,7 +205,7 @@ namespace adpTCP {
         //┴
       //│
       //●ストリームを受信
-      String retFrame = adpStream::P1_STREAM(ssTBL[ID].CONN, ssTBL[ID].Base);
+      String retFrame = adpStream::GET_FRAME(ssTBL[ID].CONN, ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査

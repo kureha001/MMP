@@ -69,6 +69,16 @@ bool BEGIN(const uint8_t argMAC[]) {
     return false;
   }
 
+  // 正常終了
+  Serial.printf(
+    "[OK] Successfully : MAC[%02X:%02X:%02X:%02X:%02X:%02X]\n",
+    targetMac[0],
+    targetMac[1],
+    targetMac[2],
+    targetMac[3],
+    targetMac[4],
+    targetMac[5]
+  );
   IS_CONNECT = true;
   return IS_CONNECT;
 }

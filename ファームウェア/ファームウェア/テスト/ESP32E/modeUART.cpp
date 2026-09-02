@@ -52,21 +52,26 @@ String RUN(
   if (!IS_CONNECT ) errMSG = "[NG] Initialization";
   if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not Ready.";}
 
-  // コマンドをリクエストする
-  MySerial.print(cmdStr);
-
   // 前処理
   uint8_t       strRX[6] = {0};
   unsigned long startMs  = millis();
   int           cntChar  = 0;
 
+  // コマンドをリクエストする
+  MySerial.print(cmdStr);
+
   // レスポンスを取得する
-  while (cntChar < 5 && (millis() - startMs) < argTimeoutMs) {
+  while (cntChar < 5) {
+    if (millis() - startMs > argTimeoutMs) {
+      errMSG = "[FAIL] Timeout";  
+      Serial.println(errMSG);
+      return errMSG;
+    }
     strRX[cntChar++] = MySerial.read();
     delay(10);
   } /* END-while */
 
-  // レスポンス値を返却する
+  // 正常終了
   strRX[cntChar] = '\0';
   return ((char*)strRX);
 

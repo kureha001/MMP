@@ -44,19 +44,22 @@ namespace modeWebSoc {
 //=====================================================
 bool BEGIN(uint16_t argPort) {
 
-  if (WiFi.status() != WL_CONNECTED) return false;
+  Serial.println("---------- [WebSocket] BEGIN() ----------");
+  String errMSG = "";
+  if (WiFi.status() != WL_CONNECTED) errMSG = "[NG] No WiFi Service";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not ready";}
 
+  // サービスの取得
   CONN_PORT = argPort;   
   CONN.begin(SRV_IP, CONN_PORT, "/");
-  CONN.onEvent(OnReceive);
-  
-  unsigned long startMs = millis();
-  while (!IS_CONNECT && (millis() - startMs) < 2000) {
-    CONN.loop();
-    delay(10);
-  }
 
-  return IS_CONNECT;
+  // コールバックを登録
+  CONN.onEvent(OnReceive);  
+
+  // 正常終了
+  Serial.printf("[OK] Successfully : port[%d]\n", CONN_PORT);
+  IS_CONNECT = true;
+  return       true;
 }
 
 //=====================================================
@@ -76,37 +79,34 @@ String RUN(
   const    char* cmdStr,
   unsigned long  argTimeoutMs
 ) {
+  Serial.println("---------- [WebSocket] RUN() ----------");
+  Serial.printf (" command : %s\n", cmdStr);
 
-  // WiFi接続を確認する
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected.");
-    delay(100);
-    return "FAIL#0";
-  }
-
-  // WinSocket接続を確認する
-  if (!IS_CONNECT) {
-    Serial.println("WebSocket not connected.");
-    delay(100);
-    return "FAIL#1";
-  }
+  String errMSG = "";
+  if      (!IS_CONNECT                  ) errMSG = "[NG] No Callback";
+  else if (WiFi.status() != WL_CONNECTED) errMSG = "[NG] No WiFi Service";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not Ready.";}
 
   // 前処理
   STR_RX   = ""   ; // 受信バッファ
   IS_FRAME = false; // フレームの作成状況を判定
 
-  //コマンドをリクエストする
-  Serial.printf("Sending command (WEB Socket): %s\n", cmdStr);
+  // ＭＭＰへリクエスト
   CONN.sendTXT(cmdStr);
 
   //レスポンスを取得する（イベント駆動の完了を待つ）
   unsigned long startMs = millis();
-  while (!IS_FRAME && (millis() - startMs) < argTimeoutMs) {
+  while (!IS_FRAME) {
+    if (millis() - startMs > argTimeoutMs) {
+      errMSG = "[FAIL] Timeout";  
+      Serial.println(errMSG);
+      return errMSG;
+    }
     CONN.loop();
     delay(5);
   }
 
-  // レスポンス値を返却する
+  // 正常終了
   return STR_RX;
 
 } /* runTCP() */

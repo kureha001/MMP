@@ -111,6 +111,11 @@ String RUN(
   // レスポンスを受信
   unsigned long startMs = millis();
   while (true) {
+    if (millis() - startMs > argTimeoutMs) {
+      errMSG = "[FAIL] Timeout";  
+      Serial.println(errMSG);
+      return errMSG;
+    }
 
     // 割り込み側からフラグが立っているか確認
     bool receivedCopy = false;
@@ -123,11 +128,6 @@ String RUN(
 
     if (receivedCopy) break;
 
-    if (millis() - startMs > argTimeoutMs) {
-      errMSG = "[FAIL] Timeout";  
-      Serial.println(errMSG);
-      return errMSG;
-    }
     delay(1);
   }
 

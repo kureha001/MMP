@@ -15,8 +15,14 @@ namespace modeWebAPI {
 // 接続する
 //=====================================================
 bool BEGIN(uint16_t argPort) {
-  if (WiFi.status() != WL_CONNECTED) return false;
-  CONN_PORT = argPort;   
+
+  Serial.println("---------- [WebAPI] BEGIN() ----------");
+  String errMSG = "";
+  if (WiFi.status() != WL_CONNECTED) errMSG = "[NG] No WiFi Service";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not ready";}
+
+  CONN_PORT = argPort;
+
   return false;
 }
 
@@ -30,16 +36,17 @@ bool END() {return false;}
 //=====================================================
 String RUN(const char* cmdStr) {
 
-  // WiFi接続を確認する
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected.");
-    delay(100);
-    return "FAIL#0";
-  }
+  Serial.println("---------- [WebAPI] RUN() ----------");
+  Serial.printf (" command : %s\n", cmdStr);
 
-  // コマンドをリクエストする
+  String errMSG = "";
+  if (WiFi.status() != WL_CONNECTED) errMSG = "[NG] No WiFi Service";
+  if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not Ready.";}
+
+  // 前処理
   String strURL = String("http://") + SRV_IP + ":" + CONN_PORT + "/" + cmdStr;
-  Serial.printf("Sending command (WEB API): %s\n", strURL.c_str());
+
+  // ＭＭＰへリクエスト
   CONN.begin(strURL)       ; // クライアントを開始
   int intResCD = CONN.GET(); // GETメソッドでリクエスト
 
@@ -53,6 +60,7 @@ String RUN(const char* cmdStr) {
     DeserializationError error = deserializeJson(strRX, payload);
     
     if (!error) {
+      Serial.println("[OK] Successfully");
       if (strRX.containsKey("source")) {
         retMSG = strRX["source"].as<String>();
       } else if (strRX.containsKey("text")) {
@@ -61,12 +69,12 @@ String RUN(const char* cmdStr) {
         retMSG = payload; 
       }
     } else {
-      Serial.println("Failed to parse JSON response.");
+      Serial.println("[FAIL] Parse JSON");
       retMSG = "ERR";
     }
 
   } else {
-    Serial.printf("HTTP Error: %s\n", CONN.errorToString(intResCD).c_str());
+    Serial.printf("[FAIL] HTTP Error: %s\n", CONN.errorToString(intResCD).c_str());
     retMSG = "FAIL";
   }
 

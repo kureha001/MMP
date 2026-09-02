@@ -139,7 +139,11 @@ namespace adpWSOC {
   //─────────────────
   void HANDLE(){
     //┬
-    //●WebSocketサーバの処理を進める
+    //○WebSocketサーバの処理を進める
+    // ・新規クライアントからの接続要求（ハンドシェイク）の受付
+    // ・パケットの受送信とイベント（ON_RECIVE）の発火
+    // ・Ping / Pong によるキープアライブ（接続維持チェック）
+    // ・切断処理（クリーンアップ）
     ADP_SRV->loop();
     //│
     //◎┐ルーティングを指示
@@ -156,6 +160,9 @@ namespace adpWSOC {
       //│
       //●コマンドを実行
       adpBase::RUN(ADP_ID, popDat.FRAME);
+      //│
+      //●実行結果をレスポンス
+      SEND_CONN(popDat.CONN);
       //┴
     } /* END-while */
     //┴

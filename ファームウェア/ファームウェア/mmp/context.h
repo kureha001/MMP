@@ -66,7 +66,7 @@ struct MmpContext {
   const String sysName = "MMPサブ";
 #endif // ----------------------------------------┘
   //■システム
-  const String sysVer  = "V121!"; // バージョン
+  const String sysVer  = "V12a!"; // バージョン
   boolean      sysLog  = false  ; // ログレベル {false:なし | true:あり}
   //│
   //■機能モジュールのレスポンス
@@ -84,11 +84,3 @@ struct MmpContext {
   const int    accIDS   = 30; // アクセスIDの総数(ユーザ認証スロット数)
   //┴
 };
-
-//━━━━━━━━━━━━━━━━━
-// グローバル資源
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // コンテクスト
-  //─────────────────
-  extern MmpContext ctx; // ※実体の所有者はスケッチ（共有参照のみ公開）

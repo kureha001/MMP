@@ -18,35 +18,30 @@
 //========================================================
 //┬
 //■┐インクルード
-  //■Arduinoシステム
-  //│
   //■ＭＭＰシステム
   #include "conf.h"   // 各種設定
   #include "dev.h"
   //│
-  //■デバイス
+  //■ＭＭＰシステム(通信デバイス群）
   #include "device/UART.cpp"
   #include "device/WiFi.cpp"
   #include "device/BLE.cpp"
 //┴
 
-//########################################################
-//# 専用の名前空間
-//########################################################
 void INIT_DEVICE() {
   //┬
   //●通信デバイスを初期化（UART）
   devUART ::START();
   //│
-// ┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
+// -----------┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
 #if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
   //●通信デバイスを初期化（WiFi）
   devWiFi::START();
 #endif // -------------------------------------------┘
   //│
-#if defined(ADP_COM_BLE  ) // --┨ＢＬＥ通信┨----┐
+#if defined(ADP_COM_BLE  ) // ------------┨ＢＬＥ┠-┐
   //●通信デバイスを初期化（BLE）
   devBLE    ::START();
-#endif // ----------------------------------------┘
+#endif // -------------------------------------------┘
   //┴
 } /* INIT_DEVICE() */

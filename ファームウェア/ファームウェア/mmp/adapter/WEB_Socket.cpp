@@ -9,13 +9,15 @@
 //■┐インクルード
   //■追加ライブラリ：WebSockets by Markus Sattler
   #include <WebSocketsServer.h>
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpWSOC {
+class AdapterWEB_Socket : public AdapterBase {
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -30,8 +32,8 @@ namespace adpWSOC {
     //─────────────────
     // 使用するサービス
     //─────────────────
-    static WebSocketsServer* ADP_SRV = nullptr; // WebSocketサーバ
-    static int               SRV_PORT = 8082  ; // ポート番号
+    static WebSocketsServer* ADP_SRV         ; // WebSocketサーバ
+    static int               SRV_PORT        ; // ポート番号
 
 //========================================================
 // Ｂ．レスポンス
@@ -93,7 +95,7 @@ namespace adpWSOC {
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  void ON_RECIVE(
+  static void ON_RECIVE(
     uint8_t   num    , // クライアント番号
     WStype_t  type   , // エベント種別
     uint8_t * payload, // 受信データ
@@ -119,10 +121,11 @@ namespace adpWSOC {
 //========================================================
 // Ｅ．公開機能
 //========================================================
-  //─────────────────
-  // 初期化処理
-  //─────────────────
-  void START() {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // コンストラクタ
+  //━━━━━━━━━━━━━━━━━
+  AdapterWEB_Socket(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○サービスを開始
     ADP_SRV = new WebSocketsServer(SRV_PORT); // サーバ生成
@@ -130,14 +133,14 @@ namespace adpWSOC {
     ADP_SRV->begin()                        ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.println(String("　[OK] WebSocket -> port ") + String(SRV_PORT));
+    Serial.println(String(" [OK] WebSocket -> port ") + String(SRV_PORT));
     //┴
-  } /* START() */
+  } /* constractor AdapterWEB_Socket() */
 
-  //─────────────────
-  // ハンドラ入口（ポーリング入口）
-  //─────────────────
-  void HANDLE(){
+  //━━━━━━━━━━━━━━━━━
+  // ポーリング用ハンドラ
+  //━━━━━━━━━━━━━━━━━
+  void handle() override {
     //┬
     //○WebSocketサーバの処理を進める
     // ・新規クライアントからの接続要求（ハンドシェイク）の受付
@@ -166,6 +169,12 @@ namespace adpWSOC {
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpWSOC */
+}; /* class AdapterWEB_Socket */
+
+// staticメンバの実体定義
+WebSocketsServer*           AdapterWEB_Socket::ADP_SRV = nullptr;
+int                         AdapterWEB_Socket::SRV_PORT = 8082;
+std::queue<AdapterWEB_Socket::myQueue> AdapterWEB_Socket::QUEUE;
+std::mutex                  AdapterWEB_Socket::QUEUE_MUTEX;

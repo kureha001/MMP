@@ -52,7 +52,7 @@ void INIT_DEVICE() {
 #endif // -------------------------------------------┘
 
 // -----------┨TcpRaw｜WebAPI｜WebSoc｜ESP-Now|WEB┠┐
-#if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)||defined(ADP_WEB)
+#if defined(ADP_COM_TCP)||defined(ADP_COM_WAPI)||defined(ADP_COM_WSOC)||defined(ADP_COM_ESPN)
   devWiFi::START();
 #endif // -------------------------------------------┘
 

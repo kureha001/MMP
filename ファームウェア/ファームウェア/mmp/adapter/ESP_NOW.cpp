@@ -10,13 +10,15 @@
   //■┐Arduinoシステム
   #include <WiFi.h>
   #include <esp_now.h>
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpESPN {
+class AdapterESPNOW : public AdapterBase {
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -108,7 +110,7 @@ void SEND_CONN(const uint8_t* argConn){
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  void ON_RECIVE(
+  static void ON_RECIVE(
     const esp_now_recv_info_t *recv_info,
 //    const esp_now_recv_info_t *recv_info,
     const uint8_t *payload,
@@ -138,30 +140,31 @@ void SEND_CONN(const uint8_t* argConn){
 //========================================================
 // Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterESPNOW(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○サービス資源を生成
     if (esp_now_init() != ESP_OK) {
     //│＼（通信デバイスが起動していない場合）
         //○起動ログを表示（異常終了）
         //▼終了：早期リターン
-        Serial.println("　[NG ] ESP-NOW -> 初期化失敗");
+        Serial.println(" [NG ] ESP-NOW -> 初期化失敗");
         return;
     } /* END-if */
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
     //○メッセージ表示
-    Serial.println(String("　[OK] ESP-NOW   -> MAC ") + String(WiFi.macAddress()));
+    Serial.println(String(" [OK] ESP-NOW   -> MAC ") + String(WiFi.macAddress()));
     //┴
-  } /* START() */
+  } /* constractor AdapterESPNOW() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE(){
+  void handle() override {
     //┬
     //◎┐ルーティングを指示
     myQueue popDat;
@@ -183,6 +186,10 @@ void SEND_CONN(const uint8_t* argConn){
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpESPN */
+}; /* class AdapterESPNOW */
+
+// staticメンバの実体定義
+std::queue<AdapterESPNOW::myQueue> AdapterESPNOW::QUEUE;
+std::mutex                         AdapterESPNOW::QUEUE_MUTEX;

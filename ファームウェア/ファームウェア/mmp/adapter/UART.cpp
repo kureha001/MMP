@@ -10,9 +10,16 @@
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpUART {
+class AdapterUART : public AdapterBase {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterBase::AdapterBase;
+
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -35,7 +42,7 @@ namespace adpUART {
       SS_SLOT_TYPE Base              ; // 基本メンバ
       Stream*      CONN  = nullptr   ; // アクセス資源(参照)
     };
-    static T_SS_SLOT* ssTBL = nullptr; // 事前予約
+    static T_SS_SLOT* ssTBL          ; // 事前予約
 
 
 //========================================================
@@ -127,14 +134,15 @@ namespace adpUART {
   //─────────────────
   // タスクのハンドルを保持する変数
   //─────────────────
-  static TaskHandle_t TaskHandle = NULL;
+  static TaskHandle_t TaskHandle;
 
   //─────────────────
   // FreeRTOSタスクのエントリポイント
   //─────────────────
-  void StreamQueue(void *pvParameters) {
+  static void StreamQueue(void *pvParameters) {
+    AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
     for (;;) {
-      ON_RECIVE();                        // コールバック関数を登録
+      if (self) self->ON_RECIVE();        // コールバック関数を登録
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
@@ -142,10 +150,11 @@ namespace adpUART {
 //========================================================
 // Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //●接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
@@ -159,20 +168,20 @@ namespace adpUART {
       StreamQueue,    // 実行するタスク関数
       ADP_ID.c_str(), // タスク名（デバッグ用）
       4096,           // スタックサイズ（バイト単位）
-      NULL,           // パラメータ
+      this,           // パラメータ
       2,              // 優先度
       &TaskHandle     // タスクハンドル
     );
     //│
     //○メッセージ表示
-    Serial.println(String("　[OK] USB/UART  -> #0,#1"));
+    Serial.println(String(" [OK] USB/UART  -> #0,#1"));
     //┴
-  } /* START() */
+  } /* constractor AdapterUART() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE(){
+  void handle() override {
     //┬
     //◎┐ルーティングを指示
     myQueue popDat;
@@ -194,6 +203,12 @@ namespace adpUART {
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpUART */
+}; /* class AdapterUART */
+
+// staticメンバの実体定義
+AdapterUART::T_SS_SLOT* AdapterUART::ssTBL = nullptr;
+std::queue<AdapterUART::myQueue> AdapterUART::QUEUE;
+std::mutex AdapterUART::QUEUE_MUTEX;
+TaskHandle_t AdapterUART::TaskHandle = NULL;

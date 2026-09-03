@@ -9,13 +9,21 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <WebServer.h> // ユーザ受付資源
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 専用名の前空間
+//# クラス
 //########################################################
-namespace adpWAPI {
+class AdapterWEB_API : public AdapterBase {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterBase::AdapterBase;
+
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -30,8 +38,8 @@ namespace adpWAPI {
     //─────────────────
     // 使用するサービス
     //─────────────────
-    static WebServer* ADP_SRV  = nullptr; // WEBサーバ
-    static int        SRV_PORT = 8080   ; // ポート番号
+    static WebServer* ADP_SRV   ; // WEBサーバ
+    static int        SRV_PORT  ; // ポート番号
 
 //========================================================
 // Ｂ．レスポンス
@@ -267,12 +275,12 @@ namespace adpWAPI {
         //○┐ルート０：ホスト直下の登録
           //●GETへの応答
           //●CORS事前確認へ応答
-          server.on("/", HTTP_GET,     [&server](){routeRoot(server);});
-          server.on("/", HTTP_OPTIONS, [&server](){route204(server); });
+          server.on("/", HTTP_GET,     [&server, this](){routeRoot(server);});
+          server.on("/", HTTP_OPTIONS, [&server, this](){route204(server); });
           //┴
         //│
         //○┐ルート１：ＭＭＰコマンドの登録
-        server.onNotFound([&server](){
+        server.onNotFound([&server, this](){
           //│
           //○ＭＭＰ処理へ渡す要求であるかを確認
           if (server.method() == HTTP_OPTIONS){route204(server); return;}
@@ -291,12 +299,13 @@ namespace adpWAPI {
     }/* registRoutes() */
 
 //========================================================
-// Ｄ．公開機能
+// Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterWEB_API(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○サービス資源を生成
     ADP_SRV = new WebServer(SRV_PORT); // サーバ生成
@@ -304,18 +313,22 @@ namespace adpWAPI {
     ADP_SRV->begin()                 ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.println(String("　[OK] WEB API   -> port ") + String(SRV_PORT));
+    Serial.println(String(" [OK] WEB API   -> port ") + String(SRV_PORT));
     //┴
-  } /* START() */
+  } /* constractor AdapterWEB_API() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE() {
+  void handle() override {
     //┬
     //○ルーティングを指示（その後も同期処理）
     ADP_SRV->handleClient();
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpWAPI */
+}; /* class AdapterWEB_API */
+
+// staticメンバの実体定義
+WebServer* AdapterWEB_API::ADP_SRV = nullptr;
+int AdapterWEB_API::SRV_PORT = 8080;

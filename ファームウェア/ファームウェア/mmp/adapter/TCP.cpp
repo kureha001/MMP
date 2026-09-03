@@ -9,13 +9,23 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <WiFi.h> // ユーザ受付資源
+  #include <queue>
+  #include <mutex>
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpTCP {
+class AdapterTCP : public AdapterBase {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterBase::AdapterBase;
+
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -32,8 +42,8 @@ namespace adpTCP {
     //─────────────────
     // 使用するサービス
     //─────────────────
-    static WiFiServer* ADP_SRV = nullptr; // WiFiサーバ
-    static int         SRV_PORT = 8081  ; // ポート番号
+    static WiFiServer* ADP_SRV    ; // WiFiサーバ
+    static int         SRV_PORT   ; // ポート番号
 
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -45,7 +55,7 @@ namespace adpTCP {
       SS_SLOT_TYPE    Base              ; // 基本メンバ
       WiFiClient      CONN              ; // アクセス資源(TCP接続の実体)
     };
-    static T_SS_SLOT* ssTBL = nullptr   ; // 事前予約
+    static T_SS_SLOT* ssTBL             ; // 事前予約
 
     //─────────────────
     // 初期化
@@ -221,25 +231,27 @@ namespace adpTCP {
   //─────────────────
   // タスクのハンドルを保持する変数
   //─────────────────
-  static TaskHandle_t TaskHandle = NULL;
+  static TaskHandle_t TaskHandle;
 
   //─────────────────
   // FreeRTOSタスクのエントリポイント
   //─────────────────
-  void StreamQueue(void *pvParameters) {
+  static void StreamQueue(void *pvParameters) {
+    AdapterTCP* self = static_cast<AdapterTCP*>(pvParameters);
     for (;;) {
-      ON_RECIVE();                        // コールバック関数を登録
+      if (self) self->ON_RECIVE();        // コールバック関数を登録
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
 
 //========================================================
-// Ｇ．公開機能
+// Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterTCP(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //●接続管理TBLを作成
     ssTBL = new T_SS_SLOT[SS_SLOTS];
@@ -253,20 +265,20 @@ namespace adpTCP {
       StreamQueue,    // 実行するタスク関数
       ADP_ID.c_str(), // タスク名（デバッグ用）
       4096,           // スタックサイズ（バイト単位）
-      NULL,           // パラメータ
+      this,           // パラメータ
       2,              // 優先度
       &TaskHandle     // タスクハンドル
     );
     //│
     //○メッセージ表示
-    Serial.println(String("　[OK] TCP Raw   -> port ") + String(SRV_PORT));
+    Serial.println(String(" [OK] TCP Raw   -> port ") + String(SRV_PORT));
     //┴
-  } /* START() */
+  } /* constractor AdapterTCP() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE(){
+  void handle() override {
     //┬
     //◎┐ルーティングを指示
     myQueue popDat;
@@ -288,6 +300,14 @@ namespace adpTCP {
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpTCP */
+}; /* class AdapterTCP */
+
+// staticメンバの実体定義
+WiFiServer* AdapterTCP::ADP_SRV = nullptr;
+int AdapterTCP::SRV_PORT = 8081;
+AdapterTCP::T_SS_SLOT* AdapterTCP::ssTBL = nullptr;
+std::queue<AdapterTCP::myQueue> AdapterTCP::QUEUE;
+std::mutex AdapterTCP::QUEUE_MUTEX;
+TaskHandle_t AdapterTCP::TaskHandle = NULL;

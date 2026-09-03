@@ -9,13 +9,15 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <Wire.h>
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpI2C {
+class AdapterIIC : public AdapterBase {
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -35,7 +37,7 @@ namespace adpI2C {
     //─────────────────
     static const uint8_t I2C_ADDR_MIN = 0xA0; // スレーブのI2Cアドレス（先頭）
     static const uint8_t I2C_ADDR_MAX = 0xA4; // スレーブのI2Cアドレス（末尾）
-    String SEND_MSG[I2C_ADDR_MAX - I2C_ADDR_MIN + 1]; // スレーブへのレスポンスバッファ
+    static String SEND_MSG[I2C_ADDR_MAX - I2C_ADDR_MIN + 1]; // スレーブへのレスポンスバッファ
 
  //========================================================
 // Ｂ．レスポンス
@@ -98,7 +100,7 @@ namespace adpI2C {
   //─────────────────
   // 別タスクとして機能
   //─────────────────
-  void ON_RECIVE(){
+  static void ON_RECIVE(){
     //┬
     //◎┐スレーブ（I2Cアドレス）を走査
     for (uint8_t ID = I2C_ADDR_MIN; ID <= I2C_ADDR_MAX; ID++) {
@@ -137,12 +139,12 @@ namespace adpI2C {
   //─────────────────
   // タスクのハンドルを保持する変数
   //─────────────────
-  static TaskHandle_t TaskHandle = NULL;
+  static TaskHandle_t TaskHandle;
 
   //─────────────────
   // FreeRTOSタスクのエントリポイント
   //─────────────────
-  void StreamQueue(void *pvParameters) {
+  static void StreamQueue(void *pvParameters) {
     for (;;) {
       ON_RECIVE();                        // コールバック関数を登録
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
@@ -152,10 +154,11 @@ namespace adpI2C {
 //========================================================
 // Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterIIC(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○サービスを開始
     //  ※PWMモジュールが先行して初期化済み
@@ -171,17 +174,17 @@ namespace adpI2C {
     );
     //│
     //○メッセージ表示
-    Serial.print  (String("　[OK] I2C       -> "));
+    Serial.print  (String(" [OK] I2C       -> "));
     Serial.print  (String(I2C_ADDR_MIN));
     Serial.print  (" ～ ");
     Serial.println(String(I2C_ADDR_MAX));
     //┴
-  } /* START() */
+  } /* constractor AdapterIIC() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE(){
+  void handle() override {
     //┬
     //◎┐ルーティングを指示
     myQueue popDat;
@@ -203,6 +206,12 @@ namespace adpI2C {
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpI2C */
+}; /* class AdapterIIC */
+
+// staticメンバの実体定義
+String                            AdapterIIC::SEND_MSG[AdapterIIC::I2C_ADDR_MAX - AdapterIIC::I2C_ADDR_MIN + 1];
+std::queue<AdapterIIC::myQueue>   AdapterIIC::QUEUE;
+std::mutex                        AdapterIIC::QUEUE_MUTEX;
+TaskHandle_t                      AdapterIIC::TaskHandle = NULL;

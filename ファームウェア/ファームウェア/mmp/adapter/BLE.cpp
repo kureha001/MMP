@@ -8,20 +8,22 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <BLEDevice.h> // ユーザ受付資源を
+  #include <BLEDevice.h> // ユーザ受付資源
   #include <BLEServer.h> // ユーザ受付資源
   #include <BLEUtils.h > // ユーザ受付資源
   #include <BLE2902.h  > // ユーザ受付資源
   //│
   //■ＭＭＰシステム
   #include "dev.h"       // デバイスの初期化(devBLEを参照の為）
+  #include "_API_.h"
   //┴
 //┴
 
 //########################################################
-//# 前空間
+//# クラス
 //########################################################
-namespace adpBLE {
+class AdapterBLE : public AdapterBase {
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -31,8 +33,8 @@ namespace adpBLE {
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID = "BLE"; // アダプタID
-        bool CONNECTED  = false; // 接続状況｛true：接続あり｜false：接続なし｝
+    const String ADP_ID      = "BLE" ; // アダプタID
+    static bool  CONNECTED          ; // 接続状況｛true：接続あり｜false：接続なし｝
 
     //─────────────────
     // 使用するサービス
@@ -67,7 +69,7 @@ namespace adpBLE {
   //─────────────────
   // 基本情報
   //─────────────────
-  const int WAIT_MS = 15        ; // 受信タイムラグ
+  static const int WAIT_MS = 15 ; // 受信タイムラグ
   struct myQueue {
     uint8_t CONN ; // アクセス資源(クライアント番号)
     String  FRAME; // 受信バッファ
@@ -169,24 +171,25 @@ namespace adpBLE {
 //========================================================
 // Ｅ．公開機能
 //========================================================
+public:
   //━━━━━━━━━━━━━━━━━
-  // 初期化処理
+  // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  void START() {
+  AdapterBLE(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○サービス資源を生成
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // クライアント(受信)
     //│
     //○メッセージ表示
-    Serial.println("　[OK] Bluetooth");
+    Serial.println(" [OK] Bluetooth");
     //┴
-  } /* START() */
+  } /* constractor AdapterBLE() */
 
   //━━━━━━━━━━━━━━━━━
-  // ハンドラ入口（ポーリング入口）
+  // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
-  void HANDLE(){
+  void handle() override {
     //┬
     //◎┐ルーティングを指示
     myQueue popDat;
@@ -208,6 +211,13 @@ namespace adpBLE {
       //┴
     } /* END-while */
     //┴
-  } /* HANDLE() */
+  } /* handle() */
 
-} /* namespace adpBLE */
+}; /* class AdapterBLE */
+
+// staticメンバの実体定義
+bool                             AdapterBLE::CONNECTED = false;
+std::queue<AdapterBLE::myQueue>  AdapterBLE::QUEUE;
+std::mutex                       AdapterBLE::QUEUE_MUTEX;
+AdapterBLE::Callback_Server      AdapterBLE::ON_CONNECTION;
+AdapterBLE::Callback_Client      AdapterBLE::ON_RECIVE;

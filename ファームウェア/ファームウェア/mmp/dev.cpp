@@ -12,8 +12,7 @@
   #include <BLEUtils.h>
   //│
   //■ＭＭＰシステム
-  #include "dev.h"
-  #include "conf.h"
+  #include "dev.h"       // デバイスの初期化(devBLEを参照の為）
   //│
   //■ＭＭＰシステム(通信デバイス群）
   #include "device/UART.cpp"

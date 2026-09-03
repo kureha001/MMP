@@ -18,10 +18,10 @@
   //■Arduinoシステム
   #include <Wire.h> // setup()
   //│
-  //■ＭＭＰシステム
-  #include "dev.h"  // デバイス・マネージャ
-  #include "adp.h"  // アダプタ・マネージャ
-  #include "cmd.h"  // コマンド・マネージャ
+  //■ＭＭＰシステム(マネージャ群)
+  #include "dev.h"  // 通信デバイス
+  #include "adp.h"  // 経路アダプタ
+  #include "cmd.h"  // コマンド
   //┴
 //┴
 
@@ -39,11 +39,11 @@
     //●アダプタ・マネージャに初期化を依頼
     AdapterManager::INIT();
     //│
-  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+  #if defined(MMP_TYPE_MAIN)
     //●コマンド・マネージャに初期化を依頼
     CommandManager::INIT();
     //┴
-  #endif //----------------------------------┘
+  #endif
   } /* initialize() */
 
   //─────────────────
@@ -51,11 +51,11 @@
   //─────────────────
   void opening(){
     //┬
-  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+  #if defined(MMP_TYPE_MAIN)
     //●ファンファーレ
     ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
     CommandManager::RunCommand();
-  #endif //----------------------------------┘
+  #endif
     //│
     //○開始メッセージ出力
     Serial.println("---------------------------");

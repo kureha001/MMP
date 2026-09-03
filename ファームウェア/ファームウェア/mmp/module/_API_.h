@@ -18,7 +18,7 @@
   #define DAT_LENGTH 20 // 1トークンあたりの上限バイト数
 
 //========================================================
-// コマンド・モジュールの抽象基底クラス
+// 機能モジュールの抽象基底クラス
 //========================================================
 class ModuleBase {
 protected:
@@ -42,16 +42,14 @@ public:
     const char* argName, // 引数：モジュール名
     const char* argDesc  // 引数：モジュールの説明
   ):
-  ctx(argCtx)          , // コンテクスト(参照メンバ)に結び付ける
-  modName(argName)     , // モジュール名(メンバ)にセット
-  modDesc(argDesc)       // モジュール説明(メンバ)にセット
-  {} // 処理なし
+    ctx(argCtx)        , // コンテクスト(参照メンバ)に結び付ける
+    modName(argName)   , // モジュール名(メンバ)にセット
+    modDesc(argDesc)     // モジュール説明(メンバ)にセット
+  {}
   //┴
-
   //┬
   //○デストラクタ
-  virtual ~ModuleBase()
-  {} // 処理なし
+  virtual ~ModuleBase() {}
   //┴
 
   //┬

@@ -1,4 +1,4 @@
-// filename : mmpCtx.h
+// filename : context.h
 //========================================================
 // ＭＭＰコンテクスト
 //--------------------------------------------------------
@@ -11,6 +11,7 @@
   #include <Arduino.h>
   //│
   //■ＭＭＰシステム
+  #include "conf.h"    // プリプロセッサ
   //┴
 //┴
 
@@ -20,11 +21,11 @@
 struct MmpContext {
   //┬
   //■システム情報
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
+#if defined(MMP_TYPE_MAIN)
   const String sysName = "MMP本体";
-#else // -----------------------┨ＭＭＰサブ┠----┤
+#else
   const String sysName = "MMPサブ";
-#endif // ----------------------------------------┘
+#endif
   //■システム
   const String sysVer  = "V12a!"; // バージョン
   boolean      sysLog  = true  ; // ログレベル {false:なし | true:あり}

@@ -1,8 +1,8 @@
 // filename : adapter/ESP_NOW.cpp
 //========================================================
-// 通信アダプタ：ＥＳＰ－ＮＯＷ
+// 経路アダプタ：ESP NOW
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -112,7 +112,6 @@ void SEND_CONN(const uint8_t* argConn){
   //━━━━━━━━━━━━━━━━━
   static void ON_RECIVE(
     const esp_now_recv_info_t *recv_info,
-//    const esp_now_recv_info_t *recv_info,
     const uint8_t *payload,
     int length
   ) {
@@ -190,6 +189,18 @@ public:
 
 }; /* class AdapterESPNOW */
 
-// staticメンバの実体定義
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+//│
+//■送受信バッファ
+//│
+//■スレッド／コールバック
+//│
+//■リクエスト
 std::queue<AdapterESPNOW::myQueue> AdapterESPNOW::QUEUE;
 std::mutex                         AdapterESPNOW::QUEUE_MUTEX;
+//┴

@@ -1,8 +1,8 @@
 // filename : adapter/WEB_Socket.cpp
 //========================================================
-// 通信アダプタ：ＷＥＢ Ｓｏｃｋｅｔ
+// 経路アダプタ：WEB Socket
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -173,8 +173,20 @@ public:
 
 }; /* class AdapterWEB_Socket */
 
-// staticメンバの実体定義
-WebSocketsServer*           AdapterWEB_Socket::ADP_SRV = nullptr;
-int                         AdapterWEB_Socket::SRV_PORT = 8082;
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+WebSocketsServer* AdapterWEB_Socket::ADP_SRV  = nullptr; // サーバ
+int               AdapterWEB_Socket::SRV_PORT = 8082   ; // サービス・ポート
+//│
+//■送受信バッファ
+//│
+//■スレッド／コールバック
+//│
+//■リクエスト
 std::queue<AdapterWEB_Socket::myQueue> AdapterWEB_Socket::QUEUE;
-std::mutex                  AdapterWEB_Socket::QUEUE_MUTEX;
+std::mutex                             AdapterWEB_Socket::QUEUE_MUTEX;
+//┴

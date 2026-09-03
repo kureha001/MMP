@@ -2,7 +2,7 @@
 //========================================================
 // アダプタ・マネージャ：アダプタを統括する
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 
@@ -12,7 +12,7 @@
   #include <vector>
   //│
   //■ＭＭＰシステム
-  #include "adp.h"  // 通信アダプタ共通へ公開
+  #include "adp.h"  // 経路アダプタ共通へ公開
   #include "cmd.h"  // コマンド・マネージャ
   //│
   //■ＭＭＰシステム(アダプタ群)
@@ -36,7 +36,7 @@
   MmpContext ctx;
 
   //─────────────────
-  // 通信アダプタ群 (登録コンテナ)
+  // 経路アダプタ群 (登録コンテナ)
   //─────────────────
   std::vector<AdapterBase*> ADAPTER; // 抽象基底ポインタのリスト
 
@@ -226,17 +226,11 @@
 
 
 //########################################################
-//# 前空間：アダプタ・マネージャ
+//# 前空間：経路アダプタ・マネージャ
 //########################################################
 namespace AdapterManager{
   //========================================================
-  //# アダプタの初期化
-  //--------------------------------------------------------
-  //【依存性注入の採用】
-  // メイン側で固定生成した MmpContext の参照を各アダプタへ
-  // 注入・共有することで、ヒープ断片化（動的確保）の防止と、
-  // マルチプロトコル環境におけるグローバル変数汚染の回避を
-  // 両立させる。
+  //# アダプタの初期化（抽象化・一括管理）
   //========================================================
   void INIT() {
     //┬
@@ -248,26 +242,26 @@ namespace AdapterManager{
       adpAUTH::INIT_TBL();
   #endif //----------------------------------┘
     //│
-    //●通信アダプタを初期化
-  #if defined(ADP_COM_UART)
+    //●経路アダプタを初期化
+  #if defined(ADP_UART)
       ADAPTER.push_back(new AdapterUART(ctx));
   #endif
-  #if defined(ADP_COM_TCP )
+  #if defined(ADP_TCP )
       ADAPTER.push_back(new AdapterTCP(ctx));
   #endif
-  #if defined(ADP_COM_WAPI)
+  #if defined(ADP_WAPI)
       ADAPTER.push_back(new AdapterWEB_API(ctx));
   #endif
-  #if defined(ADP_COM_WSOC)
+  #if defined(ADP_WSOC)
       ADAPTER.push_back(new AdapterWEB_Socket(ctx));
   #endif
-  #if defined(ADP_COM_BLE )
+  #if defined(ADP_BLE )
       ADAPTER.push_back(new AdapterBLE(ctx));
   #endif
-  #if defined(ADP_COM_ESPN)
+  #if defined(ADP_ESPN)
       ADAPTER.push_back(new AdapterESPNOW(ctx));
   #endif
-  #if defined(ADP_COM_I2C )
+  #if defined(ADP_I2C )
       ADAPTER.push_back(new AdapterIIC(ctx));
   #endif
     //│

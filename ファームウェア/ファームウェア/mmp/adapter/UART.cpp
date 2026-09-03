@@ -1,8 +1,8 @@
 // filename : adapter/UART.cpp
 //========================================================
-// 通信アダプタ：ＵＡＲＴ
+// 経路アダプタ：UART
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -102,9 +102,9 @@ private:
 //========================================================
 // Ｄ．データ受信
 //========================================================
-  //─────────────────
-  // 別タスクとして機能
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // コールバック：クライアント用
+  //━━━━━━━━━━━━━━━━━
   void ON_RECIVE(){
     //┬
     //◎┐スロットを走査
@@ -131,18 +131,14 @@ private:
     //┴
   } /* ON_RECIVE() */
 
-  //─────────────────
-  // タスクのハンドルを保持する変数
-  //─────────────────
-  static TaskHandle_t TaskHandle;
-
-  //─────────────────
-  // FreeRTOSタスクのエントリポイント
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // スレッド処理の定義
+  //━━━━━━━━━━━━━━━━━
+  static TaskHandle_t TaskHandle;         // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
     for (;;) {
-      if (self) self->ON_RECIVE();        // コールバック関数を登録
+      if (self) self->ON_RECIVE();        // 疑似コールバック関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
@@ -207,8 +203,20 @@ public:
 
 }; /* class AdapterUART */
 
-// staticメンバの実体定義
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+//│
+//■送受信バッファ
 AdapterUART::T_SS_SLOT* AdapterUART::ssTBL = nullptr;
+//│
+//■スレッド／コールバック
+TaskHandle_t AdapterUART::TaskHandle = NULL;
+//│
+//■リクエスト
 std::queue<AdapterUART::myQueue> AdapterUART::QUEUE;
 std::mutex AdapterUART::QUEUE_MUTEX;
-TaskHandle_t AdapterUART::TaskHandle = NULL;
+//┴

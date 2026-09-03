@@ -1,8 +1,8 @@
 // filename : adapter/BLE.cpp
 //========================================================
-// 通信アダプタ：ＢＬＥ
+// 経路アダプタ：BLE
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -34,7 +34,7 @@ private:
     // ステータス
     //─────────────────
     const String ADP_ID      = "BLE" ; // アダプタID
-    static bool  CONNECTED          ; // 接続状況｛true：接続あり｜false：接続なし｝
+    static bool  IS_BUSY          ; // 接続状況｛true：接続あり｜false：接続なし｝
 
     //─────────────────
     // 使用するサービス
@@ -111,6 +111,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：サーバ用
   //━━━━━━━━━━━━━━━━━
+  // ※既定のコールバック用のクラス関数をオーバーライドする
   class Callback_Server : public BLEServerCallbacks {
     //─────────────────
     // 接続イベント：接続制限（同時1人）
@@ -118,13 +119,14 @@ private:
     void onConnect(BLEServer* pServer) override {
       //┬
       //○接続状況を確認
-      if (CONNECTED) return;
+      if (IS_BUSY) return;
       //│＼（既に参加している場合）
       //│ ▼終了：これ以上は参加させない
       //│
       //○ステータスを変更（接続済）
+      IS_BUSY = true;
+      //│
       //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
-      CONNECTED = true;
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
       //┴
     } /* onConnect() */
@@ -137,14 +139,16 @@ private:
       //○アドバタイジングを再開
       //○ステータスを変更（未接続）
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
-      CONNECTED = false;
+      IS_BUSY = false;
       //┴
     } /* onDisconnect() */
   }; /* Callback_Server */
+  static Callback_Server ON_CONNECTION;
 
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
+  // ※既定のコールバック用のクラス関数をオーバーライドする
   class Callback_Client : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
       //┬
@@ -161,12 +165,7 @@ private:
       //┴
     }; /* onWrite() */
   }; /* Callback_Client */
-
-  //─────────────────
-  // コールバック関数を実体化
-  //─────────────────
-  static Callback_Server ON_CONNECTION; // 接続・切断
-  static Callback_Client ON_RECIVE    ; // データ受信
+  static Callback_Client ON_RECIVE;
 
 //========================================================
 // Ｅ．公開機能
@@ -215,9 +214,21 @@ public:
 
 }; /* class AdapterBLE */
 
-// staticメンバの実体定義
-bool                             AdapterBLE::CONNECTED = false;
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+//│
+//■送受信バッファ
+//│
+//■スレッド／コールバック
+AdapterBLE::Callback_Server AdapterBLE::ON_CONNECTION  ;
+AdapterBLE::Callback_Client AdapterBLE::ON_RECIVE      ;
+bool                        AdapterBLE::IS_BUSY = false; // 入場制限
+//│
+//■リクエスト
 std::queue<AdapterBLE::myQueue>  AdapterBLE::QUEUE;
 std::mutex                       AdapterBLE::QUEUE_MUTEX;
-AdapterBLE::Callback_Server      AdapterBLE::ON_CONNECTION;
-AdapterBLE::Callback_Client      AdapterBLE::ON_RECIVE;
+//┴

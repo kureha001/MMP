@@ -1,8 +1,8 @@
 // filename : cmd.cpp
 //========================================================
-// コマンド・マネージャ：通信アダプタと機能モジュールを連携する
+// コマンド・マネージャ：経路アダプタと機能モジュールを連携する
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #include "cmd.h"
 
@@ -16,6 +16,9 @@
   #include "module/mp3.h"     // MP3プレイヤー
 //┴
 
+//########################################################
+//# 前空間：コマンド・マネージャ
+//########################################################
 namespace CommandManager {
   //─────────────────
   // 機能モジュール管理
@@ -46,29 +49,15 @@ namespace CommandManager {
     static const size_t MODs = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
     //┴
 
-  //─────────────────
-  // リソース破棄
-  //─────────────────
-  void CLEAN(){
-    for (auto* mod : MODULE) {
-      if (mod) delete mod;
-    }
-    MODULE.clear();
-  } /* CLEAN() */
-
-  //─────────────────
-  // コマンド・モジュールをアドイン
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // 初期化
+  //━━━━━━━━━━━━━━━━━
   void INIT(){
     //┬
     //○開始表示
     Serial.println("<<モジュールの初期化>>");
     //│
-    //○コマンド・モジュールを登録
-    // メイン側で固定生成した MmpContext の参照を各モジュールへ
-    // 注入・共有することで、ヒープ断片化（動的確保）の防止と、
-    // マルチプロトコル環境におけるグローバル変数汚染の回避を
-    // 両立させる。
+    //○コマンド・モジュールをアドイン（抽象化・一括管理）
     MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
     MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
     MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
@@ -99,9 +88,9 @@ namespace CommandManager {
     //┬
     //◎┐略名に対応する正式名称を取得
     String strDesc = "";
-    for (size_t i = 0; i < MODs; ++i){
+    for (size_t modID = 0; modID < MODs; ++modID){
       //○モジュール定義を取得
-      const T_MOD& thisMod = *MOD_LIST[i];
+      const T_MOD& thisMod = *MOD_LIST[modID];
       //│
       //○名称を確認
       if (argName == thisMod.name) {strDesc = thisMod.desc; break;}

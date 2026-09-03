@@ -2,7 +2,7 @@
 //========================================================
 // 各種設定
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 
 //─────────────────
@@ -21,15 +21,15 @@
 #define MMP_TYPE_MAIN
 
 //─────────────────
-// 通信アダプタ選択
+// 経路アダプタ選択
 //----------------------------------
 //・必要：コメントアウト「しない」
 //・不要：コメントアウト「する」
 //─────────────────
-#define ADP_COM_UART // UART  ※本体＋サブの構成で必須
-#define ADP_COM_TCP  // TcpRaw
-#define ADP_COM_WAPI // WebAPI
-#define ADP_COM_WSOC // WebSocket
-#define ADP_COM_ESPN // ESP-NOW
-#define ADP_COM_BLE  // BLE
-//#define ADP_COM_I2C  // i2c ※他IICデバイスが使えなくなる(本体で使用禁止)
+#define ADP_UART // UART  ※本体＋サブの構成で必須
+#define ADP_TCP  // TCP RAW
+#define ADP_WAPI // WWB API
+#define ADP_WSOC // WEB Socket
+#define ADP_ESPN // ESP NOW
+#define ADP_BLE  // BLE
+//#define ADP_I2C  // i2c ※他IICデバイスが使えなくなる(本体で使用禁止)

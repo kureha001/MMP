@@ -1,8 +1,8 @@
 // filename : adapter/IIC.cpp
 //========================================================
-// 通信アダプタ：ＩＩＣ
+// 経路アダプタ：IIC
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -27,7 +27,7 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID   = "I2C"; // アダプタID
+    const String ADP_ID   = "IIC"; // アダプタID
     
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -35,17 +35,18 @@ private:
     //─────────────────
     // 基本情報
     //─────────────────
-    static const uint8_t I2C_ADDR_MIN = 0xA0; // スレーブのI2Cアドレス（先頭）
-    static const uint8_t I2C_ADDR_MAX = 0xA4; // スレーブのI2Cアドレス（末尾）
-    static String SEND_MSG[I2C_ADDR_MAX - I2C_ADDR_MIN + 1]; // スレーブへのレスポンスバッファ
+    static const uint8_t IIC_ADDR_MIN = 0xA0; // スレーブのIICアドレス（先頭）
+    static const uint8_t IIC_ADDR_MAX = 0xA4; // スレーブのIICアドレス（末尾）
+    static       String  CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
 
  //========================================================
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(uint8_t argConn){
     //┬
-    //○メッセージを返送バッファにセット
-    SEND_MSG[argConn - I2C_ADDR_MIN] = ctx.resMSG;
+    //○レスポンス内容を返送バッファにセット
+    //  ※ここではレスポンスしないでスレッド処理に回す
+    CONN_TX[argConn - IIC_ADDR_MIN] = ctx.resMSG;
     //│
     //●ログ出力
     adpBase::SHOW_LOG();
@@ -59,7 +60,7 @@ private:
   // 基本情報
   //─────────────────
     struct myQueue {
-      uint8_t CONN ; // I2C Slaveアドレス
+      uint8_t CONN ; // IIC Slaveアドレス
       String  FRAME; // 受信バッファ
     };
 
@@ -97,21 +98,21 @@ private:
 //========================================================
 // Ｄ．データ受信
 //========================================================
-  //─────────────────
-  // 別タスクとして機能
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // コールバック：クライアント用
+  //━━━━━━━━━━━━━━━━━
   static void ON_RECIVE(){
     //┬
-    //◎┐スレーブ（I2Cアドレス）を走査
-    for (uint8_t ID = I2C_ADDR_MIN; ID <= I2C_ADDR_MAX; ID++) {
+    //◎┐スレーブ（IICアドレス）を走査
+    for (uint8_t ID = IIC_ADDR_MIN; ID <= IIC_ADDR_MAX; ID++) {
       //│＼（最後のアドレスに達した場合）
       //│ ▼完了：走査を終了
       //│
       //○前処理
       String retFrame = "";
-      int    nowID    = ID - I2C_ADDR_MIN;
-      String msg      = SEND_MSG[nowID] == "" ? "####!" : SEND_MSG[nowID];
-      SEND_MSG[nowID] = "";
+      int    nowID    = ID - IIC_ADDR_MIN;
+      String msg      = CONN_TX[nowID] == "" ? "####!" : CONN_TX[nowID];
+      CONN_TX[nowID] = "";
       //│
       //○レスポンスをスレーブへ返信
       Wire.beginTransmission(ID);
@@ -136,17 +137,13 @@ private:
     //┴
   } /* ON_RECIVE() */
 
-  //─────────────────
-  // タスクのハンドルを保持する変数
-  //─────────────────
-  static TaskHandle_t TaskHandle;
-
-  //─────────────────
-  // FreeRTOSタスクのエントリポイント
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // スレッド処理の定義
+  //━━━━━━━━━━━━━━━━━
+  static TaskHandle_t TaskHandle;         // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     for (;;) {
-      ON_RECIVE();                        // コールバック関数を登録
+      ON_RECIVE();                        // 疑似コールバック関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
@@ -174,10 +171,10 @@ public:
     );
     //│
     //○メッセージ表示
-    Serial.print  (String(" [OK] I2C       -> "));
-    Serial.print  (String(I2C_ADDR_MIN));
+    Serial.print  (String(" [OK] IIC       -> "));
+    Serial.print  (String(IIC_ADDR_MIN));
     Serial.print  (" ～ ");
-    Serial.println(String(I2C_ADDR_MAX));
+    Serial.println(String(IIC_ADDR_MAX));
     //┴
   } /* constractor AdapterIIC() */
 
@@ -210,8 +207,20 @@ public:
 
 }; /* class AdapterIIC */
 
-// staticメンバの実体定義
-String                            AdapterIIC::SEND_MSG[AdapterIIC::I2C_ADDR_MAX - AdapterIIC::I2C_ADDR_MIN + 1];
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+//│
+//■送受信バッファ
+String AdapterIIC::CONN_TX[AdapterIIC::IIC_ADDR_MAX - AdapterIIC::IIC_ADDR_MIN + 1];
+//│
+//■スレッド／コールバック
+TaskHandle_t  AdapterIIC::TaskHandle = NULL;
+//│
+//■リクエスト
 std::queue<AdapterIIC::myQueue>   AdapterIIC::QUEUE;
 std::mutex                        AdapterIIC::QUEUE_MUTEX;
-TaskHandle_t                      AdapterIIC::TaskHandle = NULL;
+//┴

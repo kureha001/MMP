@@ -1,8 +1,8 @@
 // filename : adapter/TCP.cpp
 //========================================================
-// 通信アダプタ：ＴＣＰ（ＲＡＷ）
+// 経路アダプタ：TCP RAW
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/04) 
 //========================================================
 #pragma once
 //┬
@@ -184,9 +184,9 @@ private:
 //========================================================
 // Ｄ．データ受信
 //========================================================
-  //─────────────────
-  // 別タスクとして機能
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // コールバック：クライアント用
+  //━━━━━━━━━━━━━━━━━
   void ON_RECIVE(){
     //┬
     //○接続管理スロットを動的アタッチ
@@ -228,18 +228,14 @@ private:
     //┴
   } /* ON_RECIVE() */
 
-  //─────────────────
-  // タスクのハンドルを保持する変数
-  //─────────────────
-  static TaskHandle_t TaskHandle;
-
-  //─────────────────
-  // FreeRTOSタスクのエントリポイント
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
+  // スレッド処理の定義
+  //━━━━━━━━━━━━━━━━━
+  static TaskHandle_t TaskHandle;         // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     AdapterTCP* self = static_cast<AdapterTCP*>(pvParameters);
     for (;;) {
-      if (self) self->ON_RECIVE();        // コールバック関数を登録
+      if (self) self->ON_RECIVE();        // 疑似コールバック関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
@@ -304,10 +300,22 @@ public:
 
 }; /* class AdapterTCP */
 
-// staticメンバの実体定義
-WiFiServer* AdapterTCP::ADP_SRV = nullptr;
-int AdapterTCP::SRV_PORT = 8081;
+
+//########################################################
+//# スタティック資源の実体
+//########################################################
+//┬
+//■サーバ／サービス
+WiFiServer* AdapterTCP::ADP_SRV  = nullptr; // サーバ
+int         AdapterTCP::SRV_PORT = 8081   ; // サービス・ポート
+//│
+//■送受信バッファ
 AdapterTCP::T_SS_SLOT* AdapterTCP::ssTBL = nullptr;
+//│
+//■スレッド／コールバック
+TaskHandle_t AdapterTCP::TaskHandle = NULL;
+//│
+//■リクエスト
 std::queue<AdapterTCP::myQueue> AdapterTCP::QUEUE;
 std::mutex AdapterTCP::QUEUE_MUTEX;
-TaskHandle_t AdapterTCP::TaskHandle = NULL;
+//┴

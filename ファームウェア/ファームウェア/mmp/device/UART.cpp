@@ -2,21 +2,7 @@
 //========================================================
 // 通信デバイス初期化：ＵＡＲＴ
 //--------------------------------------------------------
-//【目的】
-// ＵＡＲＴポートを任意のボーレートで初期化する
-// オンボードのRGB-LEDの色でボーレートを知らせる
-//--------------------------------------------------------
-//【公開資源】
-//・ENABLE ：このデバイスの有効性
-//・START()：UARTポートを通信可能にする
-//--------------------------------------------------------
-//【処理機能】
-//・3本のGPIOピンで8通りのボーレートを選択する
-//・ボーレートごとに固有の色でRGB-LEDを点灯する
-//・UARTポートを指定のボーレートで使用開始する
-//・初期化の状況をシリアルに表示する
-//--------------------------------------------------------
-// Ver 1.1.0 (2026/08/23) 
+// Ver 1.2.2 (2026/09/03) 
 //========================================================
 #pragma once
 //┬
@@ -36,27 +22,8 @@ namespace devUART {
 //========================================================
 // ハードウェア
 //========================================================
-
-  //─────────────────
-  // ボーレートのプリセット
-  //─────────────────
-  static const int BAUD_PRESETS[8] = {
-    921600,
-    115200,
-    57600,
-    19200,
-    9600,
-    4800,
-    2400,
-    300
-  };
-
-  //─────────────────
-  // ボーレート変更スイッチのGPIO
-  //─────────────────
-  #define SW_PIN_A 18 // bit-0
-  #define SW_PIN_B 14 // bit-1
-  #define SW_PIN_C 13 // bit-2
+    // 通信速度の定義
+    int IntBaud = 115200;
 
 //========================================================
 // メイン処理
@@ -70,34 +37,28 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
 
-    // ボーレート設定ボタンのピンを定義
-    pinMode(SW_PIN_A, INPUT_PULLUP);
-    pinMode(SW_PIN_B, INPUT_PULLUP);
-    pinMode(SW_PIN_C, INPUT_PULLUP);
-    delay(10);
-
-    // ボタンを読取
-    int A = (digitalRead(SW_PIN_A) == LOW) ? 1 : 0;
-    int B = (digitalRead(SW_PIN_B) == LOW) ? 1 : 0;
-    int C = (digitalRead(SW_PIN_C) == LOW) ? 1 : 0;
-
-    //ボーレートIDを取得
-    int id = 7;
-    if      (A==0 && B==0 && C==0) id = 0; // □□□
-    else if (A==1 && B==0 && C==0) id = 1; // ■□□
-    else if (A==0 && B==1 && C==0) id = 2; // □■□
-    else if (A==0 && B==0 && C==1) id = 3; // □□■
-    else if (A==1 && B==1 && C==0) id = 4; // ■■□
-    else if (A==0 && B==1 && C==1) id = 5; // □■■
-    else if (A==1 && B==0 && C==1) id = 6; // ■□■
-    else if (A==1 && B==1 && C==1) id = 7; // ■■■
-
     // UARTポートを起動
-    int intBaud = BAUD_PRESETS[id];
-    Serial1.begin(intBaud, SERIAL_8N1, 44, 43); // GPIO Serial
-    
+#if defined(BOARD_ESP32_S3_TINY) // --------┨WS社 ESP32S3-Tiny┠┐
+    Serial1.begin(IntBaud, SERIAL_8N1,  4,  5);
+  #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠┐
+    // ※Serial2はMP3プレイヤーで使用
+  #else // -------------------------------------┤
+    Serial2.begin(IntBaud, SERIAL_8N1, 11, 12);
+  #endif // ------------------------------------┘
+
+#elif  defined(BOARD_M5STAMP_S3) // -------------┨M5SampS3(A)┠┤
+    Serial1.begin(IntBaud, SERIAL_8N1,  1,  2);
+
+#elif  defined(BOARD_PICO2W) // --------------┨ラズパイpico2W┠┤
+    Serial1.begin(IntBaud, SERIAL_8N1, 13, 17);
+    Serial2.begin(IntBaud, SERIAL_8N1,  5,  9);
+
+#else // --------------------------------------------------------┤
+  #error "【設定エラー】ボードが未定義です！"
+#endif // -------------------------------------------------------┘
+
     //○有効性セット
-    Serial.println("　 [OK] UART(#01) -> " + String(intBaud) + "bps");
+    Serial.println("　 [OK] UART(#01) -> " + String(IntBaud) + "bps");
     ENABLED = true;
   } /* START() */
 } /* namespace devUART */

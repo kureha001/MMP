@@ -1,15 +1,16 @@
 // filename : adp.cpp
 //========================================================
-// アダプタ共通：アダプタ全体のライフサイクルを統括する
+// アダプタ・マネージャ：アダプタを統括する
 //--------------------------------------------------------
-// Ver 1.2.0 (2026/09/02) 
+// Ver 1.2.2 (2026/09/03) 
 //========================================================
 #pragma once
 
-#include <vector>
-
 //┬
 //■┐インクルード
+  //■Arduinoシステム
+  #include <vector>
+  //│
   //■ＭＭＰシステム
   #include "adp.h"  // 通信アダプタ共通へ公開
   //│
@@ -63,14 +64,10 @@
     } 
   }
 
-
-//########################################################
-//# 前空間：アダプタの基本処理
-//########################################################
-namespace adpBase{
 //========================================================
 //【非公開機能】
 //========================================================
+ namespace adpBase{
   //─────────────────
   // フレームから第１トークンを取り出す
   //----------------------------------
@@ -179,7 +176,7 @@ namespace adpBase{
   //━━━━━━━━━━━━━━━━━
   void RUN(String argAdpID, String argFrame){
     //┬
-    //●セットアップ（）
+    //●セットアップ
     SETUP(argAdpID, argFrame);
     //│
 
@@ -192,7 +189,7 @@ namespace adpBase{
     //│＼（処理継続が不可の場合）
     //│ ▼終了：早期リターン
     //│
-    //●ＭＭＰコマンドを実行
+    //●コマンド・マネージャにコマンド実行を指示
     MMP_CMD_MGR->RunCommand();
     //┴
 
@@ -221,7 +218,7 @@ namespace adpBase{
   //━━━━━━━━━━━━━━━━━
   // デバッグログ表示
   //━━━━━━━━━━━━━━━━━
-  void P9_SHOW_LOG(){
+  void SHOW_LOG(){
     if (!ctx.sysLog) return;
     Serial.println(String("\n======================================"));
     Serial.println(String("strFrame["   ) + String(ctx.strFrame) + String("]"));
@@ -237,8 +234,9 @@ namespace adpBase{
 
 
 //########################################################
-//# 前空間：アダプタの統括
+//# 前空間：アダプタ・マネージャ
 //########################################################
+namespace AdapterManager{
   //========================================================
   //# アダプタの初期化
   //--------------------------------------------------------
@@ -249,40 +247,46 @@ namespace adpBase{
   // 両立させる。
   //========================================================
   void INIT_ADAPTER() {
+    //┬
+    //○メッセージ表示を開始
     Serial.println("<<アダプタの初期化>>");
-
-    #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //│
+  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //○ユーザ認証の初期化
       adpAUTH::INIT_TBL();
-    #endif //----------------------------------┘
-
-    //●通信アダプタを初期化・リストへ登録
-    #if defined(ADP_COM_UART)
+  #endif //----------------------------------┘
+    //│
+    //●通信アダプタを初期化
+  #if defined(ADP_COM_UART)
       ADAPTER.push_back(new AdapterUART(ctx));
-    #endif
-    #if defined(ADP_COM_TCP )
+  #endif
+  #if defined(ADP_COM_TCP )
       ADAPTER.push_back(new AdapterTCP(ctx));
-    #endif
-    #if defined(ADP_COM_WAPI)
+  #endif
+  #if defined(ADP_COM_WAPI)
       ADAPTER.push_back(new AdapterWEB_API(ctx));
-    #endif
-    #if defined(ADP_COM_WSOC)
+  #endif
+  #if defined(ADP_COM_WSOC)
       ADAPTER.push_back(new AdapterWEB_Socket(ctx));
-    #endif
-    #if defined(ADP_COM_BLE )
+  #endif
+  #if defined(ADP_COM_BLE )
       ADAPTER.push_back(new AdapterBLE(ctx));
-    #endif
-    #if defined(ADP_COM_ESPN)
+  #endif
+  #if defined(ADP_COM_ESPN)
       ADAPTER.push_back(new AdapterESPNOW(ctx));
-    #endif
-    #if defined(ADP_COM_I2C )
+  #endif
+  #if defined(ADP_COM_I2C )
       ADAPTER.push_back(new AdapterIIC(ctx));
-    #endif
-
+  #endif
+    //│
+    //○メッセージ表示を終了
     Serial.println("");
-
-    #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
-      MMP_CMD_MGR->START();
-    #endif //----------------------------------┘
+    //│
+  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //○コマンド・マネージャを初期化
+    MMP_CMD_MGR->START();
+  #endif //----------------------------------┘
+    //┴
   } /* INIT_ADAPTER() */
 
   //========================================================
@@ -291,3 +295,5 @@ namespace adpBase{
   void KICK_HANDLE(){
     for (auto* adp : ADAPTER) if (adp) adp->handle();
   } /* KICK_HANDLE() */
+
+} /* namespace AdapterManager */

@@ -21,7 +21,7 @@ namespace adpStream{
   //─────────────────
   // スロット初期化
   //----------------------------------
-  // 通信アダプタの名前空間で派生(名称:INIT_SLOT)
+  // 経路アダプタの名前空間で派生(名称:INIT_SLOT)
   //─────────────────
   void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot){
     argSlot.used   = false; // スロット有効性を「無効」

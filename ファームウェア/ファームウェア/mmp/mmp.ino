@@ -33,10 +33,10 @@
   //─────────────────
   void initialize(){
     //┬
-    //●デバイス・マネージャに初期化を依頼
+    //●通信デバイス・マネージャに初期化を依頼
     DeviceManager::INIT();
     //│
-    //●アダプタ・マネージャに初期化を依頼
+    //●経路アダプタ・マネージャに初期化を依頼
     AdapterManager::INIT();
     //│
   #if defined(MMP_TYPE_MAIN)
@@ -52,7 +52,7 @@
   void opening(){
     //┬
   #if defined(MMP_TYPE_MAIN)
-    //●ファンファーレ
+    //●ファンファーレを鳴らす
     ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
     CommandManager::RunCommand();
   #endif
@@ -83,7 +83,7 @@ void setup(){
 //========================================================
 void loop(){
   //┬
-  //●アダプタ・マネージャにハンドルのキックを依頼
+  //●経路アダプタ・マネージャにハンドル実行を依頼
   AdapterManager::HANDLE();
   //┴
 } /* loop() */

@@ -7,35 +7,39 @@
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <vector>
+  #include <vector> // 登録コンテナが使用
+  #include <queue>  // 経路アダプタが使用
+  #include <mutex>  // 経路アダプタが使用
   //│
   //■ＭＭＰシステム
-  #include "adp.h"  // 経路アダプタ共通へ公開
-  #include "cmd.h"  // コマンド・マネージャ
+  #include "adp.h"
+  #include "cmd.h"  // コマンド実行に使用
   //│
   //■ＭＭＰシステム(アダプタ群)
-  #include "adapter/UART.cpp"        // UART
-  #include "adapter/TCP.cpp"         // TCP RAW
-  #include "adapter/WEB_API.cpp"     // WEB API
-  #include "adapter/WEB_Socket.cpp"  // WEB Socket
-  #include "adapter/ESP_NOW.cpp"     // ESP-NOW
-  #include "adapter/BLE.cpp"         // BLE
-  #include "adapter/IIC.cpp"         // IIC
+  #include "adapter/_API_.h"        // <<抽象基底クラス>>
+  #include "adapter/UART.cpp"       // UART
+  #include "adapter/TCP.cpp"        // TCP RAW
+  #include "adapter/WEB_API.cpp"    // WEB API
+  #include "adapter/WEB_Socket.cpp" // WEB Socket
+  #include "adapter/ESP_NOW.cpp"    // ESP-NOW
+  #include "adapter/BLE.cpp"        // BLE
+  #include "adapter/IIC.cpp"        // IIC
   //┴
 //┴
 
 //━━━━━━━━━━━━━━━━━
-// グローバル資源の所有（実体化）
+// グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト
+  // コンテクスト（実体化）
   //─────────────────
   MmpContext ctx;
 
   //─────────────────
   // 経路アダプタ群 (登録コンテナ)
   //─────────────────
-  std::vector<AdapterBase*> ADAPTER; // 抽象基底ポインタのリスト
+  std::vector<AdapterBase*> ADAPTER;
+
 
 //========================================================
 // 共通部品

@@ -9,7 +9,6 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <Arduino.h>
-  #include <vector>
   //│
   //■ＭＭＰシステム
   #include "conf.h"    // プリプロセッサ
@@ -25,11 +24,6 @@
   // ※_API_.h より前に宣言が必要
   //─────────────────
   extern MmpContext ctx;
-
-//┬
-//■インクルード（モジュール基底）
-  #include "module/_API_.h"
-//┴
 
 //========================================================
 // コマンド・マネージャ
@@ -50,11 +44,6 @@ namespace CommandManager {
       const char* name; // 名前
       const char* desc; // 説明
   };
-
-  //─────────────────
-  // 機能モジュール・コンテナ（実体は cmd.cpp に配置）
-  //─────────────────
-  extern std::vector<ModuleBase*> MODULE;
 
   //─────────────────
   // 公開関数宣言

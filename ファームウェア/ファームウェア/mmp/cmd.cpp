@@ -6,11 +6,14 @@
 //========================================================
 //┬
 //■┐インクルード(機能モジュール群)
+  //■Arduinoシステム
+  #include <vector> // 登録コンテナが使用
   //│
   //■ＭＭＰシステム
   #include "cmd.h"
   //│
   //■ＭＭＰシステム(モジュール群)
+  #include "module/_API_.h"   // <<抽象基底クラス>>
   #include "module/system.h"  // システム管理
   #include "module/analog.h"  // アナログ入力
   #include "module/digital.h" // デジタル入出力
@@ -19,6 +22,15 @@
   #include "module/mp3.h"     // MP3プレイヤー
   //┴
 //┴
+
+//━━━━━━━━━━━━━━━━━
+// グローバル資源
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 機能モジュール群 (登録コンテナ)
+  //─────────────────
+  extern std::vector<ModuleBase*> MODULE;
+
 
 //########################################################
 //# 前空間：コマンド・マネージャ
@@ -39,7 +51,7 @@ namespace CommandManager {
     static const T_MOD modIIC    = {"IIC"    , "IIC Read/Write"      };
     static const T_MOD modMP3    = {"MP3"    , "MP3 Player"          };
     //│
-    // 機能モジュールのエントリー
+    //□機能モジュールのエントリー
     static const T_MOD* const MOD_LIST[] = {
         &modSYS,
         &modANA_I,
@@ -59,9 +71,9 @@ namespace CommandManager {
   void INIT(){
     //┬
     //○開始表示
-    Serial.println("<<モジュールの初期化>>");
+    Serial.println("<<機能モジュールの初期化>>");
     //│
-    //○コマンド・モジュールをアドイン（抽象化・一括管理）
+    //○機能モジュールをアドイン（抽象化・一括管理）
     MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
     MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
     MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
@@ -72,10 +84,10 @@ namespace CommandManager {
     //◎┐登録名を表示
     Serial.print(" Add In ->");
     for (auto* mod : MODULE){
-      //│＼（全モジュールを走査し終えた場合）
+      //│＼（全機能モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
-      //●モジュール名を表示
+      //●機能モジュール名を表示
       Serial.print(String(" [") + String(mod->getModName()) + String("]"));
       //┴
     } /* END-for */
@@ -86,14 +98,14 @@ namespace CommandManager {
   } /* INIT() */
 
   //━━━━━━━━━━━━━━━━━
-  // モジュール名を表示
+  // 機能モジュール名を表示
   //━━━━━━━━━━━━━━━━━
   void SHOW_DESC(String argName){
     //┬
     //◎┐略名に対応する正式名称を取得
     String strDesc = "";
     for (size_t modID = 0; modID < MODs; ++modID){
-      //○モジュール定義を取得
+      //○機能モジュール定義を取得
       const T_MOD& thisMod = *MOD_LIST[modID];
       //│
       //○名称を確認
@@ -159,22 +171,22 @@ namespace CommandManager {
       //┴
     }   /* ② */
     //│
-    //③┐モジュール機能を実行
+    //③┐機能モジュール機能を実行
       //○レスポンスを初期化
       ctx.resMSG = "";
       //│
       //◎┐モジュールを走査
       for (auto* m : MODULE){
-        //│＼（全モジュールを走査し終えた場合）
+        //│＼（全機能モジュールを走査し終えた場合）
         //│ ▼ループ処理を中断
         //│
         //◇┐当該モジュールを実行
         if (m->owns(dat[0])){
           //├→(コマンド所有者の場合)
-            //●モジュール説明を表示
+            //●機能モジュール説明を表示
 //          SHOW_DESC(m->getModName());
             //│
-            //○モジュールを実行
+            //○機能モジュールを実行
             m->handle(dat, regCount);          
             //│
             //▼実行結果をリターン

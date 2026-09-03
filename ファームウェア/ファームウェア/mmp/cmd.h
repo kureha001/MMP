@@ -1,16 +1,16 @@
 // filename : cmd.h
 //========================================================
-// コマンド・マネージャ：ＭＭＰコマンドを統括する
-//--------------------------------------------------------
-//【目的】
-// ・コマンド・モジュールの登録
-// ・コマンド・モジュールのルーティング
+// コマンド・マネージャ：通信アダプタと機能モジュールを連携する
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/03) 
 //========================================================
 #pragma once
 //┬
 //■┐インクルード
+  //■ＭＭＰシステム
+  #include "conf.h"
+  #include "context.h"
+  //│
   //■ＭＭＰシステム(モジュール群)
   #include "module/_API_.h"   // <<抽象基底クラス>>
   #include "module/system.h"  // システム管理
@@ -26,148 +26,120 @@
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コマンド管理
-  //----------------------------------
-  // ※定義：ここ、実装：adp.cpp
+  // コンテクスト
   //─────────────────
-  class  CommandManager         ; // 前方宣言
-  extern CommandManager* INO_CMD; // 実体を参照
+  extern MmpContext ctx;
 
+
+//########################################################
+//# 前空間：コマンド・マネージャ
+//########################################################
+namespace CommandManager {
   //─────────────────
-  // 各アダプタからの進行移譲先
+  // 機能モジュール管理
   //─────────────────
-  void RUN_COMMAND()      ; // 前方宣言
+    //┬
+    //□機能モジュール・コンテナ
+    inline std::vector<ModuleBase*> MODULE;
+    //│
+    //□機能モジュール構造体
+    struct T_MOD {
+        const char* name; // 名前
+        const char* desc; // 説明
+    };
+    //│
+    //□機能モジュールのプロファイル
+    static const T_MOD modSYS    = {"SYS"    , "System Management"   };
+    static const T_MOD modANA_I  = {"ANALOG" , "Analog Input"        };
+    static const T_MOD modDIG_IO = {"DIGITAL", "Digital Input/Output"};
+    static const T_MOD modPWM    = {"PWM"    , "PWM Output"          };
+    static const T_MOD modIIC    = {"IIC"    , "IIC Read/Write"      };
+    static const T_MOD modMP3    = {"MP3"    , "MP3 Player"          };
+    //│
+    // 機能モジュールのエントリー
+    static const T_MOD* const MOD_LIST[] = {
+        &modSYS,
+        &modANA_I,
+        &modDIG_IO,
+        &modPWM,
+        &modIIC,
+        &modMP3,
+    };
+    //│
+    //□機能モジュール総数
+    static const size_t MODs = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
+    //┴
 
   //─────────────────
   // クライアントからのリクエスト条件
   //─────────────────
   #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
   #define DAT_COUNT      10 // コマンド＋引数の個数
-
-
-//========================================================
-// コマンド・モジュール定義
-//========================================================
-  struct T_MOD {
-    const char* name; // 名前
-    const char* desc; // 説明
-  };
-
-
-//########################################################
-//# 前空間：モジュールのリスト
-//########################################################
-namespace MMP_MOD {
-
-  // 略名、正式名称を定義
-  static const T_MOD SYS    = {"SYS"    , "System Management"   };
-  static const T_MOD ANA_I  = {"ANALOG" , "Analog Input"        };
-  static const T_MOD DIG_IO = {"DIGITAL", "Digital Input/Output"};
-  static const T_MOD PWM    = {"PWM"    , "PWM Output"          };
-  static const T_MOD IIC    = {"IIC"    , "IIC Read/Write"      };
-  static const T_MOD MP3    = {"MP3"    , "MP3 Player"          };
-
-  // モジュールのリストを定義
-  static const T_MOD* const MOD_LIST[] = {
-    &SYS,
-    &ANA_I,
-    &DIG_IO,
-    &PWM,
-    &IIC,
-    &MP3,
-  };
-
-  static const size_t COUNT = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
-
-} /* namespace MMP_MOD */
-
-
-//########################################################
-//# クラス：コマンド管理
-//--------------------------------------------------------
-//【依存性注入の採用】
-// メイン側で固定生成した MmpContext の参照を各アダプタへ
-// 注入・共有することで、ヒープ断片化（動的確保）の防止と、
-// マルチプロトコル環境におけるグローバル変数汚染の回避を
-// 両立させる。
-//########################################################
-class CommandManager {
-  //┬
-  //□コンテクスト(ポインタ)
-  MmpContext&               ctxRef;     // ※スケッチで依存注入
-  //｜
-  //□保有情報
-  std::vector<ModuleBase*>  mods;       // 登録モジュール群
-  //┴
-
-public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
-  // ※スケッチで実装化
-  //━━━━━━━━━━━━━━━━━
-  CommandManager(MmpContext& c): ctxRef(c) {}
+  #define DAT_LENGTH     20 // トークン最大長（未定義時のフォールバック）
 
   //─────────────────
   // コマンド・モジュールをアドイン
   //─────────────────
-  void START(){
+  inline void INIT(){
     //┬
     //○開始表示
     Serial.println("<<モジュールの初期化>>");
     //│
     //○コマンド・モジュールを登録
-    mods.push_back(new ModuleSystem (ctxRef, MMP_MOD::SYS.name   , MMP_MOD::SYS.desc   ));
-    mods.push_back(new ModuleAnalog (ctxRef, MMP_MOD::ANA_I.name , MMP_MOD::ANA_I.desc ));
-    mods.push_back(new ModuleDigital(ctxRef, MMP_MOD::DIG_IO.name, MMP_MOD::DIG_IO.desc));
-    mods.push_back(new ModulePwm    (ctxRef, MMP_MOD::PWM.name   , MMP_MOD::PWM.desc   ));
-    mods.push_back(new ModuleIIC    (ctxRef, MMP_MOD::IIC.name   , MMP_MOD::IIC.desc   ));
-    mods.push_back(new ModuleMP3    (ctxRef, MMP_MOD::MP3.name   , MMP_MOD::MP3.desc   ));
+    // メイン側で固定生成した MmpContext の参照を各モジュールへ
+    // 注入・共有することで、ヒープ断片化（動的確保）の防止と、
+    // マルチプロトコル環境におけるグローバル変数汚染の回避を
+    // 両立させる。
+    MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
+    MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
+    MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
+    MODULE.push_back(new ModulePwm    (ctx, modPWM.name   , modPWM.desc   ));
+    MODULE.push_back(new ModuleIIC    (ctx, modIIC.name   , modIIC.desc   ));
+    MODULE.push_back(new ModuleMP3    (ctx, modMP3.name   , modMP3.desc   ));
     //│
     //◎┐登録名を表示
     Serial.print(" Add In ->");
-    for (auto* m : mods){
+    for (auto* mod : MODULE){
       //│＼（全モジュールを走査し終えた場合）
       //│ ▼ループ処理を中断
       //│
       //●モジュール名を表示
-      Serial.print(String(" [") + String(m->getModName() + String("]")));
+      Serial.print(String(" [") + String(mod->getModName()) + String("]"));
       //┴
     } /* END-for */
     //│
     //○終了表示
     Serial.println("");
     //┴
-} /* START() */
+  } /* INIT() */
 
-private:
   //━━━━━━━━━━━━━━━━━
   // モジュール名を表示
   //━━━━━━━━━━━━━━━━━
-  void SHOW_DESC(const char* argName){
-  //┬
-  //◎┐略名に対応する正式名称を取得
-  String strDesc = "";
-  for (size_t i = 0; i < MMP_MOD::COUNT; ++i){
-    //○モジュール定義を取得
-    const T_MOD& thisMod = *MMP_MOD::MOD_LIST[i];
+  inline void SHOW_DESC(String argName){
+    //┬
+    //◎┐略名に対応する正式名称を取得
+    String strDesc = "";
+    for (size_t i = 0; i < MODs; ++i){
+      //○モジュール定義を取得
+      const T_MOD& thisMod = *MOD_LIST[i];
+      //│
+      //○名称を確認
+      if (argName == thisMod.name) {strDesc = thisMod.desc; break;}
+      //│＼（一致した場合）
+      //│  ▼中断：走査を終了
+      //┴
+    } /* END-for */
     //│
-    //○名称を確認
-    if (strcmp(argName, thisMod.name) == 0) {strDesc = thisMod.desc; break;}
-    //│＼（一致した場合）
-    //│  ▼中断：走査を終了
+    //○説明を表示
+    Serial.printf("Run : %s\n", (strDesc != "") ? strDesc.c_str() : "(Unknown)");
     //┴
-  } /* END-for */
-  //│
-  //○説明を表示
-  Serial.printf("Run : %s\n", (strDesc != "") ? strDesc : "(Unknown)");
-  //┴
   } /* SHOW_DESC() */
 
-public:
   //─────────────────
   // コマンド実行
   //─────────────────
-  void RunCommand(){
+  inline void RunCommand(){
     //┬
     //①┐コマンドパスを整形
     char pPath[ REQUEST_LENGTH ];
@@ -220,7 +192,7 @@ public:
       ctx.resMSG = "";
       //│
       //◎┐モジュールを走査
-      for (auto* m : mods){
+      for (auto* m : MODULE){
         //│＼（全モジュールを走査し終えた場合）
         //│ ▼ループ処理を中断
         //│
@@ -247,4 +219,4 @@ public:
     //┴
   } /* RunCommand() */
 
-}; /* class CommandManager */
+}; /* namespace CommandManager */

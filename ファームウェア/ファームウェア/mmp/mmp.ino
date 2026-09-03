@@ -12,10 +12,6 @@
 // - WebSockets by Markus Sattler
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/03) 
-// ・[通信アダプタ]をオブジェクト化
-// ・[通信アダプタ(UART)]をMMPサブ用に対応
-// ・[機能モジュール][抽象基底クラス]を最適化
-// ・全体を[ネームスペース][クラス]で安全性を確保
 //========================================================
 //┬
 //■┐インクルード
@@ -25,25 +21,60 @@
   //■ＭＭＰシステム
   #include "dev.h"  // デバイス・マネージャ
   #include "adp.h"  // アダプタ・マネージャ
+  #include "cmd.h"  // コマンド・マネージャ
   //┴
 //┴
+
+//━━━━━━━━━━━━━━━━━
+// セットアップ部品
+//━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // 資源の初期化
+  //─────────────────
+  void initialize(){
+    //┬
+    //●デバイス・マネージャに初期化を依頼
+    DeviceManager::INIT();
+    //│
+    //●アダプタ・マネージャに初期化を依頼
+    AdapterManager::INIT();
+    //│
+  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //●コマンド・マネージャに初期化を依頼
+    CommandManager::INIT();
+    //┴
+  #endif //----------------------------------┘
+  } /* initialize() */
+
+  //─────────────────
+  // オープニング
+  //─────────────────
+  void opening(){
+    //┬
+  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
+    //●ファンファーレ
+    ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
+    CommandManager::RunCommand();
+  #endif //----------------------------------┘
+    //│
+    //○開始メッセージ出力
+    Serial.println("---------------------------");
+    Serial.print  (String(ctx.sysName));
+    Serial.println(String(" Ver.") + String(ctx.sysVer ));
+    Serial.println("---------------------------");
+    //┴
+  } /* opening() */
 
 //========================================================
 // セットアップ
 //========================================================
 void setup(){
   //┬
-  //○デバイス・マネージャに初期化を依頼
-  DeviceManager::INIT_DEVICE();
+  //○資源を初期化
+  initialize();
   //│
-  //●アダプタ・マネージャに初期化を依頼
-  AdapterManager::INIT_ADAPTER();
-  //│
-  //○開始メッセージ出力
-  Serial.println("---------------------------");
-  Serial.print  (String(ctx.sysName));
-  Serial.println(String(" Ver.") + String(ctx.sysVer ));
-  Serial.println("---------------------------");
+  //●オープニングを表示
+  opening();
   //┴
 } /* setup() */
 
@@ -53,6 +84,6 @@ void setup(){
 void loop(){
   //┬
   //●アダプタ・マネージャにハンドルのキックを依頼
-  AdapterManager::KICK_HANDLE();
+  AdapterManager::HANDLE();
   //┴
 } /* loop() */

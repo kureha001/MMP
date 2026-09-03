@@ -28,64 +28,15 @@
 
 
 //========================================================
-// ユーザ認証
+// アダプタ・マネージャ
 //========================================================
-  //─────────────────
-  // 特殊コマンド
-  //─────────────────
-  static const String SP_CMD_START = "_START_!"; // 認証開始
-
-  //─────────────────
-  // テーブル初期化
-  //─────────────────
-  void AUTH_INIT_TBL();
+namespace AdapterManager{
+  void INIT()  ; // 初期化
+  void HANDLE(); // ハンドルをキック
+}
 
 //========================================================
-// 接続情報：接続ごとの受信状態を管理
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // 基本情報
-  //━━━━━━━━━━━━━━━━━
-  static const int SS_RX_SIZE = 128 ; // 受信バッファ容量
-
-  //━━━━━━━━━━━━━━━━━
-  // スロット
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // 構造体
-    //─────────────────
-    struct SS_SLOT_TYPE {
-      bool    used   = false ; // スロット有効性
-      String  rx     = ""    ; // 受信バッファ
-      bool    isOver = false ; // 容量超過フラグ
-    };
-
-//========================================================
-// 共通部品
-//========================================================
-  //【URI整形】
-  void FORMAT_URI(String &str);  // [adpBase][adpStream]で利用
-
-  //【基本】
-  namespace adpBase{
-    void RUN(String argAdpID, String argFrame);
-    void SHOW_LOG();
-  }
-
-  //【ストリーム処理】
-  namespace adpStream{
-    void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
-    String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
-  }
-
-  //【認証処理】
-  namespace adpAUTH{
-    void INIT_TBL(); // [adp]で利用
-    bool CHECK()   ; // [adpBase]で利用
-  }
-
-//========================================================
-// 各通信アダプタ
+// メンバー（通信アダプタ）
 //========================================================
   //【通信アダプタ：ＵＡＲＴ】
   namespace adpUART{
@@ -129,17 +80,52 @@
     void HANDLE() ; // ポーリングのハンドル
   }
 
-  //【ＷＥＢアダプタ：ＷＥＢ画面】
-  namespace adpWEB{
-    extern       bool ENABLED  ; // 有効性：{有効：true|無効：false}
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
 
 //========================================================
-// アダプタ・マネージャ
+// 共通部品
 //========================================================
-namespace AdapterManager{
-  void INIT_ADAPTER(); // 初期化
-  void KICK_HANDLE() ; // ハンドルをキック
-}
+  //━━━━━━━━━━━━━━━━━
+  // 特殊コマンド名
+  //━━━━━━━━━━━━━━━━━
+    static const String SP_CMD_START = "_START_!"; // 認証コード発行
+
+  //━━━━━━━━━━━━━━━━━
+  // 接続情報：接続ごとの受信状態を管理
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 基本情報
+    //─────────────────
+    static const int SS_RX_SIZE = 128 ; // 受信バッファ容量
+
+    //─────────────────
+    // 構造体
+    //─────────────────
+    struct SS_SLOT_TYPE {
+      bool    used   = false ; // スロット有効性
+      String  rx     = ""    ; // 受信バッファ
+      bool    isOver = false ; // 容量超過フラグ
+    };
+
+  //━━━━━━━━━━━━━━━━━
+  // 通常プロセス
+  //━━━━━━━━━━━━━━━━━
+    //【URI整形】
+    void FORMAT_URI(String &str);  // [adpBase][adpStream]で利用
+
+    //【基本】
+    namespace adpBase{
+      void RUN(String argAdpID, String argFrame);
+      void SHOW_LOG();
+    }
+
+    //【ストリーム処理】
+    namespace adpStream{
+      void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
+      String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
+    }
+
+    //【認証処理】
+    namespace adpAUTH{
+      void INIT_TBL(); // [adp]で利用
+      bool CHECK()   ; // [adpBase]で利用
+    }

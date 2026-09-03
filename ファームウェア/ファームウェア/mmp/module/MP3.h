@@ -90,6 +90,58 @@ public:
     }
     
     // ───────────────────────────────
+    // 機能：ルート内トラックを再生開始
+    // 書式：MP3/TRACK/PLAY_ROOT:<機器番号0～1>!
+    // 戻値：トラック状態CD
+    // ───────────────────────────────
+    if (strcmp(Cmd,"TRACK/PLAY_ROOT") == 0){
+      // １．前処理：
+        // 1.1.書式チェック
+        if (dat_cnt < 3) {_ResChkErr(); return;}
+
+        // 1.2. 対象外チェック
+        int idx;
+        if (!checkDev(dat[1], idx)) return;
+
+        // 1.2. 単項目チェック
+        int folder, track;
+        if (!_Str2Int(dat[2], track,  0, 255) ){_ResChkErr(); return;}
+
+      // ２．コマンド実行
+      g_MP3[idx].play(track);
+
+      // ３．後処理：
+      reTrackkState(idx);
+      return;
+    }
+
+    // ───────────────────────────────
+    // 機能：MP3フォルダ内トラックを再生開始
+    // 書式：MP3/TRACK/PLAY:<機器番号0～1>!
+    // 戻値：トラック状態CD
+    // ───────────────────────────────
+    if (strcmp(Cmd,"TRACK/PLAY_MP3") == 0){
+      // １．前処理：
+        // 1.1.書式チェック
+        if (dat_cnt < 3) {_ResChkErr(); return;}
+
+        // 1.2. 対象外チェック
+        int idx;
+        if (!checkDev(dat[1], idx)) return;
+
+        // 1.2. 単項目チェック
+        int folder, track;
+        if (!_Str2Int(dat[2], track,  0, 255) ){_ResChkErr(); return;}
+
+      // ２．コマンド実行
+      g_MP3[idx].playMp3Folder(track);
+
+      // ３．後処理：
+      reTrackkState(idx);
+      return;
+    }
+
+    // ───────────────────────────────
     // 機能：ループ再生を設定
     // 書式：MP3/LOOP:<機器番号0～1>:<設定 1(ON),0(OFF)>!
     // 戻値：トラック状態CD

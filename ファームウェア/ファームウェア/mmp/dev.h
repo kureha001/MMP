@@ -18,7 +18,14 @@
 //┴
 
 //━━━━━━━━━━━━━━━━━
-// 通信デバイスの公開情報
+// デバイス・マネージャ
+//━━━━━━━━━━━━━━━━━
+namespace DeviceManager{
+  void INIT();
+}
+
+//━━━━━━━━━━━━━━━━━
+// メンバー（通信デバイス）
 //━━━━━━━━━━━━━━━━━
   //【UART】
   namespace devUART{
@@ -40,10 +47,3 @@
     extern BLECharacteristic* BLE_TX; // 送信用キャラクタリスティック
     void START()                    ; // デバイス開始の指示
   }
-
-//━━━━━━━━━━━━━━━━━
-// デバイス・マネージャ
-//━━━━━━━━━━━━━━━━━
-namespace DeviceManager{
-  void INIT_DEVICE();
-}

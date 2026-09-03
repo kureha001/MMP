@@ -27,7 +27,7 @@ struct MmpContext {
 #endif // ----------------------------------------┘
   //■システム
   const String sysVer  = "V12a!"; // バージョン
-  boolean      sysLog  = false  ; // ログレベル {false:なし | true:あり}
+  boolean      sysLog  = true  ; // ログレベル {false:なし | true:あり}
   //│
   //■レスポンス
   String       resMSG  = "" ; // レスポンスメッセージ

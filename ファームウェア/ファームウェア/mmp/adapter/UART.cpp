@@ -47,12 +47,19 @@ private:
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  void SEND_CONN(Stream* argConn){
+  //─────────────────
+  // スロットの受付資源に送信
+  //----------------------------------
+  // 引数：
+  // ・出力制限：強制出力(true)、通常出力(false)
+  // ・接続資源：キューから取得した物
+  //─────────────────
+  void SEND_CONN(bool argMode, Stream* argConn){
     //┬
     //○動作モードを確認
-    if (ctx.sysMode != MODE_MAIN) return;
-    //│＼（メインモード以外の場合）
-    //│ ▼終了：これ以上は参加させない
+    if (!argMode && ctx.sysMode != MODE_MAIN) return;
+    //│＼（出力制限がなく、メインモード以外の場合）
+    //│ ▼終了：早期リターン
     //│
     //○メッセージをレスポンス
     if (argConn != nullptr) argConn->print(ctx.resMSG);
@@ -201,16 +208,16 @@ public:
       //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(popDat.CONN); continue;}
+      if (popDat.FRAME.startsWith("#")){SEND_CONN(true, popDat.CONN); continue;}
       //│＼（エラーが発生している場合）
-      //│ ●エラーをレスポンス
+      //│ ●エラーを強制レスポンス
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
       adpBase::RUN(ADP_ID, popDat.FRAME);
       //│
       //●実行結果をレスポンス
-      SEND_CONN(popDat.CONN);
+      SEND_CONN(false, popDat.CONN);
       //┴
     } /* END-while */
     //┴

@@ -37,8 +37,12 @@ private:
 // Ｂ．レスポンス
 //========================================================
 void SEND_CONN(const uint8_t* argConn){
-#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
+    //○動作モードを確認
+    if (ctx.sysMode != MODE_MAIN) return;
+    //│＼（メインモード以外の場合）
+    //│ ▼終了：早期リターン
+    //│
     //○メッセージをレスポンス    
     // 【対策1】返信相手がピアに未登録なら、ここで自動追加する
     if (!esp_now_is_peer_exist(argConn)) {
@@ -59,7 +63,6 @@ void SEND_CONN(const uint8_t* argConn){
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
-#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

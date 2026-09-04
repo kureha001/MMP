@@ -281,14 +281,11 @@
     //●セットアップ
     SETUP(argAdpID, argFrame);
     //│
-    //●モード別に後続処理を継続
-  #if   defined(MMP_TYPE_MAIN)
-    RUN_MAIN();
-  #elif defined(MMP_TYPE_SUB)
-    RUN_SUB();
-  #elif defined(MMP_TYPE_BRIDGE)
-    RUN_BRIDGE();
-  #endif
+    //●モード別に後続処理
+    if (ctx.sysMode == MODE_MAIN  ) RUN_MAIN();
+    if (ctx.sysMode == MODE_SUB   ) RUN_SUB();
+    if (ctx.sysMode == MODE_BRIDGE) RUN_BRIDGE();
+    //┴
   } /* RUN() */
 
 
@@ -322,33 +319,31 @@ namespace AdapterManager{
     //○メッセージ表示を開始
     Serial.println("<<経路アダプタの初期化>>");
     //│
-  #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
     //○ユーザ認証の初期化
       adpAUTH::INIT_TBL();
-  #endif //----------------------------------┘
     //│
     //●経路アダプタを初期化
-  #if defined(ADP_UART)
+    #if defined(ADP_UART)
       ADAPTER.push_back(new AdapterUART(ctx));
-  #endif
-  #if defined(ADP_TCP )
+    #endif
+    #if defined(ADP_TCP )
       ADAPTER.push_back(new AdapterTCP(ctx));
-  #endif
-  #if defined(ADP_WAPI)
+    #endif
+    #if defined(ADP_WAPI)
       ADAPTER.push_back(new AdapterWEB_API(ctx));
-  #endif
-  #if defined(ADP_WSOC)
+    #endif
+    #if defined(ADP_WSOC)
       ADAPTER.push_back(new AdapterWEB_Socket(ctx));
-  #endif
-  #if defined(ADP_BLE )
+    #endif
+    #if defined(ADP_BLE )
       ADAPTER.push_back(new AdapterBLE(ctx));
-  #endif
-  #if defined(ADP_ESPN)
+    #endif
+    #if defined(ADP_ESPN)
       ADAPTER.push_back(new AdapterESPNOW(ctx));
-  #endif
-  #if defined(ADP_I2C )
+    #endif
+    #if defined(ADP_I2C )
       ADAPTER.push_back(new AdapterIIC(ctx));
-  #endif
+    #endif
     //│
     //○メッセージ表示を終了
     Serial.println("");

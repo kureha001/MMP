@@ -47,12 +47,6 @@ namespace DeviceManager{
     // --------------------------------------------------
     // 設定値の整合性チェック（ビルドガード）
     // --------------------------------------------------
-    #if !defined(MMP_TYPE_MAIN) && !defined(ADP_UART)
-        #error "【設定エラー】サブ構成の場合は ADP_UART の定義が必須です！"
-    #endif
-    #if defined(MMP_TYPE_MAIN) && !defined(ADP_UART)
-        #warning "【確認】サブ機を繋げる場合は UART を有効にしてください。"
-    #endif
     //┬
     //○USB(CDC)ポートを初期化
     Serial.begin(115200);          // USB(CDC)

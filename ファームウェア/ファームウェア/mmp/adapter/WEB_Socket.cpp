@@ -37,15 +37,18 @@ private:
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(uint8_t argConn){
-#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
+    //○動作モードを確認
+    if (ctx.sysMode != MODE_MAIN) return;
+    //│＼（メインモード以外の場合）
+    //│ ▼終了：早期リターン
+    //│
     //○メッセージをレスポンス
     if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
     //│
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
-#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

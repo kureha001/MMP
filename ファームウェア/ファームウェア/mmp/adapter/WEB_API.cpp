@@ -152,8 +152,12 @@ private:
   }; /* JSON_DATA */
   //─────────────────
   void SEND_CONN(){
-#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
+    //○動作モードを確認
+    if (ctx.sysMode != MODE_MAIN) return;
+    //│＼（メインモード以外の場合）
+    //│ ▼終了：早期リターン
+    //│
     //○前処理
     JSON_DATA jsDat ;
     String    js    ;
@@ -225,7 +229,6 @@ private:
     //○通信経路にJSON形式でレスポンス
     SEND_JSON(js);
     //┴
-#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

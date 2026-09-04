@@ -20,16 +20,10 @@
 //========================================================
 struct MmpContext {
   //┬
-  //■システム情報
-#if defined(MMP_TYPE_MAIN)
-  const String sysName = "MMP本体";
-  boolean      sysLog  = true  ; // ログレベル {false:なし | true:あり}
-#else
-  const String sysName = "MMPサブ";
-  boolean      sysLog  = true  ; // ログレベル {false:なし | true:あり}
-#endif
   //■システム
-  const String sysVer  = "V12a!"; // バージョン
+  const String sysVer  = "V12a!"  ; // バージョン
+  int          sysMode = MODE_MAIN; // 動作モード
+  bool         sysLog  = true     ; // ログ表示
   //│
   //■レスポンス
   String       resMSG  = "" ; // レスポンスメッセージ

@@ -49,8 +49,12 @@ private:
   // スロットの受付資源に送信
   //─────────────────
   void SEND_CONN(uint8_t argConn){
-#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
+    //○動作モードを確認
+    if (ctx.sysMode != MODE_MAIN) return;
+    //│＼（メインモード以外の場合）
+    //│ ▼終了：早期リターン
+    //│
     //○メッセージをレスポンス
     if (devBLE::BLE_TX != nullptr) {
       devBLE::BLE_TX->setValue(ctx.resMSG.c_str());
@@ -60,7 +64,6 @@ private:
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
-#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

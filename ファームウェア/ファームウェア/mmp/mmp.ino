@@ -18,6 +18,10 @@
   //■Arduinoシステム
   #include <Wire.h> // setup()
   //│
+  //■ＭＭＰシステム
+  #include "conf.h"    // 設定
+  #include "context.h" // コンテクスト
+  //│
   //■ＭＭＰシステム(マネージャ群)
   #include "dev.h"  // 通信デバイス
   #include "adp.h"  // 経路アダプタ
@@ -39,11 +43,9 @@
     //●経路アダプタ・マネージャに初期化を依頼
     AdapterManager::INIT();
     //│
-  #if defined(MMP_TYPE_MAIN)
     //●コマンド・マネージャに初期化を依頼
     CommandManager::INIT();
     //┴
-  #endif
   } /* initialize() */
 
   //─────────────────
@@ -51,17 +53,21 @@
   //─────────────────
   void opening(){
     //┬
-  #if defined(MMP_TYPE_MAIN)
-    //●ファンファーレを鳴らす
-    ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
-    CommandManager::RunCommand();
-  #endif
-    //│
     //○開始メッセージ出力
+    String strMode = "";
+    if (MODE_BOOT == MODE_MAIN  ) strMode = "メイン"  ;
+    if (MODE_BOOT == MODE_SUB   ) strMode = "サブ"    ;
+    if (MODE_BOOT == MODE_BRIDGE) strMode = "ブリッジ";
     Serial.println("---------------------------");
-    Serial.print  (String(ctx.sysName));
-    Serial.println(String(" Ver.") + String(ctx.sysVer ));
+    Serial.printf (" MMP Ver.%s\n"    , ctx.sysVer);
+    Serial.printf (" 動作モード：%s\n", strMode   );
     Serial.println("---------------------------");
+    //│
+    //●ファンファーレを鳴らす
+    if (MODE_BOOT == MODE_MAIN) {
+      ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
+      CommandManager::RunCommand();
+    }
     //┴
   } /* opening() */
 

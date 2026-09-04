@@ -29,11 +29,7 @@ private:
     // ステータス
     //─────────────────
     const String ADP_ID   = "UART"; // アダプタID
-#if defined(MMP_TYPE_BRIDGE) // ---------------------┨ブリッジモード┠┐
-    const int    SS_SLOTS = 1     ; // 固定スロット(USB(CDC)に限定)
-#else // ----------------------------------------------------┨その他┠┤
-    const int    SS_SLOTS = 2     ; // 固定スロット(物理ポート毎に1個)
-#endif // -------------------------------------------------------------┘
+          int    SS_SLOTS = 2     ; // 固定スロット(USB(CDC)に限定)
 
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -52,15 +48,18 @@ private:
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(Stream* argConn){
-#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
+    //○動作モードを確認
+    if (ctx.sysMode != MODE_MAIN) return;
+    //│＼（メインモード以外の場合）
+    //│ ▼終了：これ以上は参加させない
+    //│
     //○メッセージをレスポンス
     if (argConn != nullptr) argConn->print(ctx.resMSG);
     //│
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
-#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================
@@ -157,14 +156,23 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
-    //●接続管理TBLを作成
-    ssTBL = new T_SS_SLOT[SS_SLOTS];
-    ssTBL[0].Base.used = true     ; // 使用中
-    ssTBL[0].CONN      = &Serial  ; // 参照先を登録
-#if !defined(MMP_TYPE_BRIDGE) // ----------------┨ブリッジモード以外┠┐
-    ssTBL[1].Base.used = true     ; // 使用中
-    ssTBL[1].CONN      = &Serial1 ; // 参照先を登録
-#endif // -------------------------------------------------------------┘
+    //●┐接続管理TBLを作成
+      //○領域を確保
+      SS_SLOTS = (ctx.sysMode == MODE_MAIN) ? 2 :1;
+      ssTBL    = new T_SS_SLOT[SS_SLOTS];
+      //│
+      //○USB(CDC)をセット
+      ssTBL[0].Base.used = true   ; // 使用中
+      ssTBL[0].CONN      = &Serial; // 参照先を登録
+      //│
+      //○動作モードを確認
+      if (ctx.sysMode == MODE_MAIN) {
+      //│＼（メインモードの場合）
+          //○UART1以降をセット
+          ssTBL[1].Base.used = true    ; // 使用中
+          ssTBL[1].CONN      = &Serial1; // 参照先を登録
+          //┴
+      } /* END-if */
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(

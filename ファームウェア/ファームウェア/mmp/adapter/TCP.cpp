@@ -129,6 +129,7 @@ private:
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(WiFiClient& argConn){
+#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
     //○メッセージをレスポンス
     if (argConn.connected()) argConn.print(ctx.resMSG);
@@ -136,6 +137,7 @@ private:
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
+#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

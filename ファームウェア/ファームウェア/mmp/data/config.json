@@ -9,12 +9,7 @@
     {
       "type": "sta",
       "name": "MMP_STA-JSON",
-      "ip": "98"
-    },
-    {
-      "type": "ap",
-      "name": "MMP_AP-JSON",
-      "ip": "192.168.99.3"
+      "ip": "90"
     }
   ],
 
@@ -23,18 +18,6 @@
       "label": "ROOM_G",
       "ssid": "Buffalo-G-7050",
       "pass": "etnxhurnecbs7",
-      "default": false
-    },
-    {
-      "label": "HOME_G",
-      "ssid": "Buffalo-G-C0F0",
-      "pass": "6shkfa53dk8ks",
-      "default": false
-    },
-    {
-      "label": "Mobile Phone",
-      "ssid": "kureha_Redme",
-      "pass": "09017390454",
       "default": false
     }
   ]

@@ -23,7 +23,7 @@ protected:
 public:
   //┬
   //○コンストラクタ
-  AdapterBase(MmpContext& argCtx): ctx(argCtx){}  //┴
+  AdapterBase(MmpContext& argCtx): ctx(argCtx){}
   //┴
   //┬
   //○デストラクタ

@@ -37,9 +37,9 @@ private:
 // Ｂ．レスポンス
 //========================================================
 void SEND_CONN(const uint8_t* argConn){
+#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
-    //○メッセージをレスポンス
-    
+    //○メッセージをレスポンス    
     // 【対策1】返信相手がピアに未登録なら、ここで自動追加する
     if (!esp_now_is_peer_exist(argConn)) {
       esp_now_peer_info_t peerInfo = {};
@@ -59,6 +59,7 @@ void SEND_CONN(const uint8_t* argConn){
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
+#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

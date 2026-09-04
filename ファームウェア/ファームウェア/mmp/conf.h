@@ -14,11 +14,10 @@
 
 //─────────────────
 // MMPタイプ
-//----------------------------------
-//・MMP本体：コメントアウト「しない」
-//・MMPサブ：コメントアウト「す る」
 //─────────────────
-#define MMP_TYPE_MAIN
+//#define MMP_TYPE_MAIN    // 本体モード
+//#define MMP_TYPE_SUB     // サブモード
+#define MMP_TYPE_BRIDGE  // ブリッジモード
 
 //─────────────────
 // 経路アダプタ選択
@@ -26,7 +25,7 @@
 //・必要：コメントアウト「しない」
 //・不要：コメントアウト「する」
 //─────────────────
-#define ADP_UART // UART  ※本体＋サブの構成で必須
+#define ADP_UART // UART  ※本体＋サブの構成、ブリッジで必須
 #define ADP_TCP  // TCP RAW
 #define ADP_WAPI // WWB API
 #define ADP_WSOC // WEB Socket

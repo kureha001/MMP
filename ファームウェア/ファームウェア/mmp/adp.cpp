@@ -148,9 +148,12 @@
   // 接続スロットごとの前処理
   //━━━━━━━━━━━━━━━━━
   void SETUP(String argAdpID, String argFrame){
+
     ctx.adpID    = argAdpID; // アダプタID
+
     ctx.strFrame = argFrame; // フレーム
     FORMAT_URI(ctx.strFrame);
+    if (!ctx.strFrame.endsWith("!")) ctx.strFrame += "!";
 
     ctx.resMSG   = ""  ; // レスポンスメッセージ
     ctx.cmdPath  = ""  ; // コマンドパス
@@ -159,54 +162,135 @@
   } /* SETUP() */
 
 
+  //━━━━━━━━━━━━━━━━━
+  // ブリッジ用
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // ブリッジ・コマンド
+    //----------------------------------
+    // 戻り値：コマンド実行の有無（論理値）
+    // ・true ：コマンド実行「あり」
+    // ・false：コマンド実行「なし」
+    //─────────────────
+    bool BRIDGE_COMMAND(){
+    /*
+        //┬
+        //○ctx.strFrame を コマンド、引数で配列に分解
+        //│
+        //○コマンドごとに転送先をセット
+        if   (CMD[0] == "SYS/BRIDGE/@TCP" ) {break;}
+        elif (CMD[0] == "SYS/BRIDGE/@WSOC") {break;}
+        elif (CMD[0] == "SYS/BRIDGE/@WAPI") {break;}
+        elif (CMD[0] == "SYS/BRIDGE/@BLE" ) {break;}
+        elif (CMD[0] == "SYS/BRIDGE/@ESPN") {break;}
+        elif (CMD[0] == "SYS/BRIDGE/@IIC" ) {break;}
+        else {return false}
+    */
+        //│
+        //▼返却：コマンド実行あり
+        return true;
+        //┴
+    } /* BRIDGE_COMMAND() */
+
+    //─────────────────
+    // リクエストを転送
+    //─────────────────
+    void BRIDGE_TRANS(){
+    // リクエストを指定経路に転送
+    } /* BRIDGE_TRANS() */
+
+    
+  //━━━━━━━━━━━━━━━━━
+  // モード別後続処理
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // １．本体モード
+    //─────────────────
+    void RUN_MAIN(){
+      //┬
+      //○リクエストをデータ項目ごとに分解
+      SET_ACD_CPATH();
+      //│
+      //●ユーザ認証を実施
+      if (adpAUTH::CHECK()) return;
+      //│＼（処理継続が不可の場合）
+      //│ ▼終了：早期リターン
+      //│
+      //●コマンド・マネージャにコマンド実行を指示
+      CommandManager::RunCommand();
+      //┴
+    } /* RUN_MAIN() */
+
+    //─────────────────
+    // ２．サブモード
+    //─────────────────
+    void RUN_SUB(){
+      //┬
+      //○コマンドをMMP本体のUARTへ転送
+      Serial1.print(ctx.strFrame);
+      //│
+      //◎┐受信待ちデータの取り込み
+      String strRX = "";
+      while (!strRX.endsWith("!")) {
+        //│＼（終端に達した場合）
+        //│ ▽完了：走査終了
+        //│
+        //○受信データを受信バッファに加える
+        if (Serial1.available()) strRX += (char)Serial1.read();
+        //┴
+      } /* END-while */
+      //│
+      //○ＭＭＰ本体からのレスポンスをコンテクストに反映
+      ctx.resMSG = strRX;
+      //┴
+    } /* RUN_SUB() */
+
+    //─────────────────
+    // ３．ブリッジモード
+    //─────────────────
+    void RUN_BRIDGE(){
+      //┬
+      //●ブリッジ用コマンドに応答
+      if (BRIDGE_COMMAND()) return;
+      //│＼（専用コマンドを処理した場合）
+      //│ ▼完了：早期リターン
+      //│
+      //○受信元に応じた経路に転送
+      if (ctx.adpID == "UART") {
+      //├┐（UARTの場合）
+        //●リクエストを指定経路に転送
+        BRIDGE_TRANS();
+        //┴
+      } else {
+      //└┐（その他）
+        //○MMP本体からのレスポンスをPCに転送
+        Serial.print(ctx.strFrame);
+        //┴
+      }/* END-if */
+      //┴
+    } /* RUN_BRIDGE() */
+
 //========================================================
 //【公開機能】
 //========================================================
   //━━━━━━━━━━━━━━━━━
   //【公開】MMPコマンドを実行
-  //----------------------------------
-  // MMPメイン／サブで機能が異なる
   //━━━━━━━━━━━━━━━━━
   void RUN(String argAdpID, String argFrame){
     //┬
     //●セットアップ
     SETUP(argAdpID, argFrame);
     //│
-
-#if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠----┐
-    //○リクエストをデータ項目ごとに分解
-    SET_ACD_CPATH();
-    //│
-    //●ユーザ認証を実施
-    if (adpAUTH::CHECK()) return;
-    //│＼（処理継続が不可の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //●コマンド・マネージャにコマンド実行を指示
-    CommandManager::RunCommand();
-    //┴
-
-#else // -----------------------┨ＭＭＰサブ┠----┤
-    //○コマンドをMMP本体にUART送信
-    Serial1.print(ctx.strFrame);
-    //│
-    //◎┐受信待ちデータの取り込み
-    String strRX = "";
-    while (!strRX.endsWith("!")) {
-      //│＼（終端に達した場合）
-      //│ ▽完了：走査終了
-      //│
-      //○受信データを受信バッファに加える
-      if (Serial1.available()) strRX += (char)Serial1.read();
-      //┴
-    } /* END-while */
-    //│
-    //○ＭＭＰ本体からのレスポンスをコンテクストに反映
-    ctx.resMSG = strRX;
-    //┴
-#endif // ----------------------------------------┘
-
+    //●モード別に後続処理を継続
+  #if   defined(MMP_TYPE_MAIN)
+    RUN_MAIN();
+  #elif defined(MMP_TYPE_SUB)
+    RUN_SUB();
+  #elif defined(MMP_TYPE_BRIDGE)
+    RUN_BRIDGE();
+  #endif
   } /* RUN() */
+
 
   //━━━━━━━━━━━━━━━━━
   // デバッグログ表示
@@ -236,7 +320,7 @@ namespace AdapterManager{
   void INIT() {
     //┬
     //○メッセージ表示を開始
-    Serial.println("<<アダプタの初期化>>");
+    Serial.println("<<経路アダプタの初期化>>");
     //│
   #if defined(MMP_TYPE_MAIN) //┨ＭＭＰ本体┠┐
     //○ユーザ認証の初期化

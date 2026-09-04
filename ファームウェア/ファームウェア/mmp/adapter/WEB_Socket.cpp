@@ -37,6 +37,7 @@ private:
 // Ｂ．レスポンス
 //========================================================
   void SEND_CONN(uint8_t argConn){
+#if !defined(MMP_TYPE_BRIDGE) // ---┨ブリッジモード以外┠┐
     //┬
     //○メッセージをレスポンス
     if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
@@ -44,6 +45,7 @@ private:
     //●ログ出力
     adpBase::SHOW_LOG();
     //┴
+#endif // ------------------------------------------------┘
   } /* SEND_CONN() */
 
 //========================================================

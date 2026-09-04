@@ -37,7 +37,7 @@ namespace devUART {
 
     // UARTポートを起動
 #if defined(BOARD_ESP32_S3_TINY) // --------┨WS社 ESP32S3-Tiny┠┐
-    Serial1.begin(IntBaud, SERIAL_8N1,  4,  5);
+    Serial1.begin(IntBaud, SERIAL_8N1, 17, 18);
   #if defined(MMP_TYPE_MAIN) // --┨ＭＭＰ本体┠┐
     // ※Serial2はMP3プレイヤーで使用
   #else // -------------------------------------┤
@@ -56,7 +56,7 @@ namespace devUART {
 #endif // -------------------------------------------------------┘
 
     //○有効性セット
-    Serial.println("　 [OK] UART(#01) -> " + String(IntBaud) + "bps");
+    Serial.println("　[OK] UART(#01) -> " + String(IntBaud) + "bps");
     ENABLED = true;
   } /* START() */
 } /* namespace devUART */

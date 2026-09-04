@@ -61,7 +61,7 @@ private:
     // 引数：(参照)接続管理スロット
     //─────────────────
     void SS_INI_SLOT(T_SS_SLOT& argSlot){
-      adpStream::SS_INI_SLOT_BASE(argSlot.Base); // 基本メンバを初期化
+      adpFnStream::SS_INI_SLOT_BASE(argSlot.Base); // 基本メンバを初期化
       if (argSlot.CONN) argSlot.CONN.stop()    ; // アクセス資源を切断
     } /* SS_INI_SLOT() */
     
@@ -146,7 +146,7 @@ private:
     if (argConn.connected()) argConn.print(ctx.resMSG);
     //│
     //●ログ出力
-    adpBase::SHOW_LOG();
+    adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -225,7 +225,7 @@ private:
         //┴
       //│
       //●ストリームを受信
-      String retFrame = adpStream::GET_FRAME(ssTBL[ID].CONN, ssTBL[ID].Base);
+      String retFrame = adpFnStream::GET_FRAME(ssTBL[ID].CONN, ssTBL[ID].Base);
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査
@@ -299,7 +299,7 @@ public:
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
-      adpBase::RUN(ADP_ID, popDat.FRAME);
+      adpFnBase::RUN(ADP_ID, popDat.FRAME);
       //│
       //●実行結果をレスポンス
       SEND_CONN(false, popDat.CONN);

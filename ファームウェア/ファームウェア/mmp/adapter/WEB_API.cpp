@@ -78,7 +78,7 @@ private:
     ADP_SRV->send(200, "application/json; charset=utf-8", argJSON);
     //│
     //●ログ出力
-    adpBase::SHOW_LOG();
+    adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_JSON() */
 
@@ -292,7 +292,7 @@ private:
           //│ ▼終了：早期リターン
           //│
           //●コマンドを実行
-          adpBase::RUN(ADP_ID, ADP_SRV->uri());
+          adpFnBase::RUN(ADP_ID, ADP_SRV->uri());
           //│
           //●実行結果をレスポンス
           SEND_CONN(false);

@@ -68,7 +68,7 @@ private:
     );
     //│
     //●ログ出力
-    adpBase::SHOW_LOG();
+    adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
 
@@ -187,7 +187,7 @@ public:
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
-      adpBase::RUN(ADP_ID, popDat.FRAME);
+      adpFnBase::RUN(ADP_ID, popDat.FRAME);
       //│
       //●実行結果をレスポンス
       SEND_CONN(false, popDat.CONN);

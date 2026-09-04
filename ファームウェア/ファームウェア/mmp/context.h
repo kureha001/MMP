@@ -28,6 +28,12 @@ struct MmpContext {
   //■レスポンス
   String       resMSG  = "" ; // レスポンスメッセージ
   //│
+  //■転送先情報（ブリッジモードで利用）
+  int          transID     = -1; // 転送先のアダプタID
+  String       transDat1st = ""; // 転送先の個別情報１
+  String       transDat2nd = ""; // 転送先の個別情報２
+  String       transDat3rd = ""; // 転送先の個別情報３
+  //│
   //■リクエスト情報
   int          adpID    = -1; // アダプタID
   String       strFrame = ""; // フレーム

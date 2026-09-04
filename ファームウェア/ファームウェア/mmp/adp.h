@@ -36,8 +36,9 @@
   const int ADP_ID_ESPN = 5;
   const int ADP_ID_IIC  = 6;
 
+
 //========================================================
-// 経路アダプタ・マネージャ
+// 統括マネージャ
 //========================================================
 namespace AdapterManager{
   void INIT()  ; // 初期化
@@ -103,17 +104,44 @@ namespace AdapterManager{
     void HANDLE() ; // ポーリングのハンドル
   }
 
+//========================================================
+// サブマネージャ（動作モード）
+//========================================================
+  namespace modeMain  {void RUN();} // メインモード
+  namespace modeSub   {void RUN();} // サブモード
+  namespace modeBridge{void RUN();} //ブリッジモード
+
 
 //========================================================
-// 共通部品
+// 作業標準
 //========================================================
+namespace adpFnBase{
   //━━━━━━━━━━━━━━━━━
-  // 特殊コマンド名
+  // 一般処理：ユーザ認証
   //━━━━━━━━━━━━━━━━━
+    void FORMAT_URI(String &str);  // [adpFnBase][adpFnStream]で利用
+    void RUN(int argAdpID, String argFrame);
+    void SHOW_LOG();
+  }
+
+  //━━━━━━━━━━━━━━━━━
+  // 専門処理：ユーザ認証
+  //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // 特殊コマンド名
+    //─────────────────
     static const String SP_CMD_START = "_START_!"; // 認証コード発行
 
+    //─────────────────
+    // 実行部品
+    //─────────────────
+    namespace adpFnAuth{
+      void INIT_TBL(); // [AdapterManager]で利用
+      bool CHECK()   ; // [adpFnBase]で利用
+    }
+
   //━━━━━━━━━━━━━━━━━
-  // 接続情報：接続ごとの受信状態を管理
+  // 専門処理：ストリーム受信
   //━━━━━━━━━━━━━━━━━
     //─────────────────
     // 基本情報
@@ -129,34 +157,10 @@ namespace AdapterManager{
       bool    isOver = false ; // 容量超過フラグ
     };
 
-  //━━━━━━━━━━━━━━━━━
-  // 通常プロセス
-  //━━━━━━━━━━━━━━━━━
     //─────────────────
-    // URI整形
+    // 実行部品
     //─────────────────
-    void FORMAT_URI(String &str);  // [adpBase][adpStream]で利用
-
-    //─────────────────
-    // 基本
-    //─────────────────
-    namespace adpBase{
-      void RUN(int argAdpID, String argFrame);
-      void SHOW_LOG();
-    }
-
-    //─────────────────
-    // ストリーム処理
-    //─────────────────
-    namespace adpStream{
+    namespace adpFnStream{
       void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
       String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
-    }
-
-    //─────────────────
-    // 認証処理
-    //─────────────────
-    namespace adpAUTH{
-      void INIT_TBL(); // [adp]で利用
-      bool CHECK()   ; // [adpBase]で利用
     }

@@ -31,8 +31,8 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID      = "BLE" ; // アダプタID
-    static bool  IS_BUSY          ; // 接続状況｛true：接続あり｜false：接続なし｝
+    const  int  ADP_ID = ADP_ID_BLE;
+    static bool IS_BUSY; // 接続状況｛true：接続あり｜false：接続なし｝
 
     //─────────────────
     // 使用するサービス

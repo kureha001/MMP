@@ -11,7 +11,7 @@
   #include <Arduino.h>
   //│
   //■ＭＭＰシステム
-  #include "conf.h"    // プリプロセッサ
+  #include "conf.h"    // 初期設定
   //┴
 //┴
 
@@ -22,14 +22,14 @@ struct MmpContext {
   //┬
   //■システム
   const String sysVer  = "V12a!"  ; // バージョン
-  int          sysMode = MODE_MAIN; // 動作モード
+  int          sysMode = MODE_BOOT; // 動作モード
   bool         sysLog  = true     ; // ログ表示
   //│
   //■レスポンス
   String       resMSG  = "" ; // レスポンスメッセージ
   //│
-  //■リクエスト情報---
-  String       adpID    = ""; // アダプタID
+  //■リクエスト情報
+  int          adpID    = -1; // アダプタID
   String       strFrame = ""; // フレーム
   String       cmdPath  = ""; // コマンドパス
   String       authCD   = ""; // 認証コード

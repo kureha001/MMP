@@ -25,7 +25,7 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID   = "IIC"; // アダプタID
+    const int ADP_ID = ADP_ID_IIC;
     
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -165,12 +165,12 @@ public:
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
-      StreamQueue,    // 実行するタスク関数
-      ADP_ID.c_str(), // タスク名（デバッグ用）
-      4096,           // スタックサイズ（バイト単位）
-      NULL,           // パラメータ
-      2,              // 優先度
-      &TaskHandle     // タスクハンドル
+      StreamQueue           , // 実行するタスク関数
+      String(ADP_ID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &TaskHandle             // タスクハンドル
     );
     //│
     //○メッセージ表示

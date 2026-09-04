@@ -33,7 +33,7 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID   = "TCPR"; // アダプタID
+    const int ADP_ID = ADP_ID_TCP;
     const int    SS_SLOTS = 10    ; // 複数スロット(接続タイミングで登録)
           bool   ENABLED  = false ; // 有効性：{有効：true|無効：false}
 
@@ -261,12 +261,12 @@ public:
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
-      StreamQueue,    // 実行するタスク関数
-      ADP_ID.c_str(), // タスク名（デバッグ用）
-      4096,           // スタックサイズ（バイト単位）
-      this,           // パラメータ
-      2,              // 優先度
-      &TaskHandle     // タスクハンドル
+      StreamQueue           , // 実行するタスク関数
+      String(ADP_ID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &TaskHandle             // タスクハンドル
     );
     //│
     //○メッセージ表示

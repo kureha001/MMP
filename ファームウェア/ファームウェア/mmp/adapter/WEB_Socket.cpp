@@ -25,7 +25,7 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID  = "WSOC"; // アダプタID
+    const int ADP_ID = ADP_ID_WSOC;
 
     //─────────────────
     // 使用するサービス

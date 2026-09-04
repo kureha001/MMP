@@ -31,7 +31,7 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID = "WAPI"; // アダプタID
+    const int ADP_ID = ADP_ID_WAPI;
 
     //─────────────────
     // 使用するサービス

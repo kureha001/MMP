@@ -11,7 +11,7 @@
   #include <Arduino.h>
   //│
   //■ＭＭＰシステム
-  #include "conf.h"    // プリプロセッサ
+  #include "conf.h"    // 初期設定
   #include "context.h" // コンテクスト
   //┴
 //┴

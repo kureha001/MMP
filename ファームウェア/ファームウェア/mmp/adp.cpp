@@ -147,7 +147,7 @@
   //━━━━━━━━━━━━━━━━━
   // 接続スロットごとの前処理
   //━━━━━━━━━━━━━━━━━
-  void SETUP(String argAdpID, String argFrame){
+  void SETUP(int argAdpID, String argFrame){
 
     ctx.adpID    = argAdpID; // アダプタID
 
@@ -256,7 +256,7 @@
       //│ ▼完了：早期リターン
       //│
       //○受信元に応じた経路に転送
-      if (ctx.adpID == "UART") {
+      if (ctx.adpID == ADP_ID_UART) {
       //├┐（UARTの場合）
         //●リクエストを指定経路に転送
         BRIDGE_TRANS();
@@ -276,7 +276,7 @@
   //━━━━━━━━━━━━━━━━━
   //【公開】MMPコマンドを実行
   //━━━━━━━━━━━━━━━━━
-  void RUN(String argAdpID, String argFrame){
+  void RUN(int argAdpID, String argFrame){
     //┬
     //●セットアップ
     SETUP(argAdpID, argFrame);

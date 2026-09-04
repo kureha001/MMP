@@ -18,10 +18,6 @@
   //■Arduinoシステム
   #include <Wire.h> // setup()
   //│
-  //■ＭＭＰシステム
-  #include "conf.h"    // 設定
-  #include "context.h" // コンテクスト
-  //│
   //■ＭＭＰシステム(マネージャ群)
   #include "dev.h"  // 通信デバイス
   #include "adp.h"  // 経路アダプタ

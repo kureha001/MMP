@@ -28,8 +28,8 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const String ADP_ID   = "UART"; // アダプタID
-          int    SS_SLOTS = 2     ; // 固定スロット(USB(CDC)に限定)
+    const int ADP_ID = ADP_ID_UART;
+          int SS_SLOTS = 2        ; // 固定スロット(USB(CDC)に限定)
 
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -176,12 +176,12 @@ public:
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
-      StreamQueue,    // 実行するタスク関数
-      ADP_ID.c_str(), // タスク名（デバッグ用）
-      4096,           // スタックサイズ（バイト単位）
-      this,           // パラメータ
-      2,              // 優先度
-      &TaskHandle     // タスクハンドル
+      StreamQueue           , // 実行するタスク関数
+      String(ADP_ID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &TaskHandle             // タスクハンドル
     );
     //│
     //○メッセージ表示

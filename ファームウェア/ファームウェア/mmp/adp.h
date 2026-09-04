@@ -11,7 +11,7 @@
   #include <Arduino.h>
   //│
   //■ＭＭＰシステム
-  #include "conf.h"    // プリプロセッサ
+  #include "conf.h"    // 初期設定
   #include "context.h" // コンテクスト
   //┴
 //┴
@@ -25,6 +25,16 @@
   //─────────────────
   extern MmpContext ctx;
 
+  //─────────────────
+  // 経路アダプタID
+  //─────────────────
+  const int ADP_ID_UART = 0;
+  const int ADP_ID_TCP  = 1;
+  const int ADP_ID_WAPI = 2;
+  const int ADP_ID_WSOC = 3;
+  const int ADP_ID_BLE  = 4;
+  const int ADP_ID_ESPN = 5;
+  const int ADP_ID_IIC  = 6;
 
 //========================================================
 // 経路アダプタ・マネージャ
@@ -131,7 +141,7 @@ namespace AdapterManager{
     // 基本
     //─────────────────
     namespace adpBase{
-      void RUN(String argAdpID, String argFrame);
+      void RUN(int argAdpID, String argFrame);
       void SHOW_LOG();
     }
 

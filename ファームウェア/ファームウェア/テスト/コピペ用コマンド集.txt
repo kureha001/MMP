@@ -14,7 +14,6 @@ PSWD: 6shkfa53dk8ks
 -------------------------------
 
 _START_!
-
 SYS/VERSION!
 SYS/SET_LOG:0!
 SYS/SET_LOG:1!

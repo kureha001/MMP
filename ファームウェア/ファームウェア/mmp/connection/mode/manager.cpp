@@ -20,8 +20,9 @@
     ctx.adpID    = argAdpID; // アダプタID
 
     ctx.strFrame = argFrame; // フレーム
-    if (!ctx.strFrame.endsWith("!")) ctx.strFrame += "!";
-
+    if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
+    if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
+    
     ctx.resMSG   = ""  ; // レスポンスメッセージ
     ctx.cmdPath  = ""  ; // コマンドパス
     ctx.authCD   = ""  ; // 認証コード

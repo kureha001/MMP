@@ -16,10 +16,10 @@
 //─────────────────
 // MMPタイプ
 //─────────────────
-const int MODE_MAIN   = 0; // メインモード
-const int MODE_SUB    = 1; // サブモード
-const int MODE_BRIDGE = 2; // ブリッジモード
-const int MODE_BOOT   = MODE_MAIN; // 起動時モード
+extern const int MODE_MAIN  ; // メインモード
+extern const int MODE_SUB   ; // サブモード
+extern const int MODE_BRIDGE; // ブリッジモード
+extern const int MODE_BOOT  ; // 起動時モード
 
 //─────────────────
 // 経路アダプタ選択

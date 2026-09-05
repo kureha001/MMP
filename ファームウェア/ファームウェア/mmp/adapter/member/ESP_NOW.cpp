@@ -6,7 +6,10 @@
 //========================================================
 //┬
 //■┐インクルード
-  //■┐Arduinoシステム
+  //■同僚
+  #include "_index_.h"
+  //│
+  //■Arduinoシステム
   #include <WiFi.h>
   #include <esp_now.h>
   //┴
@@ -187,7 +190,7 @@ public:
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
-      adpFnBase::RUN(ADP_ID, popDat.FRAME);
+      mode::RUN(ADP_ID, popDat.FRAME);
       //│
       //●実行結果をレスポンス
       SEND_CONN(false, popDat.CONN);

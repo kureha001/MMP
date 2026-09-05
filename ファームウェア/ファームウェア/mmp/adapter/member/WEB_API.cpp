@@ -6,6 +6,9 @@
 //========================================================
 //┬
 //■┐インクルード
+  //■同僚
+  #include "_index_.h"
+  //│
   //■Arduinoシステム
   #include <WebServer.h> // ユーザ受付資源
   //┴
@@ -292,7 +295,7 @@ private:
           //│ ▼終了：早期リターン
           //│
           //●コマンドを実行
-          adpFnBase::RUN(ADP_ID, ADP_SRV->uri());
+          mode::RUN(ADP_ID, ADP_SRV->uri());
           //│
           //●実行結果をレスポンス
           SEND_CONN(false);

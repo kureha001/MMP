@@ -1,6 +1,6 @@
-// filename : adp.cpp
+// filename : adapter/mamager.cpp
 //========================================================
-// 経路アダプタ／統括マネージャ：アダプタを統括
+// クライアント接続部門／統括マネージャ
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
@@ -11,18 +11,8 @@
   #include <queue>  // 経路アダプタが使用
   #include <mutex>  // 経路アダプタが使用
   //│
-  //■ＭＭＰシステム
-  #include "adp.h"
-  //│
-  //■ＭＭＰシステム(アダプタ群)
-  #include "adapter/_API_.h"        // <<抽象基底クラス>>
-  #include "adapter/UART.cpp"       // UART
-  #include "adapter/TCP.cpp"        // TCP RAW
-  #include "adapter/WEB_API.cpp"    // WEB API
-  #include "adapter/WEB_Socket.cpp" // WEB Socket
-  #include "adapter/ESP_NOW.cpp"    // ESP-NOW
-  #include "adapter/BLE.cpp"        // BLE
-  #include "adapter/IIC.cpp"        // IIC
+  //■部内組織
+  #include "_index_.h"
   //┴
 //┴
 
@@ -30,17 +20,13 @@
 // グローバル資源
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // コンテクスト（実体化）
-  //─────────────────
-  MmpContext ctx;
-
-  //─────────────────
   // 経路アダプタ群 (登録コンテナ)
   //─────────────────
   std::vector<AdapterBase*> ADAPTER;
 
+
 //########################################################
-//# 前空間：経路アダプタ・マネージャ
+//# 前空間：クライアント接続部門（統括マネージャ）
 //########################################################
 namespace AdapterManager{
   //========================================================

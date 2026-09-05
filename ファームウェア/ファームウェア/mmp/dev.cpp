@@ -25,6 +25,15 @@
 //########################################################
 namespace DeviceManager{
   //━━━━━━━━━━━━━━━━━
+  // 通信デバイス関数の抽象構造体
+  //━━━━━━━━━━━━━━━━━
+  struct T_DEVICE {
+    const char* name       ; // デバイス名
+          bool* pEnabled   ; // 有効フラグへのポインタ
+          void  (*pStart)(); // 開始関数ポインタ
+  }; /* struct T_DEVICE */
+
+  //━━━━━━━━━━━━━━━━━
   // 通信デバイス群（抽象化・一括管理）
   //━━━━━━━━━━━━━━━━━
   static const T_DEVICE DEVICE[] = {

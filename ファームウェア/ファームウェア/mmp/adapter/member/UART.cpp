@@ -1,20 +1,26 @@
-// filename : adapter/WEB_Socket.cpp
+// filename : adapter/UART.cpp
 //========================================================
-// 経路アダプタ：WEB Socket
+// 経路アダプタ：UART
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
 //┬
 //■┐インクルード
-  //■追加ライブラリ：WebSockets by Markus Sattler
-  #include <WebSocketsServer.h>
+  //■同僚
+  #include "_index_.h"
   //┴
 //┴
 
 //########################################################
-//# クラス：経路アダプタ(WEB Socket)
+//# クラス：経路アダプタ(UART)
 //########################################################
-class AdapterWEB_Socket : public AdapterBase {
+class AdapterUART : public AdapterBase {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterBase::AdapterBase;
+
 private:
 //========================================================
 // Ａ．アダプタの基本
@@ -25,25 +31,33 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const int ADP_ID = ADP_ID_WSOC;
+    const int ADP_ID = ADP_ID_UART;
+          int SS_SLOTS = 2        ; // 固定スロット(USB(CDC)に限定)
 
+  //━━━━━━━━━━━━━━━━━
+  // 接続管理
+  //━━━━━━━━━━━━━━━━━
     //─────────────────
-    // 使用するサービス
+    // 基本情報
     //─────────────────
-    static WebSocketsServer* ADP_SRV         ; // WebSocketサーバ
-    static int               SRV_PORT        ; // ポート番号
+    struct T_SS_SLOT{
+      SS_SLOT_TYPE Base              ; // 基本メンバ
+      Stream*      CONN  = nullptr   ; // アクセス資源(参照)
+    };
+    static T_SS_SLOT* ssTBL          ; // 事前予約
+
 
 //========================================================
 // Ｂ．レスポンス
 //========================================================
   //─────────────────
-  // クライアントにレスポンス
+  // スロットの受付資源に送信
   //----------------------------------
   // 引数：
   // ・出力制限：強制出力(true)、通常出力(false)
   // ・接続資源：キューから取得した物
   //─────────────────
-  void SEND_CONN(bool argMode, uint8_t argConn){
+  void SEND_CONN(bool argMode, Stream* argConn){
     //┬
     //○動作モードを確認
     if (!argMode && ctx.sysMode != MODE_MAIN) return;
@@ -51,7 +65,7 @@ private:
     //│ ▼終了：早期リターン
     //│
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
+    if (argConn != nullptr) argConn->print(ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -64,13 +78,13 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  struct myQueue {
-    uint8_t CONN ; // アクセス資源(クライアント番号)
-    String  FRAME; // 受信バッファ
-  };
-  static std::queue<myQueue> QUEUE      ; // キューバッファ
-  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
- 
+    struct myQueue {
+      Stream* CONN = nullptr; // アクセス資源(シリアルのオブジェクトを参照)
+      String  FRAME         ; // 受信バッファ
+    };
+    static std::queue<myQueue> QUEUE      ; // キューバッファ
+    static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+
   //─────────────────
   // キューの取出
   //----------------------------------
@@ -105,28 +119,43 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  static void ON_RECIVE(
-    uint8_t   num    , // クライアント番号
-    WStype_t  type   , // エベント種別
-    uint8_t * payload, // 受信データ
-    size_t    length   // 受信データ長
-  ){
+  void ON_RECIVE(){
     //┬
-    //○イベントの種類を確認
-    if(type !=WStype_TEXT) return;
-    //│＼（テキスト以外の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○未取り込みデータを受信
-    if (payload == nullptr || length < 1) return;
-    //│＼（空の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○受信データをキューに追加
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    QUEUE.push({num, String((char*)payload)});
+    //◎┐スロットを走査
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
+      //│＼（最後のスロットに達した場合）
+      //│ ▼完了：走査を終了
+      //│
+      //○スロットの状態を確認
+      if (ssTBL[ID].CONN == nullptr) continue;
+      //│＼（未使用の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //●ストリームを受信
+      String retFrame = adpFnStream::GET_FRAME(*(ssTBL[ID].CONN), ssTBL[ID].Base);
+      if (retFrame == "") continue;
+      //│＼（フレームが未完成の場合）
+      //│ ▽次へ：次のスロットを走査
+      //│
+      //○キューに登録
+      std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
+      QUEUE.push({ssTBL[ID].CONN, retFrame})       ; // キューを追加(通信資源、フレーム)
+      //┴
+    } /* END-for */
     //┴
   } /* ON_RECIVE() */
+
+  //━━━━━━━━━━━━━━━━━
+  // スレッド処理の定義
+  //━━━━━━━━━━━━━━━━━
+  static TaskHandle_t TaskHandle;         // タスク・ハンドル
+  static void StreamQueue(void *pvParameters) {
+    AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
+    for (;;) {
+      if (self) self->ON_RECIVE();        // 疑似コールバック関数
+      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
+    }
+  } /* StreamQueue() */
 
 //========================================================
 // Ｅ．公開機能
@@ -135,35 +164,51 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterWEB_Socket(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
-    //○サービスを開始
-    ADP_SRV = new WebSocketsServer(SRV_PORT); // サーバ生成
-    ADP_SRV->onEvent(ON_RECIVE)             ; // コールバック関数登録
-    ADP_SRV->begin()                        ; // サーバ起動
+    //●┐接続管理TBLを作成
+      //○領域を確保
+      SS_SLOTS = (ctx.sysMode == MODE_MAIN) ? 2 :1;
+      ssTBL    = new T_SS_SLOT[SS_SLOTS];
+      //│
+      //○USB(CDC)をセット
+      ssTBL[0].Base.used = true   ; // 使用中
+      ssTBL[0].CONN      = &Serial; // 参照先を登録
+      //│
+      //○動作モードを確認
+      if (ctx.sysMode == MODE_MAIN) {
+      //│＼（メインモードの場合）
+          //○UART1以降をセット
+          ssTBL[1].Base.used = true    ; // 使用中
+          ssTBL[1].CONN      = &Serial1; // 参照先を登録
+          //┴
+      } /* END-if */
+    //│
+    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
+    xTaskCreate(
+      StreamQueue           , // 実行するタスク関数
+      String(ADP_ID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &TaskHandle             // タスクハンドル
+    );
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] WebSocket -> port ") + String(SRV_PORT));
+    Serial.println(String(" [OK] USB/UART  -> #0,#1"));
     //┴
-  } /* constractor AdapterWEB_Socket() */
+  } /* constractor AdapterUART() */
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
   void handle() override {
     //┬
-    //○WebSocketサーバの処理を進める
-    // ・新規クライアントからの接続要求（ハンドシェイク）の受付
-    // ・パケットの受送信とイベント（ON_RECIVE）の発火
-    // ・Ping / Pong によるキープアライブ（接続維持チェック）
-    // ・切断処理（クリーンアップ）
-    ADP_SRV->loop();
-    //│
     //◎┐ルーティングを指示
     myQueue popDat;
     while (popQueue(popDat)) {
       //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
+      //│ ▼完了：ルーティングを終了
       //│
       //○フレームの状態を確認
       if (popDat.FRAME.startsWith("#")){SEND_CONN(true, popDat.CONN); continue;}
@@ -172,7 +217,7 @@ public:
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
-      adpFnBase::RUN(ADP_ID, popDat.FRAME);
+      mode::RUN(ADP_ID, popDat.FRAME);
       //│
       //●実行結果をレスポンス
       SEND_CONN(false, popDat.CONN);
@@ -181,7 +226,7 @@ public:
     //┴
   } /* handle() */
 
-}; /* class AdapterWEB_Socket */
+}; /* class AdapterUART */
 
 
 //########################################################
@@ -189,14 +234,14 @@ public:
 //########################################################
 //┬
 //■サーバ／サービス
-WebSocketsServer* AdapterWEB_Socket::ADP_SRV  = nullptr; // サーバ
-int               AdapterWEB_Socket::SRV_PORT = 8082   ; // サービス・ポート
 //│
 //■送受信バッファ
+AdapterUART::T_SS_SLOT* AdapterUART::ssTBL = nullptr;
 //│
 //■スレッド／コールバック
+TaskHandle_t AdapterUART::TaskHandle = NULL;
 //│
 //■リクエスト
-std::queue<AdapterWEB_Socket::myQueue> AdapterWEB_Socket::QUEUE;
-std::mutex                             AdapterWEB_Socket::QUEUE_MUTEX;
+std::queue<AdapterUART::myQueue> AdapterUART::QUEUE;
+std::mutex AdapterUART::QUEUE_MUTEX;
 //┴

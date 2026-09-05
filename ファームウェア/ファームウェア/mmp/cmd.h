@@ -4,15 +4,13 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+#ifndef CMD_H // コンパイラ不具合対策
+#define CMD_H // adapter/mode/member/main.cpp での指定が認識できない
 #pragma once
 //┬
 //■┐インクルード
   //■Arduinoシステム
   #include <Arduino.h>
-  //│
-  //■ＭＭＰシステム
-  #include "conf.h"    // 初期設定
-  #include "context.h" // コンテクスト
   //┴
 //┴
 
@@ -54,3 +52,4 @@ namespace CommandManager {
   void RunCommand();
 
 }; /* namespace CommandManager */
+#endif // CMD_H

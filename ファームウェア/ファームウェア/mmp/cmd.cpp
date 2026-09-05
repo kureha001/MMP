@@ -10,6 +10,10 @@
   #include <vector> // 登録コンテナが使用
   //│
   //■ＭＭＰシステム
+  #include "conf.h"    // 初期設定
+  #include "context.h" // コンテクスト
+
+  //■ＭＭＰシステム
   #include "cmd.h"
   //│
   //■ＭＭＰシステム(モジュール群)

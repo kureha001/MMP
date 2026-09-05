@@ -23,17 +23,17 @@
 //┬
 //□┐ＭＭＰ（保有資源）
   //│
-  //□┐全体資源
+  //□┐情報
     //│
     //□動作モード
-    #include "conf.h"    // 環境設定
+    #include "mmpConfig.h"             // 環境設定
     const int MODE_MAIN   = 0        ; // メインモード
     const int MODE_SUB    = 1        ; // サブモード
     const int MODE_BRIDGE = 2        ; // ブリッジモード
     const int MODE_BOOT   = MODE_MAIN; // 起動時モード
     //│
     //□コンテクスト
-    #include "context.h" // コンテクスト
+    #include "mmpContext.h" // コンテクスト
     MmpContext ctx;
     //┴
   //│
@@ -56,7 +56,7 @@
     DeviceManager::INIT();
     //│
     //●経路アダプタ・マネージャに初期化を依頼
-    AdapterManager::INIT();
+    ConnectionManager::INIT();
     //│
     //●コマンド・マネージャに初期化を依頼
     CommandManager::INIT();
@@ -105,6 +105,6 @@ void setup(){
 void loop(){
   //┬
   //●経路アダプタ・マネージャにハンドル実行を依頼
-  AdapterManager::HANDLE();
+  ConnectionManager::HANDLE();
   //┴
 } /* loop() */

@@ -17,8 +17,8 @@
 //□┐クライアント接続部門（保有資源）
   //│
   //□全体資源
-  #include "conf.h"    // 初期設定
-  #include "context.h" // コンテクスト
+  #include "mmpConfig.h"  // 初期設定
+  #include "mmpContext.h" // コンテクスト
   extern MmpContext ctx;
   //│
   //□組織（統括マネージャ）

@@ -29,7 +29,7 @@ namespace adpFnBase{
   //─────────────────
   #include "sp_auth.cpp" 
   namespace adpFnAuth{
-    void INIT_TBL(); // [AdapterManager]で利用
+    void INIT_TBL(); // [ConnectionManager]で利用
     bool CHECK()   ; // [adpFnBase]で利用
   }
 

@@ -71,7 +71,7 @@ public:
         && (cmd[nameLen] == '\0' || cmd[nameLen] == '/');
     }
     //│
-    //□コマンド実行(実行結果は仮想ストリームに格納)
+    //□コマンド実行(実行結果はコンテキストに格納)
     virtual void handle(char dat[][ DAT_LENGTH ], int dat_cnt) = 0;
     //┴
 }; /* class ModuleBase */

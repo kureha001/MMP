@@ -6,14 +6,23 @@
 //========================================================
 #pragma once
 //┬
-//■┐インクルード
-  //■在籍一覧
-  #include "_api_.h"   // <<抽象基底クラス>>
-  #include "system.h"  // システム管理
-  #include "analog.h"  // アナログ入力
-  #include "digital.h" // デジタル入出力
-  #include "pwm.h"     // PWM出力
-  #include "IIC.h"     // IIC通信
-  #include "mp3.h"     // MP3プレイヤー
+//□┐保有資源
+  //│
+  //□┐作業標準
+    //│
+    //□抽象基底クラス
+    #include "_api_.h"
+    //┴
+  //│
+  //□┐メンバー(経路アダプタ)
+    //│
+    //□
+    #include "system.h"  // システム管理
+    #include "analog.h"  // アナログ入力
+    #include "digital.h" // デジタル入出力
+    #include "pwm.h"     // PWM出力
+    #include "IIC.h"     // IIC通信
+    #include "mp3.h"     // MP3プレイヤー
+    //┴
   //┴
 //┴

@@ -1,4 +1,4 @@
-// filename : adp.h
+// filename : Connection.h
 //========================================================
 // クライアント接続部門
 //--------------------------------------------------------
@@ -15,13 +15,13 @@
 //□┐クライアント接続部門（保有資源）
   //│
   //□全体資源
-  #include "conf.h"    // 初期設定
-  #include "context.h" // コンテクスト
+  #include "mmpConfig.h"  // 初期設定
+  #include "mmpContext.h" // コンテクスト
   extern MmpContext ctx;
   //│
   //□組織（統括マネージャ）
   #include "connection/manager.cpp"
-  namespace AdapterManager{
+  namespace ConnectionManager{
     void INIT()  ; // 初期化
     void HANDLE(); // ハンドルをキック
   }

@@ -36,9 +36,9 @@ private:
     //─────────────────
     // 基本情報
     //─────────────────
-    static const uint8_t IIC_ADDR_MIN = 0xA0; // スレーブのIICアドレス（先頭）
-    static const uint8_t IIC_ADDR_MAX = 0xA4; // スレーブのIICアドレス（末尾）
-    static       String  CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
+    static const uint8_t IIC_ADDR_MIN = 0xA0;
+    static const uint8_t IIC_ADDR_MAX = 0xA4;
+    String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
 
  //========================================================
 // Ｂ．レスポンス
@@ -72,13 +72,12 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-    struct myQueue {
-      uint8_t CONN ; // IIC Slaveアドレス
-      String  FRAME; // 受信バッファ
-    };
-
-    static std::queue<myQueue> QUEUE      ; // キューバッファ
-    static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  struct myQueue {
+    uint8_t CONN ; // IIC Slaveアドレス
+    String  FRAME; // 受信バッファ
+  };
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
   // キューの取出
@@ -114,7 +113,8 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  static void ON_RECIVE(){
+  //static void ON_RECIVE(){
+  void ON_RECIVE(){
     //┬
     //◎┐スレーブ（IICアドレス）を走査
     for (uint8_t ID = IIC_ADDR_MIN; ID <= IIC_ADDR_MAX; ID++) {
@@ -125,7 +125,7 @@ private:
       String retFrame = "";
       int    nowID    = ID - IIC_ADDR_MIN;
       String msg      = CONN_TX[nowID] == "" ? "####!" : CONN_TX[nowID];
-      CONN_TX[nowID] = "";
+      CONN_TX[nowID]  = "";
       //│
       //○レスポンスをスレーブへ返信
       Wire.beginTransmission(ID);
@@ -153,10 +153,11 @@ private:
   //━━━━━━━━━━━━━━━━━
   // スレッド処理の定義
   //━━━━━━━━━━━━━━━━━
-  static TaskHandle_t TaskHandle;         // タスク・ハンドル
+  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
+    AdapterIIC* self = static_cast<AdapterIIC*>(pvParameters);
     for (;;) {
-      ON_RECIVE();                        // 疑似コールバック関数
+      if (self) self->ON_RECIVE();        // 疑似コールバック関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
     }
   } /* StreamQueue() */
@@ -219,21 +220,3 @@ public:
   } /* handle() */
 
 }; /* class AdapterIIC */
-
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-//│
-//■送受信バッファ
-String AdapterIIC::CONN_TX[AdapterIIC::IIC_ADDR_MAX - AdapterIIC::IIC_ADDR_MIN + 1];
-//│
-//■スレッド／コールバック
-TaskHandle_t  AdapterIIC::TaskHandle = NULL;
-//│
-//■リクエスト
-std::queue<AdapterIIC::myQueue>   AdapterIIC::QUEUE;
-std::mutex                        AdapterIIC::QUEUE_MUTEX;
-//┴

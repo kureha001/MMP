@@ -36,15 +36,15 @@ private:
     //─────────────────
     // ステータス
     //─────────────────
-    const int ADP_ID = ADP_ID_TCP;
-    const int    SS_SLOTS = 10    ; // 複数スロット(接続タイミングで登録)
-          bool   ENABLED  = false ; // 有効性：{有効：true|無効：false}
+    const int  ADP_ID = ADP_ID_TCP;
+    const int  SS_SLOTS = 10    ; // 複数スロット(接続タイミングで登録)
+          bool ENABLED  = false ; // 有効性：{有効：true|無効：false}
 
     //─────────────────
     // 使用するサービス
     //─────────────────
-    static WiFiServer* ADP_SRV    ; // WiFiサーバ
-    static int         SRV_PORT   ; // ポート番号
+    WiFiServer* ADP_SRV  = nullptr; // WiFiサーバ
+    int         SRV_PORT = 8081   ; // ポート番号
 
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -53,10 +53,10 @@ private:
     // 基本情報
     //─────────────────
     struct T_SS_SLOT{
-      SS_SLOT_TYPE    Base              ; // 基本メンバ
-      WiFiClient      CONN              ; // アクセス資源(TCP接続の実体)
+      SS_SLOT_TYPE Base           ; // 基本メンバ
+      WiFiClient   CONN           ; // アクセス資源(TCP接続の実体)
     };
-    static T_SS_SLOT* ssTBL             ; // 事前予約
+    T_SS_SLOT*     ssTBL = nullptr; // 事前予約
 
     //─────────────────
     // 初期化
@@ -159,12 +159,12 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-    struct myQueue {
-      WiFiClient CONN ; // アクセス資源(TCP接続の実体)
-      String     FRAME; // 受信バッファ
-    };
-    static std::queue<myQueue> QUEUE      ; // キューバッファ
-    static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  struct myQueue {
+    WiFiClient CONN ; // アクセス資源(TCP接続の実体)
+    String     FRAME; // 受信バッファ
+  };
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
   // キューの取出
@@ -243,8 +243,9 @@ private:
 
   //━━━━━━━━━━━━━━━━━
   // スレッド処理の定義
+  // ※この関数はスタティックにする
   //━━━━━━━━━━━━━━━━━
-  static TaskHandle_t TaskHandle;         // タスク・ハンドル
+  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     AdapterTCP* self = static_cast<AdapterTCP*>(pvParameters);
     for (;;) {
@@ -312,23 +313,3 @@ public:
   } /* handle() */
 
 }; /* class AdapterTCP */
-
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-WiFiServer* AdapterTCP::ADP_SRV  = nullptr; // サーバ
-int         AdapterTCP::SRV_PORT = 8081   ; // サービス・ポート
-//│
-//■送受信バッファ
-AdapterTCP::T_SS_SLOT* AdapterTCP::ssTBL = nullptr;
-//│
-//■スレッド／コールバック
-TaskHandle_t AdapterTCP::TaskHandle = NULL;
-//│
-//■リクエスト
-std::queue<AdapterTCP::myQueue> AdapterTCP::QUEUE;
-std::mutex AdapterTCP::QUEUE_MUTEX;
-//┴

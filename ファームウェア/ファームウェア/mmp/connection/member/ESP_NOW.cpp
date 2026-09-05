@@ -27,6 +27,12 @@ private:
   // 基本情報
   //━━━━━━━━━━━━━━━━━
     //─────────────────
+    // インスタンス管理用
+    //（静的コールバックからのルーティング用）
+    //─────────────────
+    static AdapterESPNOW* MY_INSTANS;
+
+    //─────────────────
     // ステータス
     //─────────────────
     const int ADP_ID = ADP_ID_ESPN;
@@ -39,7 +45,7 @@ private:
 //========================================================
 // Ｂ．レスポンス
 //========================================================
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   // スロットの受付資源に送信
   //----------------------------------
   // 引数：
@@ -85,8 +91,8 @@ private:
     uint8_t CONN[6]; // MACアドレス
     String  FRAME  ; // 受信バッファ
   };
-  static std::queue<myQueue> QUEUE      ; // キューバッファ
-  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
   // キューの取出
@@ -113,7 +119,7 @@ private:
     //▼返却：あり
     argData = QUEUE.front();
     QUEUE.pop();
-     return true;
+    return true;
   } /* popQueue() */
 
 //========================================================
@@ -128,9 +134,9 @@ private:
     int length
   ) {
     //┬
-    //○未取り込みデータを受信
-//    if (recv_info == nullptr || payload == nullptr || length < 1) return;
-    //│＼（空の場合）
+    //○インスタンスを確認
+    if (!MY_INSTANS) return;
+    //│＼（通信デバイスが起動していない場合）
     //│ ▼終了：早期リターン
     //│
     //○送信元MACアドレスを取得
@@ -138,14 +144,12 @@ private:
     memcpy(mac, recv_info->src_addr, 6);
     //│
     //○受信データをキューに追加
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
+    std::lock_guard<std::mutex> lock(MY_INSTANS->QUEUE_MUTEX);
     myQueue pkt;
     memcpy(pkt.CONN, mac, 6);
     pkt.FRAME = String((const char*)payload, length);
-    QUEUE.push(pkt);
-    //│
-    //▼終了：早期リターン
-    return;
+    MY_INSTANS->QUEUE.push(pkt);
+    //┴
   } /* ON_RECIVE() */
 
 //========================================================
@@ -157,6 +161,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterESPNOW(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
+    //○インスタンスを登録
+    MY_INSTANS = this;
+    //│
     //○サービス資源を生成
     if (esp_now_init() != ESP_OK) {
     //│＼（通信デバイスが起動していない場合）
@@ -201,18 +208,7 @@ public:
 
 }; /* class AdapterESPNOW */
 
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-//│
-//■送受信バッファ
-//│
-//■スレッド／コールバック
-//│
-//■リクエスト
-std::queue<AdapterESPNOW::myQueue> AdapterESPNOW::QUEUE;
-std::mutex                         AdapterESPNOW::QUEUE_MUTEX;
-//┴
+//━━━━━━━━━━━━━━━━━
+//インスタンス管理用
+//━━━━━━━━━━━━━━━━━
+AdapterESPNOW* AdapterESPNOW::MY_INSTANS = nullptr;

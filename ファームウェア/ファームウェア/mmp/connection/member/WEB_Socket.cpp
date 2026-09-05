@@ -18,13 +18,18 @@
 //# クラス：経路アダプタ(WEB Socket)
 //########################################################
 class AdapterWEB_Socket : public AdapterBase {
-private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 基本情報
   //━━━━━━━━━━━━━━━━━
+    //─────────────────
+    // インスタンス管理用
+    //（静的コールバックからのルーティング用）
+    //─────────────────
+    static AdapterWEB_Socket* MY_INSTANS;
+
     //─────────────────
     // ステータス
     //─────────────────
@@ -33,8 +38,8 @@ private:
     //─────────────────
     // 使用するサービス
     //─────────────────
-    static WebSocketsServer* ADP_SRV         ; // WebSocketサーバ
-    static int               SRV_PORT        ; // ポート番号
+    WebSocketsServer* ADP_SRV  = nullptr; // WebSocketサーバ
+    int               SRV_PORT = 8082   ; // ポート番号
 
 //========================================================
 // Ｂ．レスポンス
@@ -71,8 +76,8 @@ private:
     uint8_t CONN ; // アクセス資源(クライアント番号)
     String  FRAME; // 受信バッファ
   };
-  static std::queue<myQueue> QUEUE      ; // キューバッファ
-  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
  
   //─────────────────
   // キューの取出
@@ -115,6 +120,11 @@ private:
     size_t    length   // 受信データ長
   ){
     //┬
+    //○インスタンスを確認
+    if (!MY_INSTANS) return;
+    //│＼（通信デバイスが起動していない場合）
+    //│ ▼終了：早期リターン
+    //│
     //○イベントの種類を確認
     if(type !=WStype_TEXT) return;
     //│＼（テキスト以外の場合）
@@ -126,8 +136,8 @@ private:
     //│ ▼終了：早期リターン
     //│
     //○受信データをキューに追加
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    QUEUE.push({num, String((char*)payload)});
+    std::lock_guard<std::mutex> lock(MY_INSTANS->QUEUE_MUTEX);
+    MY_INSTANS->QUEUE.push({num, String((char*)payload)});
     //┴
   } /* ON_RECIVE() */
 
@@ -140,6 +150,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterWEB_Socket(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
+    //○インスタンスを登録
+    MY_INSTANS = this;
+    //│
     //○サービスを開始
     ADP_SRV = new WebSocketsServer(SRV_PORT); // サーバ生成
     ADP_SRV->onEvent(ON_RECIVE)             ; // コールバック関数登録
@@ -186,20 +199,7 @@ public:
 
 }; /* class AdapterWEB_Socket */
 
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-WebSocketsServer* AdapterWEB_Socket::ADP_SRV  = nullptr; // サーバ
-int               AdapterWEB_Socket::SRV_PORT = 8082   ; // サービス・ポート
-//│
-//■送受信バッファ
-//│
-//■スレッド／コールバック
-//│
-//■リクエスト
-std::queue<AdapterWEB_Socket::myQueue> AdapterWEB_Socket::QUEUE;
-std::mutex                             AdapterWEB_Socket::QUEUE_MUTEX;
-//┴
+//━━━━━━━━━━━━━━━━━
+//インスタンス管理用
+//━━━━━━━━━━━━━━━━━
+AdapterWEB_Socket* AdapterWEB_Socket::MY_INSTANS = nullptr;

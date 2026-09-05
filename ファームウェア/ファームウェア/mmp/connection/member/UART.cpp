@@ -41,10 +41,10 @@ private:
     // 基本情報
     //─────────────────
     struct T_SS_SLOT{
-      SS_SLOT_TYPE Base              ; // 基本メンバ
-      Stream*      CONN  = nullptr   ; // アクセス資源(参照)
+      SS_SLOT_TYPE Base           ; // 基本メンバ
+      Stream*      CONN  = nullptr; // アクセス資源(参照)
     };
-    static T_SS_SLOT* ssTBL          ; // 事前予約
+    T_SS_SLOT*     ssTBL          ; // 事前予約
 
 
 //========================================================
@@ -78,12 +78,12 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-    struct myQueue {
-      Stream* CONN = nullptr; // アクセス資源(シリアルのオブジェクトを参照)
-      String  FRAME         ; // 受信バッファ
-    };
-    static std::queue<myQueue> QUEUE      ; // キューバッファ
-    static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  struct myQueue {
+    Stream* CONN = nullptr; // アクセス資源(シリアルのオブジェクトを参照)
+    String  FRAME         ; // 受信バッファ
+  };
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
   // キューの取出
@@ -147,8 +147,9 @@ private:
 
   //━━━━━━━━━━━━━━━━━
   // スレッド処理の定義
+  // ※この関数はスタティックにする
   //━━━━━━━━━━━━━━━━━
-  static TaskHandle_t TaskHandle;         // タスク・ハンドル
+  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
     for (;;) {
@@ -227,21 +228,3 @@ public:
   } /* handle() */
 
 }; /* class AdapterUART */
-
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-//│
-//■送受信バッファ
-AdapterUART::T_SS_SLOT* AdapterUART::ssTBL = nullptr;
-//│
-//■スレッド／コールバック
-TaskHandle_t AdapterUART::TaskHandle = NULL;
-//│
-//■リクエスト
-std::queue<AdapterUART::myQueue> AdapterUART::QUEUE;
-std::mutex AdapterUART::QUEUE_MUTEX;
-//┴

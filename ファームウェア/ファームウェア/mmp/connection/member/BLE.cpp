@@ -32,10 +32,16 @@ private:
   // 基本情報
   //━━━━━━━━━━━━━━━━━
     //─────────────────
+    // インスタンス管理用
+    //（静的コールバックからのルーティング用）
+    //─────────────────
+    static AdapterBLE* MY_INSTANS;
+
+    //─────────────────
     // ステータス
     //─────────────────
-    const  int  ADP_ID = ADP_ID_BLE;
-    static bool IS_BUSY; // 接続状況｛true：接続あり｜false：接続なし｝
+    const int  ADP_ID  = ADP_ID_BLE;
+          bool IS_BUSY = false; // 接続状況｛true：接続あり｜false：接続なし｝
 
     //─────────────────
     // 使用するサービス
@@ -84,8 +90,8 @@ private:
     uint8_t CONN ; // アクセス資源(クライアント番号)
     String  FRAME; // 受信バッファ
   };
-  static std::queue<myQueue> QUEUE      ; // キューバッファ
-  static std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
+  std::queue<myQueue> QUEUE      ; // キューバッファ
+  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
 
   //─────────────────
   // キューの取出
@@ -128,13 +134,18 @@ private:
     //─────────────────
     void onConnect(BLEServer* pServer) override {
       //┬
+      //○インスタンスを確認
+      if (!MY_INSTANS) return;
+      //│＼（通信デバイスが起動していない場合）
+      //│ ▼終了：早期リターン
+      //│
       //○接続状況を確認
-      if (IS_BUSY) return;
+      if (MY_INSTANS->IS_BUSY) return;
       //│＼（既に参加している場合）
       //│ ▼終了：これ以上は参加させない
       //│
       //○ステータスを変更（接続済）
-      IS_BUSY = true;
+      MY_INSTANS->IS_BUSY = true;
       //│
       //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
@@ -146,14 +157,20 @@ private:
     //─────────────────
     void onDisconnect(BLEServer* pServer) override {
       //┬
+      //○インスタンスを確認
+      if (!MY_INSTANS) return;
+      //│＼（通信デバイスが起動していない場合）
+      //│ ▼終了：早期リターン
+      //│
       //○アドバタイジングを再開
-      //○ステータスを変更（未接続）
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
-      IS_BUSY = false;
+      //│
+      //○ステータスを変更（未接続）
+      MY_INSTANS->IS_BUSY = false;
       //┴
     } /* onDisconnect() */
   }; /* Callback_Server */
-  static Callback_Server ON_CONNECTION;
+  Callback_Server ON_CONNECTION;
 
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
@@ -162,6 +179,11 @@ private:
   class Callback_Client : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
       //┬
+      //○インスタンスを確認
+      if (!MY_INSTANS) return;
+      //│＼（通信デバイスが起動していない場合）
+      //│ ▼終了：早期リターン
+      //│
       //○未取り込みデータを受信（getValue()参照後は消費されない）
       delay(WAIT_MS);
       String rxData = pCharacteristic->getValue(); // データ複製
@@ -170,12 +192,12 @@ private:
       //│ ▼終了：早期リターン
       //│
       //○受信データをキューに追加
-      std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-      QUEUE.push({0,rxData});
+      std::lock_guard<std::mutex> lock(MY_INSTANS->QUEUE_MUTEX);
+      MY_INSTANS->QUEUE.push({0,rxData});
       //┴
     }; /* onWrite() */
   }; /* Callback_Client */
-  static Callback_Client ON_RECIVE;
+  Callback_Client ON_RECIVE;
 
 //========================================================
 // Ｅ．公開機能
@@ -186,6 +208,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterBLE(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
+    //○インスタンスを登録
+    MY_INSTANS = this;
+    //│
     //○サービス資源を生成
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // クライアント(受信)
@@ -224,21 +249,7 @@ public:
 
 }; /* class AdapterBLE */
 
-
-//########################################################
-//# スタティック資源の実体
-//########################################################
-//┬
-//■サーバ／サービス
-//│
-//■送受信バッファ
-//│
-//■スレッド／コールバック
-AdapterBLE::Callback_Server AdapterBLE::ON_CONNECTION  ;
-AdapterBLE::Callback_Client AdapterBLE::ON_RECIVE      ;
-bool                        AdapterBLE::IS_BUSY = false; // 入場制限
-//│
-//■リクエスト
-std::queue<AdapterBLE::myQueue>  AdapterBLE::QUEUE;
-std::mutex                       AdapterBLE::QUEUE_MUTEX;
-//┴
+//━━━━━━━━━━━━━━━━━
+//インスタンス管理用
+//━━━━━━━━━━━━━━━━━
+AdapterBLE* AdapterBLE::MY_INSTANS = nullptr;

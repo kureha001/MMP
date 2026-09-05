@@ -20,31 +20,29 @@
   #include <Wire.h> // setup()
   //┴
 //┴
-
-//━━━━━━━━━━━━━━━━━
-// 全体共通資源
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 動作モード
-  //─────────────────
-  #include "conf.h"    // 環境設定
-  const int MODE_MAIN   = 0        ; // メインモード
-  const int MODE_SUB    = 1        ; // サブモード
-  const int MODE_BRIDGE = 2        ; // ブリッジモード
-  const int MODE_BOOT   = MODE_MAIN; // 起動時モード
-
-  //─────────────────
-  // コンテクスト
-  //─────────────────
-  #include "context.h" // コンテクスト
-  MmpContext ctx;
-
-  //─────────────────
-  // 部門
-  //─────────────────
-  #include "dev.h" // 通信デバイス
-  #include "adp.h" // クライアント接続
-  #include "cmd.h" // コマンド
+//┬
+//□┐ＭＭＰ（保有資源）
+  //│
+  //□┐全体資源
+    //│
+    //□動作モード
+    #include "conf.h"    // 環境設定
+    const int MODE_MAIN   = 0        ; // メインモード
+    const int MODE_SUB    = 1        ; // サブモード
+    const int MODE_BRIDGE = 2        ; // ブリッジモード
+    const int MODE_BOOT   = MODE_MAIN; // 起動時モード
+    //│
+    //□コンテクスト
+    #include "context.h" // コンテクスト
+    MmpContext ctx;
+    //┴
+  //│
+  //□組織（部門）
+  #include "Device.h"     // 通信デバイス
+  #include "Connection.h" // クライアント接続
+  #include "Command.h"    // コマンド実行
+  //┴
+//┴
 
 //━━━━━━━━━━━━━━━━━
 // セットアップ部品

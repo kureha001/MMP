@@ -1,0 +1,41 @@
+// filename : connection/member/_index_.h
+//========================================================
+// 通信デバイス部門／メンバー：デバイス
+//--------------------------------------------------------
+// Ver 1.2.2 (2026/09/04) 
+//========================================================
+#pragma once
+//┬
+//□┐通信デバイス部門（保有資源）
+  //│
+  //□┐組織
+    //│
+    //□UARTデバイス
+    #include "UART.cpp" // UART
+    namespace devUART{
+        extern bool ENABLED ; // 有効性
+        void START()        ; // デバイス開始の指示
+    } /* namespace devUART */
+    //│
+    //□WiFiサーバ
+    #include "WiFi.cpp" // WEB API
+    namespace devWiFi{
+      extern bool ENABLED ; // 有効性
+      void START()        ; // デバイス開始の指示
+    } /* namespace devWiFi */
+    //│
+    //□BLEサーバ
+    class BLEServer        ; // 前方宣言(ヘッダー非依存化)
+    class BLECharacteristic; // 前方宣言(ヘッダー非依存化)
+    #include "BLE.cpp"  // BLE
+    namespace devBLE{
+      extern bool ENABLED             ; // 有効性
+      void START()                    ; // デバイス開始の指示
+      //※BLE固有の実体ポインタ（前方宣言型を利用）
+      extern BLEServer*         MY_SRV; // BLEサーバー
+      extern BLECharacteristic* BLE_RX; // 受信用キャラクタリスティック
+      extern BLECharacteristic* BLE_TX; // 送信用キャラクタリスティック
+    } /* namespace devBLE */    //┴
+    //┴
+  //┴
+//┴

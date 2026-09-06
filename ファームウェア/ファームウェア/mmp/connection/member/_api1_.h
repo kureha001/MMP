@@ -1,6 +1,6 @@
 // filename : connection/member/_api1_.h
 //========================================================
-// 抽象基底クラス：非同期キュー付き経路アダプタ
+// 経路アダプタAPI：非同期キュー型
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06)
 //========================================================
@@ -29,8 +29,8 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 純粋仮想関数（派生クラスで実装）
   //━━━━━━━━━━━━━━━━━
+  virtual int  getAID() const = 0;
   virtual void SEND_CONN(T argConn) = 0;
-  virtual int  getAdpId() const = 0;
 
 public:
   using AdapterBase::AdapterBase;
@@ -85,10 +85,15 @@ public:
       //│ ▽次へ：次のキューを走査
       //│
       //●コマンドを実行
-      mode::RUN(getAdpId(), popDat.frame);
+      mode::RUN(getAID(), popDat.frame);
+      //│
+      //○モードを確認
+      if (ctx.sysMode == MODE_BRIDGE) continue;
+      //│＼（ブリッジモードの場合）
+      //│ ▽次へ：次のキューを走査
       //│
       //●実行結果をレスポンス
-      if (ctx.sysMode == MODE_MAIN) SEND_CONN(popDat.conn);
+      SEND_CONN(popDat.conn);
       //┴
     } /* END-while */
     //│

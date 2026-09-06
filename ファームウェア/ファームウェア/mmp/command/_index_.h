@@ -6,26 +6,22 @@
 //========================================================
 #pragma once
 //┬
-//□┐保有資源
+//□┐情報
+  //□制限事項
+  #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
+  #define DAT_COUNT      10 // コマンド＋引数の個数
+  #define DAT_LENGTH     20 // トークン最大長（未定義時のフォールバック）
   //│
-  //□┐作業標準
-    //│
-    //□基本情報
-    #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
-    #define DAT_COUNT      10 // コマンド＋引数の個数
-    #define DAT_LENGTH     20 // トークン最大長（未定義時のフォールバック）
-    //│
-    //□機能アダプタ情報（スロット構造体）
-    struct T_MOD {
-      const char* name; // 名前
-      const char* desc; // 説明
-    };
-    //┴
-  //│
-  //□┐組織
-    //│
-    //□メンバー(経路アダプタ)
-    #include "member/_index_.h"
-    //┴
-  //┴
-//┴
+  //□機能モジュール情報
+  struct T_MOD {
+    const char* name; // 名前
+    const char* desc; // 説明
+  };
+//│┴
+//│
+//□┐クライアント接続部門
+  //□┐統括マネージャ
+    //□┐担当
+      //□機能モジュール
+      #include "member/_index_.h"
+//┴┴┴┴

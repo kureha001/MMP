@@ -1,21 +1,23 @@
 // filename : connection/member/WEB_Socket.cpp
 //========================================================
-// 経路アダプタ：WEB Socket
+// クライアント接続部門／担当：WEB Socket
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06) 
 //========================================================
 //┬
-//■┐インクルード
-  //■同僚
-  #include "_index_.h"
-  //│
-  //■追加ライブラリ：WebSockets by Markus Sattler
+//□┐インクルード
+  //□追加ライブラリ：WebSockets by Markus Sattler
   #include <WebSocketsServer.h>
-  //┴
-//┴
+//┴┴
+//┬
+//□┐クライアント接続部門
+  //□┐統括マネージャ
+    //□担当：経路アダプタ
+    #include "_index_.h"
+//┴┴┴
 
 //########################################################
-//# クラス：経路アダプタ(WEB Socket)
+//# 処理詳細
 //########################################################
 class AdapterWEB_Socket : public AdapterQueueBase<uint8_t> {
 public:
@@ -32,26 +34,17 @@ private:
   // 基本情報
   //━━━━━━━━━━━━━━━━━
     //─────────────────
-    // インスタンス管理用
-    //（静的コールバックからのルーティング用）
-    //─────────────────
-    static AdapterWEB_Socket* MY_INSTANS;
-
-    //─────────────────
     // ステータス
     //─────────────────
     const int ADP_ID = ADP_ID_WSOC;
+    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+    static AdapterWEB_Socket* MY_INSTANS; // 静的コールバックからのルーティング用
 
     //─────────────────
     // 使用するサービス
     //─────────────────
     WebSocketsServer* ADP_SRV  = nullptr; // WebSocketサーバ
     int               SRV_PORT = 8082   ; // ポート番号
-
-  //━━━━━━━━━━━━━━━━━
-  // ID取得 (基底クラスの dispatch 処理用)
-  //━━━━━━━━━━━━━━━━━
-  int getAdpId() const override { return ADP_ID; }
 
 //========================================================
 // レスポンス

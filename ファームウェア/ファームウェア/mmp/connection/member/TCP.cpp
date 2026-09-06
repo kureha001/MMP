@@ -1,23 +1,25 @@
 // filename : connection/member/TCP.cpp
 //========================================================
-// 経路アダプタ：TCP RAW
+// クライアント接続部門／担当：TCP RAW
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06) 
 //========================================================
 //┬
-//■┐インクルード
-  //■同僚
-  #include "_index_.h"
-  //│
-  //■Arduinoシステム
+//□┐インクルード
+  //□Arduinoシステム
   #include <WiFi.h> // ユーザ受付資源
   #include <queue>
   #include <mutex>
-  //┴
-//┴
+//┴┴
+//┬
+//□┐クライアント接続部門
+  //□┐統括マネージャ
+    //□担当：経路アダプタ
+    #include "_index_.h"
+//┴┴┴
 
 //########################################################
-//# クラス：経路アダプタ(TCP RAW)
+//# 処理詳細
 //########################################################
 class AdapterTCP : public AdapterQueueBase<WiFiClient> {
 public:
@@ -37,8 +39,7 @@ private:
     // ステータス
     //─────────────────
     const int  ADP_ID = ADP_ID_TCP;
-    const int  SS_SLOTS = 10    ; // 複数スロット(接続タイミングで登録)
-          bool ENABLED  = false ; // 有効性：{有効：true|無効：false}
+    int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
     //─────────────────
     // 使用するサービス
@@ -47,16 +48,12 @@ private:
     int         SRV_PORT = 8081   ; // ポート番号
 
   //━━━━━━━━━━━━━━━━━
-  // ID取得 (基底クラスの dispatch 処理用)
-  //━━━━━━━━━━━━━━━━━
-  int getAdpId() const override { return ADP_ID; }
-
-  //━━━━━━━━━━━━━━━━━
   // 接続管理
   //━━━━━━━━━━━━━━━━━
     //─────────────────
     // 基本情報
     //─────────────────
+    const int  SS_SLOTS = 10      ; // 複数スロット(接続タイミングで登録)
     struct T_SS_SLOT{
       SS_SLOT_TYPE Base           ; // 基本メンバ
       WiFiClient   CONN           ; // アクセス資源(TCP接続の実体)

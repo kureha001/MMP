@@ -1,60 +1,20 @@
 // filename : connection/mode/member/bridge.cpp
 //========================================================
-// 経路アダプタ／動作モード／メンバー：ブリッジモード
+// クライアント接続部門／動作モード／担当：ブリッジモード
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+//┬
+//□┐クライアント接続部門
+  //□┐統括マネージャ
+    //□┐担当マネージャ
+      //□┐担当：ブリッジモード
+        //□アダプター
+        #include "bridge_adapter/_index_.h"
+//┴┴┴┴┴
 
 //########################################################
-//# 前空間：メンバー（ブリッジモード）
-//########################################################
- namespace TRANS{
-    // TCP RAW
-    namespace TCP{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace TCP */
-
-    // WEB Socket
-    namespace WSOC{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace WSOC */
-
-    // WEB Socket
-    namespace WAPI{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace WAPI */
-
-    // BLE
-    namespace BLE{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace BLE */
-
-    // ESP-NOW
-    namespace ESPN{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace ESPN */
-
-    // IIC
-    namespace IIC{
-      bool begin() {return false;}
-      bool send()  {return false;}
-      bool end()   {return false;}
-    } /* namespace IIC */
-} /* namespace TRANS */
-
-
-//########################################################
-//# 前空間：ブリッジモード
+//# 処理詳細
 //########################################################
  namespace modeBridge{
 //========================================================
@@ -191,12 +151,12 @@
     //◇┐[リクエストを転送]または[クライアントへレスポンス]
     if (ctx.adpID == ADP_ID_UART) CONN_SEND();
     //├┐（UARTアダプタから受信した場合）
-        //●リクエストを転送
-        //┴
+      //●リクエストを転送
+      //┴
     else Serial.print(ctx.strFrame);
     //└┐（その他）
-        //○MMPレスポンスをクライアント(USB-CDC)へ送信
-        //┴
+      //○MMPレスポンスをクライアント(USB-CDC)へ送信
+      //┴
     //┴
   } /* RUN() */
 

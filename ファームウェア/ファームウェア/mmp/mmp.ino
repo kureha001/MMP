@@ -11,7 +11,7 @@
 // 追加ライブラリ：
 // - WebSockets by Markus Sattler
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.2.2 (2026/09/06) 
 //========================================================
 #pragma once
 //┬
@@ -21,28 +21,25 @@
   //┴
 //┴
 //┬
-//□┐ＭＭＰ（保有資源）
+//□┐情報
+  //□環境設定
+  #include "mmpConfig.h"
+  const int MODE_MAIN   = 0        ; // メインモード
+  const int MODE_SUB    = 1        ; // サブモード
+  const int MODE_BRIDGE = 2        ; // ブリッジモード
+  const int MODE_BOOT   = MODE_MAIN; // 起動時モード
   //│
-  //□┐情報
-    //│
-    //□動作モード
-    #include "mmpConfig.h"             // 環境設定
-    const int MODE_MAIN   = 0        ; // メインモード
-    const int MODE_SUB    = 1        ; // サブモード
-    const int MODE_BRIDGE = 2        ; // ブリッジモード
-    const int MODE_BOOT   = MODE_MAIN; // 起動時モード
-    //│
-    //□コンテクスト
-    #include "mmpContext.h" // コンテクスト
-    MmpContext ctx;
-    //┴
-  //│
-  //□組織（部門）
+  //□コンテクスト
+  #include "mmpContext.h"
+  MmpContext ctx;
+//│┴
+//│
+//□┐組織
+  //□部門
   #include "Device.h"     // 通信デバイス
   #include "Connection.h" // クライアント接続
   #include "Command.h"    // コマンド実行
-  //┴
-//┴
+//┴┴
 
 //━━━━━━━━━━━━━━━━━
 // セットアップ部品
@@ -52,13 +49,11 @@
   //─────────────────
   void initialize(){
     //┬
-    //●通信デバイス・マネージャに初期化を依頼
+    //●通信デバイス部門に初期化を依頼
+    //●接続クライアント部門に初期化を依頼
+    //●コマンド実行部門に初期化を依頼
     DeviceManager::INIT();
-    //│
-    //●経路アダプタ・マネージャに初期化を依頼
     ConnectionManager::INIT();
-    //│
-    //●コマンド・マネージャに初期化を依頼
     CommandManager::INIT();
     //┴
   } /* initialize() */
@@ -68,7 +63,7 @@
   //─────────────────
   void opening(){
     //┬
-    //○開始メッセージ出力
+    //○開始メッセージを出力
     String strMode = "";
     if (MODE_BOOT == MODE_MAIN  ) strMode = "メイン"  ;
     if (MODE_BOOT == MODE_SUB   ) strMode = "サブ"    ;
@@ -91,10 +86,9 @@
 //========================================================
 void setup(){
   //┬
-  //○資源を初期化
-  initialize();
-  //│
+  //●資源を初期化
   //●オープニングを表示
+  initialize();
   opening();
   //┴
 } /* setup() */
@@ -104,7 +98,7 @@ void setup(){
 //========================================================
 void loop(){
   //┬
-  //●経路アダプタ・マネージャにハンドル実行を依頼
+  //●クライアント接続部門に通常活動を指示
   ConnectionManager::HANDLE();
   //┴
 } /* loop() */

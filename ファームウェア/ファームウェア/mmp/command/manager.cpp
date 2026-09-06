@@ -16,15 +16,6 @@
     #include "_index_.h"
 //┴┴┴
 
-//━━━━━━━━━━━━━━━━━
-// グローバル資源
-//━━━━━━━━━━━━━━━━━
-  //─────────────────
-  // 機能モジュール群 (登録コンテナ)
-  //─────────────────
-  extern std::vector<ModuleBase*> MODULE;
-
-
 //########################################################
 //# 処理詳細
 //########################################################
@@ -33,10 +24,10 @@ namespace CommandManager {
   // 機能モジュール管理
   //─────────────────
     //┬
-    //□機能モジュール・コンテナの実体定義
+    //□コンテナを用意
     std::vector<ModuleBase*> MODULE;
     //│
-    //□機能モジュールのプロファイル
+    //□プロファイルを定義
     static const T_MOD modSYS    = {"SYS"    , "System Management"   };
     static const T_MOD modANA_I  = {"ANALOG" , "Analog Input"        };
     static const T_MOD modDIG_IO = {"DIGITAL", "Digital Input/Output"};
@@ -44,7 +35,7 @@ namespace CommandManager {
     static const T_MOD modIIC    = {"IIC"    , "IIC Read/Write"      };
     static const T_MOD modMP3    = {"MP3"    , "MP3 Player"          };
     //│
-    //□機能モジュールのエントリー
+    //□コンテナ登録のエントリー
     static const T_MOD* const MOD_LIST[] = {
         &modSYS,
         &modANA_I,
@@ -58,8 +49,11 @@ namespace CommandManager {
     static const size_t MODs = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
     //┴
 
+//========================================================
+// 公開機能
+//========================================================
   //━━━━━━━━━━━━━━━━━
-  // 初期化
+  // 活動に必要な資源を初期化
   //━━━━━━━━━━━━━━━━━
   void INIT(){
     //┬
@@ -91,31 +85,8 @@ namespace CommandManager {
   } /* INIT() */
 
   //━━━━━━━━━━━━━━━━━
-  // 機能モジュール名を表示
-  //━━━━━━━━━━━━━━━━━
-  void SHOW_DESC(String argName){
-    //┬
-    //◎┐略名に対応する正式名称を取得
-    String strDesc = "";
-    for (size_t modID = 0; modID < MODs; ++modID){
-      //○機能モジュール定義を取得
-      const T_MOD& thisMod = *MOD_LIST[modID];
-      //│
-      //○名称を確認
-      if (argName == thisMod.name) {strDesc = thisMod.desc; break;}
-      //│＼（一致した場合）
-      //│  ▼中断：走査を終了
-      //┴
-    } /* END-for */
-    //│
-    //○説明を表示
-    Serial.printf("Run : %s\n", (strDesc != "") ? strDesc.c_str() : "(Unknown)");
-    //┴
-  } /* SHOW_DESC() */
-
-  //─────────────────
   // コマンド実行
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   void RunCommand(){
     //┬
     //①┐コマンドパスを整形
@@ -176,9 +147,6 @@ namespace CommandManager {
         //◇┐当該モジュールを実行
         if (m->owns(dat[0])){
           //├→(コマンド所有者の場合)
-            //●機能モジュール説明を表示
-//          SHOW_DESC(m->getModName());
-            //│
             //○機能モジュールを実行
             m->handle(dat, regCount);          
             //│

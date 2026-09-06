@@ -45,7 +45,7 @@
 // セットアップ部品
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // 資源の初期化
+  // 活動に必要な資源を初期化
   //─────────────────
   void initialize(){
     //┬
@@ -99,6 +99,6 @@ void setup(){
 void loop(){
   //┬
   //●クライアント接続部門に通常活動を指示
-  ConnectionManager::HANDLE();
+  ConnectionManager::WORK();
   //┴
 } /* loop() */

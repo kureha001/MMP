@@ -30,8 +30,8 @@
   //━━━━━━━━━━━━━━━━━
   #include "connection/manager.cpp"
   namespace ConnectionManager{
-    void INIT()  ; // 初期化
-    void HANDLE(); // ハンドルをキック
+    void INIT(); // 初期化
+    void WORK(); // 通常活動
   }
 
 #endif // CONN_H

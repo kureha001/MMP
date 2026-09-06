@@ -324,8 +324,13 @@ private:
           //●コマンドを実行
           mode::RUN(ADP_ID, strFrame);
           //│
+          //○モードを確認
+          if (MODE == MODE_BRIDGE) return;
+          //│＼（ブリッジモードの場合）
+          //│ ▼終了：早期リターン
+          //│
           //●実行結果をレスポンス
-          if (MODE == MODE_MAIN){IS_JSON ? SEND_CONN_JSON() : SEND_CONN();}
+          IS_JSON ? SEND_CONN_JSON() : SEND_CONN();
           //┴
         }); /* server.onNotFound */
         //┴

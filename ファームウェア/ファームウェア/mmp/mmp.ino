@@ -65,9 +65,9 @@
     if (MODE == MODE_BRIDGE) strMode = "Bridge";
     //│
     //○開始メッセージを出力
-    Serial.println("-----------------------------");
-    Serial.printf (" MMP Ver.%s [%sMode]\n", ctx.sysVer, strMode);
-    Serial.println("-----------------------------");
+    Serial.println("------------------------");
+    Serial.printf (" MMP [%s Mode]  %s\n", strMode, ctx.sysVer);
+    Serial.println("------------------------");
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {

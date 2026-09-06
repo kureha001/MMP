@@ -29,7 +29,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 純粋仮想関数（派生クラスで実装）
   //━━━━━━━━━━━━━━━━━
-  virtual void SEND_CONN(bool argMode, T argConn) = 0;
+  virtual void SEND_CONN(T argConn) = 0;
   virtual int  getAdpId() const = 0;
 
 public:
@@ -77,7 +77,7 @@ public:
       //│
       //○フレームの状態を確認
       if (popDat.frame.startsWith("#")) {
-        SEND_CONN(true, popDat.conn);
+        SEND_CONN(popDat.conn);
         continue;
       }
       //│＼（エラーが発生している場合）
@@ -88,7 +88,7 @@ public:
       mode::RUN(getAdpId(), popDat.frame);
       //│
       //●実行結果をレスポンス
-      if (ctx.sysMode == MODE_MAIN) SEND_CONN(false, popDat.conn);
+      if (ctx.sysMode == MODE_MAIN) SEND_CONN(popDat.conn);
       //┴
     } /* END-while */
     //│

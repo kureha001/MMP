@@ -58,18 +58,10 @@ private:
 //========================================================
   //─────────────────
   // クライアントにレスポンス
-  //----------------------------------
-  // 引数：
-  // ・出力制限：強制出力(true)、通常出力(false)
-  // ・接続資源：キューから取得した物
+  // ※AdapterQueueBaseをオーバーライド
   //─────────────────
-  void SEND_CONN(bool argMode, uint8_t argConn) override {
+  void SEND_CONN(uint8_t argConn) override {
     //┬
-    //○動作モードを確認
-    if (!argMode && ctx.sysMode != MODE_MAIN) return;
-    //│＼（出力制限がなく、メインモード以外の場合）
-    //│ ▼終了：早期リターン
-    //│
     //○メッセージをレスポンス
     if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
     //│

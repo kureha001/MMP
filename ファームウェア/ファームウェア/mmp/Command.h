@@ -4,8 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
-#ifndef CMD_H
-#define CMD_H
+#ifndef CMD_BASE_H
+#define CMD_BASE_H
 #pragma once
 //┬
 //□┐インクルード
@@ -34,4 +34,4 @@
     void RunCommand(); // コマンド実行
   }
 
-#endif // CMD_H
+#endif // CMD_BASE_H

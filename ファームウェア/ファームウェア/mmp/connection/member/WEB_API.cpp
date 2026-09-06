@@ -295,7 +295,7 @@ private:
           mode::RUN(ADP_ID, ADP_SRV->uri());
           //│
           //●実行結果をレスポンス
-          if (ctx.sysMode == MODE_MAIN) SEND_CONN();
+          if (MODE == MODE_MAIN) SEND_CONN();
           //┴
         }); /* server.onNotFound */
         //┴

@@ -4,8 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
-#ifndef CONN_H
-#define CONN_H
+#ifndef CONN_BASE_H
+#define CONN_BASE_H
 #pragma once
 //┬
 //□┐インクルード
@@ -34,4 +34,4 @@
     void WORK(); // 通常活動
   }
 
-#endif // CONN_H
+#endif // CONN_BASE_H

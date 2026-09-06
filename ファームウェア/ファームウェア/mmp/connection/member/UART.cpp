@@ -119,7 +119,7 @@ public:
     //┬
     //●┐接続管理TBLを作成
       //○領域を確保
-      SS_SLOTS = (ctx.sysMode == MODE_MAIN) ? 2 :1;
+      SS_SLOTS = (MODE == MODE_MAIN) ? 2 :1;
       ssTBL    = new T_SS_SLOT[SS_SLOTS];
       //│
       //○USB(CDC)をセット
@@ -127,7 +127,7 @@ public:
       ssTBL[0].CONN      = &Serial; // 参照先を登録
       //│
       //○動作モードを確認
-      if (ctx.sysMode == MODE_MAIN) {
+      if (MODE == MODE_MAIN) {
       //│＼（メインモードの場合）
           //○UART1以降をセット
           ssTBL[1].Base.used = true    ; // 使用中

@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+#ifndef CONN_COMMON_H
+#define CONN_COMMON_H
 #pragma once
 
 //========================================================
@@ -37,3 +39,5 @@
     void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
     String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
   }
+
+#endif // CONN_COMMON_H

@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+#ifndef MEMBER_BRIDGE_H
+#define MEMBER_BRIDGE_H
 #pragma once
 
 //========================================================
@@ -52,3 +54,5 @@
     bool end()   {return false;}
   } /* namespace IIC */
 } /* namespace TRANS */
+
+#endif // MEMBER_BRIDGE_H

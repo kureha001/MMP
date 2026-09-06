@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/06) 
 //========================================================
+#ifndef CONFIG_H
+#define CONFIG_H
 #pragma once
 
 //─────────────────
@@ -14,12 +16,12 @@
 //#define BOARD_PICO2W
 
 //─────────────────
-// MMPタイプ
+// 動作モード
 //─────────────────
-extern const int MODE_MAIN  ; // メインモード
-extern const int MODE_SUB   ; // サブモード
-extern const int MODE_BRIDGE; // ブリッジモード
-extern const int MODE_BOOT  ; // 起動時モード
+#define MODE_MAIN   0 // メインモード
+#define MODE_SUB    1 // サブモード
+#define MODE_BRIDGE 2 // ブリッジモード
+#define MODE        MODE_MAIN // 現在の動作モード
 
 //─────────────────
 // 経路アダプタ選択
@@ -34,3 +36,5 @@ extern const int MODE_BOOT  ; // 起動時モード
 #define ADP_ESPN // ESP NOW
 #define ADP_BLE  // BLE
 //#define ADP_I2C  // i2c ※他IICデバイスが使えなくなる(本体で使用禁止)
+
+#endif // CONFIG_H

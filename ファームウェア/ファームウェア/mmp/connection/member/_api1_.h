@@ -88,7 +88,7 @@ public:
       mode::RUN(getAID(), popDat.frame);
       //│
       //○モードを確認
-      if (ctx.sysMode == MODE_BRIDGE) continue;
+      if (MODE == MODE_BRIDGE) continue;
       //│＼（ブリッジモードの場合）
       //│ ▽次へ：次のキューを走査
       //│

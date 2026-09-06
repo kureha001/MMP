@@ -4,8 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
-#ifndef DEV_H
-#define DEV_H
+#ifndef DEV_BASE_H
+#define DEV_BASE_H
 #pragma once
 //┬
 //□┐インクルード
@@ -29,4 +29,4 @@
     void INIT(); // 初期化
   }
 
-#endif // DEV_H
+#endif // DEV_BASE_H

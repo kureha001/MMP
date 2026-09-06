@@ -23,13 +23,8 @@
 //┬
 //□┐情報
   //□環境設定
+  //□コンテクスト（実体化）
   #include "mmpConfig.h"
-  const int MODE_MAIN   = 0        ; // メインモード
-  const int MODE_SUB    = 1        ; // サブモード
-  const int MODE_BRIDGE = 2        ; // ブリッジモード
-  const int MODE_BOOT   = MODE_MAIN; // 起動時モード
-  //│
-  //□コンテクスト
   #include "mmpContext.h"
   MmpContext ctx;
 //│┴
@@ -63,18 +58,20 @@
   //─────────────────
   void opening(){
     //┬
-    //○開始メッセージを出力
+    //○動作モード名を取得
     String strMode = "";
-    if (MODE_BOOT == MODE_MAIN  ) strMode = "メイン"  ;
-    if (MODE_BOOT == MODE_SUB   ) strMode = "サブ"    ;
-    if (MODE_BOOT == MODE_BRIDGE) strMode = "ブリッジ";
+    if (MODE == MODE_MAIN  ) strMode = "メイン"  ;
+    if (MODE == MODE_SUB   ) strMode = "サブ"    ;
+    if (MODE == MODE_BRIDGE) strMode = "ブリッジ";
+    //│
+    //○開始メッセージを出力
     Serial.println("---------------------------");
     Serial.printf (" MMP Ver.%s\n"    , ctx.sysVer);
     Serial.printf (" 動作モード：%s\n", strMode   );
     Serial.println("---------------------------");
     //│
     //●ファンファーレを鳴らす
-    if (MODE_BOOT == MODE_MAIN) {
+    if (MODE == MODE_MAIN) {
       ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
       CommandManager::RunCommand();
     }

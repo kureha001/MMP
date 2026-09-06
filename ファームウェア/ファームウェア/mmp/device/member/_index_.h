@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+#ifndef DEV_MEMBER_H
+#define DEV_MEMBER_H
 #pragma once
 
 //========================================================
@@ -41,3 +43,5 @@
     extern BLECharacteristic* BLE_RX; // 受信用キャラクタリスティック
     extern BLECharacteristic* BLE_TX; // 送信用キャラクタリスティック
   } /* namespace devBLE */
+
+#endif // DEV_MEMBER_H

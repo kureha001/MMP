@@ -4,6 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
+#ifndef MODE_MEMBER_H
+#define MODE_MEMBER_H
 #pragma once
 //┬
 //□┐クライアント接続部門
@@ -21,3 +23,5 @@
   namespace modeMain  {void RUN();} // メインモード
   namespace modeSub   {void RUN();} // サブモード
   namespace modeBridge{void RUN();} // ブリッジモード
+
+#endif // MODE_MEMBER_H

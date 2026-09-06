@@ -41,9 +41,9 @@
     SETUP(argAdpID, argFrame);
     //│
     //●モード別に後続処理
-    if (ctx.sysMode == MODE_MAIN  ) modeMain  ::RUN();
-    if (ctx.sysMode == MODE_SUB   ) modeSub   ::RUN();
-    if (ctx.sysMode == MODE_BRIDGE) modeBridge::RUN();
+    if (MODE == MODE_MAIN  ) modeMain  ::RUN();
+    if (MODE == MODE_SUB   ) modeSub   ::RUN();
+    if (MODE == MODE_BRIDGE) modeBridge::RUN();
     //┴
   } /* RUN() */
   } /* namespace mode */

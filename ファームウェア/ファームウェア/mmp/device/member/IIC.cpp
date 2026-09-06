@@ -1,24 +1,18 @@
-// filename : device/member/UART.cpp
+// filename : device/member/IIC.cpp
 //========================================================
-// 通信デバイス部門／担当：UARTポート
+// 通信デバイス部門／担当：IICポート
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.2.3 (2026/09/06) IICポートを新設
 //========================================================
 
 //########################################################
 //# 処理詳細
 //########################################################
-namespace devUART {
+namespace devIIC {
 //========================================================
 // 基本情報
 //========================================================
   bool ENABLED = false; // 有効判定：有効：true、無効：false
-
-//========================================================
-// ハードウェア
-//========================================================
-  // 通信速度の定義
-  int IntBaud = 115200;
 
 //========================================================
 // メイン処理
@@ -32,27 +26,19 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
 
-    // UARTポートを起動
-    #if (BOARD == BOARD_ESP32_S3_TINY)
-      Serial1.begin(IntBaud, SERIAL_8N1, 17, 18);
-      // ※メインモードは、Serial2をMP3プレイヤーで使用
-      #if (BOARD != MMP_TYPE_MAIN)
-        Serial2.begin(IntBaud, SERIAL_8N1, 11, 12);
-      #endif
+    int SDA, SCL;
 
-    #elif (BOARD == BOARD_M5STAMP_S3)
-      Serial1.begin(IntBaud, SERIAL_8N1,  1,  2);
-
-    #elif (BOARD == BOARD_PICO2W)
-      Serial1.begin(IntBaud, SERIAL_8N1, 13, 17);
-      Serial2.begin(IntBaud, SERIAL_8N1,  5,  9);
-
-    #else
-      #error "【設定エラー】ボードが未定義です！"
-    #endif
+    if      (BOARD == BOARD_ESP32_S3_TINY){SDA=16; SCL=15;}
+    else if (BOARD == BOARD_M5STAMP_S3   ){SDA=13; SCL=15;}
+    else if (BOARD == BOARD_PICO2W       ){SDA= 4; SCL= 5;}
+    else return;
+    
+    //○IICを開始
+    Wire.begin(SDA,SCL);
 
     //○有効性セット
-    Serial.println("　[OK] UART(#01) -> " + String(IntBaud) + "bps");
+    Serial.printf("　[OK] IIC       -> SDA[%d],SCL[%d]\n", SDA, SCL);
     ENABLED = true;
+
   } /* START() */
 } /* namespace devUART */

@@ -47,9 +47,9 @@
     //●通信デバイス部門に初期化を依頼
     //●接続クライアント部門に初期化を依頼
     //●コマンド実行部門に初期化を依頼
-    DeviceManager::INIT();
+    DeviceManager    ::INIT();
     ConnectionManager::INIT();
-    CommandManager::INIT();
+    CommandManager   ::INIT();
     //┴
   } /* initialize() */
 
@@ -66,8 +66,8 @@
     //│
     //○開始メッセージを出力
     Serial.println("---------------------------");
-    Serial.printf (" MMP Ver.%s\n"    , ctx.sysVer);
-    Serial.printf (" 動作モード：%s\n", strMode   );
+    Serial.printf (" MMP Ver.%s\n", ctx.sysVer  );
+    Serial.printf (" %sモード\n"  , strMode     );
     Serial.println("---------------------------");
     //│
     //●ファンファーレを鳴らす

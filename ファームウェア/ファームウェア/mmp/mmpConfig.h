@@ -9,11 +9,15 @@
 #pragma once
 
 //─────────────────
-// ターゲット・ボード(UART設定で必要)
+// ターゲット・ボード
+// [device/member/UART] PIN設定に仕様
+// [device/member/IIC ] PIN設定に仕様
 //─────────────────
-#define BOARD_ESP32_S3_TINY
-//#define BOARD_M5STAMP_S3
-//#define BOARD_PICO2W
+#define BOARD_ESP32_S3_TINY 10
+#define BOARD_M5STAMP_S3    11
+#define BOARD_PICO2W        20
+// 現在のターゲット ※上記から選択
+#define BOARD BOARD_ESP32_S3_TINY
 
 //─────────────────
 // 動作モード
@@ -21,7 +25,8 @@
 #define MODE_MAIN   0 // メインモード
 #define MODE_SUB    1 // サブモード
 #define MODE_BRIDGE 2 // ブリッジモード
-#define MODE        MODE_MAIN // 現在の動作モード
+// 現在の動作モード ※上記から選択
+#define MODE MODE_MAIN
 
 //─────────────────
 // 経路アダプタ選択
@@ -29,12 +34,12 @@
 //・必要：コメントアウト「しない」
 //・不要：コメントアウト「する」
 //─────────────────
-#define ADP_UART // UART  ※本体＋サブの構成、ブリッジで必須
-#define ADP_TCP  // TCP RAW
-#define ADP_WAPI // WWB API
-#define ADP_WSOC // WEB Socket
-#define ADP_ESPN // ESP NOW
-#define ADP_BLE  // BLE
-//#define ADP_I2C  // i2c ※他IICデバイスが使えなくなる(本体で使用禁止)
+#define ADP_UART true // UART ※本体＋サブ、ブリッジでは自動適用
+#define ADP_TCP  true // TCP RAW
+#define ADP_WAPI false // WWB API
+#define ADP_WSOC false // WEB Socket
+#define ADP_ESPN false // ESP NOW
+#define ADP_BLE  false // BLE
+#define ADP_IIC  false // IIC ※メインモードでは使用禁止
 
 #endif // CONFIG_H

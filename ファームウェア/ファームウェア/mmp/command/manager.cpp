@@ -57,6 +57,11 @@ namespace CommandManager {
   //━━━━━━━━━━━━━━━━━
   void INIT(){
     //┬
+    //○動作モードを確認
+    if (MODE != MODE_MAIN) return;
+    //│＼（動作モードがメイン以外場合）
+    //│ ▼終了：早期リターン
+    //│
     //○開始表示
     Serial.println("<<機能モジュールの初期化>>");
     //│
@@ -72,7 +77,7 @@ namespace CommandManager {
     Serial.print(" Add In ->");
     for (auto* mod : MODULE){
       //│＼（全機能モジュールを走査し終えた場合）
-      //│ ▼ループ処理を中断
+      //│ ▼完了：走査を終える
       //│
       //●機能モジュール名を表示
       Serial.print(String(" [") + String(mod->getModName()) + String("]"));

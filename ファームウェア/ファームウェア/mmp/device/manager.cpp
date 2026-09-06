@@ -2,7 +2,7 @@
 //========================================================
 // 通信デバイス部門：統括マネージャ
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.2.3 (2026/09/06) IICポートを追加 
 //========================================================
 //┬
 //■┐インクルード
@@ -34,13 +34,20 @@ namespace DeviceManager{
   // 通信デバイス群（抽象化・一括管理）
   //━━━━━━━━━━━━━━━━━
   static const T_DEVICE DEVICE[] = {
-    #if defined(ADP_UART)
+
+    #if (MODE!=MODE_MAIN)||ADP_UART //※メインモード以外は強制適用
       { "UART", &devUART::ENABLED, devUART::START },
     #endif
-    #if defined(ADP_TCP)||defined(ADP_WAPI)||defined(ADP_WSOC)||defined(ADP_ESPN)
+
+    #if (MODE==MODE_MAIN)||ADP_IIC //※メインモードは強制適用
+      { "IIC", &devIIC::ENABLED, devIIC::START },
+    #endif
+
+    #if ADP_TCP||ADP_WAPI||ADP_WSOC||ADP_ESPN
       { "WiFi", &devWiFi::ENABLED, devWiFi::START },
     #endif
-    #if defined(ADP_BLE)
+
+    #if ADP_BLE
       { "BLE" , &devBLE::ENABLED, devBLE::START },
     #endif
   };
@@ -62,7 +69,7 @@ namespace DeviceManager{
     //○ログ表示を開始
     Serial.println("<<通信デバイスの初期化>>");
     Serial.println(" [Serial device]"  );
-    Serial.println("  [OK] USB (CDC) -> 115,200bps");
+    Serial.println("  [OK] USB (CDC) -> 115200bps");
     //│
     //◎┐通信デバイスを初期化
     for (size_t devID = 0; devID < DEVs; ++devID) {

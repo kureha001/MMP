@@ -21,6 +21,15 @@
   }
 
   //━━━━━━━━━━━━━━━━━
+  // IICポート
+  //━━━━━━━━━━━━━━━━━
+  #include "IIC.cpp"
+  namespace devIIC{
+    extern bool ENABLED ; // 有効性
+    void START()        ; // デバイス開始の指示
+  }
+
+  //━━━━━━━━━━━━━━━━━
   // WiFiサーバ
   //━━━━━━━━━━━━━━━━━
   #include "WiFi.cpp"

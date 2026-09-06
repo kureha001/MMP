@@ -19,7 +19,7 @@
     #include "_index_.h"
 //│┴┴
 //│
-//□通信デバイス部門 ★他部門と連携(devBLEを参照)
+//□通信デバイス部門
   #include "../../device.h"
 //┴
 
@@ -163,6 +163,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterBLE(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
+    //○インフラを確認
+    if (!devBLE::ENABLED) return;
+    //│＼（無効の場合）
+    //│ ▼終了：早期リターン
+    //│
     //○インスタンスを登録
     MY_INSTANS = this;
     //│

@@ -15,7 +15,11 @@
 //□┐クライアント接続部門
   //□統括マネージャ
   #include "_index_.h"
-//┴┴
+//│┴
+//│
+//□通信デバイス部門 ※他部門と情報連携
+#include "../device.h"
+//┴
 
 //########################################################
 //# 処理詳細
@@ -44,26 +48,31 @@ namespace ConnectionManager{
       adpFnAuth::INIT_TBL();
     //│
     //●経路アダプタを初期化
-    #if defined(ADP_UART)
-      ADAPTER.push_back(new AdapterUART(ctx));
+    #if ADP_UART
+      if (devUART::ENABLED) ADAPTER.push_back(new AdapterUART(ctx));
     #endif
-    #if defined(ADP_TCP )
+
+    if (devWiFi::ENABLED) {
+    #if ADP_TCP
       ADAPTER.push_back(new AdapterTCP(ctx));
     #endif
-    #if defined(ADP_WAPI)
+    #if ADP_WAPI
       ADAPTER.push_back(new AdapterWEB_API(ctx));
     #endif
-    #if defined(ADP_WSOC)
+    #if ADP_WSOC
       ADAPTER.push_back(new AdapterWEB_Socket(ctx));
     #endif
-    #if defined(ADP_BLE )
-      ADAPTER.push_back(new AdapterBLE(ctx));
-    #endif
-    #if defined(ADP_ESPN)
+    #if ADP_ESPN
       ADAPTER.push_back(new AdapterESPNOW(ctx));
     #endif
-    #if defined(ADP_I2C )
-      ADAPTER.push_back(new AdapterIIC(ctx));
+    }
+
+    #if ADP_BLE
+      if (devBLE::ENABLED) ADAPTER.push_back(new AdapterBLE(ctx));
+    #endif
+
+    #if ADP_I2C && (MODE != MODE_MAIN) //※メインモードでは使用不可
+      if (devIIC::ENABLED) ADAPTER.push_back(new AdapterIIC(ctx));
     #endif
     //│
     //○メッセージ表示を終了

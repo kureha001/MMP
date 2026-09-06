@@ -79,7 +79,7 @@ private:
     //◎┐スレーブ（IICアドレス）を走査
     for (uint8_t ID = IIC_ADDR_MIN; ID <= IIC_ADDR_MAX; ID++) {
       //│＼（最後のアドレスに達した場合）
-      //│ ▼完了：走査を終了
+      //│ ▽完了：走査を終了
       //│
       //○前処理
       String retFrame = "";
@@ -130,9 +130,6 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterIIC(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //○サービスを開始
-    //  ※PWMモジュールが先行して初期化済み
-    //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
       StreamQueue           , // 実行するタスク関数

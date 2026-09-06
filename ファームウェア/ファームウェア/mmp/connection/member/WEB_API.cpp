@@ -154,13 +154,8 @@ private:
     String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
   }; /* JSON_DATA */
   //─────────────────
-  void SEND_CONN(bool argMode){
+  void SEND_CONN(){
     //┬
-    //○動作モードを確認
-    if (!argMode && ctx.sysMode != MODE_MAIN) return;
-    //│＼（出力制限がなく、メインモード以外の場合）
-    //│ ▼終了：早期リターン
-    //│
     //○前処理
     JSON_DATA jsDat ;
     String    js    ;
@@ -298,7 +293,7 @@ private:
           mode::RUN(ADP_ID, ADP_SRV->uri());
           //│
           //●実行結果をレスポンス
-          SEND_CONN(false);
+          if (ctx.sysMode == MODE_MAIN) SEND_CONN();
           //┴
         }); /* server.onNotFound */
         //┴
@@ -336,5 +331,4 @@ public:
     ADP_SRV->handleClient();
     //┴
   } /* handle() */
-
 }; /* class AdapterWEB_API */

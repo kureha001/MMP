@@ -2,7 +2,7 @@
 //========================================================
 // 経路アダプタ：BLE
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.2.3 (2026/09/06) 
 //========================================================
 //┬
 //■┐インクルード
@@ -23,7 +23,13 @@
 //########################################################
 //# クラス：経路アダプタ(BLE)
 //########################################################
-class AdapterBLE : public AdapterBase {
+class AdapterBLE : public AdapterQueueBase<uint8_t> {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterQueueBase::AdapterQueueBase;
+
 private:
 //========================================================
 // Ａ．アダプタの基本
@@ -50,6 +56,12 @@ private:
     //   dev.hで公開されたBLE固有の受付資源を使用
     // ・BLE_RX：受信用キャラクタリスティック
     // ・BLE_TX：送信用キャラクタリスティック
+    static const int WAIT_MS = 15 ; // 受信タイムラグ
+
+  //━━━━━━━━━━━━━━━━━
+  // ID取得 (基底クラスの dispatch 処理用)
+  //━━━━━━━━━━━━━━━━━
+  int getAdpId() const override { return ADP_ID; }
 
 //========================================================
 // Ｂ．レスポンス
@@ -61,7 +73,7 @@ private:
   // ・出力制限：強制出力(true)、通常出力(false)
   // ・接続資源：キューから取得した物
   //─────────────────
-  void SEND_CONN(bool argMode, uint8_t argConn){
+  void SEND_CONN(bool argMode, uint8_t argConn) override {
     //┬
     //○動作モードを確認
     if (!argMode && ctx.sysMode != MODE_MAIN) return;
@@ -78,48 +90,6 @@ private:
     adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
-
-//========================================================
-// Ｃ．リクエスト・キュー管理
-//========================================================
-  //─────────────────
-  // 基本情報
-  //─────────────────
-  static const int WAIT_MS = 15 ; // 受信タイムラグ
-  struct myQueue {
-    uint8_t CONN ; // アクセス資源(クライアント番号)
-    String  FRAME; // 受信バッファ
-  };
-  std::queue<myQueue> QUEUE      ; // キューバッファ
-  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
-
-  //─────────────────
-  // キューの取出
-  //----------------------------------
-  // 引数：
-  // ・キュー受取用の変数
-  //----------------------------------
-  // 戻り値：キューの有無（論理値）
-  // ・true ：あり
-  // ・false：なし
-  //─────────────────
-  bool popQueue(myQueue &argData) {
-    //┬
-    //○別スレッドとの衝突回避用のロック
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    //│
-    //○キューの容量を確認
-    if (QUEUE.empty()) return false;
-    //│＼（通信デバイスが起動していない場合）
-    //│ ▼返却：なし
-    //│
-    //○先頭を抽出
-    //○先頭を削除
-    //▼返却：あり
-    argData = QUEUE.front();
-    QUEUE.pop();
-     return true;
-  } /* popQueue() */
 
 //========================================================
 // Ｄ．データ受信
@@ -191,9 +161,8 @@ private:
       //│＼（空の場合）
       //│ ▼終了：早期リターン
       //│
-      //○受信データをキューに追加
-      std::lock_guard<std::mutex> lock(MY_INSTANS->QUEUE_MUTEX);
-      MY_INSTANS->QUEUE.push({0,rxData});
+      //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
+      MY_INSTANS->pushQueue(0, rxData);
       //┴
     }; /* onWrite() */
   }; /* Callback_Client */
@@ -206,7 +175,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterBLE(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterBLE(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
     //○インスタンスを登録
     MY_INSTANS = this;
@@ -219,34 +188,6 @@ public:
     Serial.println(" [OK] Bluetooth");
     //┴
   } /* constractor AdapterBLE() */
-
-  //━━━━━━━━━━━━━━━━━
-  // ポーリング用ハンドラ
-  //━━━━━━━━━━━━━━━━━
-  void handle() override {
-    //┬
-    //◎┐ルーティングを指示
-    myQueue popDat;
-    while (popQueue(popDat)) {
-      //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
-      //│
-      //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(true, popDat.CONN); continue;}
-      //│＼（エラーが発生している場合）
-      //│ ●エラーを強制レスポンス
-      //│ ▽次へ：次のキューを走査
-      //│
-      //●コマンドを実行
-      mode::RUN(ADP_ID, popDat.FRAME);
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(false, popDat.CONN);
-      //┴
-    } /* END-while */
-    //┴
-  } /* handle() */
-
 }; /* class AdapterBLE */
 
 //━━━━━━━━━━━━━━━━━

@@ -2,7 +2,7 @@
 //========================================================
 // 経路アダプタ：IIC
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.2.3 (2026/09/06) 
 //========================================================
 //┬
 //■┐インクルード
@@ -17,7 +17,13 @@
 //########################################################
 //# クラス：経路アダプタ(IIC)
 //########################################################
-class AdapterIIC : public AdapterBase {
+class AdapterIIC : public AdapterQueueBase<uint8_t> {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterQueueBase::AdapterQueueBase;
+
 private:
 //========================================================
 // Ａ．アダプタの基本
@@ -29,6 +35,11 @@ private:
     // ステータス
     //─────────────────
     const int ADP_ID = ADP_ID_IIC;
+
+  //━━━━━━━━━━━━━━━━━
+  // ID取得 (基底クラスの dispatch 処理用)
+  //━━━━━━━━━━━━━━━━━
+  int getAdpId() const override { return ADP_ID; }
     
   //━━━━━━━━━━━━━━━━━
   // 接続管理
@@ -50,7 +61,7 @@ private:
   // ・出力制限：強制出力(true)、通常出力(false)
   // ・接続資源：キューから取得した物
   //─────────────────
-  void SEND_CONN(bool argMode, uint8_t argConn){
+  void SEND_CONN(bool argMode, uint8_t argConn) override {
     //┬
     //○動作モードを確認
     if (!argMode && ctx.sysMode != MODE_MAIN) return;
@@ -65,47 +76,6 @@ private:
     adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
-
-//========================================================
-// Ｃ．リクエスト・キュー管理
-//========================================================
-  //─────────────────
-  // 基本情報
-  //─────────────────
-  struct myQueue {
-    uint8_t CONN ; // IIC Slaveアドレス
-    String  FRAME; // 受信バッファ
-  };
-  std::queue<myQueue> QUEUE      ; // キューバッファ
-  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
-
-  //─────────────────
-  // キューの取出
-  //----------------------------------
-  // 引数：
-  // ・キュー受取用の変数
-  //----------------------------------
-  // 戻り値：キューの有無（論理値）
-  // ・true ：あり
-  // ・false：なし
-  //─────────────────
-  bool popQueue(myQueue &argData) {
-    //┬
-    //○別スレッドとの衝突回避用のロック
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    //│
-    //○キューの容量を確認
-    if (QUEUE.empty()) return false;
-    //│＼（通信デバイスが起動していない場合）
-    //│ ▼返却：なし
-    //│
-    //○先頭を抽出
-    //○先頭を削除
-    //▼返却：あり
-    argData = QUEUE.front();
-    QUEUE.pop();
-     return true;
-  } /* popQueue() */
 
 //========================================================
 // Ｄ．データ受信
@@ -142,9 +112,8 @@ private:
       retFrame = retFrame.substring(0, idx + 1);
       if (retFrame == "!") continue;
       //│
-      //○キューに登録
-      std::lock_guard<std::mutex> lock(QUEUE_MUTEX); // 排他ロック
-      QUEUE.push({(uint8_t)ID, retFrame});           // キューを追加(通信資源、フレーム)
+      //○キューに登録（基底クラスの pushQueue を呼出し）
+      pushQueue((uint8_t)ID, retFrame);
       //┴
     } /* END-for */
     //┴
@@ -169,7 +138,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterIIC(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterIIC(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
     //○サービスを開始
     //  ※PWMモジュールが先行して初期化済み
@@ -191,32 +160,4 @@ public:
     Serial.println(String(IIC_ADDR_MAX));
     //┴
   } /* constractor AdapterIIC() */
-
-  //━━━━━━━━━━━━━━━━━
-  // ポーリング用ハンドラ
-  //━━━━━━━━━━━━━━━━━
-  void handle() override {
-    //┬
-    //◎┐ルーティングを指示
-    myQueue popDat;
-    while (popQueue(popDat)) {
-      //│＼（キューが空の場合）
-      //│ ▼完了：ルーティングを終了
-      //│
-      //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(true, popDat.CONN); continue;}
-      //│＼（エラーが発生している場合）
-      //│ ●エラーを強制レスポンス
-      //│ ▽次へ：次のキューを走査
-      //│
-      //●コマンドを実行
-      mode::RUN(ADP_ID, popDat.FRAME);
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(false, popDat.CONN);
-      //┴
-    } /* END-while */
-    //┴
-  } /* handle() */
-
 }; /* class AdapterIIC */

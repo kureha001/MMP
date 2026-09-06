@@ -2,7 +2,7 @@
 //========================================================
 // 経路アダプタ：WEB Socket
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.2.3 (2026/09/06) 
 //========================================================
 //┬
 //■┐インクルード
@@ -17,7 +17,14 @@
 //########################################################
 //# クラス：経路アダプタ(WEB Socket)
 //########################################################
-class AdapterWEB_Socket : public AdapterBase {
+class AdapterWEB_Socket : public AdapterQueueBase<uint8_t> {
+public:
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterQueueBase::AdapterQueueBase;
+
+private:
 //========================================================
 // Ａ．アダプタの基本
 //========================================================
@@ -41,6 +48,11 @@ class AdapterWEB_Socket : public AdapterBase {
     WebSocketsServer* ADP_SRV  = nullptr; // WebSocketサーバ
     int               SRV_PORT = 8082   ; // ポート番号
 
+  //━━━━━━━━━━━━━━━━━
+  // ID取得 (基底クラスの dispatch 処理用)
+  //━━━━━━━━━━━━━━━━━
+  int getAdpId() const override { return ADP_ID; }
+
 //========================================================
 // Ｂ．レスポンス
 //========================================================
@@ -51,7 +63,7 @@ class AdapterWEB_Socket : public AdapterBase {
   // ・出力制限：強制出力(true)、通常出力(false)
   // ・接続資源：キューから取得した物
   //─────────────────
-  void SEND_CONN(bool argMode, uint8_t argConn){
+  void SEND_CONN(bool argMode, uint8_t argConn) override {
     //┬
     //○動作モードを確認
     if (!argMode && ctx.sysMode != MODE_MAIN) return;
@@ -67,47 +79,6 @@ class AdapterWEB_Socket : public AdapterBase {
   } /* SEND_CONN() */
 
 //========================================================
-// Ｃ．リクエスト・キュー管理
-//========================================================
-  //─────────────────
-  // 基本情報
-  //─────────────────
-  struct myQueue {
-    uint8_t CONN ; // アクセス資源(クライアント番号)
-    String  FRAME; // 受信バッファ
-  };
-  std::queue<myQueue> QUEUE      ; // キューバッファ
-  std::mutex          QUEUE_MUTEX; // 別スレッドとの衝突回避用のロック
- 
-  //─────────────────
-  // キューの取出
-  //----------------------------------
-  // 引数：
-  // ・キュー受取用の変数
-  //----------------------------------
-  // 戻り値：キューの有無（論理値）
-  // ・true ：あり
-  // ・false：なし
-  //─────────────────
-  bool popQueue(myQueue &argData) {
-    //┬
-    //○別スレッドとの衝突回避用のロック
-    std::lock_guard<std::mutex> lock(QUEUE_MUTEX);
-    //│
-    //○キューの容量を確認
-    if (QUEUE.empty()) return false;
-    //│＼（通信デバイスが起動していない場合）
-    //│ ▼返却：なし
-    //│
-    //○先頭を抽出
-    //○先頭を削除
-    //▼返却：あり
-    argData = QUEUE.front();
-    QUEUE.pop();
-     return true;
-  } /* popQueue() */
-
-//========================================================
 // Ｄ．データ受信
 //========================================================
   //━━━━━━━━━━━━━━━━━
@@ -115,7 +86,7 @@ class AdapterWEB_Socket : public AdapterBase {
   //━━━━━━━━━━━━━━━━━
   static void ON_RECIVE(
     uint8_t   num    , // クライアント番号
-    WStype_t  type   , // エベント種別
+    WStype_t  type   , // イベント種別
     uint8_t * payload, // 受信データ
     size_t    length   // 受信データ長
   ){
@@ -126,7 +97,7 @@ class AdapterWEB_Socket : public AdapterBase {
     //│ ▼終了：早期リターン
     //│
     //○イベントの種類を確認
-    if(type !=WStype_TEXT) return;
+    if (type != WStype_TEXT) return;
     //│＼（テキスト以外の場合）
     //│ ▼終了：早期リターン
     //│
@@ -135,9 +106,8 @@ class AdapterWEB_Socket : public AdapterBase {
     //│＼（空の場合）
     //│ ▼終了：早期リターン
     //│
-    //○受信データをキューに追加
-    std::lock_guard<std::mutex> lock(MY_INSTANS->QUEUE_MUTEX);
-    MY_INSTANS->QUEUE.push({num, String((char*)payload)});
+    //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
+    MY_INSTANS->pushQueue(num, String((char*)payload));
     //┴
   } /* ON_RECIVE() */
 
@@ -148,7 +118,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterWEB_Socket(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterWEB_Socket(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
     //○インスタンスを登録
     MY_INSTANS = this;
@@ -164,42 +134,17 @@ public:
   } /* constractor AdapterWEB_Socket() */
 
   //━━━━━━━━━━━━━━━━━
-  // ポーリング用ハンドラ
+  // ポーリング用前処理
   //━━━━━━━━━━━━━━━━━
-  void handle() override {
+  void handle_begin() override {
     //┬
-    //○WebSocketサーバの処理を進める
-    // ・新規クライアントからの接続要求（ハンドシェイク）の受付
-    // ・パケットの受送信とイベント（ON_RECIVE）の発火
-    // ・Ping / Pong によるキープアライブ（接続維持チェック）
-    // ・切断処理（クリーンアップ）
-    ADP_SRV->loop();
-    //│
-    //◎┐ルーティングを指示
-    myQueue popDat;
-    while (popQueue(popDat)) {
-      //│＼（キューが空の場合）
-      //│ ▼BREAK：ルーティングを終了
-      //│
-      //○フレームの状態を確認
-      if (popDat.FRAME.startsWith("#")){SEND_CONN(true, popDat.CONN); continue;}
-      //│＼（エラーが発生している場合）
-      //│ ●エラーを強制レスポンス
-      //│ ▽次へ：次のキューを走査
-      //│
-      //●コマンドを実行
-      mode::RUN(ADP_ID, popDat.FRAME);
-      //│
-      //●実行結果をレスポンス
-      SEND_CONN(false, popDat.CONN);
-      //┴
-    } /* END-while */
+    //○WebSocketサーバの処理を進める（イベント発火）
+    if (ADP_SRV) ADP_SRV->loop();
     //┴
-  } /* handle() */
-
+  } /* handle_begin() */
 }; /* class AdapterWEB_Socket */
 
 //━━━━━━━━━━━━━━━━━
-//インスタンス管理用
+// インスタンス管理用
 //━━━━━━━━━━━━━━━━━
 AdapterWEB_Socket* AdapterWEB_Socket::MY_INSTANS = nullptr;

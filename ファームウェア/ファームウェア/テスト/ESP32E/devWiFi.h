@@ -3,6 +3,8 @@
 #pragma once
 #include <WiFi.h>
 
+extern String SRV_IP;
+
 //=====================================================
 // ＷｉＦｉ
 //=====================================================
@@ -10,7 +12,11 @@ namespace devWiFi {
   //─────────────────
   // デバイス起動
   //─────────────────
-  bool START(String argSSID, String argPSWD) {
+  bool START(
+    String argSSID,  // ルータのSSID
+    String argPSWD,  // ルータのパスワード
+    String argSrvIP4 // MMPのIPアドレス(第4オクテット)
+) {
 
     Serial.println("\n========== [WiFi] START() ==========");
 
@@ -35,7 +41,15 @@ namespace devWiFi {
       return false;
     } /* END-if */
 
-    Serial.printf   ("  [OK] Connected IP:[%s]\n", WiFi.localIP().toString().c_str());
+    IPAddress localIP = WiFi.localIP();
+    SRV_IP = String(localIP[0]) + "." + 
+             String(localIP[1]) + "." + 
+             String(localIP[2]) + "." + 
+             argSrvIP4;
+
+    Serial.printf   ("  [OK] My  IP:[%s]\n", WiFi.localIP().toString().c_str());
+    Serial.printf   ("  [OK] MMP IP:[%s]\n", SRV_IP);
+
     return true;
   } /* START() */
 

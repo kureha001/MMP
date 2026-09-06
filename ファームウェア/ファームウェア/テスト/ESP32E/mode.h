@@ -6,7 +6,7 @@
 #include <queue>
 #include <mutex>
 
-extern const char* SRV_IP;
+extern String SRV_IP;
 
 namespace modeUART{
   extern bool IS_CONNECT;

@@ -23,7 +23,7 @@ bool BEGIN(uint16_t argPort) {
   CONN_PORT = argPort;   
   CONN.setTimeout(2000);
 
-  if (CONN.connect(SRV_IP, CONN_PORT)) {
+  if (CONN.connect(SRV_IP.c_str(), CONN_PORT)) {
     Serial.printf("[OK] Successfully : port[%d]\n", CONN_PORT);
     IS_CONNECT = true;
 

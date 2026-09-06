@@ -11,7 +11,7 @@
 //=====================================================
 // 基本情報
 //=====================================================
-const char* SRV_IP = "192.168.2.99";
+String SRV_IP  = "";
 TFT_eSPI tft = TFT_eSPI();
 
 //=====================================================
@@ -317,7 +317,7 @@ void setup() {
     DrawUIFrame();
 
     // Wi-Fiを接続する
-    int retWifi = devWiFi::START("Buffalo-G-7050","etnxhurnecbs7");
+    int retWifi = devWiFi::START("Buffalo-G-7050","etnxhurnecbs7","99");
 
     // BLEを接続する
     int retBLE  = devBLE::START("MMP-ESP32S3");

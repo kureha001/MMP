@@ -53,7 +53,7 @@ bool BEGIN(uint16_t argPort) {
 
   // サービスの取得
   CONN_PORT = argPort;   
-  CONN.begin(SRV_IP, CONN_PORT, "/");
+  CONN.begin(SRV_IP.c_str(), CONN_PORT, "/");
 
   // コールバックを登録
   CONN.onEvent(OnReceive);  

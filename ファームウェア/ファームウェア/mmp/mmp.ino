@@ -11,7 +11,7 @@
 // 追加ライブラリ：
 // - WebSockets by Markus Sattler
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/06) 
+// Ver 1.2.3 (2026/09/07) 
 //========================================================
 #pragma once
 //┬
@@ -60,15 +60,14 @@
     //┬
     //○動作モード名を取得
     String strMode = "";
-    if (MODE == MODE_MAIN  ) strMode = "メイン"  ;
-    if (MODE == MODE_SUB   ) strMode = "サブ"    ;
-    if (MODE == MODE_BRIDGE) strMode = "ブリッジ";
+    if (MODE == MODE_MAIN  ) strMode = "Main"  ;
+    if (MODE == MODE_SUB   ) strMode = "Sub"    ;
+    if (MODE == MODE_BRIDGE) strMode = "Bridge";
     //│
     //○開始メッセージを出力
-    Serial.println("---------------------------");
-    Serial.printf (" MMP Ver.%s\n", ctx.sysVer  );
-    Serial.printf (" %sモード\n"  , strMode     );
-    Serial.println("---------------------------");
+    Serial.println("-----------------------------");
+    Serial.printf (" MMP Ver.%s [%sMode]\n", ctx.sysVer, strMode);
+    Serial.println("-----------------------------");
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {

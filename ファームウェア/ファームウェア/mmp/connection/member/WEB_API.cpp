@@ -37,6 +37,7 @@ private:
     // ステータス
     //─────────────────
     const int ADP_ID = ADP_ID_WAPI;
+    bool IS_JSON = false;
 
     //─────────────────
     // 使用するサービス
@@ -147,7 +148,7 @@ private:
   } /* SEND_MSG() */
 
   //─────────────────
-  // スロットの受付資源に送信
+  // クライアントに送信(JSON形式)
   //─────────────────
   struct JSON_DATA{
     bool    Res = false; // MMPの処理結果      {OK:true | NG:false}
@@ -156,7 +157,7 @@ private:
     String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
   }; /* JSON_DATA */
   //─────────────────
-  void SEND_CONN(){
+  void SEND_CONN_JSON(){
     //┬
     //○前処理
     JSON_DATA jsDat ;
@@ -229,6 +230,21 @@ private:
     //○通信経路にJSON形式でレスポンス
     SEND_JSON(js);
     //┴
+  } /* SEND_CONN_JSON() */
+
+
+  //─────────────────
+  // クライアントに送信(通常の4バイト)
+  //─────────────────
+  void SEND_CONN(){
+    //┬
+    //○テキストをレスポンス
+    ADD_CROSS(*ADP_SRV);
+    ADP_SRV->send(200, "text/plain; charset=utf-8", ctx.resMSG);
+    //│
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
+    //┴
   } /* SEND_CONN() */
 
 //========================================================
@@ -291,11 +307,25 @@ private:
           //│ ●CORS事前確認へ応答
           //│ ▼終了：早期リターン
           //│
+          //◇┐レスポンスのスタイルを確認
+          String strFrame = ADP_SRV->uri();
+          if (strFrame.endsWith("!!")) {
+          //├┐（フレームのスタイルがJSON指定の場合）
+            //○JSONスタイルにセット
+            //○フレームの末尾を補正する
+            IS_JSON  = true;
+            strFrame.remove(strFrame.length() - 1);
+            //┴
+          } else IS_JSON = false;
+          //└┐（その他）
+            //○標準スタイルにセット
+            //┴
+          //│
           //●コマンドを実行
-          mode::RUN(ADP_ID, ADP_SRV->uri());
+          mode::RUN(ADP_ID, strFrame);
           //│
           //●実行結果をレスポンス
-          if (MODE == MODE_MAIN) SEND_CONN();
+          if (MODE == MODE_MAIN){IS_JSON ? SEND_CONN_JSON() : SEND_CONN();}
           //┴
         }); /* server.onNotFound */
         //┴

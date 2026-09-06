@@ -40,11 +40,12 @@
   <label style="font-weight:bold;">通信モード:</label>
   <label class="inline"><input type="radio" name="commMode" value="ws" checked> WebSocket</label>
   <label class="inline"><input type="radio" name="commMode" value="api"> WebAPI (HTTP)</label>
+  <label class="inline" style="margin-left:12px;"><input type="checkbox" id="chkJson"> JSON形式</label>
 </div>
 
 <div class="row">
   <label class="inline">ＩＰ:
-    <input id="host" placeholder="例: 192.168.2.99">
+    <input id="host" placeholder="例: 192.168.11.99">
   </label>
   <label class="inline">ポート:
     <input id="port" type="number" value="8082" min="1" max="65535" style="width:7rem">
@@ -187,8 +188,9 @@
   const statusEl = $('#connStatus');
   const wsControls = $('#wsControls');
   const apiLogsDiv = $('#apiLogs');
+  const chkJsonEl = $('#chkJson');
 
-  hostEl.value = location.hostname || '192.168.2.99';
+  hostEl.value = location.hostname || '192.168.11.99';
   let ws = null;
 
   function updateModeUI() {
@@ -196,11 +198,14 @@
     if (mode === 'ws') {
       wsControls.style.display = 'inline-block';
       apiLogsDiv.style.display = 'none';
+      chkJsonEl.disabled = true;
       const isConnected = (ws && ws.readyState === WebSocket.OPEN);
       setConnectedState(isConnected);
     } else {
       wsControls.style.display = 'none';
-      apiLogsDiv.style.display = 'block';
+      // ★ WebAPIモード時かつJSON形式ONの場合のみ詳細ログ(apiLogs)を表示
+      apiLogsDiv.style.display = chkJsonEl.checked ? 'block' : 'none';
+      chkJsonEl.disabled = false;
       statusEl.textContent = 'WebAPIモード';
       statusEl.className = 'connected';
       setAllButtons(true);
@@ -210,6 +215,9 @@
   document.querySelectorAll('input[name="commMode"]').forEach(radio => {
     radio.onchange = updateModeUI;
   });
+
+  // ★ JSONチェックボックス変更時にも表示スタイルを更新
+  chkJsonEl.onchange = updateModeUI;
 
   function setConnectedState(connected) {
     statusEl.textContent = connected ? '接続中' : '未接続';
@@ -295,29 +303,39 @@
     } else {
       const host = hostEl.value.trim();
       const port = (portEl.value || '8080').trim();
-      const url = `http://${host}:${port}${finalPath}`;
+      
+      const suffix = chkJsonEl.checked ? '!!' : '!';
+      const url = `http://${host}:${port}${finalPath}${suffix}`;
 
       clearLogs();
       preReq.textContent = `GET ${url}`;
 
       try {
         const res = await fetch(url, { method:'GET', cache:'no-store', credentials:'omit' });
-        let hdr = `HTTP ${res.status} ${res.statusText}\n`;
-        for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
-        preHdrs.textContent = hdr;
+        
+        // JSON形式がONの時のみ詳細表示エリアを有効化
+        if (chkJsonEl.checked) {
+          let hdr = `HTTP ${res.status} ${res.statusText}\n`;
+          for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
+          preHdrs.textContent = hdr;
+        }
 
         const text = await res.text();
         preRaw.textContent = text.length ? text : '(空)';
 
-        try {
-          preJson.textContent = JSON.stringify(JSON.parse(text), null, 2);
-        } catch {
-          preJson.textContent = '(JSONとして解釈できません)';
+        if (chkJsonEl.checked) {
+          try {
+            preJson.textContent = JSON.stringify(JSON.parse(text), null, 2);
+          } catch {
+            preJson.textContent = '(JSONとして解釈できません)';
+          }
         }
       } catch(e) {
-        preHdrs.textContent = 'リクエストに失敗しました。';
+        if (chkJsonEl.checked) {
+          preHdrs.textContent = 'リクエストに失敗しました。';
+          preJson.textContent = '(取得不可)';
+        }
         preRaw.textContent = String(e?.message || e || 'UNKNOWN');
-        preJson.textContent = '(取得不可)';
       }
     }
   }

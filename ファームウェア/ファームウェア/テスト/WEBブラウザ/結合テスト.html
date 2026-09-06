@@ -38,7 +38,7 @@
     <label class="inline"><input type="radio" name="commMode" value="ws" checked> WebSocket</label>
     <label class="inline"><input type="radio" name="commMode" value="api"> WebAPI</label>
   </div>
-  <label class="inline">HOST/IP <input id="host" placeholder="例: 192.168.2.124" style="width:11rem"></label>
+  <label class="inline">HOST/IP <input id="host" placeholder="例: 192.168.11.99" style="width:11rem"></label>
   <label class="inline">PORT <input id="port" type="number" value="8080" min="1" max="65535"></label>
   <span id="wsControls" class="group">
     <button class="btn sec" id="btnConnect">接続</button>
@@ -75,6 +75,7 @@
       </div>
       <div class="group">
         <button class="btn sec" id="btnClearDtl">ログ消去</button>
+        <label class="inline"><input type="checkbox" id="chkJson"> JSON形式</label>
       </div>
     </div>
     <div class="log" id="detail"></div>
@@ -88,8 +89,9 @@
   const stdEl = $('#std'), detailEl = $('#detail');
   const statusEl = $('#connStatus');
   const wsControls = $('#wsControls');
+  const chkJsonEl = $('#chkJson');
 
-  hostEl.value = location.hostname || '192.168.2.99';
+  hostEl.value = location.hostname || '192.168.11.99';
 
   let stopFlag = false;
   let ws = null;
@@ -98,10 +100,12 @@
     const mode = document.querySelector('input[name="commMode"]:checked').value;
     if (mode === 'ws') {
       wsControls.style.display = 'inline-flex';
+      chkJsonEl.disabled = true; // ★ WebSocket選択時は無効化
       const isConnected = (ws && ws.readyState === WebSocket.OPEN);
       setConnectedState(isConnected);
     } else {
       wsControls.style.display = 'none';
+      chkJsonEl.disabled = false; // ★ WebAPI選択時は有効化
       statusEl.textContent = 'WebAPIモード';
       statusEl.className = 'connected';
       setTestButtonsEnabled(true);
@@ -204,20 +208,17 @@
 
       logDtl(`SEND (WS): ${wsMsg}`);
 
-      // WebSocketでは非同期のレスポンス返却になるため、
-      // 簡易的に送信を行って成功扱い（レスポンスは onmessage で受信ログに流れる）とするか、
-      // 既存の同期的なawait構造に合わせるためダミー応答を返します。
       ws.send(wsMsg);
       await sleep(150); // 送信ウェイト
       
-      // テストシーケンス側で r.json.ok や r.json.value を参照しているため、
-      // 最低限のモック構造（ok: true）を返してシーケンスを止めないようにします
       return {ok: true, status: 200, text: '{"ok":true}', json: {ok: true, value: 0}, err: null};
 
     } else {
       const host = hostEl.value.trim();
       const port = (portEl.value || '8080').trim();
-      const url  = `http://${host}:${port}${path}`;
+      
+      const suffix = chkJsonEl.checked ? '!!' : '!';
+      const url  = `http://${host}:${port}${path}${suffix}`;
       
       try{
         const res = await fetchWithTimeout(url);

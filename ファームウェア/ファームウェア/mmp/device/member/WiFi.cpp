@@ -30,7 +30,16 @@ namespace devWiFi {
   //─────────────────
   constexpr int g_MAX_ITEM_HOST   = 4;  // アイテム登録数：ホスト情報
   constexpr int g_MAX_ITEM_ROUTER = 6;  // アイテム登録数：Wifiルーター情報
-  String        g_FILE_PATH = "/config.json";  // SSID接続待ち時間ms(間隔)
+
+  #if   (MODE == MODE_MAIN  )
+    String g_FILE_PATH = "/config_main.json"  ;
+  #elif (MODE == MODE_SUB   )
+    String g_FILE_PATH = "/config_sub.json"   ;
+  #elif  (MODE == MODE_BRIDGE)
+    String g_FILE_PATH = "/config_bridge.json";
+  #else
+    String g_FILE_PATH = "/config.json"  ;
+  #endif
 
   //─────────────────
   // 接続条件

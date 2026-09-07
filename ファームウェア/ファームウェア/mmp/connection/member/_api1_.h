@@ -88,8 +88,8 @@ public:
       mode::RUN(getAID(), popDat.frame);
       //│
       //○モードを確認
-      if (MODE == MODE_BRIDGE) continue;
-      //│＼（ブリッジモードの場合）
+      if (MODE == MODE_BRIDGE && ctx.resMSG == "") continue;
+      //│＼（ブリッジモードで正常処理の場合）
       //│ ▽次へ：次のキューを走査
       //│
       //●実行結果をレスポンス

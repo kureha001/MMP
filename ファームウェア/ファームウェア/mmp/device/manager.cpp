@@ -35,15 +35,15 @@ namespace DeviceManager{
   //━━━━━━━━━━━━━━━━━
   static const T_DEVICE DEVICE[] = {
 
-    #if (MODE!=MODE_MAIN)||ADP_UART //※メインモード以外は強制適用
+    #if (MODE!=MODE_MAIN) || ADP_UART //※メインモード以外は強制使用
       { "UART", &devUART::ENABLED, devUART::START },
     #endif
 
-    #if (MODE==MODE_MAIN)||ADP_IIC //※メインモードは強制適用
+    #if (MODE!=MODE_MAIN) && ADP_IIC //※メインモードは使用不可
       { "IIC", &devIIC::ENABLED, devIIC::START },
     #endif
 
-    #if ADP_TCP||ADP_WAPI||ADP_WSOC||ADP_ESPN
+    #if ADP_TCP || ADP_WAPI || ADP_WSOC || ADP_ESPN
       { "WiFi", &devWiFi::ENABLED, devWiFi::START },
     #endif
 

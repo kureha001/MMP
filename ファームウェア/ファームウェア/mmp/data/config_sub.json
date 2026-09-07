@@ -8,8 +8,8 @@
   "host": [
     {
       "type": "sta",
-      "name": "MMP_STA-99",
-      "ip": "99"
+      "name": "MMP_STA-BRIDGE",
+      "ip": ""
     }
   ],
 

@@ -48,7 +48,7 @@ namespace ConnectionManager{
       adpFnAuth::INIT_TBL();
     //│
     //●経路アダプタを初期化
-    #if ADP_UART
+    #if (MODE!=MODE_MAIN) || ADP_UART //※メインモード以外は強制使用
       if (devUART::ENABLED) ADAPTER.push_back(new AdapterUART(ctx));
     #endif
 
@@ -71,7 +71,7 @@ namespace ConnectionManager{
       if (devBLE::ENABLED) ADAPTER.push_back(new AdapterBLE(ctx));
     #endif
 
-    #if ADP_I2C && (MODE != MODE_MAIN) //※メインモードでは使用不可
+    #if (MODE != MODE_MAIN) && ADP_IIC //※メインモードは使用不可
       if (devIIC::ENABLED) ADAPTER.push_back(new AdapterIIC(ctx));
     #endif
     //│

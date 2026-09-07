@@ -13,6 +13,7 @@
         #include "bridge_adapter/_index_.h"
 //┴┴┴┴┴
 
+
 //########################################################
 //# 処理詳細
 //########################################################
@@ -26,47 +27,61 @@
     //─────────────────
     // コンテクストの転送経路と接続
     //─────────────────
-    bool CONN_BEGIN() {
+    void CONN_BEGIN() {
+
+      int      ip4  = 0;
+      uint16_t port = 0;
+
       switch (ctx.transID) {
-        case ADP_ID_TCP  : TRANS::TCP ::begin(); break;
-        case ADP_ID_WSOC : TRANS::WSOC::begin(); break;
-        case ADP_ID_WAPI : TRANS::WAPI::begin(); break;
-        case ADP_ID_BLE  : TRANS::BLE ::begin(); break;
-        case ADP_ID_ESPN : TRANS::ESPN::begin(); break;
-        case ADP_ID_IIC  : TRANS::IIC ::begin(); break;
-        default          : return true;
+
+        //【TCP RAW】
+        case ADP_ID_TCP:{
+          ip4  = ctx.transDat1st.toInt();
+          port = (uint16_t)ctx.transDat2nd.toInt();
+          brdTCP::BEGIN(ip4, port); 
+          break;
+        }
+
+        //case ADP_ID_WSOC : brdWSOC::BEGIN(); break;
+        //case ADP_ID_WAPI : brdWAPI::BEGIN(); break;
+        //case ADP_ID_BLE  : brdBLE ::BEGIN(); break;
+
+        //【ESP-NOW】
+        case ADP_ID_ESPN:{
+          brdESPN::BEGIN(ctx.transDat1st);
+          break;
+        }
+
+        default: ctx.resMSG = "#ERB!";
       }
-      return false;
     }
     //─────────────────
     // コンテクストの転送経路にリクエストを送信
     //─────────────────
-    bool CONN_SEND() {
+    void CONN_SEND() {
       switch (ctx.transID) {
-        case ADP_ID_TCP  : TRANS::TCP ::send(); break;
-        case ADP_ID_WSOC : TRANS::WSOC::send(); break;
-        case ADP_ID_WAPI : TRANS::WAPI::send(); break;
-        case ADP_ID_BLE  : TRANS::BLE ::send(); break;
-        case ADP_ID_ESPN : TRANS::ESPN::send(); break;
-        case ADP_ID_IIC  : TRANS::IIC ::send(); break;
-        default          : return true;
+        case ADP_ID_TCP  : brdTCP ::SEND(); break;
+        //case ADP_ID_WSOC : brdWSOC::SEND(); break;
+        //case ADP_ID_WAPI : brdWAPI::SEND(); break;
+        //case ADP_ID_BLE  : brdBLE ::SEND(); break;
+        case ADP_ID_ESPN : brdESPN::SEND(); break;
+        default          : ctx.resMSG = "#ERS!";
       }
-      return false;
     }
     //─────────────────
     // 指定された経路を切断
     //─────────────────
-    bool CONN_END(int argRID) {
+    void CONN_END(int argRID) {
+      //○経路IDが有効化を確認
+      if (argRID < 0) return;
       switch (argRID) {
-        case ADP_ID_TCP  : TRANS::TCP ::end(); break;
-        case ADP_ID_WSOC : TRANS::WSOC::end(); break;
-        case ADP_ID_WAPI : TRANS::WAPI::end(); break;
-        case ADP_ID_BLE  : TRANS::BLE ::end(); break;
-        case ADP_ID_ESPN : TRANS::ESPN::end(); break;
-        case ADP_ID_IIC  : TRANS::IIC ::end(); break;
-        default          : return true;
+        case ADP_ID_TCP  : brdTCP ::END(); break;
+        //case ADP_ID_WSOC : brdWSOC::END(); break;
+        //case ADP_ID_WAPI : brdWAPI::END(); break;
+        //case ADP_ID_BLE  : brdBLE ::END(); break;
+        case ADP_ID_ESPN : brdESPN::END(); break;
+        default          : ctx.resMSG = "#ERE!";
       }
-      return false;
     }
 
   //━━━━━━━━━━━━━━━━━
@@ -88,6 +103,7 @@
         argCMD[i] = strCMD.substring(lastIndex, index);
         lastIndex = index + 1;
       }
+      ctx.accID = 0;
     //┴
     } /* MAKE_COMMAND() */
 
@@ -115,22 +131,23 @@
         int tmpRID = ctx.transID;
         //│
         //○コンテクストに転送先を保存
-        if      (cmd[0] == "SYS/BRIDGE/@TCP" ) {ctx.transID = ADP_ID_TCP  ;}
-        else if (cmd[0] == "SYS/BRIDGE/@WSOC") {ctx.transID = ADP_ID_WSOC ;}
-        else if (cmd[0] == "SYS/BRIDGE/@WAPI") {ctx.transID = ADP_ID_WAPI ;}
-        else if (cmd[0] == "SYS/BRIDGE/@BLE" ) {ctx.transID = ADP_ID_BLE  ;}
-        else if (cmd[0] == "SYS/BRIDGE/@ESPN") {ctx.transID = ADP_ID_ESPN ;}
-        else if (cmd[0] == "SYS/BRIDGE/@IIC" ) {ctx.transID = ADP_ID_IIC  ;}
-        else                                   {ctx.transID = -1; return 0;}
+        if      (cmd[0] == "BRIDGE/TCP" ) {ctx.transID = ADP_ID_TCP  ;}
+        //else if (cmd[0] == "BRIDGE/WSOC") {ctx.transID = ADP_ID_WSOC ;}
+        //else if (cmd[0] == "BRIDGE/WAPI") {ctx.transID = ADP_ID_WAPI ;}
+        //else if (cmd[0] == "BRIDGE/BLE" ) {ctx.transID = ADP_ID_BLE  ;}
+        else if (cmd[0] == "BRIDGE/ESPN") {ctx.transID = ADP_ID_ESPN ;}
+        else return 0; // ※特殊コマンドではないので早期リターン
         //│
         //○以前の転送先を切断
-        if (CONN_END(tmpRID)) return -1;
+        CONN_END(tmpRID);
+        if (ctx.resMSG != "") return 1;
         //│
         //○新しい転送先に接続
-        if (CONN_BEGIN()    ) return -2;
+        CONN_BEGIN();
+        if (ctx.resMSG != "") return 2;
         //│
         //▼返却：コマンド実行あり
-        return 1;
+        return 3;
         //┴
     } /* BRIDGE_COMMAND() */
 
@@ -144,19 +161,20 @@
   void RUN(){
     //┬
     //●特殊コマンドに応答
-    if (BRIDGE_COMMAND() != 0) return;
+    int ret = BRIDGE_COMMAND();
+    if (ret != 0) return;
     //│＼（特殊コマンドを実行した場合）
     //│ ▼中断：早期リターン
     //│
-    //◇┐[リクエストを転送]または[クライアントへレスポンス]
     if (ctx.adpID == ADP_ID_UART) CONN_SEND();
-    //├┐（UARTアダプタから受信した場合）
-      //●リクエストを転送
-      //┴
     else Serial.print(ctx.strFrame);
-    //└┐（その他）
-      //○MMPレスポンスをクライアント(USB-CDC)へ送信
-      //┴
+    //◇┐[リクエストを転送]または[クライアントへレスポンス]
+      //├┐（UARTアダプタから受信した場合）
+      //│●リクエストを転送実行
+      //│┴
+      //└┐（その他）
+        //○受信フレームをクライアント(USB-CDC)へレスポンス
+        //┴
     //┴
   } /* RUN() */
 

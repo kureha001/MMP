@@ -2,7 +2,7 @@
 //========================================================
 // 経路アダプタ／動作モード／ブリッジモード：経路アダプタ
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.0 (2026/09/07) 
 //========================================================
 #ifndef MEMBER_BRIDGE_H
 #define MEMBER_BRIDGE_H
@@ -11,48 +11,20 @@
 //========================================================
 // 役割
 //========================================================
- namespace TRANS{
-  // TCP RAW
-  namespace TCP{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace TCP */
-
-  // WEB Socket
-  namespace WSOC{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace WSOC */
-
-  // WEB Socket
-  namespace WAPI{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace WAPI */
-
-  // BLE
-  namespace BLE{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace BLE */
+  // TCP
+  #include "TCP.cpp"
+  namespace brdTCP{
+    void BEGIN(int argMMP_IP4, uint16_t argPort);
+    void SEND ();
+    void END  ();
+  } /* namespace brdESPN */
 
   // ESP-NOW
-  namespace ESPN{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace ESPN */
-
-  // IIC
-  namespace IIC{
-    bool begin() {return false;}
-    bool send()  {return false;}
-    bool end()   {return false;}
-  } /* namespace IIC */
-} /* namespace TRANS */
+  #include "ESP_NOW.cpp"
+  namespace brdESPN{
+    void BEGIN(String argMACStr);
+    void SEND ();
+    void END  ();
+  } /* namespace brdESPN */
 
 #endif // MEMBER_BRIDGE_H

@@ -38,7 +38,7 @@
     <label class="inline"><input type="radio" name="commMode" value="ws" checked> WebSocket</label>
     <label class="inline"><input type="radio" name="commMode" value="api"> WebAPI</label>
   </div>
-  <label class="inline">HOST/IP <input id="host" placeholder="例: 192.168.11.99" style="width:11rem"></label>
+  <label class="inline">HOST/IP <input id="host" placeholder="例: 192.168.2.99" style="width:11rem"></label>
   <label class="inline">PORT <input id="port" type="number" value="8080" min="1" max="65535"></label>
   <span id="wsControls" class="group">
     <button class="btn sec" id="btnConnect">接続</button>
@@ -91,7 +91,7 @@
   const wsControls = $('#wsControls');
   const chkJsonEl = $('#chkJson');
 
-  hostEl.value = location.hostname || '192.168.11.99';
+  hostEl.value = location.hostname || '192.168.2.99';
 
   let stopFlag = false;
   let ws = null;

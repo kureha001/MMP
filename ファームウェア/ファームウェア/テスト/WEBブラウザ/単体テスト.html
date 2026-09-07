@@ -45,7 +45,7 @@
 
 <div class="row">
   <label class="inline">ＩＰ:
-    <input id="host" placeholder="例: 192.168.11.99">
+    <input id="host" placeholder="例: 192.168.2.99">
   </label>
   <label class="inline">ポート:
     <input id="port" type="number" value="8082" min="1" max="65535" style="width:7rem">
@@ -190,7 +190,7 @@
   const apiLogsDiv = $('#apiLogs');
   const chkJsonEl = $('#chkJson');
 
-  hostEl.value = location.hostname || '192.168.11.99';
+  hostEl.value = location.hostname || '192.168.2.99';
   let ws = null;
 
   function updateModeUI() {

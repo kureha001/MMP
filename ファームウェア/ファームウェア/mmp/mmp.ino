@@ -20,6 +20,10 @@
   #include <Wire.h> // setup()
   //┴
 //┴
+
+//========================================================
+// １．活動資源を用意する
+//========================================================
 //┬
 //□┐情報
   //□環境設定
@@ -31,30 +35,30 @@
 //│
 //□┐組織
   //□部門
-  #include "Device.h"     // 通信デバイス
-  #include "Connection.h" // クライアント接続
-  #include "Command.h"    // コマンド実行
+  #include "Dep_Network.h" // 通信部門
+  #include "Dep_Command.h" // コマンド部門
+  #include "Dep_Connect.h" // 接続部門
 //┴┴
 
 //━━━━━━━━━━━━━━━━━
-// セットアップ部品
+// 始業開始のパーツ
 //━━━━━━━━━━━━━━━━━
   //─────────────────
-  // 活動に必要な資源を初期化
+  // 2-1.全部門に始業を指示する
   //─────────────────
   void initialize(){
     //┬
-    //●通信デバイス部門に初期化を依頼
-    //●接続クライアント部門に初期化を依頼
-    //●コマンド実行部門に初期化を依頼
-    DeviceManager    ::INIT();
-    ConnectionManager::INIT();
-    CommandManager   ::INIT();
+    //●通信部門に始業指示
+    //●コマンド部門に始業指示
+    //●接続部門に始業指示
+    DepNetwork::INIT();
+    DepCommand::INIT();
+    DepConnect::INIT();
     //┴
   } /* initialize() */
 
   //─────────────────
-  // オープニング
+  // 2-2.始業を宣言する
   //─────────────────
   void opening(){
     //┬
@@ -65,36 +69,36 @@
     if (MODE == MODE_BRIDGE) strMode = "Bridge";
     //│
     //○開始メッセージを出力
-    Serial.println("------------------------");
-    Serial.printf (" MMP [%s Mode]  %s\n", strMode, ctx.sysVer);
-    Serial.println("------------------------");
+    Serial.println("-----------------------------");
+    Serial.printf (" MMP[%s Mode] %s\n", ctx.sysVer, strMode);
+    Serial.println("-----------------------------");
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
       ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
-      CommandManager::RunCommand();
+      DepCommand::RunCommand();
     }
     //┴
   } /* opening() */
 
 //========================================================
-// セットアップ
+// ２．活動開始を準備する
 //========================================================
 void setup(){
   //┬
-  //●資源を初期化
-  //●オープニングを表示
+  //●2-1.資源を初期化
+  //●2-2.オープニングを表示
   initialize();
   opening();
   //┴
 } /* setup() */
 
 //========================================================
-// ポーリング
+// ３．業務を遂行し続ける
 //========================================================
 void loop(){
   //┬
-  //●クライアント接続部門に通常活動を指示
-  ConnectionManager::WORK();
+  //●接続部門に通常活動を指示
+  DepConnect::WORK();
   //┴
 } /* loop() */

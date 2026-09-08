@@ -1,11 +1,11 @@
-// filename : Dep_Command/module/_API_.h
+// filename : Dep_Command/module/_api_.h
 //========================================================
-// コマンド部門／担当：作業標準
+// コマンド部門／担当：担当課長（基本型）
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/03) 
 //========================================================
-#ifndef COMMAND_MEMBER_API_H
-#define COMMAND_MEMBER_API_H
+#ifndef CMD_MOD_H
+#define CMD_MOD_H
 #pragma once
 
 //========================================================
@@ -141,4 +141,4 @@ public:
       return s;
     } /* _Remove1st() */
 
-#endif // COMMAND_MEMBER_API_H
+#endif

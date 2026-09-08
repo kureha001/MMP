@@ -26,7 +26,7 @@
 #define MODE_SUB    1 // サブモード
 #define MODE_BRIDGE 2 // ブリッジモード
 // 現在の動作モード ※上記から選択
-#define MODE MODE_SUB
+#define MODE MODE_MAIN
 
 //─────────────────
 // 経路アダプタ選択

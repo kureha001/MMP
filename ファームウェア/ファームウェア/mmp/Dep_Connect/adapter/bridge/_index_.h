@@ -1,11 +1,11 @@
-// filename : bridge_adapter/mode/bridge_adapter/_index_.h
+// filename : Dep_Connect/adapter/bridge/_index_.h
 //========================================================
-// 経路アダプタ／動作モード／ブリッジモード：経路アダプタ
+// 接続部門／業務課／ブリッジ係：担当割一覧
 //--------------------------------------------------------
 // Ver 1.3.0 (2026/09/07) 
 //========================================================
-#ifndef MEMBER_BRIDGE_H
-#define MEMBER_BRIDGE_H
+#ifndef CONN_ADP_B_H
+#define CONN_ADP_B_H
 #pragma once
 
 //========================================================

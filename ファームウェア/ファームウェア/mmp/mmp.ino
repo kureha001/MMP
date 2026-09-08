@@ -34,10 +34,12 @@
 //│┴
 //│
 //□┐組織
-  //□部門
-  #include "Dep_Network.h" // 通信部門
-  #include "Dep_Command.h" // コマンド部門
-  #include "Dep_Connect.h" // 接続部門
+  //□通信部門
+  //□コマンド部門
+  //□接続部門
+  #include "Dep_Network/manager.h"
+  #include "Dep_Command/manager.h"
+  #include "Dep_Connect/manager.h"
 //┴┴
 
 //━━━━━━━━━━━━━━━━━
@@ -70,7 +72,7 @@
     //│
     //○開始メッセージを出力
     Serial.println("-----------------------------");
-    Serial.printf (" MMP[%s Mode] %s\n", ctx.sysVer, strMode);
+    Serial.printf (" MMP %s [Mode:%s]\n", ctx.sysVer, strMode);
     Serial.println("-----------------------------");
     //│
     //●ファンファーレを鳴らす

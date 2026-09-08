@@ -1,11 +1,11 @@
 // filename : Dep_Connect/adapter/_api1_.h
 //========================================================
-// 接続部門／業務担当：共通API（非同期キュー型）
+// 接続部門／業務課：担当課長（非同期キュー型）
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06)
 //========================================================
-#ifndef ADAPTER_QUEUE_BASE_H
-#define ADAPTER_QUEUE_BASE_H
+#ifndef CONN_ADP_API1_H
+#define CONN_ADP_API1_H
 
 #include "_api0_.h"
 #include <queue>
@@ -112,4 +112,4 @@ public:
   } /* handle() */
 }; /* class AdapterQueueBase */
 
-#endif // ADAPTER_QUEUE_BASE_H
+#endif

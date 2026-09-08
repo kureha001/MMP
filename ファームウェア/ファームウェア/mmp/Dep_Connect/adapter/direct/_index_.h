@@ -1,23 +1,12 @@
-// filename : Dep_Connect/adapter/_index_.h
+// filename : Dep_Connect/adapter/direct/_index_.h
 //========================================================
-// 接続部門／業務担当
+// 接続部門／業務課／ダイレクト：担当割一覧
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/06) 
 //========================================================
-#ifndef CONN_MEMBER_H
-#define CONN_MEMBER_H
+#ifndef CONN_ADP_D_H
+#define CONN_ADP_D_H
 #pragma once
-
-//========================================================
-// 必要な資源
-//========================================================
-//┬
-//□┐接続部門
-  //□┐統括マネージャ
-    //□担当：経路アダプタ
-    #include "../_api0_.h" // 基本
-    #include "../_api1_.h" // 上記にキューイング処理を派生追加
-//┴┴┴
 
 //========================================================
 // 担務
@@ -27,12 +16,8 @@
   //━━━━━━━━━━━━━━━━━
   #include "_run_main.cpp"
   #include "_run_sub.cpp"
-  namespace modeMain  {void RUN();} // メインモード
-  namespace modeSub   {void RUN();} // サブモード
-
-  //━━━━━━━━━━━━━━━━━
-  // UART
-  //━━━━━━━━━━━━━━━━━
+  namespace modeMain {void RUN();} // メインモード
+  namespace modeSub  {void RUN();} // サブモード
 
   //━━━━━━━━━━━━━━━━━
   // UART
@@ -96,6 +81,5 @@
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル
   }
-//┴┴┴┴
 
-#endif // CONN_MEMBER_H
+#endif

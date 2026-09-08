@@ -48,4 +48,4 @@ namespace devIIC {
     ENABLED = true;
     //┴
   } /* START() */
-} /* namespace devUART */
+} /* namespace devIIC */

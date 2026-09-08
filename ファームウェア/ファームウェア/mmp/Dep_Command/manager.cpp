@@ -15,11 +15,11 @@
 //========================================================
 //┬
 //□┐コマンド部門
-  //□担当課長（基本型）
+  //□モジュール課：担当課長（基本型）
   #define  DAT_LENGTH 20      // トークン最大長（未定義時のフォールバック）
   #include "module/_api_.h"   // ModuleBase
   //│
-  //□担当：機能モジュール
+  //□モジュール課：担当
   #include "module/system.h"  // システム管理
   #include "module/analog.h"  // アナログ入力
   #include "module/digital.h" // デジタル入出力

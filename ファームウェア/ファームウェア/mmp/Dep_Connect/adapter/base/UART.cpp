@@ -1,14 +1,9 @@
-// filename : Dep_Connect/adapter/direct/IIC.cpp
+// filename : Dep_Connect/adapter/base/UART.cpp
 //========================================================
-// 接続部門／業務課／ダイレクト係：IIC 担当
+// 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06) 
 //========================================================
-//┬
-//□┐インクルード
-  //□Arduinoシステム
-  #include <Wire.h>
-//┴┴
 
 //========================================================
 // 組織図
@@ -16,14 +11,14 @@
 //┬
 //□┐接続部門
   //□┐業務課
-    //□ダイレクト係
+    //□担当(標準型)
     #include "_index_.h"
 //┴┴┴
 
 //########################################################
 //# 処理詳細
 //########################################################
-class AdapterIIC : public AdapterQueueBase<uint8_t> {
+class AdapterUART : public AdapterQueueBase<Stream*> {
 public:
   //━━━━━━━━━━━━━━━━━
   // 抽象基底クラスからコンテクストを継承
@@ -37,15 +32,21 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_IIC;
+    const int ADP_ID = ADP_ID_UART;
     int getAID() const override {return ADP_ID;} // 基底クラスに連携
-    
-  //━━━━━━━━━━━━━━━━━
-  // サービス関連情報
-  //━━━━━━━━━━━━━━━━━
-    static const uint8_t IIC_ADDR_MIN = 0xA0;
-    static const uint8_t IIC_ADDR_MAX = 0xA4;
-    String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
+
+//========================================================
+// 接続情報管理
+//========================================================
+  //─────────────────
+  // 基本情報
+  //─────────────────
+  int            SS_SLOTS = 2   ; // 固定スロット(USB(CDC)に限定)
+  struct T_SS_SLOT{
+    SS_SLOT_TYPE Base           ; // 基本メンバ
+    Stream*      CONN  = nullptr; // アクセス資源(参照)
+  };
+  T_SS_SLOT*     ssTBL          ; // 事前予約
 
 //========================================================
 // レスポンス
@@ -54,11 +55,10 @@ private:
   // クライアントにレスポンス
   // ※AdapterQueueBaseをオーバーライド
   //─────────────────
-  void SEND_CONN(uint8_t argConn) override {
+  void SEND_CONN(Stream* argConn) override {
     //┬
-    //○レスポンス内容を返送バッファにセット
-    //  ※ここではレスポンスしないでスレッド処理に回す
-    CONN_TX[argConn - IIC_ADDR_MIN] = ctx.resMSG;
+    //○メッセージをレスポンス
+    if (argConn != nullptr) argConn->print(ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -71,37 +71,26 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  //static void ON_RECIVE(){
   void ON_RECIVE(){
     //┬
-    //◎┐スレーブ（IICアドレス）を走査
-    for (uint8_t ID = IIC_ADDR_MIN; ID <= IIC_ADDR_MAX; ID++) {
-      //│＼（最後のアドレスに達した場合）
-      //│ ▽完了：走査を終了
+    //◎┐スロットを走査
+    for (int ID = 0; ID < SS_SLOTS; ID++) {
+      //│＼（最後のスロットに達した場合）
+      //│ ▼完了：走査を終了
       //│
-      //○前処理
-      String retFrame = "";
-      int    nowID    = ID - IIC_ADDR_MIN;
-      String msg      = CONN_TX[nowID] == "" ? "####!" : CONN_TX[nowID];
-      CONN_TX[nowID]  = "";
+      //○スロットの状態を確認
+      if (ssTBL[ID].CONN == nullptr) continue;
+      //│＼（未使用の場合）
+      //│ ▽次へ：次のスロットを走査
       //│
-      //○レスポンスをスレーブへ返信
-      Wire.beginTransmission(ID);
-      Wire.write((const uint8_t*)msg.c_str(),msg.length());
-      Wire.endTransmission(false);
-      //│
-      //○リクエストをスレーブから取得
-      Wire.requestFrom(ID, SS_RX_SIZE); // 指定サイズ分取得する
-      while (Wire.available()) retFrame += (char)Wire.read();
-      //│
-      //○末尾の余分をカット
-      int idx = retFrame.indexOf('!');
-      if (idx < 0) continue;
-      retFrame = retFrame.substring(0, idx + 1);
-      if (retFrame == "!") continue;
+      //●ストリームを受信
+      String retFrame = adpFnStream::GET_FRAME(*(ssTBL[ID].CONN), ssTBL[ID].Base);
+      if (retFrame == "") continue;
+      //│＼（フレームが未完成の場合）
+      //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue((uint8_t)ID, retFrame);
+      pushQueue(ssTBL[ID].CONN, retFrame);
       //┴
     } /* END-for */
     //┴
@@ -109,10 +98,11 @@ private:
 
   //━━━━━━━━━━━━━━━━━
   // スレッド処理の定義
+  // ※この関数はスタティックにする
   //━━━━━━━━━━━━━━━━━
   TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
-    AdapterIIC* self = static_cast<AdapterIIC*>(pvParameters);
+    AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
     for (;;) {
       if (self) self->ON_RECIVE();        // 疑似コールバック関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
@@ -127,8 +117,26 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterIIC(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
+  AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
+    //●┐接続管理TBLを作成
+      //○領域を確保
+      SS_SLOTS = (MODE == MODE_MAIN) ? 2 :1;
+      ssTBL    = new T_SS_SLOT[SS_SLOTS];
+      //│
+      //○USB(CDC)をセット
+      ssTBL[0].Base.used = true   ; // 使用中
+      ssTBL[0].CONN      = &Serial; // 参照先を登録
+      //│
+      //○動作モードを確認
+      if (MODE == MODE_MAIN) {
+      //│＼（メインモードの場合）
+          //○UART1以降をセット
+          ssTBL[1].Base.used = true    ; // 使用中
+          ssTBL[1].CONN      = &Serial1; // 参照先を登録
+          //┴
+      } /* END-if */
+    //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
       StreamQueue           , // 実行するタスク関数
@@ -140,10 +148,7 @@ public:
     );
     //│
     //○メッセージ表示
-    Serial.print  (String(" [OK] IIC       -> "));
-    Serial.print  (String(IIC_ADDR_MIN));
-    Serial.print  (" ～ ");
-    Serial.println(String(IIC_ADDR_MAX));
+    Serial.println(String(" [OK] USB/UART  -> #0,#1"));
     //┴
-  } /* constractor AdapterIIC() */
-}; /* class AdapterIIC */
+  } /* constractor AdapterUART() */
+}; /* class AdapterUART */

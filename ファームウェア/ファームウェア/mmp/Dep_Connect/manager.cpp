@@ -44,13 +44,15 @@
   //□共通課
   #include "common/_index_.h"
   //│
-  //□┐業務課：担当課長
-  #include "adapter/_index_.h"
+  //□┐業務課
     //│
-    //□ダイレクト課
-    //□ブリッジ課
-     #include "adapter/direct/_index_.h" 
-    //#include "adapter/bridge/_index_.h" 
+    //□作業標準：抽象基底クラス、モード部品
+    #include "adapter/_template_/_index_.h"
+    //│
+    //□担当(標準型)
+    #include "adapter/base/_index_.h" 
+    //│
+    //□担当(ブリッジ型)
 //┴┴┴
 
 //########################################################

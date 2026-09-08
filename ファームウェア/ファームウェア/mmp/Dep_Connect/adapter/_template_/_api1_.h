@@ -1,6 +1,6 @@
-// filename : Dep_Connect/adapter/_api1_.h
+// filename : Dep_Connect/adapter/_template_/_api1_.h
 //========================================================
-// 接続部門／業務課：担当課長（非同期キュー型）
+// 接続部門／業務課／作業標準：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06)
 //========================================================
@@ -11,9 +11,16 @@
 #include <queue>
 #include <mutex>
 
-namespace modeMain { void RUN(); }
-namespace modeSub  { void RUN(); }
+//========================================================
+// モード処理係（前方宣言）
+//========================================================
+namespace modeMain   { void RUN(); }
+namespace modeSub    { void RUN(); }
+namespace modeBridge { void RUN(); }
 
+//========================================================
+// 作業標準：抽象基底クラス（非同期キュー型）
+//========================================================
 template <typename T>
 class AdapterQueueBase : public AdapterBase {
 protected:
@@ -34,6 +41,20 @@ private:
   //━━━━━━━━━━━━━━━━━
   virtual int  getAID() const = 0;
   virtual void SEND_CONN(T argConn) = 0;
+
+  //━━━━━━━━━━━━━━━━━
+  // コンテキストを初期化
+  //━━━━━━━━━━━━━━━━━
+  void setupCTX(String argFrame) {
+    ctx.adpID    = getAID(); // アダプタID
+    ctx.strFrame = argFrame; // フレーム
+    if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
+    if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
+    ctx.resMSG  = ""  ; // レスポンスメッセージ
+    ctx.cmdPath = ""  ; // コマンドパス
+    ctx.authCD  = ""  ; // 認証コード
+    ctx.accID   = -1  ; // アクセスID
+  }
 
 public:
   using AdapterBase::AdapterBase;
@@ -87,19 +108,15 @@ public:
       //│ ●エラーを強制レスポンス
       //│ ▽次へ：次のキューを走査
       //│
-      //●コマンドを実行
-      ctx.adpID    = getAID(); // アダプタID
-      ctx.strFrame = popDat.frame; // フレーム
-      if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
-      if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-      ctx.resMSG   = ""  ; // レスポンスメッセージ
-      ctx.cmdPath  = ""  ; // コマンドパス
-      ctx.authCD   = ""  ; // 認証コード
-      ctx.accID    = -1  ; // アクセスID
+      //●コンテキストを初期化
+      setupCTX(popDat.frame);
       //│
       //●モード別に後続処理
-      if (MODE == MODE_MAIN) modeMain::RUN();
-      if (MODE == MODE_SUB ) modeSub ::RUN();
+      switch (MODE) {
+      case MODE_MAIN   : modeMain  ::RUN(); break;
+      case MODE_SUB    : modeSub   ::RUN(); break;
+      case MODE_BRIDGE : modeBridge::RUN(); break;
+      }
       //│
       //●実行結果をレスポンス
       SEND_CONN(popDat.conn);

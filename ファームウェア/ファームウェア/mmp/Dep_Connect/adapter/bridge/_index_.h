@@ -7,26 +7,12 @@
 #pragma once
 
 //========================================================
-// 必要な資源
+// 担務
 //========================================================
-//┬
-//□┐接続部門
-  //□┐統括マネージャ
-    //□担当：経路アダプタ
-    #include "../_api0_.h" // 基本
-    #include "../_api1_.h" // 上記にキューイング処理を派生追加
-//┴┴┴
 
-//========================================================
-// 役割
-//========================================================
   //━━━━━━━━━━━━━━━━━
-  // 共通部品
+  // TCP RAW
   //━━━━━━━━━━━━━━━━━
-  #include "_run_bridge.cpp"
-  namespace modeBridge{void RUN();} // ブリッジモード
-
-  // TCP
   #include "TCP.cpp"
   namespace brdTCP{
     void BEGIN(int argMMP_IP4, uint16_t argPort);
@@ -34,10 +20,24 @@
     void END  ();
   } /* namespace brdESPN */
 
-  // ESP-NOW
+  //━━━━━━━━━━━━━━━━━
+  // WEB Socket
+  //━━━━━━━━━━━━━━━━━
+
+  //━━━━━━━━━━━━━━━━━
+  // WEB API
+  //━━━━━━━━━━━━━━━━━
+
+  //━━━━━━━━━━━━━━━━━
+  // ESP NOW
+  //━━━━━━━━━━━━━━━━━
   #include "ESP_NOW.cpp"
   namespace brdESPN{
     void BEGIN(String argMACStr);
     void SEND ();
     void END  ();
   } /* namespace brdESPN */
+
+  //━━━━━━━━━━━━━━━━━
+  // BLE
+  //━━━━━━━━━━━━━━━━━

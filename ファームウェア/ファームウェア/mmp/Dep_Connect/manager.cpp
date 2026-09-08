@@ -12,6 +12,47 @@
   #include <mutex>  // 経路アダプタが使用
 //┴┴
 
+//========================================================
+// 共有資源
+//========================================================
+//┬
+//□┐情報
+  //│
+  //□経路ID
+  inline constexpr int ADP_ID_UART = 0;
+  inline constexpr int ADP_ID_TCP  = 1;
+  inline constexpr int ADP_ID_WAPI = 2;
+  inline constexpr int ADP_ID_WSOC = 3;
+  inline constexpr int ADP_ID_BLE  = 4;
+  inline constexpr int ADP_ID_ESPN = 5;
+  inline constexpr int ADP_ID_IIC  = 6;
+  //│
+  //□ストリーム受信型の接続管理
+  struct SS_SLOT_TYPE {      // 接続管理スロット
+    bool    used   = false ; // スロット有効性
+    String  rx     = ""    ; // 受信バッファ
+    bool    isOver = false ; // 受信バッファ容量超過判定
+  };
+  inline constexpr int SS_RX_SIZE = 128; // 受信バッファ容量
+//┴┴
+
+//========================================================
+// 組織図
+//========================================================
+//┬
+//□┐接続部門
+  //□共通課
+  #include "common/_index_.h"
+  //│
+  //□┐業務課：担当課長
+  #include "adapter/_index_.h"
+    //│
+    //□ダイレクト課
+    //□ブリッジ課
+     #include "adapter/direct/_index_.h" 
+    //#include "adapter/bridge/_index_.h" 
+//┴┴┴
+
 //########################################################
 //# 部門長の役務（詳細）
 //########################################################
@@ -28,7 +69,8 @@ namespace DepConnect{
 // 公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // １．部下を招集
+  //（１）本部の始業指示に応じる
+  // → 部下を招集
   //━━━━━━━━━━━━━━━━━
   void INIT() {
     //┬
@@ -93,11 +135,12 @@ namespace DepConnect{
   } /* INIT_ADAPTER() */
 
   //━━━━━━━━━━━━━━━━━
-  // ２．部下に業務遂行を指示
+  //（２）本部の通常活動の指示に応じる
+  // → 部下に業務遂行を指示
   //━━━━━━━━━━━━━━━━━
   void WORK(){
     //┬
-    //◎┐業務係に業務遂行を指示
+    //◎┐業務課の担当に業務遂行を指示
     for (auto* adp : ADAPTER) {
       //│＼（全員に指示を終えた場合）
       //│ ▽完了:業務遂行の指示を終える

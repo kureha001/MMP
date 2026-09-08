@@ -10,6 +10,24 @@
   #include <vector> // 登録コンテナが使用
 //┴
 
+//========================================================
+// 組織図
+//========================================================
+//┬
+//□┐コマンド部門
+  //□担当課長（基本型）
+  #define  DAT_LENGTH 20      // トークン最大長（未定義時のフォールバック）
+  #include "module/_api_.h"   // ModuleBase
+  //│
+  //□担当：機能モジュール
+  #include "module/system.h"  // システム管理
+  #include "module/analog.h"  // アナログ入力
+  #include "module/digital.h" // デジタル入出力
+  #include "module/pwm.h"     // PWM出力
+  #include "module/IIC.h"     // IIC通信
+  #include "module/mp3.h"     // MP3プレイヤー
+//┴┴
+
 //########################################################
 //# 部門長の役務（詳細）
 //########################################################
@@ -18,13 +36,28 @@ namespace DepCommand {
 // 非公開機能
 //========================================================
   //─────────────────
-  // プレイヤー（機能モジュール）を統括
+  // 基本情報
   //─────────────────
     //┬
-    //□コンテナを用意
+    //□制限事項
+    #define DAT_COUNT      10 // コマンド＋引数の個数
+    #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
+    //│
+    //□機能モジュール情報
+    struct T_MOD {
+    const char* name; // 名前
+    const char* desc; // 説明
+    };
+    //┴
+
+  //─────────────────
+  // 出席名簿を作成
+  //─────────────────
+    //┬
+    //□空の名簿を用意
     std::vector<ModuleBase*> MODULE;
     //│
-    //□プロファイルを定義
+    //□担当のプロファイル（名前・説明）カードを用意
     static const T_MOD modSYS    = {"SYS"    , "System Management"   };
     static const T_MOD modANA_I  = {"ANALOG" , "Analog Input"        };
     static const T_MOD modDIG_IO = {"DIGITAL", "Digital Input/Output"};
@@ -32,7 +65,7 @@ namespace DepCommand {
     static const T_MOD modIIC    = {"IIC"    , "IIC Read/Write"      };
     static const T_MOD modMP3    = {"MP3"    , "MP3 Player"          };
     //│
-    //□コンテナ登録のエントリー
+    //□出席名簿にプロファイルカードを格納
     static const T_MOD* const MOD_LIST[] = {
         &modSYS,
         &modANA_I,
@@ -42,7 +75,7 @@ namespace DepCommand {
         &modMP3,
     };
     //│
-    //□機能モジュール総数
+    //□出席名簿の総件数
     static const size_t MODs = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
     //┴
 
@@ -50,7 +83,8 @@ namespace DepCommand {
 // 公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // １．部下を招集
+  //（１）本部の始業指示に応じる
+  // → 部下を招集・待機
   //━━━━━━━━━━━━━━━━━
   void INIT(){
     //┬
@@ -62,7 +96,7 @@ namespace DepCommand {
     //○始業のあいさつ（開始）
     Serial.println("<<機能モジュールの初期化>>");
     //│
-    //○部下（機能モジュール）を招集（抽象化・一括管理）
+    //○参加名簿と共に部下を招集（抽象化・一括管理）
     MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
     MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
     MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
@@ -70,7 +104,7 @@ namespace DepCommand {
     MODULE.push_back(new ModuleIIC    (ctx, modIIC.name   , modIIC.desc   ));
     MODULE.push_back(new ModuleMP3    (ctx, modMP3.name   , modMP3.desc   ));
     //│
-    //◎┐全担当を点呼
+    //◎┐担当の点呼
     Serial.print(" Add In ->");
     for (auto* mod : MODULE){
       //│＼（全機能モジュールを走査し終えた場合）
@@ -87,7 +121,8 @@ namespace DepCommand {
   } /* INIT() */
 
   //━━━━━━━━━━━━━━━━━
-  // ２．部下に業務遂行を指示
+  //（２）接続部門のコマンド実行指示に応じる
+  // → 部下に業務遂行を指示
   //━━━━━━━━━━━━━━━━━
   void RunCommand(){
     //┬

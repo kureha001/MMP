@@ -1,16 +1,16 @@
 // filename : Dev_Network/device/BLE.cpp
 //========================================================
-// 通信部門／担当：デバイス（BLEデバイス）
+// 通信部門／デバイス課：BLE 担当
 //--------------------------------------------------------
 // Ver 1.2.2 (2026/09/04) 
 //========================================================
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <BLEDevice.h>
-  #include <BLEUtils.h>
-  #include <BLEServer.h>
-  #include <BLE2902.h>
+  #include <BLEDevice.h> // BLE全体の初期化・管理用,名前設定.Central（親機）/Peripheral（子機）としての基本機能の起動
+//  #include <BLEUtils.h> // UUIDのフォーマット変換,BLEの通信データを文字列やバイト配列に相互変換
+//  #include <BLEServer.h> // Server（ペリフェラル / 子機）機能の構築,接続・切断時のイベントハンドラ（コールバック）を設定
+  #include <BLE2902.h> // Notification（通知）/ Indication 機能の有効化,キャラクタリスティックに追加し、「値更新の自動通知」を有効化
   //┴
 //┴
 

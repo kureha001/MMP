@@ -2,14 +2,16 @@
 //========================================================
 // 通信部門：部門長
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) IICポートを追加 
+// Ver 1.2.3 (2026/09/06)
+//========================================================
+
+//========================================================
+// 組織図
 //========================================================
 //┬
-//■┐インクルード
-  //■Arduinoシステム
-  #include <BLEDevice.h>
-  #include <BLEServer.h>
-  #include <BLEUtils.h>
+//□┐通信部門
+  //□デバイス課
+  #include "device/_index_.h"
 //┴┴
 
 //########################################################
@@ -20,35 +22,36 @@ namespace DepNetwork{
 // 共有資源
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // １．部下を招集
+  // 部下を招集
   //━━━━━━━━━━━━━━━━━
   //┬
-  //○部下の座席を用意
+  //□座席を用意
   struct T_RECORD {
     const char* name     ; // デバイス名
       bool* pEnabled   ; // 有効フラグへのポインタ
       void  (*pStart)(); // 開始関数ポインタ
   }; /* struct */
-  //│
-  //○┐部下（通信デバイス）を招集
+  //┴
+  //┬
+  //□┐部下（通信デバイス）を招集
   static const T_RECORD DB[] = {
     //│
-    //○UART担当 ※メインモード以外は強制
+    //□UART担当 ※メインモード以外は強制
     #if (MODE!=MODE_MAIN) || ADP_UART
     { "UART", &devUART::ENABLED, devUART::START },
     #endif
     //│
-    //○IIC担当 ※メインモードは強制(PWMモジュールが使用)
+    //□IIC担当 ※メインモードは強制(PWMモジュールが使用)
     #if (MODE==MODE_MAIN) || ADP_IIC
     { "IIC", &devIIC::ENABLED, devIIC::START },
     #endif
     //│
-    //○WiFi担当
+    //□WiFi担当
     #if ADP_TCP || ADP_WAPI || ADP_WSOC || ADP_ESPN
     { "WiFi", &devWiFi::ENABLED, devWiFi::START },
      #endif
     //│
-    //○BLE担当
+    //□BLE担当
     #if ADP_BLE
     { "BLE" , &devBLE::ENABLED, devBLE::START },
     #endif
@@ -62,21 +65,22 @@ namespace DepNetwork{
 // 公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // ２．部下に業務遂行を指示
+  //（１）本部の始業指示に応じる
+  // → 部下に業務遂行を指示
   //━━━━━━━━━━━━━━━━━
   void INIT() {
     //┬
     //○USB(CDC)ポートを初期化
     Serial.begin(115200);          // USB(CDC)
     Serial.setDebugOutput(false);  // SDKデバッグ出力を抑止
-    delay(2000);                   // 安定するまで待つ
+    delay(500);                   // 安定するまで待つ
     //│
     //○始業のあいさつ（開始）
     Serial.println("<<通信デバイスの初期化>>");
-    Serial.println(" [Serial device]"  );
+    Serial.println(" [UART device]"  );
     Serial.println("  [OK] USB (CDC) -> 115200bps");
     //│
-    //◎┐部下（通信デバイス）に業務遂行を指示
+    //◎┐デバイス課の担当に業務遂行を指示
     for (size_t devID = 0; devID < DBs; ++devID) {
       //│＼（全員に指示を終えた場合）
       //│ ▽完了:業務遂行の指示を終える

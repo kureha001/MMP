@@ -1,13 +1,13 @@
 // filename : Dep_Connect/adapter/_api1_.h
 //========================================================
-// 接続部門／業務担当：アダプタAPI（非同期キュー型）
+// 接続部門／業務担当：共通API（非同期キュー型）
 //--------------------------------------------------------
 // Ver 1.2.3 (2026/09/06)
 //========================================================
 #ifndef ADAPTER_QUEUE_BASE_H
 #define ADAPTER_QUEUE_BASE_H
 
-#include "_index_.h"
+#include "_api0_.h"
 #include <queue>
 #include <mutex>
 

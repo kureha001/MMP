@@ -37,13 +37,17 @@
 //========================================================
 //┬
 //□┐接続部門
-  //□┐統括マネージャ
+  //│
+  //□共通係
+  #include "common/_index_.h"
+  //│
+  //□┐業務係：経路アダプタ
     //│
-    //□共通係
-    #include "common/_index_.h"
+    //□直結型（メインモード、サブモード）
+    #include "adapter/direct/_index_.h" 
     //│
-    //□業務係：経路アダプタ（メイン・サブ用）
-    #include "adapter/_index_.h" 
+    //□ブリッジ型
+    //#include "adapter/bridge/_index_.h" 
 //┴┴┴
 
 #endif // CONN_H

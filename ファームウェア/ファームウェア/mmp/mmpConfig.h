@@ -36,7 +36,7 @@
 //─────────────────
 #define ADP_UART true // UART ※本体＋サブ、ブリッジでは自動適用
 #define ADP_TCP  true // TCP RAW
-#define ADP_WAPI false // WWB API
+#define ADP_WAPI true // WWB API
 #define ADP_WSOC true // WEB Socket
 #define ADP_ESPN true // ESP NOW
 #define ADP_BLE  false // BLE

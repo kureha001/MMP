@@ -7,8 +7,8 @@
 //┬
 //□┐インクルード
   //□追加ライブラリ：WebSockets by Markus Sattler
-  #include <WebSocketsServer.h>
-  #include <WebSocketsClient.h>
+  #include <WebSocketsServer.h> // メインモード，サブモード
+  #include <WebSocketsClient.h> // ブリッジモード
 //┴┴
 
 //========================================================
@@ -138,10 +138,10 @@ public:
 #endif
   } /* constractor AdapterWEB_Socket() */
 
+#if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // 転送受付
   //━━━━━━━━━━━━━━━━━
-#if (MODE == MODE_BRIDGE)
   void trans() {
     //┬
     //○クライアントを起動

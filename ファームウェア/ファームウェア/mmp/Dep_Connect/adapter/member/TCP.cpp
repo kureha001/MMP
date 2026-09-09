@@ -18,7 +18,7 @@
 //┬
 //□┐接続部門
   //□┐業務課
-    //□担当(標準型)
+    //□担当
     #include "_index_.h"
 //┴┴┴
 
@@ -277,27 +277,34 @@ public:
   } /* constractor AdapterTCP() */
 
 
+#if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // 転送受付
   //━━━━━━━━━━━━━━━━━
-#if (MODE == MODE_BRIDGE)
   void trans() {
     //┬
-    //◇クライアントを起動
+    //◇┐クライアントを起動
     if (!MY_NET.connected()) {
-      String   ip   = ctx.transDat1st;
-      uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
-      MY_NET.setTimeout(2000);
-      if (!MY_NET.connect(ip.c_str(), port)) {ctx.resMSG = "#CNT!"; return;}
-      //│
-      //○0番スロットをリセットして自身を登録準備
-      SS_INI_SLOT(ssTBL[0]);
-      //│
-      //●受信タスクが未起動なら起動（※二重起動防止）
-      if (TaskHandle == NULL) {
-        RUN_TASK();
-      }
-    }
+      //├┐（未接続の場合）
+        //│
+        //○TCPクライアントを起動
+        String   ip   = ctx.transDat1st;
+        uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
+        MY_NET.setTimeout(2000);
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.resMSG = "#CNT!"; return;}
+        //│＼（接続に失敗した場合）
+        //│ ○コンテクストにエラーIDをセット
+        //│ ▼終了：早期リターン
+        //│
+        //○0番スロットをリセットして自身を登録準備
+        SS_INI_SLOT(ssTBL[0]);
+        //│
+        //●受信タスクが未起動なら起動（※二重起動防止）
+        if (TaskHandle == NULL) RUN_TASK();
+        //┴
+      //└┐（その他）
+        //┴
+    } /* END-if */
     //│
     //○リクエストを転送
     MY_NET.print(ctx.strFrame);

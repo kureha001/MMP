@@ -2,12 +2,13 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：WEB API 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/06) 
+// Ver 1.3.0 (2026/09/10) 
 //========================================================
 //┬
 //□┐インクルード
   //□Arduinoシステム
-  #include <WebServer.h> // ユーザ受付資源
+  #include <WebServer.h>  // メインモード，サブモード
+  #include <HTTPClient.h> // ブリッジモード
 //┴┴
 
 //========================================================
@@ -16,7 +17,7 @@
 //┬
 //□┐接続部門
   //□┐業務課
-    //□担当(標準型)
+    //□担当
     #include "_index_.h"
 //┴┴┴
 
@@ -37,18 +38,23 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_WAPI;
-    bool IS_JSON = false;
+    const int ADP_ID  = ADP_ID_WAPI;
+    bool      IS_JSON = false;
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    WebServer* ADP_SRV  = nullptr; // WEBサーバ
-    int        SRV_PORT = 8080   ; // ポート番号
+#if (MODE == MODE_BRIDGE)
+    HTTPClient  MY_NET          ; // HTTPクライアント(実体)
+#else
+    WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
+    int        MY_PORT = 8080   ; // ポート番号
+#endif
 
 //========================================================
 // レスポンス
 //========================================================
+#if (MODE != MODE_BRIDGE)
     //─────────────────
     // CORS許可用HTTPヘッダ追加
     //----------------------------------
@@ -74,21 +80,25 @@ private:
         argSrv.sendHeader("Access-Control-Max-Age", "600");
         //┴
     } /* ADD_CROSS() */
+#endif
 
   //─────────────────
   // JSON形式でレスポンス
   //─────────────────
   inline void SEND_JSON(const String& argJSON) {
+#if (MODE != MODE_BRIDGE)
     //┬
     //○JSONをレスポンス
-    ADD_CROSS(*ADP_SRV);
-    ADP_SRV->send(200, "application/json; charset=utf-8", argJSON);
+    ADD_CROSS(*MY_NET);
+    MY_NET->send(200, "application/json; charset=utf-8", argJSON);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
   } /* SEND_JSON() */
 
+#if (MODE != MODE_BRIDGE)
   //─────────────────
   // コマンド管理の戻り値が数値型であるか判定
   //─────────────────
@@ -232,22 +242,25 @@ private:
     SEND_JSON(js);
     //┴
   } /* SEND_CONN_JSON() */
-
+#endif
 
   //─────────────────
   // クライアントに送信(通常の5バイト)
   //─────────────────
   void SEND_CONN(){
+#if (MODE != MODE_BRIDGE)
     //┬
     //○テキストをレスポンス
-    ADD_CROSS(*ADP_SRV);
-    ADP_SRV->send(200, "text/plain; charset=utf-8", ctx.resMSG);
+    ADD_CROSS(*MY_NET);
+    MY_NET->send(200, "text/plain; charset=utf-8", ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
   } /* SEND_CONN() */
 
+#if (MODE != MODE_BRIDGE)
 //========================================================
 // リクエスト管理
 //========================================================
@@ -309,7 +322,7 @@ private:
           //│ ▼終了：早期リターン
           //│
           //◇┐レスポンスのスタイルを確認
-          String strFrame = ADP_SRV->uri();
+          String strFrame = MY_NET->uri();
           if (strFrame.endsWith("!!")) {
           //├┐（フレームのスタイルがJSON指定の場合）
             //○JSONスタイルにセット
@@ -327,7 +340,7 @@ private:
           ctx.strFrame = strFrame;
           if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
           if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-          ctx.resMSG   = ""  ; // レスポンスメッセージ
+          ctx.resMSG   = ""  ; // レスポンスMSG
           ctx.cmdPath  = ""  ; // コマンドパス
           ctx.authCD   = ""  ; // 認証コード
           ctx.accID    = -1  ; // アクセスID
@@ -342,7 +355,7 @@ private:
         }); /* server.onNotFound */
         //┴
     }/* registRoutes() */
-
+#endif
 
 //========================================================
 // 担務（公開機能）
@@ -352,24 +365,86 @@ public:
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
   AdapterWEB_API(MmpContext& argCtx) : AdapterBase(argCtx) {
+#if (MODE == MODE_BRIDGE)
+    //┬
+    //○メッセージ表示
+    Serial.printf(" [OK] HTTP Client\n");
+    //┴
+
+#else
     //┬
     //○サービス資源を生成
-    ADP_SRV = new WebServer(SRV_PORT); // サーバ生成
-    registRoutes(*ADP_SRV)           ; // ルーティング登録
-    ADP_SRV->begin()                 ; // サーバ起動
+    MY_NET = new WebServer(MY_PORT); // サーバ生成
+    registRoutes(*MY_NET)           ; // ルーティング登録
+    MY_NET->begin()                 ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] WEB API   -> port ") + String(SRV_PORT));
+    Serial.printf(" [OK] WEB Server-> port %d\n", MY_PORT);
     //┴
+#endif
   } /* constractor AdapterWEB_API() */
+
+
+#if (MODE == MODE_BRIDGE)
+  //━━━━━━━━━━━━━━━━━
+  // 転送受付
+  //━━━━━━━━━━━━━━━━━
+  void trans() {
+    //┬
+    //○リクエストを転送（HTTPクライアントを接続）
+    String ip   = ctx.transDat1st;
+    String port = ctx.transDat2nd;
+    String cmd  = ctx.strFrame;
+    String strURL = String("http://") + ip + ":" + port + "/" + cmd;
+    MY_NET.begin(strURL);
+    //│
+    //●レスポンスを取得
+    if (MY_NET.GET() <= 0) {
+    //│＼（取得できない場合）
+    //│ ○レスポンスMSGにエラーIDをセット
+    //│ ▼終了：早期リターン
+      ctx.resMSG = "#CNT!";
+      return;
+    } /* END-if */
+    //│
+    //○レスポンスを取得
+    String strRes = MY_NET.getString();
+    //│
+    //○HTTPクライアントを切断
+    MY_NET.end();
+    //│
+    //○レスポンスをコンテクストに反映
+    ctx.strFrame = strRes;
+    ctx.resMSG   = strRes;
+    //┴
+  };
+#endif
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
   void handle() override {
+#if (MODE == MODE_BRIDGE)
+    //┬
+    //○転送依頼を確認
+    if (!ctx.transOn || ADP_ID != ctx.transID) return;
+    //│＼（自分宛に転送依頼がない場合）
+    //│ ▼終了：早期リターン
+    //│
+    //○転送依頼フラグをオフ
+    ctx.transOn = false;
+    //│
+    //●転送を受付
+    trans();
+    //│
+    //●クライアントにレスポンス
+    SEND_CONN_BRIDGE();
+    //┴
+#else
     //┬
     //○ルーティングを指示（その後も同期処理）
-    ADP_SRV->handleClient();
+    MY_NET->handleClient();
     //┴
+#endif
   } /* handle() */
 }; /* class AdapterWEB_API */

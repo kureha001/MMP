@@ -50,7 +50,7 @@ private:
     ctx.strFrame = argFrame; // フレーム
     if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
     if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-    ctx.resMSG  = ""  ; // レスポンスメッセージ
+    ctx.resMSG  = ""  ; // レスポンスMSG
     ctx.cmdPath = ""  ; // コマンドパス
     ctx.authCD  = ""  ; // 認証コード
     ctx.accID   = -1  ; // アクセスID
@@ -126,13 +126,13 @@ public:
       //┴
 
 #elif (MODE == MODE_BRIDGE)
-      //●ブリッジ・マスタの場合：コマンドを実行
-      //●ブリッジ・スレーブかエラーがある場合：クライアントにレスポンス
+      //●ブリッジ・マスタ ：コマンドを実行
+      //●レスポンスMSGあり：ブリッジ元にレスポンス
       if (ctx.adpID == ADP_ID_UART) modeBridge::RUN();
       if (ctx.resMSG != "") SEND_CONN_BRIDGE();
       if (ctx.adpID != ADP_ID_UART) {
-        ctx.resMSG = ctx.strFrame; // フレームをそのままレスポンスにセット
-        SEND_CONN_BRIDGE()       ; // クライアントレスポンスに誘導
+        ctx.resMSG = ctx.strFrame; // MSGにフレームをレスポンスMSGにセット
+        SEND_CONN_BRIDGE()       ; 
       }
 #endif
     } /* END-while */
@@ -146,6 +146,7 @@ public:
     //│＼（自分宛に転送依頼がきている場合）
         //○転送依頼フラグをオフ
         //●転送を受付
+        //●レスポンスMSGあり：ブリッジ元にレスポンス
         //▼終了：早期リターン
         ctx.transOn = false;
         trans();

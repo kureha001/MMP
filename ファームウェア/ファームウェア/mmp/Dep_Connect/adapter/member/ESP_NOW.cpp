@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：ESP-NOW 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) 
+// Ver 1.3.1 (2026/09/09) 
 //========================================================
 //┬
 //□┐インクルード
@@ -56,12 +56,22 @@ private:
   } /* macToString() */
 
   //─────────────────
-  // String -> uint8_t[6] デコード関数
+  // String -> uint8_t[6] デコード関数 (コロン区切り用)
   //─────────────────
   static void stringToMac(const String& macStr, uint8_t* mac) {
     sscanf(macStr.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
            &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
   } /* stringToMac() */
+
+  //─────────────────
+  // Raw String -> uint8_t[6] デコード関数 (12桁連続ヘキサ用)
+  // 例: "50787D185150" -> 0x50, 0x78, 0x7D, 0x18, 0x51, 0x50
+  //─────────────────
+  static void rawStringToMac(const String& rawMacStr, uint8_t* mac) {
+    if (rawMacStr.length() < 12) return;
+    sscanf(rawMacStr.c_str(), "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
+           &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+  } /* rawStringToMac() */
 
 //========================================================
 // レスポンス
@@ -88,9 +98,9 @@ private:
 
     // 【対策2】データ長から '+ 1' を外し、純粋な文字列の長さにする
     esp_now_send(
-        macBuf,                           // 送信先MACアドレス
+        macBuf,                             // 送信先MACアドレス
         (const uint8_t*)ctx.resMSG.c_str(), // 送信データ
-        ctx.resMSG.length()               // 送信データ長（+1 を削除）
+        ctx.resMSG.length()                 // 送信データ長
     );
     //│
     //●ログ出力
@@ -124,7 +134,6 @@ private:
     //┴
   } /* ON_RECIVE() */
 
-
 //========================================================
 // 担務（公開機能）
 //========================================================
@@ -139,23 +148,48 @@ public:
     //│
     //○サービス資源を生成
     if (esp_now_init() != ESP_OK) {
-    //│＼（通信デバイスが起動していない場合）
-        //○起動ログを表示（異常終了）
-        //▼終了：早期リターン
         Serial.println(" [NG ] ESP-NOW -> 初期化失敗");
         return;
     } /* END-if */
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] ESP-NOW   -> MAC ") + String(WiFi.macAddress()));
+#if (MODE == MODE_BRIDGE)
+    Serial.println(String(" [OK] ESP-NOW Bridge -> MAC ") + String(WiFi.macAddress()));
+#else
+    Serial.println(String(" [OK] ESP-NOW Server -> MAC ") + String(WiFi.macAddress()));
+#endif
     //┴
   } /* constractor AdapterESPNOW() */
 
   //━━━━━━━━━━━━━━━━━
   // 転送受付
   //━━━━━━━━━━━━━━━━━
-//  void trans() {}
+#if (MODE == MODE_BRIDGE)
+  void trans() override {
+    //┬
+    //○転送先MACアドレス（12桁連続ヘキサ）を取得してデコード
+    uint8_t macBuf[6] = {0};
+    rawStringToMac(ctx.transDat1st, macBuf);
+
+    //○転送先がピアに未登録の場合、自動追加する
+    if (!esp_now_is_peer_exist(macBuf)) {
+      esp_now_peer_info_t peerInfo = {};
+      memcpy(peerInfo.peer_addr, macBuf, 6);
+      peerInfo.channel = 0; // 現在のチャンネルを使用
+      peerInfo.encrypt = false;
+      esp_now_add_peer(&peerInfo);
+    }
+
+    //○リクエストフレームを相手側へ転送
+    esp_now_send(
+        macBuf,                               // 転送先MACアドレス
+        (const uint8_t*)ctx.strFrame.c_str(), // 送信データ
+        ctx.strFrame.length()                 // 送信データ長
+    );
+    //┴
+  };
+#endif
 
 }; /* class AdapterESPNOW */
 

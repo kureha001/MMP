@@ -60,17 +60,15 @@ private:
   // ※AdapterQueueBaseをオーバーライド
   //─────────────────
   void SEND_CONN(uint8_t argConn) override {
+#if (MODE != MODE_BRIDGE)
     //┬
     //○メッセージをレスポンス
-#if (MODE == MODE_BRIDGE)
-    MY_NET.sendTXT(ctx.resMSG.c_str());
-#else
     if (MY_NET) MY_NET->sendTXT(argConn, ctx.resMSG.c_str());
-#endif
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
   } /* SEND_CONN() */
 
 //========================================================

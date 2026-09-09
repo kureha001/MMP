@@ -45,8 +45,12 @@ private:
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    WiFiServer* ADP_SRV  = nullptr; // WiFiサーバ
-    int         SRV_PORT = 8081   ; // ポート番号
+#if (MODE == MODE_BRIDGE)
+    WiFiClient  MY_NET           ; // WiFiクライアント(実体)
+#else
+    WiFiServer* MY_NET  = nullptr; // WiFiサーバ(ポインタ)
+    int         MY_PORT = 8081   ; // ポート番号
+#endif
 
 //========================================================
 // 接続情報管理
@@ -54,7 +58,7 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  const int      SS_SLOTS = 10  ; // 複数スロット(接続タイミングで登録)
+  int SS_SLOTS = 10              ; // 複数スロット(接続タイミングで登録)
   struct T_SS_SLOT{
     SS_SLOT_TYPE Base           ; // 基本メンバ
     WiFiClient   CONN           ; // アクセス資源(TCP接続の実体)
@@ -68,7 +72,7 @@ private:
   //─────────────────
   void SS_INI_SLOT(T_SS_SLOT& argSlot){
     adpFnStream::SS_INI_SLOT_BASE(argSlot.Base); // 基本メンバを初期化
-    if (argSlot.CONN) argSlot.CONN.stop()    ; // アクセス資源を切断
+    if (argSlot.CONN) argSlot.CONN.stop()      ; // アクセス資源を切断
   } /* SS_INI_SLOT() */
     
   //─────────────────
@@ -104,12 +108,25 @@ private:
   // ・true ：異常
   //─────────────────
   bool SS_ATTACH(){
+#if (MODE == MODE_BRIDGE)
+    //【ブリッジ（クライアント）モードの場合】
+    // MY_NET 自身がアクティブであれば 0番スロットに直接割り当てる
+    if (!MY_NET.connected()) return false;
+
+    if (!ssTBL[0].Base.used) {
+      SS_INI_SLOT(ssTBL[0]);
+      ssTBL[0].Base.used = true;
+      ssTBL[0].CONN      = MY_NET; // クライアント接続をスロット0にセット
+      ssTBL[0].CONN.setNoDelay(true);
+    }
+    return false;
+#else
     //┬
     //◎┐未管理のTCP接続をMMP管理対象へ登録する
     while (true) {
     //│
     //○新規のTCP接続を取得
-    WiFiClient newConn = ADP_SRV->available();
+    WiFiClient newConn = MY_NET->available(); // WiFiサーバ(ポインタ)
     if (!newConn) return false;
     //│＼（あらたな接続がない場合）
     //│ ▼返却：正常
@@ -124,11 +141,12 @@ private:
     SS_INI_SLOT(ssTBL[ID]);
     //│
     //○スロットに新規接続を登録
-    ssTBL[ID].Base.used = true    ; // 使用中
-    ssTBL[ID].CONN    = newConn   ; // TCP接続(実体)を登録
-    ssTBL[ID].CONN.setNoDelay(true) ; // TCPパケット遅延制御
+    ssTBL[ID].Base.used = true     ; // 使用中
+    ssTBL[ID].CONN      = newConn  ; // TCP接続(実体)を登録
+    ssTBL[ID].CONN.setNoDelay(true); // TCPパケット遅延制御
     //┴
     } //* END-while */
+#endif
   } /* SS_ATTACH() */
 
 //========================================================
@@ -136,9 +154,9 @@ private:
 //========================================================
   //─────────────────
   // クライアントにレスポンス
-  // ※AdapterQueueBaseをオーバーライド
   //─────────────────
-  void SEND_CONN( WiFiClient argConn) override {
+  void SEND_CONN(WiFiClient argConn) override {
+#if (MODE != MODE_BRIDGE)
     //┬
     //○メッセージをレスポンス
     if (argConn.connected()) argConn.print(ctx.resMSG);
@@ -146,6 +164,7 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
   } /* SEND_CONN() */
 
 //========================================================
@@ -208,22 +227,10 @@ private:
   } /* StreamQueue() */
 
 
-//========================================================
-// 担務（公開機能）
-//========================================================
-public:
   //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
+  //
   //━━━━━━━━━━━━━━━━━
-  AdapterTCP(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
-    //┬
-    //●接続管理TBLを作成
-    ssTBL = new T_SS_SLOT[SS_SLOTS];
-    //│
-    //○サービス資源を生成
-    ADP_SRV = new WiFiServer(SRV_PORT);
-    ADP_SRV->begin();
-    //│
+  void RUN_TASK() {
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
       StreamQueue           , // 実行するタスク関数
@@ -233,10 +240,69 @@ public:
       2                     , // 優先度
       &TaskHandle             // タスクハンドル
     );
+  }
+
+//========================================================
+// 担務（公開機能）
+//========================================================
+public:
+  //━━━━━━━━━━━━━━━━━
+  // コンストラクタ
+  //━━━━━━━━━━━━━━━━━
+  AdapterTCP(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
+#if (MODE == MODE_BRIDGE)
+    //┬
+    //●接続管理TBLを作成
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] TCP Raw   -> port ") + String(SRV_PORT));
+    Serial.println(" [OK] TCP Client");
     //┴
+#else
+    //┬
+    //●接続管理TBLを作成
+    ssTBL = new T_SS_SLOT[SS_SLOTS];
+    //│
+    //○サービス資源を生成
+    MY_NET = new WiFiServer(MY_PORT);
+    MY_NET->begin();
+    //│
+    //●受信タスクを別スレッドとして起動
+    RUN_TASK();
+    //│
+    //○メッセージ表示
+    Serial.println(String(" [OK] TCP Raw   -> port ") + String(MY_PORT));
+    //┴
+#endif
   } /* constractor AdapterTCP() */
+
+
+  //━━━━━━━━━━━━━━━━━
+  // 転送受付
+  //━━━━━━━━━━━━━━━━━
+#if (MODE == MODE_BRIDGE)
+  void trans() {
+    //┬
+    //◇クライアントを起動
+    if (!MY_NET.connected()) {
+      String   ip   = ctx.transDat1st;
+      uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
+      MY_NET.setTimeout(2000);
+      if (!MY_NET.connect(ip.c_str(), port)) {ctx.resMSG = "#CNT!"; return;}
+      //│
+      //○0番スロットをリセットして自身を登録準備
+      SS_INI_SLOT(ssTBL[0]);
+      //│
+      //●受信タスクが未起動なら起動（※二重起動防止）
+      if (TaskHandle == NULL) {
+        RUN_TASK();
+      }
+    }
+    //│
+    //○リクエストを転送
+    MY_NET.print(ctx.strFrame);
+    //┴
+  };
+#endif
 
 }; /* class AdapterTCP */

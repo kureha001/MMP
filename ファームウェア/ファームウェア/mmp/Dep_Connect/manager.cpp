@@ -49,10 +49,8 @@
     //□作業標準：抽象基底クラス、モード部品
     #include "adapter/_template_/_index_.h"
     //│
-    //□担当(標準型)
-    #include "adapter/base/_index_.h" 
-    //│
-    //□担当(ブリッジ型)
+    //□担当
+    #include "adapter/member/_index_.h" 
 //┴┴┴
 
 //########################################################
@@ -146,7 +144,6 @@ namespace DepConnect{
     for (auto* adp : ADAPTER) {
       //│＼（全員に指示を終えた場合）
       //│ ▽完了:業務遂行の指示を終える
-      //│
       //○この担当に指示
       if (adp) adp->handle();
       //┴

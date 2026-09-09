@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／作業標準：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06)
+// Ver 1.3.0 (2026/09/09)
 //========================================================
 #ifndef CONN_ADP_API1_H
 #define CONN_ADP_API1_H
@@ -55,6 +55,23 @@ private:
     ctx.authCD  = ""  ; // 認証コード
     ctx.accID   = -1  ; // アクセスID
   }
+
+//========================================================
+// レスポンス
+//========================================================
+  //─────────────────
+  // クライアントにレスポンス
+  // ※AdapterQueueBaseをオーバーライド
+  //─────────────────
+  void SEND_CONN_BRIDGE() {
+    //┬
+    //○メッセージをUSB(CDC)へレスポンス
+    Serial.print(ctx.resMSG.c_str());
+    //│
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
+    //┴
+  } /* SEND_CONN() */
 
 public:
   using AdapterBase::AdapterBase;
@@ -111,20 +128,44 @@ public:
       //●コンテキストを初期化
       setupCTX(popDat.frame);
       //│
-      //●モード別に後続処理
-      switch (MODE) {
-      case MODE_MAIN   : modeMain  ::RUN(); break;
-      case MODE_SUB    : modeSub   ::RUN(); break;
-      case MODE_BRIDGE : modeBridge::RUN(); break;
-      }
-      //│
+#if   (MODE == MODE_MAIN)
+      //●コマンドを実行
       //●実行結果をレスポンス
+      modeMain::RUN();
       SEND_CONN(popDat.conn);
       //┴
+
+#elif (MODE == MODE_SUB)
+      //●コマンドを実行
+      //●実行結果をレスポンス
+      modeSub  ::RUN();
+      SEND_CONN(popDat.conn);
+      //┴
+
+#elif (MODE == MODE_BRIDGE)
+      //●ブリッジ・マスタの場合：コマンドを実行
+      //●ブリッジ・スレーブかエラーがある場合：クライアントにレスポンス
+      if (ctx.adpID == ADP_ID_UART) modeBridge::RUN();
+      if (ctx.adpID != ADP_ID_UART || ctx.resMSG != "") SEND_CONN_BRIDGE();
+#endif
     } /* END-while */
     //│
     //○ポーリング後処理
     handle_end();
+    //│
+#if (MODE == MODE_BRIDGE)
+    //○転送依頼を確認
+    if (ctx.transOn && ctx.adpID == ctx.transID) {
+    //│＼（自分宛に転送依頼がきている場合）
+        //○転送依頼フラグをオフ
+        //●転送を受付
+        //▼終了：早期リターン
+        ctx.transOn = false;
+        trans();
+        return;
+    //┴
+      } /* END-if */
+#endif
     //┴
   } /* handle() */
 }; /* class AdapterQueueBase */

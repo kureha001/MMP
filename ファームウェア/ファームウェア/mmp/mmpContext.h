@@ -14,7 +14,7 @@
 struct MmpContext {
   //┬
   //■システム情報
-  const String sysVer  = "V12a!"  ; // バージョン
+  const String sysVer  = "V13a!"  ; // バージョン
   bool         sysLog  = true     ; // ログ表示
   //│
   //■リクエスト情報
@@ -24,10 +24,11 @@ struct MmpContext {
   String       authCD   = ""; // 認証コード
   //│
   //■転送情報（ブリッジモードで使用）
-  int          transID     = -1; // 転送先のアダプタID
-  String       transDat1st = ""; // 転送先の個別情報１
-  String       transDat2nd = ""; // 転送先の個別情報２
-  String       transDat3rd = ""; // 転送先の個別情報３
+  int          transID     = -1   ; // 転送先のアダプタID
+  bool         transOn     = false; // 転送開始フラグ
+  String       transDat1st = ""   ; // 転送先の個別情報１
+  String       transDat2nd = ""   ; // 転送先の個別情報２
+  String       transDat3rd = ""   ; // 転送先の個別情報３
   //│
   //■ユーザメモリ情報（特定の機能モジュールで使用）
   int          accID    = -1; // アクセスID(MMP全体で一意)

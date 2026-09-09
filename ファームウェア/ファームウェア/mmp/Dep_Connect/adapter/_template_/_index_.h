@@ -36,6 +36,5 @@
     //─────────────────
     // ブリッジモード
     //─────────────────
-    #include "../bridge/_index_.h"
     #include "md_bridge.cpp"
     namespace modeBridge{void RUN();}

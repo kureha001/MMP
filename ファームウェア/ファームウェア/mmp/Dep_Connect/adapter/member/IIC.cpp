@@ -146,4 +146,5 @@ public:
     Serial.println(String(IIC_ADDR_MAX));
     //┴
   } /* constractor AdapterIIC() */
+
 }; /* class AdapterIIC */

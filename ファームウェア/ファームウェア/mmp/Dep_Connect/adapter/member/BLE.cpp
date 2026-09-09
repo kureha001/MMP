@@ -169,6 +169,7 @@ public:
     Serial.println(" [OK] Bluetooth");
     //┴
   } /* constractor AdapterBLE() */
+
 }; /* class AdapterBLE */
 
 //━━━━━━━━━━━━━━━━━

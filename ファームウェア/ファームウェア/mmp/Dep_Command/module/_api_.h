@@ -19,7 +19,7 @@ protected:
     MmpContext& ctx;
     const char* modName;
     const char* modDesc;
-    //┴
+  //┴┴
 
 public:
   //┬

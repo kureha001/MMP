@@ -238,4 +238,5 @@ public:
     Serial.println(String(" [OK] TCP Raw   -> port ") + String(SRV_PORT));
     //┴
   } /* constractor AdapterTCP() */
+
 }; /* class AdapterTCP */

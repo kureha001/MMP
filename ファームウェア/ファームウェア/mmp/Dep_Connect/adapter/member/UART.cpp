@@ -151,4 +151,5 @@ public:
     Serial.println(String(" [OK] USB/UART  -> #0,#1"));
     //┴
   } /* constractor AdapterUART() */
+
 }; /* class AdapterUART */

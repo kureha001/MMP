@@ -151,6 +151,12 @@ public:
     Serial.println(String(" [OK] ESP-NOW   -> MAC ") + String(WiFi.macAddress()));
     //┴
   } /* constractor AdapterESPNOW() */
+
+  //━━━━━━━━━━━━━━━━━
+  // 転送受付
+  //━━━━━━━━━━━━━━━━━
+//  void trans() {}
+
 }; /* class AdapterESPNOW */
 
 //━━━━━━━━━━━━━━━━━

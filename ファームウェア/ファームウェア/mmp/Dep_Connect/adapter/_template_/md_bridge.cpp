@@ -47,16 +47,19 @@
     else if (cmd[0] == "BRIDGE/BLE" ) {ctx.transID = ADP_ID_BLE ; isOn = true;}
     else if (cmd[0] == "BRIDGE/ESPN") {ctx.transID = ADP_ID_ESPN; isOn = true;}
     //│
-    //○スレーブが未設定
+    //○エラーコードをレスポンス（スレーブが未設定）
     if (ctx.transID < 0) {ctx.resMSG = "#TID!"; return;}
     //│
-    //○特殊コマンド以外は転送
+    //○特殊コマンド以外は(レスポンスなしで)転送
     if (isOn == false  ) {ctx.transOn = true  ; return;}
     //│
     //○引数をコンテクストへ反映
     ctx.transDat1st = cmd[1];
     ctx.transDat2nd = cmd[2];
     ctx.transDat3rd = cmd[3];
+    //│
+    //○正常終了をレスポンス
+    ctx.resMSG = "!!!!!";
     //┴
   } /* RUN() */
 

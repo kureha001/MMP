@@ -129,7 +129,8 @@ public:
       //●ブリッジ・マスタの場合：コマンドを実行
       //●ブリッジ・スレーブかエラーがある場合：クライアントにレスポンス
       if (ctx.adpID == ADP_ID_UART) modeBridge::RUN();
-      if (ctx.adpID != ADP_ID_UART || ctx.resMSG != "") {
+      if (ctx.resMSG != "") SEND_CONN_BRIDGE();
+      if (ctx.adpID != ADP_ID_UART) {
         ctx.resMSG = ctx.strFrame; // フレームをそのままレスポンスにセット
         SEND_CONN_BRIDGE()       ; // クライアントレスポンスに誘導
       }
@@ -148,6 +149,7 @@ public:
         //▼終了：早期リターン
         ctx.transOn = false;
         trans();
+        if (ctx.resMSG != "") SEND_CONN_BRIDGE();
         return;
     //┴
       } /* END-if */

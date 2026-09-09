@@ -153,6 +153,16 @@ public:
       MY_INSTANS = this;
       MY_NET.onEvent(ON_RECIVE); 
       MY_NET.begin(ip.c_str(), port, "/");
+      //│
+      //○接続するまでまつ。
+      unsigned long startTime = millis();
+      while(!MY_NET.isConnected() && millis() - startTime < 10000){
+        MY_NET.loop();
+        delay(200);
+      }
+      //│
+      //○タイムアウトはエラーコードをレスポンス
+      if (!MY_NET.isConnected()) {ctx.resMSG = "#TIM!"; return;}
     }
     //│
     //○リクエストを転送

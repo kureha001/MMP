@@ -119,7 +119,7 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
-    Serial.println(" [OK] WebSocket Client");
+    Serial.println(" [OK] WEB Socket Client");
     //┴
 #else
     //┬
@@ -128,14 +128,15 @@ public:
     //│
     //○サーバのサービスを開始
     MY_NET = new WebSocketsServer(MY_PORT); // サーバ生成
-    MY_NET->onEvent(ON_RECIVE)             ; // コールバック関数登録
-    MY_NET->begin()                        ; // サーバ起動
+    MY_NET->onEvent(ON_RECIVE)            ; // コールバック関数登録
+    MY_NET->begin()                       ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] WebSocket Server -> port %d\n"), MY_PORT);
+    Serial.printf(" [OK] WEB Socket Server -> port %d\n", MY_PORT);
     //┴
 #endif
   } /* constractor AdapterWEB_Socket() */
+
 
 #if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
@@ -143,7 +144,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   void trans() {
     //┬
-    //○クライアントを起動
+    //◇クライアントを起動
     if (!MY_NET.isConnected()) {
       String   ip   = ctx.transDat1st;
       uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
@@ -160,6 +161,7 @@ public:
       //│
       //○タイムアウトはエラーコードをレスポンス
       if (!MY_NET.isConnected()) {ctx.resMSG = "#TIM!"; return;}
+      //┴
     }
     //│
     //○リクエストを転送

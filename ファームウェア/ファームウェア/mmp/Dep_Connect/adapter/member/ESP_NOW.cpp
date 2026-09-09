@@ -170,7 +170,7 @@ public:
     //○転送先MACアドレス（12桁連続ヘキサ）を取得してデコード
     uint8_t macBuf[6] = {0};
     rawStringToMac(ctx.transDat1st, macBuf);
-
+    //│
     //○転送先がピアに未登録の場合、自動追加する
     if (!esp_now_is_peer_exist(macBuf)) {
       esp_now_peer_info_t peerInfo = {};
@@ -179,12 +179,12 @@ public:
       peerInfo.encrypt = false;
       esp_now_add_peer(&peerInfo);
     }
-
+    //│
     //○リクエストフレームを相手側へ転送
     esp_now_send(
-        macBuf,                               // 転送先MACアドレス
-        (const uint8_t*)ctx.strFrame.c_str(), // 送信データ
-        ctx.strFrame.length()                 // 送信データ長
+      macBuf,                               // 転送先MACアドレス
+      (const uint8_t*)ctx.strFrame.c_str(), // 送信データ
+      ctx.strFrame.length()                 // 送信データ長
     );
     //┴
   };

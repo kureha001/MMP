@@ -18,11 +18,11 @@
   void SHOW_LOG(){
     if (!ctx.sysLog) return;
     Serial.println(String("\n======================================"));
-    Serial.println(String("Frame [") + String(ctx.strFrame) + String("]"));
+    Serial.printf("Frame [%s]", String(ctx.strFrame));
     Serial.printf("AID[%d] -> TID[%d] : isTrans[%d]\n", ctx.adpID, ctx.transID, ctx.transOn);
-    Serial.printf("TDat[%s][%s][%s]\n", ctx.transDat1st, ctx.transDat2nd, ctx.transDat3rd);
-    Serial.printf("ACD[%s] : AccID[%d]/[%d]\n",ctx.authCD, ctx.accID, ctx.accIDS);
-    Serial.printf("Path[%s] = MSG[%s]\n",ctx.cmdPath, ctx.resMSG );
+    Serial.printf("TDat[%s][%s][%s]\n", String(ctx.transDat1st), String(ctx.transDat2nd), String(ctx.transDat3rd));
+    Serial.printf("ACD[%s] : AccID[%d]/[%d]\n",String(ctx.authCD), ctx.accID, ctx.accIDS);
+    Serial.printf("Path[%s] = MSG[%s]\n",String(ctx.cmdPath), String(ctx.resMSG));
     Serial.println(String("======================================"));
   } /* P9_SHOW_LOG() */
 

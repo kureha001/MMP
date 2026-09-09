@@ -1,8 +1,8 @@
-// filename : Dep_Connect/adapter/base/WEB_API.cpp
+// filename : Dep_Connect/adapter/base/HTTP.cpp
 //========================================================
-// 接続部門／業務課／担当(標準型)：WEB API 担当
+// 接続部門／業務課／担当(標準型)：HTTP GET 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/10) 
+// Ver 1.3.0 (2026/09/10)
 //========================================================
 //┬
 //□┐インクルード
@@ -24,7 +24,7 @@
 //########################################################
 //# 処理詳細
 //########################################################
-class AdapterWEB_API : public AdapterBase {
+class AdapterHTTP : public AdapterBase {
 public:
   //━━━━━━━━━━━━━━━━━
   // 抽象基底クラスからコンテクストを継承
@@ -38,7 +38,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID  = ADP_ID_WAPI;
+    const int ADP_ID  = ADP_ID_HTTP;
     bool      IS_JSON = false;
 
   //━━━━━━━━━━━━━━━━━
@@ -58,7 +58,7 @@ private:
     //─────────────────
     // CORS許可用HTTPヘッダ追加
     //----------------------------------
-    // ブラウザ上のJavaScriptからWeb APIを呼び出すための許可設定
+    // ブラウザ上のJavaScriptから呼び出すための許可設定
     // → Webブラウザのセキュリティ制約(CORS)を通過させる
     //─────────────────
     inline void ADD_CROSS(WebServer& argSrv) {
@@ -272,7 +272,7 @@ private:
     //─────────────────
     // CORS事前確認
     //----------------------------------
-    // ブラウザがWeb APIアクセス前に送信するOPTIONS要求(プリフライト)へ応答
+    // ブラウザがアクセス前に送信するOPTIONS要求(プリフライト)へ応答
     // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
     // → 本通信で返すデータはないためHTTPステータス204を返却
     //─────────────────
@@ -297,7 +297,7 @@ private:
         "\"result\":true,"
         "\"error\":\"\","
         "\"value\":-1,"
-        "\"text\":\"MMP WEB API\""
+        "\"text\":\"MMP HTTP\""
         "}"));
     }
     //─────────────────
@@ -364,13 +364,12 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterWEB_API(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterHTTP(MmpContext& argCtx) : AdapterBase(argCtx) {
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
     Serial.printf(" [OK] HTTP Client\n");
     //┴
-
 #else
     //┬
     //○サービス資源を生成
@@ -382,7 +381,7 @@ public:
     Serial.printf(" [OK] WEB Server-> port %d\n", MY_PORT);
     //┴
 #endif
-  } /* constractor AdapterWEB_API() */
+  } /* constractor AdapterHTTP() */
 
 
 #if (MODE == MODE_BRIDGE)
@@ -392,9 +391,9 @@ public:
   void trans() {
     //┬
     //○リクエストを転送（HTTPクライアントを接続）
-    String ip   = ctx.transDat1st;
-    String port = ctx.transDat2nd;
-    String cmd  = ctx.strFrame;
+    String ip     = ctx.transDat1st;
+    String port   = ctx.transDat2nd;
+    String cmd    = ctx.strFrame;
     String strURL = String("http://") + ip + ":" + port + "/" + cmd;
     MY_NET.begin(strURL);
     //│
@@ -447,4 +446,4 @@ public:
     //┴
 #endif
   } /* handle() */
-}; /* class AdapterWEB_API */
+}; /* class AdapterHTTP */

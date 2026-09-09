@@ -2,7 +2,7 @@
 //========================================================
 // 環境設定
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/06) 
+// Ver 1.3.0 (2026/09/10)
 //========================================================
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -36,7 +36,7 @@
 //─────────────────
 #define ADP_UART true // UART ※本体＋サブ、ブリッジでは自動適用
 #define ADP_TCP  true // TCP RAW
-#define ADP_WAPI true // WWB API
+#define ADP_HTTP true // HTTP GET
 #define ADP_WSOC true // WEB Socket
 #define ADP_ESPN true // ESP NOW
 #define ADP_BLE  false // BLE

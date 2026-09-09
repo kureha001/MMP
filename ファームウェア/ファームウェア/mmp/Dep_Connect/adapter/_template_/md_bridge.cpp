@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（ブリッジモード）
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/09) 
+// Ver 1.3.0 (2026/09/10)
 //========================================================
 
 //########################################################
@@ -43,7 +43,7 @@
     bool isOn = false;
     if      (cmd[0] == "BRIDGE/TCP" ) {ctx.transID = ADP_ID_TCP ; isOn = true;}
     else if (cmd[0] == "BRIDGE/WSOC") {ctx.transID = ADP_ID_WSOC; isOn = true;}
-    else if (cmd[0] == "BRIDGE/WAPI") {ctx.transID = ADP_ID_WAPI; isOn = true;}
+    else if (cmd[0] == "BRIDGE/HTTP") {ctx.transID = ADP_ID_HTTP; isOn = true;}
     else if (cmd[0] == "BRIDGE/BLE" ) {ctx.transID = ADP_ID_BLE ; isOn = true;}
     else if (cmd[0] == "BRIDGE/ESPN") {ctx.transID = ADP_ID_ESPN; isOn = true;}
     //│

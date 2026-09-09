@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.0 (2026/09/10)
 //========================================================
 //┬
 //□┐インクルード
@@ -21,7 +21,7 @@
   //□経路ID
   inline constexpr int ADP_ID_UART = 0;
   inline constexpr int ADP_ID_TCP  = 1;
-  inline constexpr int ADP_ID_WAPI = 2;
+  inline constexpr int ADP_ID_HTTP = 2;
   inline constexpr int ADP_ID_WSOC = 3;
   inline constexpr int ADP_ID_BLE  = 4;
   inline constexpr int ADP_ID_ESPN = 5;
@@ -93,9 +93,9 @@ namespace DepConnect{
           ADAPTER.push_back(new AdapterTCP(ctx));
           #endif
           //│
-          //○WebAPI担当
-          #if ADP_WAPI
-          ADAPTER.push_back(new AdapterWEB_API(ctx));
+          //○HTTP担当
+          #if ADP_HTTP
+          ADAPTER.push_back(new AdapterHTTP(ctx));
           #endif
           //│
           //○WebSocket担当

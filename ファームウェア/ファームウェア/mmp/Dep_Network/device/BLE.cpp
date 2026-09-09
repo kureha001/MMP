@@ -2,15 +2,17 @@
 //========================================================
 // 通信部門／デバイス課：BLE 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.0 (2026/09/10) 
 //========================================================
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <BLEDevice.h> // BLE全体の初期化・管理用,名前設定.Central（親機）/Peripheral（子機）としての基本機能の起動
-//  #include <BLEUtils.h> // UUIDのフォーマット変換,BLEの通信データを文字列やバイト配列に相互変換
-//  #include <BLEServer.h> // Server（ペリフェラル / 子機）機能の構築,接続・切断時のイベントハンドラ（コールバック）を設定
-  #include <BLE2902.h> // Notification（通知）/ Indication 機能の有効化,キャラクタリスティックに追加し、「値更新の自動通知」を有効化
+  // BLE全体の初期化・管理用
+  // 名前設定.Central（親機）/Peripheral（子機）としての基本機能の起動
+  #include <BLEDevice.h>
+  // Notification（通知）/ Indication 機能の有効化
+  // キャラクタリスティックに追加し、「値更新の自動通知」を有効化
+  #include <BLE2902.h>
   //┴
 //┴
 
@@ -25,8 +27,6 @@ namespace devBLE {
   // BLE通信で使用するUUID
   //─────────────────
   // サービスUUID：MMP用BLEサービスを識別
-  // RX UUID     ：MMPからBLEデバイスへの受信口（WRITE）
-  // TX UUID     ：BLEデバイスからMMPへの送信口（NOTIFY/READ）
   //─────────────────
   #define UUID_SERVICE "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
   #define UUID_RX      "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -35,18 +35,15 @@ namespace devBLE {
   //─────────────────
   // アダプター層へ公開するBLE資源
   //─────────────────
-  // MY_SRV ：BLEサーバ本体への参照
-  // BLE_RX ：受信用Characteristicへの参照
-  // BLE_TX ：送信用Characteristicへの参照
-  //
-  // これらはBLE資源そのものを所有するのではなく、
-  // devBLEが生成した資源をアダプター層から利用するための公開参照。
-  //─────────────────
-  BLEServer*         MY_SRV  = nullptr;
-  BLECharacteristic* BLE_RX  = nullptr;
-  BLECharacteristic* BLE_TX  = nullptr;
-  const String       MY_NAME = "MMP-ESP32S3";
+  BLEServer*               MY_SRV     = nullptr; // 通常モード（ペリフェラル）用
+  BLECharacteristic*       BLE_RX     = nullptr; // 通常モード受信用
+  BLECharacteristic*       BLE_TX     = nullptr; // 通常モード送信用
 
+  BLEClient*               MY_CLI     = nullptr; // ブリッジモード（セントラル）用
+  BLERemoteCharacteristic* BLE_CLI_RX = nullptr; // ブリッジモード遠隔受信用
+  BLERemoteCharacteristic* BLE_CLI_TX = nullptr; // ブリッジモード遠隔送信用
+
+  const String             MY_NAME    = "MMP-ESP32S3";
 
 //========================================================
 // 担務（公開機能）
@@ -69,13 +66,78 @@ namespace devBLE {
     // デバイス名を「MMP-ESP32S3」として設定する。
     BLEDevice::init(MY_NAME.c_str());
     //│
+#if (MODE == MODE_BRIDGE)
+    //━━━━━━━━━━━━━━━━━
+    // ブリッジモード：起動時に相手（ペリフェラル）へ初期接続を完了させる
+    //━━━━━━━━━━━━━━━━━
+    //○スキャナを取得して対向機器を探索
+    BLEScan* pBLEScan = BLEDevice::getScan();
+    pBLEScan->setActiveScan(true);
+    BLEScanResults* foundDevices = pBLEScan->start(3, false);
+
+    BLEAdvertisedDevice* targetDevice = nullptr;
+    if (foundDevices != nullptr) {
+      for (int i = 0; i < foundDevices->getCount(); i++) {
+        BLEAdvertisedDevice device = foundDevices->getDevice(i);
+        if (device.getName() == MY_NAME.c_str()) {
+          targetDevice = new BLEAdvertisedDevice(device);
+          break;
+        }
+      }
+    }
+
+    if (targetDevice == nullptr) {
+      Serial.println("   [NG] ターゲットデバイスが見つかりません");
+      Serial.println("");
+      ENABLED = false;
+      return;
+    }
+
+    //○BLEクライアント（セントラル）を生成して接続
+    MY_CLI = BLEDevice::createClient();
+    if (MY_CLI == nullptr || !MY_CLI->connect(targetDevice)) {
+      Serial.println("   [NG] ペリフェラルへの接続に失敗");
+      Serial.println("");
+      delete targetDevice;
+      ENABLED = false;
+      return;
+    }
+    delete targetDevice;
+    pBLEScan->clearResults();
+
+    //○サービスおよびキャラクタリスティックのリソースを取得・保持
+    BLERemoteService* pService = MY_CLI->getService(BLEUUID(UUID_SERVICE));
+    if (pService == nullptr) {
+      Serial.println("   [NG] サービスが見つかりません");
+      Serial.println("");
+      ENABLED = false;
+      return;
+    }
+
+    BLE_CLI_RX = pService->getCharacteristic(BLEUUID(UUID_RX));
+    BLE_CLI_TX = pService->getCharacteristic(BLEUUID(UUID_TX));
+
+    if (BLE_CLI_RX == nullptr || !BLE_CLI_RX->canWrite()) {
+      Serial.println("   [NG] キャラクタリスティック(RX)準備に失敗");
+      Serial.println("");
+      ENABLED = false;
+      return;
+    }
+
+    //○終了メッセージを表示
+    Serial.println(String("   [OK] bridge target : ") + MY_NAME.c_str()     );
+    Serial.println(String("   [OK] service UUID  : ") + String(UUID_SERVICE));
+    Serial.println("");
+    ENABLED = true;
+
+#else
+    //━━━━━━━━━━━━━━━━━
+    // 通常モード：サーバー（ペリフェラル）として起動
+    //━━━━━━━━━━━━━━━━━
     //○BLEサーバを生成
     MY_SRV = BLEDevice::createServer();
     if (MY_SRV == nullptr) {
     //│＼（サーバ生成に失敗した場合）
-        //○エラーメッセージを表示
-        //○無効化
-        //▼終了：早期リターン
         Serial.println("   [NG] サーバ生成に失敗");
         Serial.println("");
         ENABLED = false;
@@ -86,9 +148,6 @@ namespace devBLE {
     BLEService *pService = MY_SRV->createService(UUID_SERVICE);
     if (pService == nullptr) {
     //│＼（サービス生成に失敗した場合）
-        //○エラーメッセージを表示
-        //○無効化
-        //▼終了：早期リターン
         Serial.println("   [NG] サービス生成に失敗");
         Serial.println("");
         ENABLED = false;
@@ -125,9 +184,6 @@ namespace devBLE {
       BLEAdvertising *BLE_ADV = BLEDevice::getAdvertising();
       if (BLE_ADV == nullptr) {
       //│＼（資源取得に失敗した場合）
-          //○エラーメッセージを表示
-          //○無効化
-          //▼終了：早期リターン
           Serial.println("   [NG] ペアリング準備に失敗");
           Serial.println("");
           ENABLED = false;
@@ -161,6 +217,7 @@ namespace devBLE {
     //│
     //○有効性セット
     ENABLED = true;
+#endif
     //┴
   } /* START() */
 

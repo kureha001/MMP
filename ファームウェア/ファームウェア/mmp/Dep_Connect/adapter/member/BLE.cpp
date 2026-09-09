@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：BLE 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) 
+// Ver 1.3.0 (2026/09/10) 
 //========================================================
 
 //========================================================
@@ -11,7 +11,7 @@
 //┬
 //□┐接続部門
   //□┐業務課
-    //□担当(標準型)
+    //□担当
     #include "_index_.h"
 //┴┴┴
 
@@ -39,20 +39,39 @@ private:
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-  // ※BLEはサービスポートを持たないため、
-  //   dev.hで公開されたBLE固有の受付資源を使用
-  // ・BLE_RX：受信用キャラクタリスティック
-  // ・BLE_TX：送信用キャラクタリスティック
     bool IS_BUSY = false; // 接続状況｛true：接続あり｜false：接続なし｝
     static const int WAIT_MS = 15 ; // 受信タイムラグ
 
 //========================================================
+// ヘルパ関数
+//========================================================
+#if (MODE == MODE_BRIDGE)
+  //─────────────────
+  // MACアドレス文字列を "XX:XX:XX:XX:XX:XX" 形式へ補正
+  //─────────────────
+  static String formatMacAddress(const String& rawMac) {
+    // 既にコロンが含まれている場合はそのまま返却
+    if (rawMac.indexOf(':') != -1) return rawMac;
+    
+    // 12桁連続ヘキサの場合（例: "50787D185150"）
+    if (rawMac.length() == 12) {
+      String formatted = "";
+      for (int i = 0; i < 12; i += 2) {
+        if (i > 0) formatted += ":";
+        formatted += rawMac.substring(i, i + 2);
+      }
+      return formatted;
+    }
+    return rawMac;
+  } /* formatMacAddress() */
+#endif
+
+//========================================================
 // レスポンス
 //========================================================
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
-  // ※AdapterQueueBaseをオーバーライド
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━
   void SEND_CONN(uint8_t argConn) override {
     //┬
     //○メッセージをレスポンス
@@ -69,50 +88,22 @@ private:
 //========================================================
 // データ受信
 //========================================================
+#if (MODE != MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // コールバック：サーバ用
   //━━━━━━━━━━━━━━━━━
-  // ※既定のコールバック用のクラス関数をオーバーライドする
   class Callback_Server : public BLEServerCallbacks {
-    //─────────────────
-    // 接続イベント：接続制限（同時1人）
-    //─────────────────
     void onConnect(BLEServer* pServer) override {
-      //┬
-      //○インスタンスを確認
       if (!MY_INSTANS) return;
-      //│＼（通信デバイスが起動していない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○接続状況を確認
       if (MY_INSTANS->IS_BUSY) return;
-      //│＼（既に参加している場合）
-      //│ ▼終了：これ以上は参加させない
-      //│
-      //○ステータスを変更（接続済）
       MY_INSTANS->IS_BUSY = true;
-      //│
-      //○アドバタイジングを停止(新規の侵入を物理的に防ぐ)
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->getAdvertising()->stop();
-      //┴
     } /* onConnect() */
 
-    //─────────────────
-    // 切断イベント：接続制限を解除
-    //─────────────────
     void onDisconnect(BLEServer* pServer) override {
-      //┬
-      //○インスタンスを確認
       if (!MY_INSTANS) return;
-      //│＼（通信デバイスが起動していない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○アドバタイジングを再開
       if (devBLE::MY_SRV != nullptr) devBLE::MY_SRV->startAdvertising();
-      //│
-      //○ステータスを変更（未接続）
       MY_INSTANS->IS_BUSY = false;
-      //┴
     } /* onDisconnect() */
   }; /* Callback_Server */
   Callback_Server ON_CONNECTION;
@@ -120,29 +111,17 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  // ※既定のコールバック用のクラス関数をオーバーライドする
   class Callback_Client : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
-      //┬
-      //○インスタンスを確認
       if (!MY_INSTANS) return;
-      //│＼（通信デバイスが起動していない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○未取り込みデータを受信（getValue()参照後は消費されない）
       delay(WAIT_MS);
-      String rxData = pCharacteristic->getValue(); // データ複製
+      String rxData = pCharacteristic->getValue();
       if (rxData.length() < 1) return;
-      //│＼（空の場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
       MY_INSTANS->pushQueue(0, rxData);
-      //┴
     }; /* onWrite() */
   }; /* Callback_Client */
   Callback_Client ON_RECIVE;
-
+#endif
 
 //========================================================
 // 担務（公開機能）
@@ -155,20 +134,50 @@ public:
     //┬
     //○インフラを確認
     if (!devBLE::ENABLED) return;
-    //│＼（無効の場合）
-    //│ ▼終了：早期リターン
     //│
     //○インスタンスを登録
     MY_INSTANS = this;
     //│
-    //○サービス資源を生成
+#if (MODE == MODE_BRIDGE)
+    //○メッセージ表示（ブリッジモード）
+    Serial.println(" [OK] BLE Clieant");
+#else
+    //○サービス資源を生成（サーバーモード）
     devBLE::MY_SRV->setCallbacks(&ON_CONNECTION); // サーバ(接続/切断)
     devBLE::BLE_RX->setCallbacks(&ON_RECIVE    ); // クライアント(受信)
-    //│
-    //○メッセージ表示
-    Serial.println(" [OK] Bluetooth");
+    Serial.println(" [OK] BLE Server");
+#endif
     //┴
   } /* constractor AdapterBLE() */
+
+
+#if (MODE == MODE_BRIDGE)
+  //━━━━━━━━━━━━━━━━━
+  // 転送受付（確立済みコネクションへの連続コマンド発行）
+  //━━━━━━━━━━━━━━━━━
+  void trans() override {
+    //┬
+    //○接続インフラの健全性を確認
+    if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected()) {
+      ctx.resMSG = "#CNT!";
+      return;
+    }
+
+    //○リクエストを遠隔RXポートへ書き込み（Write）
+    devBLE::BLE_CLI_RX->writeValue(ctx.strFrame.c_str(), ctx.strFrame.length());
+
+    //○レスポンスを遠隔TXポートから取得（Read）
+    if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canRead()) {
+      delay(WAIT_MS);
+      String strRes = devBLE::BLE_CLI_TX->readValue();
+      ctx.resMSG   = strRes;
+      ctx.strFrame = strRes;
+    } else {
+      ctx.resMSG = "!!!!!"; // レスポンスなし正常終了
+    }
+    //┴
+  };
+#endif
 
 }; /* class AdapterBLE */
 

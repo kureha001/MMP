@@ -40,13 +40,18 @@
       //┴
     //│
     //○転送先をコンテクストへ反映
-    if      (cmd[0] == "BRIDGE/TCP" ) ctx.transID = ADP_ID_TCP ;
-    else if (cmd[0] == "BRIDGE/WSOC") ctx.transID = ADP_ID_WSOC;
-    else if (cmd[0] == "BRIDGE/WAPI") ctx.transID = ADP_ID_WAPI;
-    else if (cmd[0] == "BRIDGE/BLE" ) ctx.transID = ADP_ID_BLE ;
-    else if (cmd[0] == "BRIDGE/ESPN") ctx.transID = ADP_ID_ESPN;
-    else if (ctx.transID < 0        ) {ctx.resMSG = "#TID!"; return;}
-    else                              {ctx.transOn = true  ; return;}
+    bool isOn = false;
+    if      (cmd[0] == "BRIDGE/TCP" ) {ctx.transID = ADP_ID_TCP ; isOn = true;}
+    else if (cmd[0] == "BRIDGE/WSOC") {ctx.transID = ADP_ID_WSOC; isOn = true;}
+    else if (cmd[0] == "BRIDGE/WAPI") {ctx.transID = ADP_ID_WAPI; isOn = true;}
+    else if (cmd[0] == "BRIDGE/BLE" ) {ctx.transID = ADP_ID_BLE ; isOn = true;}
+    else if (cmd[0] == "BRIDGE/ESPN") {ctx.transID = ADP_ID_ESPN; isOn = true;}
+    //│
+    //○スレーブが未設定
+    if (ctx.transID < 0) {ctx.resMSG = "#TID!"; return;}
+    //│
+    //○特殊コマンド以外は転送
+    if (isOn == false  ) {ctx.transOn = true  ; return;}
     //│
     //○引数をコンテクストへ反映
     ctx.transDat1st = cmd[1];

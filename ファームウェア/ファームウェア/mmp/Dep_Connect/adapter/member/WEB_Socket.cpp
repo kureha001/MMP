@@ -8,6 +8,7 @@
 //□┐インクルード
   //□追加ライブラリ：WebSockets by Markus Sattler
   #include <WebSocketsServer.h>
+  #include <WebSocketsClient.h>
 //┴┴
 
 //========================================================
@@ -39,13 +40,17 @@ private:
   //━━━━━━━━━━━━━━━━━
     const int ADP_ID = ADP_ID_WSOC;
     int getAID() const override {return ADP_ID;} // 基底クラスに連携
-    static AdapterWEB_Socket* MY_INSTANS; // 静的コールバックからのルーティング用
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    WebSocketsServer* ADP_SRV  = nullptr; // WebSocketサーバ
-    int               SRV_PORT = 8082   ; // ポート番号
+#if (MODE == MODE_BRIDGE)
+    WebSocketsClient  MY_NET           ; // WebSocketクライアント
+#else
+    WebSocketsServer* MY_NET  = nullptr; // WebSocketサーバ
+    int               MY_PORT = 8082   ; // ポート番号
+#endif
+    static AdapterWEB_Socket* MY_INSTANS; // 静的コールバックからのルーティング用
 
 //========================================================
 // レスポンス
@@ -57,7 +62,11 @@ private:
   void SEND_CONN(uint8_t argConn) override {
     //┬
     //○メッセージをレスポンス
-    if (ADP_SRV) ADP_SRV->sendTXT(argConn, ctx.resMSG.c_str());
+#if (MODE == MODE_BRIDGE)
+    MY_NET.sendTXT(ctx.resMSG.c_str());
+#else
+    if (MY_NET) MY_NET->sendTXT(argConn, ctx.resMSG.c_str());
+#endif
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -71,7 +80,9 @@ private:
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
   static void ON_RECIVE(
+#if (MODE != MODE_BRIDGE)
     uint8_t   num    , // クライアント番号
+#endif
     WStype_t  type   , // イベント種別
     uint8_t * payload, // 受信データ
     size_t    length   // 受信データ長
@@ -93,10 +104,12 @@ private:
     //│ ▼終了：早期リターン
     //│
     //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
+#if (MODE == MODE_BRIDGE)
+    uint8_t num = 0;
+#endif
     MY_INSTANS->pushQueue(num, String((char*)payload));
     //┴
   } /* ON_RECIVE() */
-
 
 //========================================================
 // 担務（公開機能）
@@ -106,27 +119,59 @@ public:
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
   AdapterWEB_Socket(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
+#if (MODE == MODE_BRIDGE)
     //┬
-    //○インスタンスを登録
+    //○メッセージ表示
+    Serial.println(" [OK] WebSocket Client");
+    //┴
+#else
+    //┬
+    //○インスタンスを取得
     MY_INSTANS = this;
     //│
-    //○サービスを開始
-    ADP_SRV = new WebSocketsServer(SRV_PORT); // サーバ生成
-    ADP_SRV->onEvent(ON_RECIVE)             ; // コールバック関数登録
-    ADP_SRV->begin()                        ; // サーバ起動
+    //○サーバのサービスを開始
+    MY_NET = new WebSocketsServer(MY_PORT); // サーバ生成
+    MY_NET->onEvent(ON_RECIVE)             ; // コールバック関数登録
+    MY_NET->begin()                        ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] WebSocket -> port ") + String(SRV_PORT));
+    Serial.printf(" [OK] WebSocket Server -> port %d\n"), MY_PORT);
     //┴
+#endif
   } /* constractor AdapterWEB_Socket() */
+
+  //━━━━━━━━━━━━━━━━━
+  // 転送受付
+  //━━━━━━━━━━━━━━━━━
+#if (MODE == MODE_BRIDGE)
+  void trans() {
+    //┬
+    //○クライアントを起動
+    if (!MY_NET.isConnected()) {
+      String   ip   = ctx.transDat1st;
+      uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
+      MY_INSTANS = this;
+      MY_NET.onEvent(ON_RECIVE); 
+      MY_NET.begin(ip.c_str(), port, "/");
+    }
+    //│
+    //○リクエストを転送
+    MY_NET.sendTXT(ctx.strFrame);
+    //┴
+  };
+#endif
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用前処理
   //━━━━━━━━━━━━━━━━━
   void handle_begin() override {
     //┬
-    //○WebSocketサーバの処理を進める（イベント発火）
-    if (ADP_SRV) ADP_SRV->loop();
+    //○WebSocketの処理を進める（イベント発火）
+#if (MODE == MODE_BRIDGE)
+    MY_NET.loop();
+#else
+    if (MY_NET) MY_NET->loop();
+#endif
     //┴
   } /* handle_begin() */
 }; /* class AdapterWEB_Socket */

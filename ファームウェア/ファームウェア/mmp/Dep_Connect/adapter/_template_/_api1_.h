@@ -56,23 +56,6 @@ private:
     ctx.accID   = -1  ; // アクセスID
   }
 
-//========================================================
-// レスポンス
-//========================================================
-  //─────────────────
-  // クライアントにレスポンス
-  // ※AdapterQueueBaseをオーバーライド
-  //─────────────────
-  void SEND_CONN_BRIDGE() {
-    //┬
-    //○メッセージをUSB(CDC)へレスポンス
-    Serial.print(ctx.resMSG.c_str());
-    //│
-    //●ログ出力
-    adpFnBase::SHOW_LOG();
-    //┴
-  } /* SEND_CONN() */
-
 public:
   using AdapterBase::AdapterBase;
 
@@ -146,7 +129,10 @@ public:
       //●ブリッジ・マスタの場合：コマンドを実行
       //●ブリッジ・スレーブかエラーがある場合：クライアントにレスポンス
       if (ctx.adpID == ADP_ID_UART) modeBridge::RUN();
-      if (ctx.adpID != ADP_ID_UART || ctx.resMSG != "") SEND_CONN_BRIDGE();
+      if (ctx.adpID != ADP_ID_UART || ctx.resMSG != "") {
+        ctx.resMSG = ctx.strFrame; // フレームをそのままレスポンスにセット
+        SEND_CONN_BRIDGE()       ; // クライアントレスポンスに誘導
+      }
 #endif
     } /* END-while */
     //│
@@ -155,7 +141,7 @@ public:
     //│
 #if (MODE == MODE_BRIDGE)
     //○転送依頼を確認
-    if (ctx.transOn && ctx.adpID == ctx.transID) {
+    if (ctx.transOn && getAID() == ctx.transID) {
     //│＼（自分宛に転送依頼がきている場合）
         //○転送依頼フラグをオフ
         //●転送を受付

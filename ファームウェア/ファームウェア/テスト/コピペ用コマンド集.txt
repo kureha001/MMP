@@ -13,7 +13,7 @@ SSID: Buffalo-G-C0F0
 PSWD: 6shkfa53dk8ks
 -------------------------------
 BRIDGE/TCP:99:8081!
-BRIDGE/WSOC:99:8082!
+BRIDGE/WSOC:192.168.2.99:8082!
 BRIDGE/ESPN:50-78-7D-18-51-50!
 
 _START_!

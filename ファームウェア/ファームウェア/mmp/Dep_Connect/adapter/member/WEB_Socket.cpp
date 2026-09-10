@@ -159,7 +159,7 @@ public:
         delay(200);
       }
       //│
-      //○タイムアウトはエラーコードをレスポンス
+      //○タイムアウトはエラーCDをセット
       if (!MY_NET.isConnected()) {ctx.strFrame = "#TIM!"; return;}
       //┴
     }

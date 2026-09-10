@@ -42,7 +42,7 @@
     //○転送先（スレーブ）をセット
     bool isOn = false;
     int  ID   = -1;
-    if      (cmd[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラー
+    if      (cmd[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラーにする
     else if (cmd[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = ADP_ID_TCP ;}
     else if (cmd[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = ADP_ID_WSOC;}
     else if (cmd[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = ADP_ID_HTTP;}
@@ -54,7 +54,7 @@
     //○転送先の設定漏れを確認
     if (ctx.bridge.adpID < 0) {ctx.resMSG = "#BR1!"; return;}
     //│＼（転送先が[未設定]の場合）
-    //│ ○レスポンスMSGにエラーIDをセット
+    //│ ○コンテクストにエラーCDをセット
     //│ ▼終了：早期リターン
     //│
     //○転送先設定／コマンド実行の確認

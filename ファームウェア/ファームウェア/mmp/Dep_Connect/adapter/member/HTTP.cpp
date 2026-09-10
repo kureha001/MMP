@@ -400,7 +400,7 @@ public:
     //●レスポンスを取得
     if (MY_NET.GET() <= 0) {
     //│＼（取得できない場合）
-        //○レスポンスMSGにエラーIDをセット
+        //○コンテクストにエラーCDをセット
         //▼終了：早期リターン
         ctx.strFrame = "#CNT!";
         return;
@@ -426,14 +426,19 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○転送依頼を確認
-    if (ctx.bridge.Stat != 1 || ADP_ID != ctx.bridge.adpID) return;
+    if (ctx.bridge.Stat != BSTAT::REQ || ADP_ID != ctx.bridge.adpID) return;
     //│＼（自分宛に転送依頼がない場合）
     //│ ▼終了：早期リターン
     //│
     //○進行状況を［処理中］にセット
+    ctx.bridge.Stat == BSTAT::BUSY;
+    //│
     //●転送を受付
-    ctx.bridge.Stat == 2;
     trans();
+    if (ctx.strFrame != "") ctx.bridge.Stat = BSTAT::DONE;
+    //│＼（[エラーあり]の場合）
+        //○進行状況を[処理済]にセット
+        //┴
     //┴
 #else
     //┬

@@ -35,7 +35,7 @@ public:
     //□実行ハンドル
     virtual void handle() = 0;
     //│
-    //□転送受付（未登録はエラーIDをフレームにセット）
+    //□転送受付（未登録はコンテクストにエラーCDをセット）
     virtual void trans() {ctx.strFrame = "#BR0!";};
   //┴
 //┴

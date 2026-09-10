@@ -159,17 +159,17 @@ public:
     //┬
     //◇ブリッジマスタとして進行を制御
     switch (ctx.bridge.Stat) {
-      case 0: return false; // 待機中：進行OK
-      case 1: return true ; // 依頼中：進行NG
-      case 2: return true ; // 処理中：進行NG
-      case 3:               // 処理済：進行OK
+      case BSTAT::IDLE: return false; // 待機中：進行OK
+      case BSTAT::REQ : return true ; // 依頼中：進行NG
+      case BSTAT::BUSY: return true ; // 処理中：進行NG
+      case BSTAT::DONE:               // 処理済：進行OK
         //○フレームをレスポンスMSGにセット
         //●ブリッジ元にレスポンス
         //○進行状況を［待機中］にセット
         //▼終了：早期リターン（進行OK）
         ctx.resMSG = ctx.strFrame;
         SEND_CONN(ssTBL[ctx.bridge.slotID].CONN);
-        ctx.bridge.Stat = 0;
+        ctx.bridge.Stat = BSTAT::IDLE;
         return false;
     } /* END-switch */
     return true; // 想定外：進行NG

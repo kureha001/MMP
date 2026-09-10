@@ -107,7 +107,7 @@ public:
       //│ ▼完了：ルーティングを終了
       //│
 //-----------------------------------------
-//【ブリッジ】エラーでも中断しない
+//【ブリッジ】エラーでも中断せずにそのまま扱う
 //-----------------------------------------
 #if (MODE != MODE_BRIDGE)
       //○フレームの状態を確認
@@ -116,7 +116,7 @@ public:
         continue;
       }
       //│＼（エラーが発生している場合）
-      //│ ●エラーを強制レスポンス
+      //│ ●ブリッジ元にレスポンス
       //│ ▽次へ：次のキューを走査
 #endif
       //│
@@ -155,7 +155,7 @@ public:
           //│
           //◆┐ブリッジ処理を実行
           modeBridge::RUN();
-          if (ctx.resMSG == "") ctx.bridge.Stat = 1;
+          if (ctx.resMSG == "") ctx.bridge.Stat = BSTAT::REQ;
             //├┐（リクエストが[MMPコマンド実行]の場合）
               //○進捗状況を[依頼中]にセット
               //┴
@@ -167,7 +167,7 @@ public:
       } else if(getAID() == ctx.bridge.adpID) {
         //├┐（スレーブの場合）
           //○ステータスを[処理済]にセット
-          ctx.bridge.Stat = 3;
+          ctx.bridge.Stat = BSTAT::DONE;
           //┴
       } else continue;
         //└┐（その他：対象外アダプタの場合）
@@ -186,16 +186,16 @@ public:
     //○┐転送処理を実施
       //│
       //○転送依頼を確認
-      if (ctx.bridge.Stat != 1 || getAID() != ctx.bridge.adpID) return;
+      if (ctx.bridge.Stat != BSTAT::REQ || getAID() != ctx.bridge.adpID) return;
       //│＼（自分宛に転送依頼がない場合）
       //│ ▼終了：早期リターン
       //│
       //○進行状況を[処理中]にセット
-      ctx.bridge.Stat = 2;
+      ctx.bridge.Stat = BSTAT::BUSY;
       //│
       //●転送を実施
       trans();
-      if (ctx.strFrame != "") ctx.bridge.Stat = 3;
+      if (ctx.strFrame != "") ctx.bridge.Stat = BSTAT::DONE;
       //│＼（[エラーあり]の場合）
           //○進行状況を[処理済]にセット
           //┴

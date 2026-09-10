@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/10)
+// Ver 1.3.0 (2026/09/11)
 //========================================================
 //┬
 //□┐インクルード
@@ -26,6 +26,14 @@
   inline constexpr int ADP_ID_BLE  = 4;
   inline constexpr int ADP_ID_ESPN = 5;
   inline constexpr int ADP_ID_IIC  = 6;
+  //│
+  //□ブリッジの進捗状況
+  namespace BSTAT {
+    inline constexpr int IDLE = 0; // 待機中
+    inline constexpr int REQ  = 1; // 依頼中（マスタ→スレーブ）
+    inline constexpr int BUSY = 2; // 処理中（スレーブ実行中）
+    inline constexpr int DONE = 3; // 処理済（応答・完了）
+  }
   //│
   //□ストリーム受信型の接続管理
   struct SS_SLOT_TYPE {      // 接続管理スロット

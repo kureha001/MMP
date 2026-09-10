@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（ブリッジモード）
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/10)
+// Ver 1.3.0 (2026/09/11)
 //========================================================
 
 //########################################################
@@ -39,23 +39,27 @@
       } /* END-for */
       //┴
     //│
-    //○転送先をレスポンスMSGへ反映
+    //○転送先（スレーブ）をセット
     bool isOn = false;
-    if      (cmd[0] == "BRIDGE/TCP" ) {ctx.bridge.adpID = ADP_ID_TCP ; isOn = true;}
-    else if (cmd[0] == "BRIDGE/WSOC") {ctx.bridge.adpID = ADP_ID_WSOC; isOn = true;}
-    else if (cmd[0] == "BRIDGE/HTTP") {ctx.bridge.adpID = ADP_ID_HTTP; isOn = true;}
-    else if (cmd[0] == "BRIDGE/BLE" ) {ctx.bridge.adpID = ADP_ID_BLE ; isOn = true;}
-    else if (cmd[0] == "BRIDGE/ESPN") {ctx.bridge.adpID = ADP_ID_ESPN; isOn = true;}
+    int  ID   = -1;
+    if      (cmd[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラー
+    else if (cmd[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = ADP_ID_TCP ;}
+    else if (cmd[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = ADP_ID_WSOC;}
+    else if (cmd[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = ADP_ID_HTTP;}
+    else if (cmd[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = ADP_ID_BLE ;}
+    else if (cmd[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = ADP_ID_ESPN;}
+    else if (cmd[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = ADP_ID_IIC ;}
+    if (isOn) ctx.bridge.adpID = ID; // 転送先の指定があれば変更
     //│
     //○転送先の設定漏れを確認
-    if (ctx.bridge.adpID < 0) {ctx.resMSG = "#TID!"; return;}
-    //│＼（未設定の場合）
+    if (ctx.bridge.adpID < 0) {ctx.resMSG = "#BR1!"; return;}
+    //│＼（転送先が[未設定]の場合）
     //│ ○レスポンスMSGにエラーIDをセット
     //│ ▼終了：早期リターン
     //│
     //○転送先設定／コマンド実行の確認
     if (isOn == false  ) return;
-    //│＼（コマンド実行の場合）
+    //│＼（リクエストが[MMPコマンド実行]の場合）
     //│ ▼終了：早期リターン
     //│
     //○引数をレスポンスMSGへ反映

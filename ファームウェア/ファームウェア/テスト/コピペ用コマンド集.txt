@@ -12,6 +12,8 @@ PSWD: etnxhurnecbs7
 SSID: Buffalo-G-C0F0
 PSWD: 6shkfa53dk8ks
 -------------------------------
+BRIDGE/UART!　※エラー
+BRIDGE/IIC!　 ※エラー
 BRIDGE/HTTP:192.168.2.99:8080!
 BRIDGE/TCP:192.168.2.99:8081!
 BRIDGE/WSOC:192.168.2.99:8082!

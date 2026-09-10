@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：TCP RAW 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) 
+// Ver 1.3.0 (2026/09/11)
 //========================================================
 //┬
 //□┐インクルード
@@ -291,7 +291,7 @@ public:
         String   ip   = ctx.bridge.Dat1;
         uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
         MY_NET.setTimeout(2000);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.resMSG = "#CNT!"; return;}
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = "#CNT!"; return;}
         //│＼（接続に失敗した場合）
         //│ ○コンテクストにエラーIDをセット
         //│ ▼終了：早期リターン

@@ -391,8 +391,8 @@ public:
   void trans() {
     //┬
     //○リクエストを転送（HTTPクライアントを接続）
-    String ip     = ctx.transDat1st;
-    String port   = ctx.transDat2nd;
+    String ip     = ctx.bridge.Dat1;
+    String port   = ctx.bridge.Dat2;
     String cmd    = ctx.strFrame;
     String strURL = String("http://") + ip + ":" + port + "/" + cmd;
     MY_NET.begin(strURL);
@@ -426,18 +426,14 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○転送依頼を確認
-    if (!ctx.transOn || ADP_ID != ctx.transID) return;
+    if (ctx.bridge.Stat != 1 || ADP_ID != ctx.bridge.adpID) return;
     //│＼（自分宛に転送依頼がない場合）
     //│ ▼終了：早期リターン
     //│
-    //○転送依頼フラグをオフ
-    ctx.transOn = false;
-    //│
+    //○進行状況を［処理中］にセット
     //●転送を受付
+    ctx.bridge.Stat == 2;
     trans();
-    //│
-    //●クライアントにレスポンス
-    SEND_CONN_BRIDGE();
     //┴
 #else
     //┬

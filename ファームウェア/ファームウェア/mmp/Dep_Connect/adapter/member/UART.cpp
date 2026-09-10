@@ -151,4 +151,29 @@ public:
     //┴
   } /* constractor AdapterUART() */
 
+#if (MODE == MODE_BRIDGE)
+  //━━━━━━━━━━━━━━━━━
+  // ポーリングの前処理
+  //━━━━━━━━━━━━━━━━━
+  bool handle_Begin() override {
+    //┬
+    //◇ブリッジマスタとして進行を制御
+    switch (ctx.bridge.Stat) {
+      case 0: return false; // 待機中：進行OK
+      case 1: return true ; // 依頼中：進行NG
+      case 2: return true ; // 処理中：進行NG
+      case 3:               // 処理済：進行OK
+        //○ブリッジ元にレスポンス
+        //●ログを表示
+        //○進行状況を［転送まち］にセット
+        //▼終了：早期リターン（進行OK）
+        Serial.print(ctx.strFrame);
+        adpFnBase::SHOW_LOG();
+        ctx.bridge.Stat = 0;
+        return false;
+    } /* END-switch */
+    return true; // 想定外：進行NG
+  } /* handle_reject() */
+#endif
+
 }; /* class AdapterUART */

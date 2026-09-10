@@ -82,16 +82,18 @@ public:
   //━━━━━━━━━━━━━━━━━
   // 前後処理用のフック関数
   //━━━━━━━━━━━━━━━━━
-  virtual void handle_begin() {}
-  virtual void handle_end()   {}
+    //─────────────────
+    // ポーリングの前処理
+    //─────────────────
+    virtual bool handle_Begin() {return false;}
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
   void handle() override final {
     //┬
-    //○ポーリング前処理（例: WebSocketの loop() など）
-    handle_begin();
+    //●前処理
+    if (handle_Begin()) return;
     //│
     //◎┐キューの自動消化とルーティング
     QueueItem popDat;
@@ -99,6 +101,7 @@ public:
       //│＼（キューが空の場合）
       //│ ▼完了：ルーティングを終了
       //│
+#if (MODE != MODE_BRIDGE)
       //○フレームの状態を確認
       if (popDat.frame.startsWith("#")) {
         SEND_CONN(popDat.conn);
@@ -107,56 +110,76 @@ public:
       //│＼（エラーが発生している場合）
       //│ ●エラーを強制レスポンス
       //│ ▽次へ：次のキューを走査
+#endif
       //│
       //●コンテキストを初期化
       setupCTX(popDat.frame);
       //│
+
 #if   (MODE == MODE_MAIN)
       //●コマンドを実行
-      //●実行結果をレスポンス
       modeMain::RUN();
+      //│
+      //●実行結果をレスポンス
       SEND_CONN(popDat.conn);
       //┴
 
 #elif (MODE == MODE_SUB)
       //●コマンドを実行
-      //●実行結果をレスポンス
       modeSub  ::RUN();
+      //│
+      //●実行結果をレスポンス
       SEND_CONN(popDat.conn);
       //┴
 
 #elif (MODE == MODE_BRIDGE)
-      //●ブリッジ・マスタ ：コマンドを実行
-      //●レスポンスMSGあり：ブリッジ元にレスポンス
-      if (ctx.adpID == ADP_ID_UART) modeBridge::RUN();
-      if (ctx.resMSG != "") SEND_CONN_BRIDGE();
-      if (ctx.adpID != ADP_ID_UART) {
-        ctx.resMSG = ctx.strFrame; // MSGにフレームをレスポンスMSGにセット
-        SEND_CONN_BRIDGE()       ; 
-      }
+      //◇┐ブリッジのマスタ／スレーブを処理
+      if (ctx.adpID == ADP_ID_UART) {
+        //├┐（マスタの場合）
+          //◆┐ブリッジ処理を実行
+          modeBridge::RUN();
+          if (ctx.resMSG == "") ctx.bridge.Stat = 1;
+            //├┐（通常コマンドの場合）
+              //○進捗状況を[依頼中]にセット
+              //┴
+          else SEND_CONN(popDat.conn);
+            //└┐（その他）
+              //●ブリッジ元にレスポンス
+              //┴
+          //┴
+      } else if(getAID() == ctx.bridge.adpID) {
+        //├┐（スレーブの場合）
+          //○ステータスを[処理済]にセット
+          ctx.bridge.Stat = 3;
+          //┴
+        //└┐（その他：対象外）
+          //▽次へ：スキップ ※できる限りゴミキューを削除
+          continue;
+          //┴
+      } /* END-if */
+      //│
+      //▼終了：早期リターン ※関係するアダプタは1件だけ処理
+      return; 
 #endif
     } /* END-while */
     //│
-    //○ポーリング後処理
-    handle_end();
-    //│
 #if (MODE == MODE_BRIDGE)
-    //○転送依頼を確認
-    if (ctx.transOn && getAID() == ctx.transID) {
-    //│＼（自分宛に転送依頼がきている場合）
-        //○転送依頼フラグをオフ
-        //●転送を受付
-        //●レスポンスMSGあり：ブリッジ元にレスポンス
-        //▼終了：早期リターン
-        ctx.transOn = false;
-        trans();
-        if (ctx.resMSG != "") SEND_CONN_BRIDGE();
-        return;
-    //┴
-      } /* END-if */
+    //○┐転送処理を実施
+      //│
+      //○転送依頼を確認
+      if (ctx.bridge.Stat != 1 || getAID() != ctx.bridge.adpID) return;
+      //│＼（自分宛に転送依頼がない場合）
+      //│ ▼終了：早期リターン
+      //│
+      //○進行状況を[処理中]にセット
+      //●転送を実施
+      ctx.bridge.Stat = 2;
+      trans();
+      //┴
 #endif
     //┴
   } /* handle() */
+
 }; /* class AdapterQueueBase */
 
 #endif

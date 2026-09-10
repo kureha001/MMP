@@ -11,7 +11,15 @@
 //========================================================
 // コンテクスト
 //========================================================
-struct MmpContext {
+  struct T_BRIDGE {
+    int    adpID = -1; // 転送先のアダプタID
+    int    Stat  =  0; // 進行状況
+    String Dat1    = ""; // 転送先の個別情報１
+    String Dat2    = ""; // 転送先の個別情報２
+    String Dat3    = ""; // 転送先の個別情報３
+  };
+
+  struct MmpContext {
   //┬
   //■システム情報
   const String sysVer  = "V13a!"  ; // バージョン
@@ -24,11 +32,7 @@ struct MmpContext {
   String       authCD   = ""; // 認証コード
   //│
   //■転送情報（ブリッジモードで使用）
-  int          transID     = -1   ; // 転送先のアダプタID
-  bool         transOn     = false; // 転送開始フラグ
-  String       transDat1st = ""   ; // 転送先の個別情報１
-  String       transDat2nd = ""   ; // 転送先の個別情報２
-  String       transDat3rd = ""   ; // 転送先の個別情報３
+  T_BRIDGE     bridge;
   //│
   //■ユーザメモリ情報（特定の機能モジュールで使用）
   int          accID    = -1; // アクセスID(MMP全体で一意)

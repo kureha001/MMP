@@ -146,8 +146,8 @@ public:
     //┬
     //◇クライアントを起動
     if (!MY_NET.isConnected()) {
-      String   ip   = ctx.transDat1st;
-      uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
+      String   ip   = ctx.bridge.Dat1;
+      uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
       MY_INSTANS = this;
       MY_NET.onEvent(ON_RECIVE); 
       MY_NET.begin(ip.c_str(), port, "/");
@@ -173,7 +173,7 @@ public:
   //━━━━━━━━━━━━━━━━━
   // ポーリング用前処理
   //━━━━━━━━━━━━━━━━━
-  void handle_begin() override {
+  bool handle_Begin() override {
     //┬
     //○WebSocketの処理を進める（イベント発火）
 #if (MODE == MODE_BRIDGE)
@@ -181,8 +181,10 @@ public:
 #else
     if (MY_NET) MY_NET->loop();
 #endif
-    //┴
+    //▼終了：正常
+    return false;
   } /* handle_begin() */
+  
 }; /* class AdapterWEB_Socket */
 
 //━━━━━━━━━━━━━━━━━

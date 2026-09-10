@@ -288,8 +288,8 @@ public:
       //├┐（未接続の場合）
         //│
         //○TCPクライアントを起動
-        String   ip   = ctx.transDat1st;
-        uint16_t port = (uint16_t)ctx.transDat2nd.toInt();
+        String   ip   = ctx.bridge.Dat1;
+        uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
         MY_NET.setTimeout(2000);
         if (!MY_NET.connect(ip.c_str(), port)) {ctx.resMSG = "#CNT!"; return;}
         //│＼（接続に失敗した場合）

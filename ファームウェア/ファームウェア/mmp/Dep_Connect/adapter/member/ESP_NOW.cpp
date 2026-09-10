@@ -169,7 +169,7 @@ public:
     //┬
     //○転送先MACアドレス（12桁連続ヘキサ）を取得してデコード
     uint8_t macBuf[6] = {0};
-    rawStringToMac(ctx.transDat1st, macBuf);
+    rawStringToMac(ctx.bridge.Dat1, macBuf);
     //│
     //○転送先がピアに未登録の場合、自動追加する
     if (!esp_now_is_peer_exist(macBuf)) {

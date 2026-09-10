@@ -41,30 +41,29 @@
     //│
     //○転送先をレスポンスMSGへ反映
     bool isOn = false;
-    if      (cmd[0] == "BRIDGE/TCP" ) {ctx.transID = ADP_ID_TCP ; isOn = true;}
-    else if (cmd[0] == "BRIDGE/WSOC") {ctx.transID = ADP_ID_WSOC; isOn = true;}
-    else if (cmd[0] == "BRIDGE/HTTP") {ctx.transID = ADP_ID_HTTP; isOn = true;}
-    else if (cmd[0] == "BRIDGE/BLE" ) {ctx.transID = ADP_ID_BLE ; isOn = true;}
-    else if (cmd[0] == "BRIDGE/ESPN") {ctx.transID = ADP_ID_ESPN; isOn = true;}
+    if      (cmd[0] == "BRIDGE/TCP" ) {ctx.bridge.adpID = ADP_ID_TCP ; isOn = true;}
+    else if (cmd[0] == "BRIDGE/WSOC") {ctx.bridge.adpID = ADP_ID_WSOC; isOn = true;}
+    else if (cmd[0] == "BRIDGE/HTTP") {ctx.bridge.adpID = ADP_ID_HTTP; isOn = true;}
+    else if (cmd[0] == "BRIDGE/BLE" ) {ctx.bridge.adpID = ADP_ID_BLE ; isOn = true;}
+    else if (cmd[0] == "BRIDGE/ESPN") {ctx.bridge.adpID = ADP_ID_ESPN; isOn = true;}
     //│
-    //○転送先の設定を確認
-    if (ctx.transID < 0) {ctx.resMSG = "#TID!"; return;}
+    //○転送先の設定漏れを確認
+    if (ctx.bridge.adpID < 0) {ctx.resMSG = "#TID!"; return;}
     //│＼（未設定の場合）
     //│ ○レスポンスMSGにエラーIDをセット
     //│ ▼終了：早期リターン
     //│
-    //○転送先設定の可否を確認
-    if (isOn == false  ) {ctx.transOn = true  ; return;}
-    //│＼（転送先変更のコマンド実行ではない場合）
-    //│ ○転送依頼フラグを依頼
+    //○転送先設定／コマンド実行の確認
+    if (isOn == false  ) return;
+    //│＼（コマンド実行の場合）
     //│ ▼終了：早期リターン
     //│
     //○引数をレスポンスMSGへ反映
-    ctx.transDat1st = cmd[1];
-    ctx.transDat2nd = cmd[2];
-    ctx.transDat3rd = cmd[3];
+    ctx.bridge.Dat1 = cmd[1];
+    ctx.bridge.Dat2 = cmd[2];
+    ctx.bridge.Dat3 = cmd[3];
     //│
-    //○レスポンスMSGに正常終了IDをセット
+    //○レスポンスMSGに[正常終了]をセット
     ctx.resMSG = "!!!!!";
     //┴
   } /* RUN() */

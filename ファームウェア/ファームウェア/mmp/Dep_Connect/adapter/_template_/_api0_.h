@@ -37,14 +37,6 @@ public:
     //│
     //□転送受付（未登録はエラーをレスポンス）
     virtual void trans() {Serial.print("#TRS!");};
-    //│
-#if (MODE == MODE_BRIDGE)
-    //□レスポンス（ブリッジ用）
-    void SEND_CONN_BRIDGE() {
-      Serial.print(ctx.resMSG);
-      adpFnBase::SHOW_LOG();
-    };
-#endif
   //┴
 //┴
 };

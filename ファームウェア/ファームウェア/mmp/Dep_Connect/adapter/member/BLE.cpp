@@ -54,7 +54,7 @@ private:
   void SEND_CONN(uint8_t argConn) override {
 #if (MODE != MODE_BRIDGE)
     //┬
-    //○メッセージをレスポンス
+    //○クライアントにレスポンス
     if (devBLE::BLE_TX != nullptr && devBLE::ENABLED) {
       devBLE::BLE_TX->setValue(ctx.resMSG.c_str());
       devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）

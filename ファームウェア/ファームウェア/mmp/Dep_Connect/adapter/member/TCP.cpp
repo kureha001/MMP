@@ -158,7 +158,7 @@ private:
   void SEND_CONN(WiFiClient argConn) override {
 #if (MODE != MODE_BRIDGE)
     //┬
-    //○メッセージをレスポンス
+    //○クライアントにレスポンス
     if (argConn.connected()) argConn.print(ctx.resMSG);
     //│
     //●ログ出力

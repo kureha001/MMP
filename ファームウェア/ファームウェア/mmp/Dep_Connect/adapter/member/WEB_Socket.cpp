@@ -61,7 +61,7 @@ private:
   void SEND_CONN(uint8_t argConn) override {
 #if (MODE != MODE_BRIDGE)
     //┬
-    //○メッセージをレスポンス
+    //○クライアントにレスポンス
     if (MY_NET) MY_NET->sendTXT(argConn, ctx.resMSG.c_str());
     //│
     //●ログ出力

@@ -56,7 +56,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(Stream* argConn) override {
     //┬
-    //○メッセージをレスポンス
+    //○クライアントにレスポンス
     if (argConn != nullptr) argConn->print(ctx.resMSG);
     //│
     //●ログ出力
@@ -163,7 +163,7 @@ public:
       case BSTAT::REQ : return true ; // 依頼中：進行NG
       case BSTAT::BUSY: return true ; // 処理中：進行NG
       case BSTAT::DONE:               // 処理済：進行OK
-        //○フレームをレスポンスMSGにセット
+        //○コンテクストにレスポンス内容をセット
         //●ブリッジ元にレスポンス
         //○進行状況を［待機中］にセット
         //▼終了：早期リターン（進行OK）

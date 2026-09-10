@@ -12,11 +12,12 @@
 // コンテクスト
 //========================================================
   struct T_BRIDGE {
-    int    adpID = -1; // 転送先のアダプタID
-    int    Stat  =  0; // 進行状況
-    String Dat1    = ""; // 転送先の個別情報１
-    String Dat2    = ""; // 転送先の個別情報２
-    String Dat3    = ""; // 転送先の個別情報３
+    int    slotID =  0; // リクエスト元のスロットID
+    int    adpID  = -1; // 転送先のアダプタID
+    int    Stat   =  0; // 進行状況
+    String Dat1   = ""; // 転送先の個別情報１
+    String Dat2   = ""; // 転送先の個別情報２
+    String Dat3   = ""; // 転送先の個別情報３
   };
 
   struct MmpContext {

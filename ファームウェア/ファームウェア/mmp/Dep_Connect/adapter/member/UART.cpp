@@ -89,7 +89,7 @@ private:
       //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue(ssTBL[ID].CONN, retFrame);
+      pushQueue(ssTBL[ID].CONN, retFrame, ID);
       //┴
     } /* END-for */
     //┴
@@ -163,17 +163,17 @@ public:
       case 1: return true ; // 依頼中：進行NG
       case 2: return true ; // 処理中：進行NG
       case 3:               // 処理済：進行OK
-        //○ブリッジ元にレスポンス
-        //●ログを表示
+        //○フレームをレスポンスMSGにセット
+        //●ブリッジ元にレスポンス
         //○進行状況を［転送まち］にセット
         //▼終了：早期リターン（進行OK）
-        Serial.print(ctx.strFrame);
-        adpFnBase::SHOW_LOG();
+        ctx.resMSG = ctx.strFrame;
+        SEND_CONN(ssTBL[ctx.bridge.slotID].CONN);
         ctx.bridge.Stat = 0;
         return false;
     } /* END-switch */
     return true; // 想定外：進行NG
-  } /* handle_reject() */
+  } /* handle_Begin() */
 #endif
 
 }; /* class AdapterUART */

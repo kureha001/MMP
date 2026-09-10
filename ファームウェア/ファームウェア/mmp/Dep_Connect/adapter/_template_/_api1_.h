@@ -28,8 +28,9 @@ protected:
   // キュー要素構造体
   //━━━━━━━━━━━━━━━━━
   struct QueueItem {
-    T      conn;  // 接続識別子 (uint8_t, WiFiClient, String 等)
-    String frame; // 受信データフレーム
+    T      conn  ; // 接続識別子 (uint8_t, WiFiClient, String 等)
+    String frame ; // 受信データフレーム
+    int    slotID; // スロットID
   };
 
 private:
@@ -62,10 +63,14 @@ public:
   //━━━━━━━━━━━━━━━━━
   // キューへの追加
   //━━━━━━━━━━━━━━━━━
-  void pushQueue(const T& conn, const String& frame) {
+  void pushQueue(
+    const T&      conn , // 接続識別
+    const String& frame, // フレーム
+    const int     SID    // スロットID ※対象外は０をセット
+  ) {
     if (frame.length() < 1) return;
     std::lock_guard<std::mutex> lock(queueMutex);
-    rxQueue.push({conn, frame});
+    rxQueue.push({conn, frame, SID});
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -136,6 +141,9 @@ public:
       //◇┐ブリッジのマスタ／スレーブを処理
       if (ctx.adpID == ADP_ID_UART) {
         //├┐（マスタの場合）
+          //○スロットIDをコンテキストにコピー
+          ctx.bridge.slotID = popDat.slotID;
+          //│
           //◆┐ブリッジ処理を実行
           modeBridge::RUN();
           if (ctx.resMSG == "") ctx.bridge.Stat = 1;

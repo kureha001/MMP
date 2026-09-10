@@ -100,7 +100,7 @@ private:
       if (retFrame == "!") continue;
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue((uint8_t)ID, retFrame);
+      pushQueue((uint8_t)ID, retFrame, 0);
       //┴
     } /* END-for */
     //┴

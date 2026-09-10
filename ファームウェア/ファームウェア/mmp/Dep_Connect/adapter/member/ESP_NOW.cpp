@@ -129,7 +129,7 @@ private:
     String frame  = String((const char*)payload, length);
     //│
     //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
-    MY_INSTANS->pushQueue(macStr, frame);
+    MY_INSTANS->pushQueue(macStr, frame, 0);
     //┴
   } /* ON_RECIVE() */
 

@@ -104,7 +104,7 @@ private:
 #if (MODE == MODE_BRIDGE)
     uint8_t num = 0;
 #endif
-    MY_INSTANS->pushQueue(num, String((char*)payload));
+    MY_INSTANS->pushQueue(num, String((char*)payload), 0);
     //┴
   } /* ON_RECIVE() */
 

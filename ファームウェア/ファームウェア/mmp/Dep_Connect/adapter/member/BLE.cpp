@@ -88,7 +88,7 @@ private:
       //│ ▼終了：早期リターン
       //│
       //●受信データをキューに追加
-      MY_INSTANS->pushQueue(0, rxValue);
+      MY_INSTANS->pushQueue(0, rxValue, 0);
     } /* onWrite() */
   }; /* class ServerCallbacks */
 #endif
@@ -115,7 +115,7 @@ private:
     //│ ▼終了：早期リターン
     //│
     //●受信データをキューに追加
-    MY_INSTANS->pushQueue(0, String((char*)pData, length));
+    MY_INSTANS->pushQueue(0, String((char*)pData, length), 0);
     //┴
   } /* ON_RECIVE_NOTIFY() */
 #endif

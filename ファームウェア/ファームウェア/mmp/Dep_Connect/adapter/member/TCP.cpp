@@ -207,7 +207,7 @@ private:
       //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue(ssTBL[ID].CONN, retFrame);
+      pushQueue(ssTBL[ID].CONN, retFrame, ID);
       //┴
     } /* END-for */
     //┴

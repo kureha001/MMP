@@ -160,7 +160,7 @@ public:
       }
       //│
       //○タイムアウトはエラーコードをレスポンス
-      if (!MY_NET.isConnected()) {ctx.resMSG = "#TIM!"; return;}
+      if (!MY_NET.isConnected()) {ctx.strFrame = "#TIM!"; return;}
       //┴
     }
     //│

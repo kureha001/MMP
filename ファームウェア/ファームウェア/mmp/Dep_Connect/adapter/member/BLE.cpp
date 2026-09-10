@@ -138,7 +138,7 @@ public:
       devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
     //│
     //○メッセージ表示
-    Serial.println(" [OK] BLE Client (Bridge Mode)");
+    Serial.println(" [OK] BLE");
     //┴
 #else
     //┬
@@ -149,7 +149,7 @@ public:
     if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
     //│
     //○メッセージ表示
-    Serial.println(" [OK] BLE Server");
+    Serial.printf(" [OK] BLE (NAME=[%s])\n", devBLE::MY_NAME);
     //┴
 #endif
   } /* constractor AdapterBLE() */

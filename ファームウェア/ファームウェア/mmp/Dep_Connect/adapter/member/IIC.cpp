@@ -139,10 +139,7 @@ public:
     );
     //│
     //○メッセージ表示
-    Serial.print  (String(" [OK] IIC       -> "));
-    Serial.print  (String(IIC_ADDR_MIN));
-    Serial.print  (" ～ ");
-    Serial.println(String(IIC_ADDR_MAX));
+    Serial.printf(" [OK] IIC (ADR=[%d]->[%d]\n", IIC_ADDR_MIN, IIC_ADDR_MAX);
     //┴
   } /* constractor AdapterIIC() */
 

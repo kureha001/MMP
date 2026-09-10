@@ -368,7 +368,7 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
-    Serial.printf(" [OK] HTTP Client\n");
+    Serial.printf(" [OK] HTTP\n");
     //┴
 #else
     //┬
@@ -378,7 +378,7 @@ public:
     MY_NET->begin()                 ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] WEB Server-> port %d\n", MY_PORT);
+    Serial.printf(" [OK] HTTP (PORT=[%d])\n", MY_PORT);
     //┴
 #endif
   } /* constractor AdapterHTTP() */

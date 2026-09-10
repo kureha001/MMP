@@ -18,11 +18,12 @@
   void SHOW_LOG(){
     if (!ctx.sysLog) return;
     Serial.println(String("\n======================================"));
-    Serial.printf("Frame [%s]\n", String(ctx.strFrame));
-    Serial.printf("AID[%d] SID[%d]-> TID[%d] : Stat[%d]\n", ctx.adpID, ctx.bridge.slotID, ctx.bridge.adpID, ctx.bridge.Stat);
-    Serial.printf("TDat[%s][%s][%s]\n", String(ctx.bridge.Dat1), String(ctx.bridge.Dat2), String(ctx.bridge.Dat3));
-    Serial.printf("ACD[%s] : AccID[%d]/[%d]\n",String(ctx.authCD), ctx.accID, ctx.accIDS);
-    Serial.printf("Path[%s] = MSG[%s]\n",String(ctx.cmdPath), String(ctx.resMSG));
+    Serial.println("Frame [" + String(ctx.strFrame) + "]");
+    Serial.printf ("AID[%d] SID[%d] TID[%d](Stat[%d])\n", ctx.adpID, ctx.bridge.slotID, ctx.bridge.adpID, ctx.bridge.Stat);
+    Serial.printf ("TDat[%s][%s][%s]\n", String(ctx.bridge.Dat1), String(ctx.bridge.Dat2), String(ctx.bridge.Dat3));
+    Serial.printf ("ACD[%s] : AccID[%d]/[%d]\n",String(ctx.authCD), ctx.accID, ctx.accIDS);
+    Serial.print  ("Path[" + String(ctx.cmdPath) + "] = ");
+    Serial.println("MSG["  + String(ctx.resMSG ) + "]");
     Serial.println(String("======================================"));
   } /* P9_SHOW_LOG() */
 

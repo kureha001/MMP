@@ -147,7 +147,7 @@ public:
     );
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] USB/UART  -> #0,#1"));
+    Serial.println(" [OK] UART (PORT=[0][1])");
     //┴
   } /* constractor AdapterUART() */
 

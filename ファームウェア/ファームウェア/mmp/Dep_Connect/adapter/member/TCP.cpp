@@ -256,7 +256,7 @@ public:
     ssTBL = new T_SS_SLOT[SS_SLOTS];
     //│
     //○メッセージ表示
-    Serial.println(" [OK] TCP Client");
+    Serial.println(" [OK] TCP");
     //┴
 #else
     //┬
@@ -271,7 +271,7 @@ public:
     RUN_TASK();
     //│
     //○メッセージ表示
-    Serial.println(String(" [OK] TCP Raw   -> port ") + String(MY_PORT));
+    Serial.printf(" [OK] TCP (PORT=[%d])\n", MY_PORT);
     //┴
 #endif
   } /* constractor AdapterTCP() */

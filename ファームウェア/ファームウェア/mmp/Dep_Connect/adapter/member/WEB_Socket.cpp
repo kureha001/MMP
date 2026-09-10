@@ -119,7 +119,7 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
-    Serial.println(" [OK] WEB Socket Client");
+    Serial.println(" [OK] WEB Socket");
     //┴
 #else
     //┬
@@ -132,7 +132,7 @@ public:
     MY_NET->begin()                       ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] WEB Socket Server -> port %d\n", MY_PORT);
+    Serial.printf(" [OK] WEB Socket (PORT=[%d])\n", MY_PORT);
     //┴
 #endif
   } /* constractor AdapterWEB_Socket() */

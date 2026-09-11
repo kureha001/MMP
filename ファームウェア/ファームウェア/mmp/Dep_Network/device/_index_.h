@@ -25,6 +25,7 @@
   namespace devIIC{
     extern bool ENABLED ; // 有効性
     void START()        ; // デバイス開始の指示
+    bool UPDATE_PIN(int sda, int scl);
   }
 
   //━━━━━━━━━━━━━━━━━

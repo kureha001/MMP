@@ -26,7 +26,7 @@
 #define MODE_SUB    1 // サブモード
 #define MODE_BRIDGE 2 // ブリッジモード
 // 現在の動作モード ※上記から選択
-#define MODE MODE_BRIDGE
+#define MODE MODE_MAIN
 
 //─────────────────
 // 経路アダプタ選択
@@ -35,11 +35,11 @@
 //・不要：コメントアウト「する」
 //─────────────────
 #define ADP_UART true // UART ※本体＋サブ、ブリッジでは自動適用
-#define ADP_TCP  true // TCP RAW
-#define ADP_HTTP true // HTTP GET
-#define ADP_WSOC true // WEB Socket
-#define ADP_ESPN true // ESP NOW
-#define ADP_BLE  true // BLE
+#define ADP_TCP  false // TCP RAW
+#define ADP_HTTP false // HTTP GET
+#define ADP_WSOC false // WEB Socket
+#define ADP_ESPN false // ESP NOW
+#define ADP_BLE  false // BLE
 #define ADP_IIC  false // IIC ※メインモードでは使用禁止
 
 #endif // CONFIG_H

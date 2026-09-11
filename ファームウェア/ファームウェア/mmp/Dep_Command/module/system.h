@@ -69,7 +69,7 @@ public:
     // 引数 : ① 出力レベル {-1:なし | 0:レスポンス時 | n:処理プロセスn時 }
     // 戻り : _ResOK
     // ───────────────────────────────
-    if (strcmp(Cmd,"SET_LOG") == 0){
+    if (strcmp(Cmd,"SET/LOG") == 0){
 
       // １．前処理：
         // 1.1.書式チェック
@@ -87,6 +87,32 @@ public:
       return;
     }
 
+    // ───────────────
+    // SET_IICPIN : IICピン設定の更新＆保存
+    // ───────────────
+    if (strcmp(Cmd, "SET/IIC") == 0){
+
+      // １．前処理：
+        // 1.1.書式チェック
+      if (dat_cnt != 3) { _ResChkErr(); return; } // Cmd, SDA, SCL の3要素
+
+      // 1.2.単項目チェック
+      int sda, scl;
+      if (!_Str2Int(dat[1], sda, 0, 49)){_ResChkErr(); return;}
+      if (!_Str2Int(dat[2], scl, 0, 49)){_ResChkErr(); return;}
+
+      // 1.3.相関チェック
+      if(sda == scl){_ResChkErr(); return;}
+
+      // ２．IICを再起動
+      bool res = devIIC::UPDATE_PIN(sda, scl);
+
+      // ３．後処理：
+      if (res) _ResOK();
+      else     _ResChkErr();
+      return;
+    }
+  
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー
   //━━━━━━━━━━━━━━━━━

@@ -174,15 +174,28 @@ public:
   // ポーリング用前処理
   //━━━━━━━━━━━━━━━━━
   bool handle_Begin() override {
+#if (MODE == MODE_BRIDGE)
+    //※クライアントは未接続でも loop() を回し続けて接続状態の変化を検知
+    //※接続の有無に関わらず、後続へ進める（false）
     //┬
     //○WebSocketの処理を進める（イベント発火）
-#if (MODE == MODE_BRIDGE)
     MY_NET.loop();
-#else
-    if (MY_NET) MY_NET->loop();
-#endif
+    //│
     //▼終了：正常
     return false;
+    //┴
+#else
+    //┬
+    //○サーバはインスタンス未生成（Null）の場合は進行不可（true）
+    if (!MY_NET) return true;
+    //│
+    //○WebSocketの処理を進める（イベント発火）
+    MY_NET->loop();
+    //│
+    //▼終了：正常
+    return false;
+    //┴
+#endif
   } /* handle_begin() */
   
 }; /* class AdapterWEB_Socket */

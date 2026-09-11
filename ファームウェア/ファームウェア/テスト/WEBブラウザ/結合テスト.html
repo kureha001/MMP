@@ -217,7 +217,7 @@
       const host = hostEl.value.trim();
       const port = (portEl.value || '8080').trim();
       
-      const suffix = chkJsonEl.checked ? '!!' : '!';
+      const suffix = chkJsonEl.checked ? '@!' : '!';
       const url  = `http://${host}:${port}${path}${suffix}`;
       
       try{

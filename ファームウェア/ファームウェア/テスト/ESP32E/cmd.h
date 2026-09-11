@@ -6,8 +6,8 @@
 const char* COMMAND_TBL[] = {
   "_START_!",
   "SYS/VERSION!",
-  "SYS/SET_LOG:0!",
-  "SYS/SET_LOG:1!",
+  "SYS/SET/LOG:0!",
+  "SYS/SET/LOG:1!",
   "SYS/BOOT!",
   "========================",
   "DIGITAL/OUTPUT:17:1!",

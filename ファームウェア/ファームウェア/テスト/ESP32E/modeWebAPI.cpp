@@ -46,7 +46,10 @@ String RUN(const char* cmdStr) {
   if (errMSG != "") {Serial.println(errMSG); delay(100); return "[NG] Not Ready.";}
 
   // 前処理
-  String strURL = String("http://") + SRV_IP.c_str() + ":" + CONN_PORT + "/" + cmdStr;
+  int newLen = strlen(cmdStr) - 1 + 2 + 1;
+  char result[newLen];
+  snprintf(result, newLen, "%.*s@!", (int)strlen(cmdStr) - 1, cmdStr);
+  String strURL = String("http://") + SRV_IP.c_str() + ":" + CONN_PORT + "/" + result;
 
   // ＭＭＰへリクエスト
   CONN.begin(strURL)       ; // クライアントを開始

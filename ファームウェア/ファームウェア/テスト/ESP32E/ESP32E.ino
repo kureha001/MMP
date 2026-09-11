@@ -320,7 +320,7 @@ void setup() {
     int retWifi = devWiFi::START("Buffalo-G-7050","etnxhurnecbs7","99");
 
     // BLEを接続する
-    int retBLE  = devBLE::START("MMP-ESP32S3");
+    int retBLE  = devBLE::START("MMP-MAIN-001");
 
     // BLEを接続する
     Serial.println("\n========<< READY to Start >>========\n");

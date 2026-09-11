@@ -89,20 +89,23 @@ namespace DepCommand {
   void INIT(){
     //┬
     //○動作モードを確認
-    if (MODE != MODE_MAIN) return;
     //│＼（動作モードがメイン以外場合）
     //│ ▼終了：早期リターン
     //│
     //○始業のあいさつ（開始）
     Serial.println("<<機能モジュールの初期化>>");
     //│
-    //○参加名簿と共に部下を招集（抽象化・一括管理）
+    //○参加名簿と共に部下を招集（システムモジュール）
     MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
+    //│
+#if (MODE == MODE_MAIN)
+    //○参加名簿と共に部下を招集（メインモード用モジュール）
     MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
     MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
     MODULE.push_back(new ModulePwm    (ctx, modPWM.name   , modPWM.desc   ));
     MODULE.push_back(new ModuleIIC    (ctx, modIIC.name   , modIIC.desc   ));
     MODULE.push_back(new ModuleMP3    (ctx, modMP3.name   , modMP3.desc   ));
+#endif
     //│
     //◎┐担当の点呼
     Serial.print(" Add In ->");

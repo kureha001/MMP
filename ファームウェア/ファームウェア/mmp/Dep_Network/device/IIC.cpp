@@ -94,10 +94,10 @@ namespace devIIC {
     ENABLED = true;
   } /* START() */
 
-//━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━
   // ピン設定の更新と即時再起動（公開関数）
   //━━━━━━━━━━━━━━━━━
-  bool UPDATE_PIN(int sda, int scl) {
+  bool UPDATE(int sda, int scl) {
     if (sda < 0 || scl < 0) return false;
 
     // 1. device.json の読み込み
@@ -127,7 +127,6 @@ namespace devIIC {
     Wire.end();
     Wire.begin(SDA_PIN, SCL_PIN);
 
-    Serial.printf("   [RELOAD] IIC -> SDA[%d], SCL[%d]\n", SDA_PIN, SCL_PIN);
     return true;
   }
 } /* namespace devIIC */

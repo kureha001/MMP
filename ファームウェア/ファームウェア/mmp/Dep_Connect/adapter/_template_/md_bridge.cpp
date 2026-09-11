@@ -17,8 +17,21 @@
   //━━━━━━━━━━━━━━━━━
   void RUN(){
     //┬
+    //◇┐システムコマンドを自前で応答
+    String tmpFrame = ctx.strFrame;
+    adpFnBase::FORMAT_URI(tmpFrame);
+    if (tmpFrame.startsWith("SYS/")) {
+      //├┐（システムコマンド指定の場合）
+        //●コマンドを実行
+        //▼終了：早期リターン
+        ctx.cmdPath = tmpFrame  ; // コマンド部門への準備
+        DepCommand::RunCommand(); // コマンド実行結果はctx.resMSGにセット
+        return                  ; // メインストリームに戻る
+      //└┐（その他）
+        //┴
+    } /* END-if */
+    //│
     //○┐コマンド名と引数を取得
-      //│
       //○フレームを補正
       String strCMD = ctx.strFrame;
       strCMD.replace("!", "");

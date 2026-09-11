@@ -66,13 +66,13 @@
     //┬
     //○動作モード名を取得
     String strMode = "";
-    if (MODE == MODE_MAIN  ) strMode = "Main"  ;
-    if (MODE == MODE_SUB   ) strMode = "Sub"    ;
-    if (MODE == MODE_BRIDGE) strMode = "Bridge";
+    if (MODE == MODE_MAIN  ) strMode = "MAIN"  ;
+    if (MODE == MODE_SUB   ) strMode = "SUB"    ;
+    if (MODE == MODE_BRIDGE) strMode = "BRIDGE";
     //│
     //○開始メッセージを出力
     Serial.println("-----------------------------");
-    Serial.printf (" MMP %s [Mode:%s]\n", ctx.sysVer, strMode);
+    Serial.printf (" MMP %s [MODE: %s]\n", ctx.sysVer, strMode);
     Serial.println("-----------------------------");
     //│
     //●ファンファーレを鳴らす

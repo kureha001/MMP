@@ -31,6 +31,7 @@
   // 文字列整形部品（URI形式）
   //━━━━━━━━━━━━━━━━━
   void FORMAT_URI(String &str){
+    str.toUpperCase();
     while (str.length() > 0) {
       char c = str.charAt(0);
       if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')

@@ -2,7 +2,7 @@
 //========================================================
 // 通信部門／デバイス課：担当割一覧
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.0 (2026/09/11) 
 //========================================================
 #pragma once
 
@@ -25,7 +25,7 @@
   namespace devIIC{
     extern bool ENABLED ; // 有効性
     void START()        ; // デバイス開始の指示
-    bool UPDATE_PIN(int sda, int scl);
+    bool UPDATE(int sda, int scl); // ピンアサイン変更
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -46,6 +46,7 @@
   namespace devBLE{
     extern bool ENABLED             ; // 有効性
     void START()                    ; // デバイス開始の指示
+    bool UPDATE(const char* newName); // デバイス名変更 ※ブリッジは再起動
     //※BLE固有の実体ポインタ（前方宣言型を利用）
     extern BLEServer*         MY_SRV; // BLEサーバー
     extern BLECharacteristic* BLE_RX; // 受信用キャラクタリスティック

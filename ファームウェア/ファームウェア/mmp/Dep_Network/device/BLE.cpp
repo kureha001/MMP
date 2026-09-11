@@ -2,17 +2,16 @@
 //========================================================
 // 通信部門／デバイス課：BLE 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/10) 
+// Ver 1.3.0 (2026/09/11) 
 //========================================================
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  // BLE全体の初期化・管理用
-  // 名前設定.Central（親機）/Peripheral（子機）としての基本機能の起動
   #include <BLEDevice.h>
-  // Notification（通知）/ Indication 機能の有効化
-  // キャラクタリスティックに追加し、「値更新の自動通知」を有効化
   #include <BLE2902.h>
+  // JSONファイル読み込み用
+  #include <LittleFS.h>
+  #include <ArduinoJson.h>
   //┴
 //┴
 
@@ -23,6 +22,8 @@ namespace devBLE {
 //========================================================
 // 共通資源
 //========================================================
+  constexpr const char* FILE_PATH = "/device.json";
+
   //─────────────────
   // BLE通信で使用するUUID
   //─────────────────
@@ -43,7 +44,49 @@ namespace devBLE {
   BLERemoteCharacteristic* BLE_CLI_RX = nullptr; // ブリッジモード遠隔受信用
   BLERemoteCharacteristic* BLE_CLI_TX = nullptr; // ブリッジモード遠隔送信用
 
-  const String             MY_NAME    = "MMP-ESP32S3";
+  String                   MY_NAME    = "";      // デバイス名（device.jsonより取得）
+
+//========================================================
+// JSON操作ヘルパ
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // 設定ファイルの読み込み（起動ガード付き）
+  //━━━━━━━━━━━━━━━━━
+  static bool READ_JSON() {
+    if (!LittleFS.begin(true)) {
+      Serial.println("   [NG] LittleFS のマウントに失敗しました");
+      return false;
+    }
+
+    if (!LittleFS.exists(FILE_PATH)) {
+      Serial.println("   [NG] device.json が存在しません (起動停止)");
+      return false;
+    }
+
+    File f = LittleFS.open(FILE_PATH, "r");
+    if (!f) {
+      Serial.println("   [NG] device.json のオープンに失敗しました");
+      return false;
+    }
+
+    StaticJsonDocument<512> doc;
+    DeserializationError err = deserializeJson(doc, f);
+    f.close();
+
+    if (err) {
+      Serial.println("   [NG] device.json のパースに失敗しました");
+      return false;
+    }
+
+    const char* name = doc["dev_name"] | "";
+    if (strlen(name) == 0) {
+      Serial.println("   [NG] 不正な dev_name 設定です");
+      return false;
+    }
+
+    MY_NAME = String(name);
+    return true;
+  }
 
 //========================================================
 // 担務（公開機能）
@@ -61,9 +104,15 @@ namespace devBLE {
     //○開始メッセージを表示
     Serial.println(" [Bluetooth device]"  );
     //│
+    //○起動ガード：device.json の読み込み
+    if (!READ_JSON()) {
+      ENABLED = false;
+      return;
+    }
+    //│
     //○BLEデバイスを初期化
     // Bluetoothスタックを起動し、
-    // デバイス名を「MMP-ESP32S3」として設定する。
+    // デバイス名を device.json の dev_name として設定する。
     BLEDevice::init(MY_NAME.c_str());
     //│
 #if (MODE == MODE_BRIDGE)
@@ -220,5 +269,49 @@ namespace devBLE {
 #endif
     //┴
   } /* START() */
+
+  //━━━━━━━━━━━━━━━━━
+  // デバイス名の更新＆永続化（公開機能）
+  //━━━━━━━━━━━━━━━━━
+//━━━━━━━━━━━━━━━━━
+  // デバイス名の更新＆永続化（公開機能）
+  //━━━━━━━━━━━━━━━━━
+  bool UPDATE(const char* newName) {
+    if (!newName || strlen(newName) == 0) return false;
+
+    // １．device.json の読み込み
+    if (!LittleFS.exists(FILE_PATH)) return false;
+    File fRead = LittleFS.open(FILE_PATH, "r");
+    if (!fRead) return false;
+
+    StaticJsonDocument<512> doc;
+    DeserializationError err = deserializeJson(doc, fRead);
+    fRead.close();
+    if (err) return false;
+
+    // ２．dev_name を上書き保存（全モード共通で同じキーを書き換え）
+    doc["dev_name"] = newName;
+
+    File fWrite = LittleFS.open(FILE_PATH, "w");
+    if (!fWrite) return false;
+    serializeJson(doc, fWrite);
+    fWrite.close();
+
+    // ３．メモリ上の変数を更新
+    MY_NAME = String(newName);
+
+    // ４．モードに応じた適用処理
+#if (MODE != MODE_BRIDGE)
+    //○メイン・サブ：自アドバタイズ名を即時更新
+    BLEDevice::stopAdvertising();
+    BLEDevice::init(MY_NAME.c_str());
+    BLEDevice::startAdvertising();
+#else
+    //○ブリッジ：再起動
+    ESP.restart();
+#endif
+
+    return true;
+  } /* UPDATE_NAME() */
 
 } /* namespace devBLE */

@@ -56,7 +56,7 @@ class 開始:
         #│
         #●MMPを初期化する
         MMP.通信接続()
-        MMP.接続.Analog.Configure(
+        MMP.接続.ANALOG.SETUP(
             DS.仕様.ハード.HC4067の個数,
             DS.仕様.ハード.HC4067のCh数,
             )

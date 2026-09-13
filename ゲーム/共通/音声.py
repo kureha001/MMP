@@ -100,11 +100,11 @@ def 個別指定(
     #│
     #○一旦停止する
     if 引数_一時停止:
-        MMP.接続.Audio.Play.Stop(1)
+        MMP.接続.MP3.STOP(1)
         time.sleep(0.2)
     #│
     #○指定したファイル・音量でリピート再生する
-    MMP.接続.Audio.Volume(装置No,音量)
-    MMP.接続.Audio.Play.Start(装置No,フォルダNo,引数_ファイルNo)
-    MMP.接続.Audio.Play.SetLoop(装置No,True)
+    MMP.接続.MP3.SET.VOLUME(装置No,音量)
+    MMP.接続.MP3.PLAYF(装置No,フォルダNo,引数_ファイルNo)
+    MMP.接続.MP3.SET.LOOP(装置No,True)
     #┴

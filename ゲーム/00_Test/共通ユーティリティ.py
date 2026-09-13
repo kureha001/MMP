@@ -49,20 +49,21 @@ def アナログ入力測定(
     参加人数        = 1,      # 使用するHC4067のPin数(1～16)
     丸め            = 10,     # アナログ値の丸め(数値のバタつきを抑止)
     繰返回数        = 100,    # アドレス切替回数
-    待時間          = 0.05,   # ウェイト(秒)
+#    待時間          = 0.05,   # ウェイト(秒)
+    待時間          = 0,   # ウェイト(秒)
     表示プレイヤー  = None,   # 例：(8, 9) のようなタプル/リスト。Noneなら無指定
     表示スイッチ    = None    # 例：(0, 1)。Noneなら無指定
     ):
 
     #●アナログ入力を設定する
-    MMP.接続.Analog.Configure(スイッチ数, 参加人数)
+    MMP.接続.ANALOG.SETUP(スイッチ数, 参加人数)
 
     # 計測・取得
     print(" 1.Analog values")
     t0 = 時刻開始()
     for cnt in range(繰返回数):
 
-        MMP.接続.Analog.Update()
+        MMP.接続.ANALOG.INPUT()
         if 待時間 > 0: time.sleep(待時間)
 
         # 選択範囲を決定
@@ -74,7 +75,7 @@ def アナログ入力測定(
             parts.append(f"{pl:02d}[")
             for sw in sws:
                 try:
-                    v = MMP.接続.Analog.ReadRoundDown(pl,sw,丸め)
+                    v = MMP.接続.ANALOG.ROUNDD(pl,sw,丸め,12)
                     parts.append(f"{v}")
                 except Exception:
                     parts.append(f"ERR")
@@ -104,20 +105,20 @@ def MP3_再生(
     ):
 
     print(" 1.Device Status")
-    print("   - 1st: ", MMP.接続.Info.Dev.Audio(1))
-    print("   - 2nd: ", MMP.接続.Info.Dev.Audio(2))
+    print("   - 1st: ", MMP.接続.MP3.INFO.CONNECT(1))
+    print("   - 2nd: ", MMP.接続.MP3.INFO.CONNECT(2))
 
     print(f" 2.Volume: {arg音量}")
-    MMP.接続.Audio.Volume(arg機器No, arg音量)
+    MMP.接続.MP3.SET.VOLUME(arg機器No, arg音量)
 
     print(" 3.Play MP3")
     for (f, t) in arg再生一覧:
         print(f"  - Folder={f} Track={t}")
-        MMP.接続.Audio.Play.Start(arg機器No, f, t)
+        MMP.接続.MP3.PLAYF(arg機器No, f, t)
         time.sleep(arg再生sec)
 
     print(" 4.Stop")
-    MMP.接続.Audio.Play.Stop(arg機器No)
+    MMP.接続.MP3.STOP(arg機器No)
 
 
 #======================================================
@@ -138,7 +139,7 @@ def PWM_電源(argCh一覧, argスイッチ):
     ok_all = True
 
     for ch in _to_ch_list(argCh一覧):
-        ok = bool(MMP.接続.Pwm.Out(ch, argスイッチ))
+        ok = bool(MMP.接続.PWM.OUTPUT(ch, argスイッチ))
         if ok: continue
         print(
             "NG: PWM 電源{}  CH={:02X}".format(
@@ -157,7 +158,7 @@ def PWM_出力(argCh一覧, pwm値):
     Ch一覧 = _to_ch_list(argCh一覧)
     ok_all = True
     for ch in Ch一覧:
-        try             : ok = bool(MMP.接続.Pwm.Out(ch, pwm値))
+        try             : ok = bool(MMP.接続.PWM.OUTPUT(ch, pwm値))
         except Exception: ok = False
         if ok: continue
         try             : print("NG: CH={} PWM={:04X}".format(ch, int(pwm値) & 0xFFFF))
@@ -177,7 +178,7 @@ def PWM_移動(
     ):
     for pwm_val in range(arg開始値,arg終了値,arg増減):
         for ch in argCh一覧:
-            MMP.接続.Pwm.Out(ch, pwm_val)
+            MMP.接続.PWM.OUTPUT(ch, pwm_val)
             time.sleep(arg待ちsec)
 
 #------------------------------------------------------
@@ -195,23 +196,23 @@ def PWM_移動_上中下(
     pem中央 = (arg最小 + arg最大) // 2
 
     print("  1/4.PWM: Cnter")
-    for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pem中央)
+    for ch in argCh一覧: MMP.接続.PWM.OUTPUT(ch, pem中央)
     time.sleep(arg一時停止sec)
 
     print("  2/4.PWM: Mid to Max")
     for i in range(0, arg増分 + 1):
         pwmAngle = arg最小 + (arg最大 - arg最小) * i // arg増分
-        for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pwmAngle)
+        for ch in argCh一覧: MMP.接続.PWM.OUTPUT(ch, pwmAngle)
         time.sleep(arg待ちsec)
     time.sleep(arg一時停止sec)
 
     print("  3/4.PWM: Max to Min")
     for i in range(arg増分, -1, -1):
         pwmAngle = arg最小 + (arg最大 - arg最小) * i // arg増分
-        for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pwmAngle)
+        for ch in argCh一覧: MMP.接続.PWM.OUTPUT(ch, pwmAngle)
         time.sleep(arg待ちsec)
     time.sleep(arg一時停止sec)
 
     print("  4/4.PWM: Min to Mid")
-    for ch in argCh一覧: MMP.接続.Pwm.Out(ch, pem中央)
+    for ch in argCh一覧: MMP.接続.PWM.OUTPUT(ch, pem中央)
     time.sleep(arg一時停止sec)

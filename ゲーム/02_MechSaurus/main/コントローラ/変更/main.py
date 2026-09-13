@@ -43,7 +43,7 @@ class 本体:
     def 実行(self):
         #┬
         #●アナログ値を読み取る
-        MMP.接続.Analog.Update()
+        MMP.接続.ANALOG.INPUT()
         #│
         #●プロセスを実行する
         self.P動作.実行()

@@ -34,7 +34,7 @@ def 入力走査(
     for 各Ch in 引数_Ch一覧:
         #│
         #○スイッチ状態を求める
-        値 = MMP.接続.Analog.ReadRound(各Ch,0,引数_丸め)
+        値 = MMP.接続.ANALOG.ROUND(各Ch,0,引数_丸め,10)
         判定 = (値 > 引数_閾値) if 引数_閾値 > 0 else (値 < -引数_閾値)
         #│
         #◇┐入力状況を走査する

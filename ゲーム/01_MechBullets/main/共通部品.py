@@ -119,12 +119,12 @@ class 入出力():
         上限    = 中央値 + 閾値
 		#│
         #○縦移動を測定す
-        入力値  = MMP.接続.Analog.ReadRoundDown(引数_番号,0,丸め)
+        入力値  = MMP.接続.ANALOG.ROUNDD(引数_番号,0,丸め,10)
         測定[0] = (1) if 入力値 < 下限 else (0)
         測定[1] = (1) if 入力値 > 上限 else (0)
 		#│
         #○横移動を測定する
-        入力値  = MMP.接続.Analog.ReadRoundDown(引数_番号,1,丸め)
+        入力値  = MMP.接続.ANALOG.ROUNDD(引数_番号,1,丸め,10)
         測定[2] = (1) if 入力値 > 上限 else (0)
         測定[3] = (1) if 入力値 < 下限 else (0)
 		#│
@@ -146,7 +146,7 @@ class 入出力():
 		#│
         #○ポートのアナログ値を用意する
         ポートNo = 引数_ポートNo
-        入力値 = MMP.接続.Analog.ReadRoundDown(ポートNo,2,DS.仕様.ハード.HC4067の丸め)
+        入力値 = MMP.接続.ANALOG.ROUNDD(ポートNo,2,DS.仕様.ハード.HC4067の丸め,10)
 		#│
 		#◎└┐ON/OFF状態を求める
         for 各Ch in range(4):

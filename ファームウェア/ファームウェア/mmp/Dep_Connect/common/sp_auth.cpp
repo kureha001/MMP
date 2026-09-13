@@ -19,7 +19,7 @@ namespace adpFnAuth{
   //─────────────────
   struct AU_SLOT_TYPE {
     bool     used       = false ; // 有効性判定
-    String   authCD     = ""    ; // 認証コード
+    String   authCD     = ""    ; // 認証CD
     uint32_t lastActive = 0     ; // 最終更新時刻 ※単位：ms
   };
   static AU_SLOT_TYPE* auTBL = nullptr; // 領域確保
@@ -32,19 +32,19 @@ namespace adpFnAuth{
   //─────────────────
   void AUTH_INIT_SLOT(AU_SLOT_TYPE& argSlot){
     argSlot.used       = false ; // 有効性判定リセット(無効)
-    argSlot.authCD     = ""    ; // 認証コードをクリア
+    argSlot.authCD     = ""    ; // 認証CDをクリア
     argSlot.lastActive = 0     ; // 最終更新時刻をリセット
   } /* AUTH_INIT_SLOT */
 
 
   //─────────────────
-  // 認証コード生成
+  // 認証CD生成
   //----------------------------------
   // 仕様:
   // ・AUTH_GROUPS の各グループから1文字採用
   // ・文字配置はランダム
   //----------------------------------
-  // 戻り値：認証コード
+  // 戻り値：認証CD
   //─────────────────
   static const char* AUTH_GROUPS[] = { // 文字グループ
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",      // ・アルファベット大文字
@@ -83,7 +83,7 @@ namespace adpFnAuth{
       tmpAID[swapID] = tmpChar                ; // 移動元桁に退避した文字を移送
     }   /* for */
     //│
-    //▼認証コードを返す
+    //▼認証CDを返す
     return tmpAID;
   } /* AUTH_CREATE_ACD() */
 
@@ -118,10 +118,10 @@ namespace adpFnAuth{
   //─────────────────
   // ユーザ認証を実施
   //----------------------------------
-  // 認証コードが一致するかを確認
+  // 認証CDが一致するかを確認
   //----------------------------------
   // 引数：
-  // ・認証コード ：検索キー
+  // ・認証CD ：検索キー
   //----------------------------------
   // 戻り値：認証ID(数値型)
   //  既データなし： -1
@@ -136,7 +136,7 @@ namespace adpFnAuth{
       //│
       //○現在の認証情報と照合
       if (auTBL[extID].used && auTBL[extID].authCD == argACD) {
-      //│＼（認証コードが一致)
+      //│＼（認証CDが一致)
           //○タイムスタンプを更新
           //▼返却：既データあり
           auTBL[extID].lastActive = millis();
@@ -152,11 +152,11 @@ namespace adpFnAuth{
   //─────────────────
   // ユーザの認証管理を開始
   //----------------------------------
-  // 新たな認証コードでスロットを作成
-  // 新たな認証コードは認証情報TBL内で一意
+  // 新たな認証CDでスロットを作成
+  // 新たな認証CDは認証情報TBL内で一意
   // 空きスロットが無い場合は失敗
   //----------------------------------
-  // 戻り値：認証コード(文字列型)
+  // 戻り値：認証CD(文字列型)
   // ・成功： false
   // ・失敗： true
   //─────────────────
@@ -164,7 +164,7 @@ namespace adpFnAuth{
     //┬
     //○前処理
     String retCD = "" ; // 戻り値を[失敗]で初期化
-    String newCD = "" ; // 新しい認証コード
+    String newCD = "" ; // 新しい認証CD
     ctx.accID    = -1 ; // アクセスIDをクリア
     //│
     //◎┐新たな認証情報を登録
@@ -175,15 +175,16 @@ namespace adpFnAuth{
       //◇┐空きスロットに登録
       if (!auTBL[freeID].used){
         //├┐（スロットが未使用の場合)
-          //◎┐新しい認証コードを生成
+          //◎┐新しい認証CDを生成
           while (true){
-            //●認証コードを生成
+            //│
+            //●認証CDを生成
             newCD = AUTH_CREATE_ACD();
             //│
-            //●重複していないかを確認
-            if (GET_EXIST_AID(newCD) < 0){break;}
+            //●生成した認証CDが一意であるかを確認
+            if (GET_EXIST_AID(newCD) < 0) break;
             // ＼（存在しない場合）
-              //▽中断：作成した認証コードを採用
+              //▽中断：作成した認証CDを採用
           } /* END-while */
           //│
           //○コンテクストを更新
@@ -234,7 +235,7 @@ namespace adpFnAuth{
     //┬
     //◇┐認証開始要求に応答
     if (ctx.cmdPath == SP_CMD_START) {
-      //├┐（「認証コード発行コマンド」の場合）
+      //├┐（「認証CD発行コマンド」の場合）
         //●認証管理に加える
         if(NEW_USER()){ctx.resMSG = "#SS1!";}
         //│＼（失敗した場合）
@@ -251,7 +252,7 @@ namespace adpFnAuth{
     //│ ○ユーザIDを共用IDにセット
     //│ ▼返却：認証が不要
     //│
-    //○ユーザ認証を実施
+    //●ユーザ認証を実施
     ctx.accID = GET_EXIST_AID(ctx.authCD);
     if (ctx.accID < 0){ctx.resMSG = "#SS2!"; return true;}
     //│＼（認証に失敗した場合）

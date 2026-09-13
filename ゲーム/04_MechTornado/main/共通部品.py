@@ -13,12 +13,12 @@ from main.データセット import DS
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def 停止():
 
-    MMP.接続.Pwm.Out(
+    MMP.接続.PWM.OUTPUT(
         DS.仕様.ハード.装置No_屈伸  ,
         DS.仕様.ハード.モータ最小   ,
     )
 
-    MMP.接続.Pwm.Out(
+    MMP.接続.PWM.OUTPUT(
         DS.仕様.ハード.装置No_着地  ,
         DS.仕様.ハード.サーボ最大   ,
     )

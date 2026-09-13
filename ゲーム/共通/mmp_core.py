@@ -15,10 +15,10 @@ from mmp_adapter_base import MmpAdapterBase
 
 # 対応バージョン
 VER_MAJOR = "1"   # ベータ
-VER_MINOR = "0"   # コマンド名をWEB-API形式
+VER_MINOR = "3"   # コマンド名をWEB-API形式
 
 # ボーレート一覧
-BAUD_CANDIDATES = (921600,57600,38400,19200,9600,4800,2400,300)
+BAUD_CANDIDATES = (115200,921600,57600,38400,19200,9600,4800,2400,300)
 
 # 通信データ量
 DAT_LENGTH      = 20  # 上記1個あたりの上限バイト数
@@ -181,7 +181,7 @@ class MmpClient:
         t    = self.Settings.TimeoutVerify
         resp = self._send_command("!"            , t)
         resp = self._send_command("SYS/VERSION!", t)
-
+        print("バージョンを発見[" + resp  + "]")
         # レスポンスをチェック
         if len(resp)    != RES_LENGTH   : return
         if resp[4]      != "!"          : return

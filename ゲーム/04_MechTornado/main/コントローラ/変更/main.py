@@ -44,7 +44,7 @@ class 本体:
     def 実行(self):
         #┬
         #●アナログ値を読み取る
-        if DS.情報.シーン != DS.仕様.シーンID.終了画面: MMP.接続.Analog.Update()
+        if DS.情報.シーン != DS.仕様.シーンID.終了画面: MMP.接続.ANALOG.INPUT()
         #│
         #●プロセスを実行する
         self.P動作.実行()

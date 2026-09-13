@@ -57,7 +57,7 @@ class 本体:
         #●アナログ値を読み取る
         判定1 = (DS.情報.シーン == DS.仕様.シーンID.プレイ画面)
         判定2 = (DS.情報.操作手段 == 2)
-        if 判定1 and 判定2: MMP.接続.Analog.Update()
+        if 判定1 and 判定2: MMP.接続.ANALOG.INPUT()
         #│
         #●プロセス一覧を実行する
         for プロセス in self.プロセス一覧:プロセス.実行()

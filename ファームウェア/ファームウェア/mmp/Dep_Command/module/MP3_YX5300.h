@@ -1,13 +1,13 @@
-// filename : Dep_Command/module/MP3.h
+// filename : Dep_Command/module/MP3_YX5300.h
 //========================================================
 // コマンド部門／モジュール課：MP3プレイヤー 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.3.1 (2026/09/13) 
 //========================================================
 //┬
 //■┐インクルード
-  //■サードパーティ
-  #include <DFRobotDFPlayerMini.h>  // デバイス固有
+  //■サードパーティ(YX5300 for ESP32)
+  #include <YX5300_ESP32.h>  // デバイス固有
 //┴┴
 
 //########################################################
@@ -19,8 +19,18 @@ private:
 //━━━━━━━━━━━━━━━━━
 // デバイス情報
 //━━━━━━━━━━━━━━━━━
-    DFRobotDFPlayerMini g_MP3[2];           // コンテナ
-    bool g_MP3STATUS[2] = { false, false }; // 接続状況
+    bool IS_LOOP = true; // 自動リピート（初期値ON）
+    int  WAIT_MS = 500 ; // 待ち時間(ms)
+
+    static const int SER_MAX   = 2; // 将来拡張できる上限
+    static const int SER_CNT   = 1; // 現在用意できている個数
+    int              SER_START = 2; // Serial2を使うため(将来拡張予定)
+    
+    YX5300_ESP32    MP3[SER_MAX]  ; // MP3プレイヤ 
+    HardwareSerial* SER[SER_MAX]  ; // MP3プレイヤに割り当てるシリアルデバイス
+    int  PIN_RX[SER_MAX] = {11, 0}; // シリアルデバイスのピン（RX） 
+    int  PIN_TX[SER_MAX] = {12, 0}; // シリアルデバイスのピン（TX）
+    bool ENABLE[SER_MAX] = {false, false}; // MP3プレイヤの有効性
 
 //--------------------------------------------------------
 public:
@@ -29,23 +39,29 @@ public:
   //━━━━━━━━━━━━━━━━━
   ModuleMP3(MmpContext& ctx, const char* name, const char* desc)
   : ModuleBase(ctx, name, desc) {
-
-    Serial.println(" [MP3：DFPlayer mini]");
-
-    g_MP3STATUS[0] = false;
-    g_MP3STATUS[1] = false;
-
-    Serial2.begin(9600, SERIAL_8N1, 11, 12);
-    delay(50);
-
-    if (g_MP3[0].begin(Serial2)){ // 接続済み設定
-        g_MP3[0].volume(20);      // プロパティ：音量の規定値
-        g_MP3STATUS[0] = true;    // Global変数：状況を接続済
-    }
-
-    Serial.println(String("　 [OK] Device  ID : 1"));
+    //┬
+    //○開始
+    Serial.println(" [MP3：YX5300 Chip]");
+    //│
+    //◎┐初期設定
+    for (int ID = 0; ID < SER_MAX; ++ID) {
+      //│
+      //○シリアルボートを用意
+      if (ID == SER_CNT) break;
+      SER[ID] = new HardwareSerial(ID + SER_START); 
+      //│
+      //○MP3プレイヤーを生成
+      MP3[ID] = YX5300_ESP32(*SER[ID], PIN_RX[ID], PIN_TX[ID]);
+      //│
+      //○結果反映
+      ENABLE[ID] = true; 
+      Serial.printf("　 [OK] Device  ID : %d (Serial%d)\n", ID, ID + SER_START);
+    } /* END-for */
+    //│
+    //○終了
     Serial.println("");
-  }
+    //┴
+  }; /* Constractor ModuleMP3 */
 
   //========================================================
   // コマンド・パーサー(実装)
@@ -61,11 +77,37 @@ public:
   // 対象トラックの制御
   //━━━━━━━━━━━━━━━━━
     // ───────────────────────────────
-    // 機能：指定フォルダ内トラックを再生開始
-    // 書式：MP3/TRACK/PLAY:<機器番号0～1>!
+    // 機能：全体トラックIDで再生
+    // 書式：MP3/PLAY:<機器番号0～1>!
     // 戻値：トラック状態CD
     // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/PLAY") == 0){
+    if (strcmp(Cmd,"PLAY") == 0){
+      // １．前処理：
+        // 1.1.書式チェック
+        if (dat_cnt < 3) {_ResChkErr(); return;}
+
+        // 1.2. 対象外チェック
+        int idx;
+        if (!checkDev(dat[1], idx)) return;
+
+        // 1.2. 単項目チェック
+        int folder, track;
+        if (!_Str2Int(dat[2], track,  0, 255) ){_ResChkErr(); return;}
+
+      // ２．コマンド実行
+      MP3[idx].playTrack(track);
+
+      // ３．後処理：
+      reTrackkState(idx);
+      return;
+    } /* PLAY */
+
+    // ───────────────────────────────
+    // 機能：フォルダID／トラックIDで再生
+    // 書式：MP3/PLAYF:<機器番号0～1>!
+    // 戻値：トラック状態CD
+    // ───────────────────────────────
+    if (strcmp(Cmd,"PLAYF") == 0){
       // １．前処理：
         // 1.1.書式チェック
         if (dat_cnt < 4) {_ResChkErr(); return;}
@@ -80,71 +122,53 @@ public:
             !_Str2Int(dat[3], track,  0, 255) ){_ResChkErr(); return;}
 
       // ２．コマンド実行
-      g_MP3[idx].playFolder(folder,track);
+      MP3[idx].playTrackInFolder(track, folder);
 
       // ３．後処理：
       reTrackkState(idx);
       return;
-    }
+    } /* PLAYF */
+
+    // ───────────────────────────────
+    // 機能：次曲を再生／前曲を再生
+    // 　　　停止／一時停止／開始
+    // 書式：MP3/{NEXT|PREV|STOP|PAUSE|START}:<機器番号0～1>!
+    // 戻値：トラック状態CD
+    // ───────────────────────────────
+    if (
+      strcmp(Cmd,"NEXT" ) == 0 || strcmp(Cmd,"PREV" ) == 0 ||
+      strcmp(Cmd,"STOP" ) == 0 || strcmp(Cmd,"PAUSE") == 0 ||
+      strcmp(Cmd,"START") == 0
+    ){
+      // １．前処理：
+        // 1.1.書式チェック
+        if (dat_cnt < 2){_ResChkErr(); return;}
+
+        // 1.2. 対象外チェック
+        int idx;
+        if (!checkDev(dat[1], idx)) return;
+
+      // ２．コマンド実行
+      if (strcmp(Cmd,"NEXT" ) == 0) MP3[idx].next();
+      if (strcmp(Cmd,"PREV" ) == 0) MP3[idx].prev();
+      if (strcmp(Cmd,"STOP" ) == 0) MP3[idx].stop();
+      if (strcmp(Cmd,"PAUSE") == 0) MP3[idx].pause();
+      if (strcmp(Cmd,"START") == 0) MP3[idx].resume();
+            
+      // ３．後処理：
+      reTrackkState(idx);
+      return;
+    } /* NEXT|PREV|STOP|PAUSE|START */
     
-    // ───────────────────────────────
-    // 機能：ルート内トラックを再生開始
-    // 書式：MP3/TRACK/PLAY_ROOT:<機器番号0～1>!
-    // 戻値：トラック状態CD
-    // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/PLAY_ROOT") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt < 3) {_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-        // 1.2. 単項目チェック
-        int folder, track;
-        if (!_Str2Int(dat[2], track,  0, 255) ){_ResChkErr(); return;}
-
-      // ２．コマンド実行
-      g_MP3[idx].play(track);
-
-      // ３．後処理：
-      reTrackkState(idx);
-      return;
-    }
-
-    // ───────────────────────────────
-    // 機能：MP3フォルダ内トラックを再生開始
-    // 書式：MP3/TRACK/PLAY:<機器番号0～1>!
-    // 戻値：トラック状態CD
-    // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/PLAY_MP3") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt < 3) {_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-        // 1.2. 単項目チェック
-        int folder, track;
-        if (!_Str2Int(dat[2], track,  0, 255) ){_ResChkErr(); return;}
-
-      // ２．コマンド実行
-      g_MP3[idx].playMp3Folder(track);
-
-      // ３．後処理：
-      reTrackkState(idx);
-      return;
-    }
-
+  //━━━━━━━━━━━━━━━━━
+  // デバイスの設定
+  //━━━━━━━━━━━━━━━━━
     // ───────────────────────────────
     // 機能：ループ再生を設定
-    // 書式：MP3/LOOP:<機器番号0～1>:<設定 1(ON),0(OFF)>!
+    // 書式：MP3/SET/LOOP:<機器番号0～1>:<設定 1(ON),0(OFF)>!
     // 戻値：トラック状態CD
     // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/LOOP") == 0){
+    if (strcmp(Cmd,"SET/LOOP") == 0){
       // １．前処理：
         // 1.1.書式チェック
         if (dat_cnt < 3){_ResChkErr(); return;}
@@ -157,83 +181,14 @@ public:
         int loop; if (!_Str2Int(dat[2], loop, 0, 1)){_ResChkErr(); return;}
 
       // ２．コマンド実行
-      if (loop==1)  g_MP3[idx].enableLoop();
-      else          g_MP3[idx].disableLoop();
+      if (loop==1){IS_LOOP = true ; MP3[idx].beginLoopingTrack();} // ループ登録
+      else        {IS_LOOP = false; MP3[idx].endLoopingTrack()  ;} // ループ解除
 
       // ３．後処理：
       reTrackkState(idx);
       return;
-    }
+    } /* SET/LOOP */
     
-    // ───────────────────────────────
-    // 機能：停止
-    // 書式：MP3/STOP:<機器番号0～1>!
-    // 戻値：トラック状態CD
-    // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/STOP") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt<2){_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-      // ２．コマンド実行
-      g_MP3[idx].stop();
-            
-      // ３．後処理：
-      reTrackkState(idx);
-      return;
-    }
-    
-    // ───────────────────────────────
-    // 機能：一時停止
-    // 書式：MP3/PAUSE:<機器番号0～1>!
-    // 戻値：トラック状態CD
-    // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/PAUSE") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt < 2){_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-      // ２．コマンド実行
-      g_MP3[idx].pause();
-      
-      // ３．後処理：
-      reTrackkState(idx);
-      return;
-    }
-    
-    // ───────────────────────────────
-    // 機能：開始
-    // 書式：MP3/START:<機器番号0～1>!
-    // 戻値：トラック状態CD
-    // ───────────────────────────────
-    if (strcmp(Cmd,"TRACK/START") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt<2){_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-      // ２．コマンド実行
-      g_MP3[idx].start();
-
-      // ３．後処理：
-      reTrackkState(idx);
-      return;
-    }
-    
-  //━━━━━━━━━━━━━━━━━
-  // デバイスの設定
-  //━━━━━━━━━━━━━━━━━
     // ───────────────────────────────
     // 機能：音量を設定
     // 書式：MP3/VOLUME:<機器番号0～1>:<音量0～30>!
@@ -253,40 +208,13 @@ public:
         int v; if (!_Str2Int(dat[2], v, 0, 30)){_ResChkErr(); return;}
 
       // ２．コマンド実行
-      g_MP3[idx].volume(v);
+      MP3[idx].setVolume(v);
 
       // ３．後処理：
       _ResOK();
       return;
-    }
-    
-    // ───────────────────────────────
-    // 機能：イコライザーを設定
-    // 書式：MP3/EQ:<機器番号0～1>:<タイプ0～5>!
-    //        0: Normal, 1: Pop, 2: Rock,3: Jazz, 4: Classic, 5: Bass
-    // 制限 : とくになし
-    // 戻値：_ResOK
-    // ───────────────────────────────
-    if (strcmp(Cmd,"SET/EQ") == 0){
-      // １．前処理：
-        // 1.1.書式チェック
-        if (dat_cnt<3){_ResChkErr(); return;}
-
-        // 1.2. 対象外チェック
-        int idx;
-        if (!checkDev(dat[1], idx)) return;
-
-        // 1.3. 単項目チェック
-        int mode; if (!_Str2Int(dat[2], mode, 0, 5)){_ResChkErr(); return;}
-
-      // ２．コマンド実行
-      g_MP3[idx].EQ(mode);
-
-      // ３．後処理：
-      _ResOK();
-      return;
-    }
-    
+    } /* SET/VOLUME */
+       
   //━━━━━━━━━━━━━━━━━
   // インフォメーション
   //━━━━━━━━━━━━━━━━━
@@ -306,23 +234,22 @@ public:
         if (!_Str2Int(dat[1], dev, 1, 2)){_ResChkErr(); return;}
 
       // ２．コマンド実行
-      int res = g_MP3STATUS[dev - 1];
+      int res = ENABLE[dev - 1];
 
       // ３．後処理：
       _ResValue(res);
       return;
-    }
+    } /* INFO/CONNECT */
 
     // ───────────────────────────────
     // 機能：各種状態取得
-    // 書式：MP3/INFO/*:<機器番号0～1>!
+    // 書式：MP3/INFO/{TRACK|VOLUME|FILEID|FILES}:<機器番号0～1>!
     // 制限 : とくになし
     // 戻値：_ResValue
     // ───────────────────────────────
     if (
       strcmp(Cmd,"INFO/TRACK" ) == 0 ||
       strcmp(Cmd,"INFO/VOLUME") == 0 ||
-      strcmp(Cmd,"INFO/EQ"    ) == 0 ||
       strcmp(Cmd,"INFO/FILEID") == 0 ||
       strcmp(Cmd,"INFO/FILES" ) == 0 )
     {
@@ -337,25 +264,24 @@ public:
         // ２．コマンド実行 ※エラーならリトライ
         int res = -1;
         for (int tries = 0; tries < 50 && res == -1; ++tries) {
-          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = g_MP3[idx].readState()            ;res = g_MP3[idx].readState()            ;} 
-          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = g_MP3[idx].readVolume()           ;res = g_MP3[idx].readVolume()           ;}
-          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = g_MP3[idx].readEQ()               ;res = g_MP3[idx].readEQ()               ;}
-          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = g_MP3[idx].readCurrentFileNumber();res = g_MP3[idx].readCurrentFileNumber();}
-          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = g_MP3[idx].readFileCounts()       ;res = g_MP3[idx].readFileCounts()       ;}
+          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = MP3[idx].queryDeviceState      ();} 
+          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = MP3[idx].queryCurrentVolume    ();}
+          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = MP3[idx].queryCurrentTrackIndex();}
+          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = MP3[idx].queryTrackCount       ();}
           if (res != -1) break;
         }
 
         // ３．後処理：
         _ResValue(res);
         return;
-      }    
+    } /* INFO/{TRACK|VOLUME|FILEID|FILES} */
 
-  //━━━━━━━━━━━━━━━━━
-  // コマンド名エラー
-  //━━━━━━━━━━━━━━━━━
-  _ResNotCmd();
-  return;
-  }
+    //━━━━━━━━━━━━━━━━━
+    // コマンド名エラー
+    //━━━━━━━━━━━━━━━━━
+    _ResNotCmd();
+    return;
+  } /* handle() */
 
 //━━━━━━━━━━━━━━━━━
 // 内部ヘルパー
@@ -370,11 +296,12 @@ public:
 
     // 対象外チェック
     idx = dev - 1;
-    if (!g_MP3STATUS[idx]){_ResDevErr(); return false;}
+    if (!ENABLE[idx]){_ResDevErr(); return false;}
 
     // 後処理
     return true;
-  }
+  } /* checkDev() */
+
   // ───────────────
   // 対象トラック状況
   // ───────────────
@@ -382,10 +309,10 @@ public:
     // ※エラーならリトライ
     int res = -1;
     for (int tries = 0; tries < 50 && res == -1; ++tries) {
-      res = g_MP3[idx].readState();
-      res = g_MP3[idx].readState();
-      if (res != -1) break;          // 成功したら即終了
-    }
+      res = MP3[idx].queryDeviceState();
+      if (res != -1) break;
+    } /* END-for*/
     _ResValue(res);
-  }
-};
+  } /* reTrackkState() */
+
+}; /* class ModuleMP3 */

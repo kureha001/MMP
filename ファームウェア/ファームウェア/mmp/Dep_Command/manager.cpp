@@ -2,7 +2,7 @@
 //========================================================
 // コマンド部門：部門長
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.1 (2026/09/13) 
 //========================================================
 //┬
 //■┐インクルード(機能モジュール群)
@@ -20,12 +20,13 @@
   #include "module/_api_.h"   // ModuleBase
   //│
   //□モジュール課：担当
-  #include "module/system.h"  // システム管理
-  #include "module/analog.h"  // アナログ入力
-  #include "module/digital.h" // デジタル入出力
-  #include "module/pwm.h"     // PWM出力
-  #include "module/IIC.h"     // IIC通信
-  #include "module/mp3.h"     // MP3プレイヤー
+  #include "module/system.h"      // システム管理
+  #include "module/analog.h"      // アナログ入力
+  #include "module/digital.h"     // デジタル入出力
+  #include "module/pwm.h"         // PWM出力
+  #include "module/IIC.h"         // IIC通信
+  #include "module/MP3_DFPMini.h" // MP3プレイヤー
+//#include "module/MP3_YX5300.h"  // MP3プレイヤー
 //┴┴
 
 //########################################################

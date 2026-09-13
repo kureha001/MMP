@@ -23,7 +23,7 @@
   struct MmpContext {
   //┬
   //■システム情報
-  const String sysVer  = "V13a!"  ; // バージョン
+  const String sysVer  = "V13b!"  ; // バージョン
   bool         sysLog  = true     ; // ログ表示
   //│
   //■リクエスト情報

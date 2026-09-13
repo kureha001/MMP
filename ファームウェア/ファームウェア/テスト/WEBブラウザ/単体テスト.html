@@ -375,11 +375,11 @@
   $('#btnMP3Volume').onclick = () => run(`/MP3/SET/VOLUME:${encDat('#mp3_dev')}:${encDat('#mp3_value')}`);
   $('#btnMP3EQ'    ).onclick = () => run(`/MP3/SET/EQ:${encDat('#mp3_dev')}:${encDat('#mp3_eq')}`);
 
-  $('#btnMP3TrkPlay' ).onclick = () => run(`/MP3/TRACK/PLAY:${encDat('#mp3_dev')}:${encDat('#mp3_dir')}:${encDat('#mp3_file')}`);
-  $('#btnMP3TrkLoop' ).onclick = () => run(`/MP3/TRACK/LOOP:${encDat('#mp3_dev')}:${encDat('#mp3_loop')}`);
-  $('#btnMP3TrkStop' ).onclick = () => run(`/MP3/TRACK/STOP:${encDat('#mp3_dev')}`);
-  $('#btnMP3TrkPause').onclick = () => run(`/MP3/TRACK/PAUSE:${encDat('#mp3_dev')}`);
-  $('#btnMP3TrkStart').onclick = () => run(`/MP3/TRACK/START:${encDat('#mp3_dev')}`);
+  $('#btnMP3TrkPlay' ).onclick = () => run(`/MP3/PLAYF:${encDat('#mp3_dev')}:${encDat('#mp3_dir')}:${encDat('#mp3_file')}`);
+  $('#btnMP3TrkLoop' ).onclick = () => run(`/MP3/SET/LOOP:${encDat('#mp3_dev')}:${encDat('#mp3_loop')}`);
+  $('#btnMP3TrkStop' ).onclick = () => run(`/MP3/STOP:${encDat('#mp3_dev')}`);
+  $('#btnMP3TrkPause').onclick = () => run(`/MP3/PAUSE:${encDat('#mp3_dev')}`);
+  $('#btnMP3TrkStart').onclick = () => run(`/MP3/START:${encDat('#mp3_dev')}`);
 
   $('#btnMP3InfTrack' ).onclick = () => run(`/MP3/INFO/TRACK:${encDat('#mp3_dev')}`);
   $('#btnMP3InfVolume').onclick = () => run(`/MP3/INFO/VOLUME:${encDat('#mp3_dev')}`);

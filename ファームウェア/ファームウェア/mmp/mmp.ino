@@ -77,7 +77,7 @@
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
-      ctx.cmdPath = "MP3/TRACK/PLAY_ROOT:1:1!";
+      ctx.cmdPath = "MP3/PLAY:1:1!";
       DepCommand::RunCommand();
     }
     //┴

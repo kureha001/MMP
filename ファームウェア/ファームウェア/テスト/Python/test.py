@@ -116,21 +116,21 @@ def RunDigital():
 def RunMp3Playlist():
     print("３.ＭＰ３再生（ DFPlayer ）")
     命令0 = "/MP3/SET/"
-    命令1 = "/MP3/TRACK/"
+    命令1 = "/MP3/"
     _, _, j, _ = api_get(f"{命令0}VOLUME:1:20")
     print(f" ・音量 → 20 : {j.get('result') if j else 'True'}")
-    _, _, j, _ = api_get(f"{命令1}LOOP:1:0")
+    _, _, j, _ = api_get(f"{命令0}LOOP:1:0")
     print(f" ・ループ → OFF : {j.get('value') if j else '0'}")
     print(" ・再生")
     for track in range(1, 4):
-        _, _, j, _ = api_get(f"{命令1}PLAY:1:1:{track}")
+        _, _, j, _ = api_get(f"{命令1}PLAYF:1:1:{track}")
         print(f"  → F=1,T={track} : {j.get('value') if j else 'OK'}")
         time.sleep(3.0)
     _, _, j, _ = api_get(f"{命令1}STOP:1")
     print(f" ・停止 : {j.get('value') if j else 'OK'}")
-    _, _, j, _ = api_get(f"{命令1}PLAY:1:2:102")
+    _, _, j, _ = api_get(f"{命令1}PLAYF:1:2:102")
     print(f" ・再生 → F=2,T=102 : {j.get('value') if j else 'OK'}")
-    _, _, j, _ = api_get(f"{命令1}LOOP:1:1")
+    _, _, j, _ = api_get(f"{命令0}LOOP:1:1")
     print(f" ・ループ → ON : {j.get('value') if j else '1'}")
     time.sleep(10.0)
     _, _, j, _ = api_get(f"{命令1}STOP:1")
@@ -140,13 +140,13 @@ def RunMp3Playlist():
 def RunMp3Control():
     print("４.ＭＰ３制御（ DFPlayer ）")
     命令0 = "/MP3/SET/"
-    命令1 = "/MP3/TRACK/"
+    命令1 = "/MP3/"
     命令2 = "/MP3/INFO/"
     _, _, j, _ = api_get(f"{命令0}VOLUME:1:20")
     print(f" ・音量 → 20 : {tf(j.get('ok') if j else True)}")
-    _, _, j, _ = api_get(f"{命令1}PLAY:1:4:1")
+    _, _, j, _ = api_get(f"{命令1}PLAYF:1:4:1")
     print(f" ・再生 → F=4,T=1 : {j.get('value') if j else 'OK'}")
-    _, _, j, _ = api_get(f"{命令1}LOOP:1:0")
+    _, _, j, _ = api_get(f"{命令0}LOOP:1:0")
     print(f" ・ループ → OFF : {j.get('value') if j else '0'}")
     print(" ・参照")
     _, _, st, _ = api_get(f"{命令2}TRACK:1"  )

@@ -2,7 +2,10 @@
 //========================================================
 // 接続部門／業務課／作業標準：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11)
+// Ver 1.3.2 (2026/09/14)
+// ・コンテキスト初期化を共通へ移動
+// ・転送処理の共通部を[modeBridge]に部品化
+// ・[handle_Begin()]を[AdapterBase]へ移動
 //========================================================
 #ifndef CONN_ADP_API1_H
 #define CONN_ADP_API1_H
@@ -43,20 +46,6 @@ private:
   virtual int  getAID() const = 0;
   virtual void SEND_CONN(T argConn) = 0;
 
-  //━━━━━━━━━━━━━━━━━
-  // コンテキストを初期化
-  //━━━━━━━━━━━━━━━━━
-  void setupCTX(String argFrame) {
-    ctx.adpID    = getAID(); // アダプタID
-    ctx.strFrame = argFrame; // フレーム
-    if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
-    if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-    ctx.resMSG  = ""  ; // レスポンスMSG
-    ctx.cmdPath = ""  ; // コマンドパス
-    ctx.authCD  = ""  ; // 認証コード
-    ctx.accID   = -1  ; // アクセスID
-  }
-
 public:
   using AdapterBase::AdapterBase;
 
@@ -83,14 +72,6 @@ public:
     rxQueue.pop();
     return true;
   }
-
-  //━━━━━━━━━━━━━━━━━
-  // 前後処理用のフック関数
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // ポーリングの前処理
-    //─────────────────
-    virtual bool handle_Begin() {return false;}
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
@@ -121,7 +102,7 @@ public:
 #endif
       //│
       //●コンテキストを初期化
-      setupCTX(popDat.frame);
+      adpFnBase::SETUP_CTX(getAID(), popDat.frame);
       //│
 //-----------------------------------------
 //【メイン】
@@ -180,26 +161,19 @@ public:
     } /* END-while */
     //│
 //-----------------------------------------
-//【ブリッジ】キューが空の時は転送を試みる
+//【ブリッジ】キューがない時は転送に応答
 //-----------------------------------------
 #if (MODE == MODE_BRIDGE)
-    //○┐転送処理を実施
-      //│
-      //○転送依頼を確認
-      if (ctx.bridge.Stat != BSTAT::REQ || getAID() != ctx.bridge.adpID) return;
-      //│＼（自分宛に転送依頼がない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○進行状況を[処理中]にセット
-      ctx.bridge.Stat = BSTAT::BUSY;
-      //│
-      //●転送を実施
-      trans();
-      if (ctx.strFrame != "") ctx.bridge.Stat = BSTAT::DONE;
-      //│＼（[エラーあり]の場合）
-          //○進行状況を[処理済]にセット
-          //┴
-      //┴
+    //○転送処理を開始
+    if (modeBridge::TARNS_BEGIN(getAID())) return
+    //│＼（転送要求が無い場合）
+    //│ ▼終了：早期リターン
+    //│
+    //●転送を実施
+    trans();
+    //│
+    //○転送処理を終了
+    modeBridge::TARNS_END();
 #endif
 //-----------------------------------------
     //┴

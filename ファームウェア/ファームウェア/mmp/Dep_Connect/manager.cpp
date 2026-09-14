@@ -2,7 +2,9 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11)
+// Ver 1.3.2 (2026/09/14)
+// ・プリプロセッサ判定を整理
+// ・スロット構造体を削除
 //========================================================
 //┬
 //□┐インクルード
@@ -34,14 +36,6 @@
     inline constexpr int BUSY = 2; // 処理中（スレーブ実行中）
     inline constexpr int DONE = 3; // 処理済（応答・完了）
   }
-  //│
-  //□ストリーム受信型の接続管理
-  struct SS_SLOT_TYPE {      // 接続管理スロット
-    bool    used   = false ; // スロット有効性
-    String  rx     = ""    ; // 受信バッファ
-    bool    isOver = false ; // 受信バッファ容量超過判定
-  };
-  inline constexpr int SS_RX_SIZE = 128; // 受信バッファ容量
 //┴┴
 
 //========================================================
@@ -119,12 +113,10 @@ namespace DepConnect{
         //┴
       } /* END-if */
       //│
-      //○┐専門係
+      //○┐個別係
         //│
         //○UART担当
-        #if (MODE!=MODE_MAIN) || ADP_UART //※メインモード以外は強制使用
         if (devUART::ENABLED) ADAPTER.push_back(new AdapterUART(ctx));
-        #endif
         //│
         //○BLE担当
         #if ADP_BLE
@@ -132,7 +124,7 @@ namespace DepConnect{
         #endif
         //│
         //○┐IIC担当
-        #if (MODE != MODE_MAIN) && ADP_IIC //※メインモードは使用不可
+        #if ADP_IIC //※メインモードは使用不可
         if (devIIC::ENABLED) ADAPTER.push_back(new AdapterIIC(ctx));
         #endif
         //┴

@@ -2,7 +2,9 @@
 //========================================================
 // 接続部門／共通課：担当割一覧
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.2 (2026/09/14)
+// ・[adpFnBase::SETUP_CTX()]を追加([AdapterQueueBase]の処理を移動)
+// ・[adpFnAuth::]を非公開化
 //========================================================
 #ifndef CONN_COMMON_H
 #define CONN_COMMON_H
@@ -19,6 +21,7 @@
     void FORMAT_URI(String &str);  // [adpFnStream]で利用
     void RUN(int argAdpID, String argFrame);
     void SHOW_LOG();
+    void SETUP_CTX(int argAID, String argFrame);
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -36,8 +39,7 @@
   //━━━━━━━━━━━━━━━━━
   #include "sp_stream.cpp"
   namespace adpFnStream{
-    void   SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot);
-    String GET_FRAME(Stream& argConn, SS_SLOT_TYPE argBASES);
+    String GET_FRAME(Stream& argConn);
   }
 
 #endif // CONN_COMMON_H

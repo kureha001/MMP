@@ -16,7 +16,7 @@ COMM_CONFIG = {
     "PORT_WAPI": 8080,
     "PORT_TCPR": 8081,
     "PORT_WSOC": 8082,
-    "COMP_PORT": "COM148",
+    "COMP_PORT": "COM23",
     "COMP_BAUD": 115200,
     "BLE_NAME": "MMP-ESP32S3",
     "BLE_CHAR_RX": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",

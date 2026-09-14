@@ -70,9 +70,12 @@ def tf(b):
 #============================================================
 def RunAnalog():
     print("１.アナログ入力（ HC4067：JoyPad1,2 ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令 = "/ANALOG/"
-    ok, _, j, _ = api_get(f"{命令}SETUP:2:4")
+    #２コントローラｘ４アナログ入力
+    ok, _, j, _ = api_get(f"{命令}SETUP:2:4") 
     ok1 = bool(j and (j.get("result") or j.get("ok")))
+
     print(f" ・アクセス範囲指定 [2,4]  : {ok1}")
     if not ok1:
         print("  <<中断>>\n")
@@ -80,6 +83,7 @@ def RunAnalog():
 
     ok, _, j, _ = api_get(f"{命令}INPUT")
     ok2 = bool(j and (j.get("result") or j.get("ok")))
+
     print(f" ・アナログ値をバッファに格納 : {ok2}")
     if not ok2:
         print("  <<中断>>\n")
@@ -92,10 +96,12 @@ def RunAnalog():
             _, _, jj, _ = api_get(f"{命令}READ:{x}:{y}")
             val = jj.get("value") if jj else "NaN"
             print(f"   [{y}] = {val}")
+
     print(" [終了]\n")
 
 def RunDigital():
     print("２.デジタル入出力（ GPIO ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令 = "/DIGITAL/"
     print(" ・入力")
     for pin in (18, 14, 13):
@@ -115,6 +121,7 @@ def RunDigital():
 
 def RunMp3Playlist():
     print("３.ＭＰ３再生（ DFPlayer ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令0 = "/MP3/SET/"
     命令1 = "/MP3/"
     _, _, j, _ = api_get(f"{命令0}VOLUME:1:20")
@@ -139,6 +146,7 @@ def RunMp3Playlist():
 
 def RunMp3Control():
     print("４.ＭＰ３制御（ DFPlayer ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令0 = "/MP3/SET/"
     命令1 = "/MP3/"
     命令2 = "/MP3/INFO/"
@@ -188,6 +196,7 @@ PAUSE_S     = 2
 
 def RunPwm(argMode=True):
     title = "５.ＰＷＭ" if argMode else "６.Ｉ２Ｃ"
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     print("{}（ PCA9685：サーボモータ180度型,連続回転型 ）".format(title))
     命令PWM = "/PWM/OUTPUT"
     命令I2C = "/I2C/WRITE"
@@ -255,6 +264,7 @@ def RunPwmSweep(命令, ch, start, end, step, delay):
 
 def RunPwm_Angle():
     print("６.ＰＷＭ（ 角度指定：180度型サーボ ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令 = "/PWM/ANGLE/"
     ANGLE_MAX       = 180
     STEP            = 3
@@ -279,6 +289,7 @@ def RunPwm_Angle():
 
 def RunPwm_Rotate():
     print("７.ＰＷＭ（ 連続回転型サーボ ）")
+    ok, _, j, _ = api_get("/SYS/SET/LOG:0!") 
     命令 = "/PWM/ROTATE/"
     STEP            = 1
     STEP_DELAY_S    = 0.05

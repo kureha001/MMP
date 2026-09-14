@@ -2,8 +2,9 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：HTTP GET 担当
 //--------------------------------------------------------
-// Ver 1.3.1 (2026/09/11)
-// ・JSONスイッチを[!!]から[@!]へ修正
+// Ver 1.3.2 (2026/09/14)
+// ・プリプロセッサの整理
+// ・転送処理の共通部を[modeBridge]に部品化
 //========================================================
 //┬
 //□┐インクルード
@@ -52,10 +53,13 @@ private:
     int        MY_PORT = 8080   ; // ポート番号
 #endif
 
+//############################
+//# 1.ブリッジはサーバ機能なし
+//############################
+#if (MODE != MODE_BRIDGE)
 //========================================================
 // レスポンス
 //========================================================
-#if (MODE != MODE_BRIDGE)
     //─────────────────
     // CORS許可用HTTPヘッダ追加
     //----------------------------------
@@ -81,13 +85,11 @@ private:
         argSrv.sendHeader("Access-Control-Max-Age", "600");
         //┴
     } /* ADD_CROSS() */
-#endif
 
   //─────────────────
   // JSON形式でレスポンス
   //─────────────────
   inline void SEND_JSON(const String& argJSON) {
-#if (MODE != MODE_BRIDGE)
     //┬
     //○JSONをレスポンス
     ADD_CROSS(*MY_NET);
@@ -96,10 +98,12 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-#endif
   } /* SEND_JSON() */
 
-#if (MODE != MODE_BRIDGE)
+//############################
+//# 2.JSONはメインのみ
+//############################
+#if (MODE == MODE_MAIN)
   //─────────────────
   // コマンド管理の戻り値が数値型であるか判定
   //─────────────────
@@ -244,12 +248,14 @@ private:
     //┴
   } /* SEND_CONN_JSON() */
 #endif
+//############################
+//# 2.JSONはメインのみ
+//############################
 
   //━━━━━━━━━━━━━━━━━
   // クライアントに送信(通常の5バイト)
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(){
-#if (MODE != MODE_BRIDGE)
     //┬
     //○テキストをレスポンス
     ADD_CROSS(*MY_NET);
@@ -258,106 +264,118 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-#endif
   } /* SEND_CONN() */
 
-#if (MODE != MODE_BRIDGE)
 //========================================================
 // リクエスト管理
 //========================================================
   //─────────────────
-  // リクエストの登録
+  // CORS事前確認
   //----------------------------------
-  // コールバック関数として機能
+  // ブラウザがアクセス前に送信するOPTIONS要求(プリフライト)へ応答
+  // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
+  // → 本通信で返すデータはないためHTTPステータス204を返却
   //─────────────────
-    //─────────────────
-    // CORS事前確認
-    //----------------------------------
-    // ブラウザがアクセス前に送信するOPTIONS要求(プリフライト)へ応答
-    // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
-    // → 本通信で返すデータはないためHTTPステータス204を返却
-    //─────────────────
-    inline void route204(WebServer& argSrv) {
-      //┬
-      //●CORS許可用HTTPヘッダ追加
-      ADD_CROSS(argSrv);
-      //│
-      //○HTTPステータスを返却
-      //  ※豆知識{200:返すデータあり｜204:返すデータなし}
-      // argSrv.send(204);
-      argSrv.send(204, "text/plain", "");
-      //┴
-    } /* route204() */
+  inline void route204(WebServer& argSrv) {
+    //┬
+    //●CORS許可用HTTPヘッダ追加
+    ADD_CROSS(argSrv);
+    //│
+    //○HTTPステータスを返却
+    //  ※豆知識{200:返すデータあり｜204:返すデータなし}
+    // argSrv.send(204);
+    argSrv.send(204, "text/plain", "");
+    //┴
+  } /* route204() */
 
-    //─────────────────
-    // ルート０：ホスト直下
-    //─────────────────
-    void routeRoot(WebServer& srv){
-      SEND_JSON(F("{"
-      "\"ok\":true,"
-      "\"result\":true,"
-      "\"error\":\"\","
-      "\"value\":-1,"
-      "\"text\":\"MMP HTTP\""
-      "}"));
-    }
-    //─────────────────
-    // ルーティング登録
-    //─────────────────
-    void registRoutes(WebServer& server){
-      //┬
-      //○┐ルート０：ホスト直下の登録
-        //●GETへの応答
-        //●CORS事前確認へ応答
-        server.on("/", HTTP_GET,     [&server, this](){routeRoot(server);});
-        server.on("/", HTTP_OPTIONS, [&server, this](){route204(server); });
+  //─────────────────
+  // ルート０：ホスト直下
+  //─────────────────
+  void routeRoot(WebServer& srv){
+    SEND_JSON(F("{"
+    "\"ok\":true,"
+    "\"result\":true,"
+    "\"error\":\"\","
+    "\"value\":-1,"
+    "\"text\":\"MMP HTTP\""
+    "}"));
+  }
+
+  //─────────────────
+  // ルーティング登録
+  //─────────────────
+  void registRoutes(WebServer& server){
+    //┬
+    //○┐ルート０：ホスト直下の登録
+      //●GETへの応答
+      //●CORS事前確認へ応答
+      server.on("/", HTTP_GET,     [&server, this](){routeRoot(server);});
+      server.on("/", HTTP_OPTIONS, [&server, this](){route204(server); });
+      //┴
+    //│
+    //○┐ルート１：ＭＭＰコマンドの登録
+    server.onNotFound([&server, this](){
+      //│
+      //○ＭＭＰ処理へ渡す要求であるかを確認
+      if (server.method() == HTTP_OPTIONS){route204(server); return;}
+      //│＼（HTTP層で完結している）
+      //│ ●CORS事前確認へ応答
+      //│ ▼終了：早期リターン
+      //│
+      //◇┐レスポンスのスタイルを確認
+      String strRX = MY_NET->uri();
+      if (strRX.endsWith("@!")) {
+      //├┐（JSONレスポンス指定の場合）
+        //○JSONスタイルにセット
+        //○フレーム末尾の"#"を削除する
+        IS_JSON  = true;
+        strRX.remove(strRX.length() - 2);
+        strRX += "!";
+        //┴
+      } else IS_JSON = false;
+      //└┐（その他）
+        //○標準スタイルにセット
         //┴
       //│
-      //○┐ルート１：ＭＭＰコマンドの登録
-      server.onNotFound([&server, this](){
-        //│
-        //○ＭＭＰ処理へ渡す要求であるかを確認
-        if (server.method() == HTTP_OPTIONS){route204(server); return;}
-        //│＼（HTTP層で完結している）
-        //│ ●CORS事前確認へ応答
-        //│ ▼終了：早期リターン
-        //│
-        //◇┐レスポンスのスタイルを確認
-        String strFrame = MY_NET->uri();
-        if (strFrame.endsWith("@!")) {
-        //├┐（フレームのスタイルがJSON指定の場合）
-          //○JSONスタイルにセット
-          //○フレーム末尾の"#"を削除する
-          IS_JSON  = true;
-          strFrame.remove(strFrame.length() - 2);
-          strFrame += "!";
-          //┴
-        } else IS_JSON = false;
-        //└┐（その他）
-          //○標準スタイルにセット
-          //┴
-        //│
-        //●コマンドを実行
-        ctx.adpID    = ADP_ID;
-        ctx.strFrame = strFrame;
-        if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
-        if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-        ctx.resMSG   = ""  ; // レスポンスMSG
-        ctx.cmdPath  = ""  ; // コマンドパス
-        ctx.authCD   = ""  ; // 認証コード
-        ctx.accID    = -1  ; // アクセスID
-        //│
-        //●モード別に後続処理
-          if (MODE == MODE_MAIN) modeMain::RUN();
-          if (MODE == MODE_SUB ) modeSub ::RUN();
-        //│
-        //●実行結果をレスポンス
-        IS_JSON ? SEND_CONN_JSON() : SEND_CONN();
-        //┴
-      }); /* server.onNotFound */
-      //┴
-    }/* registRoutes() */
+      //●コンテキストを初期化
+      adpFnBase::SETUP_CTX(ADP_ID, strRX);
+      //│
+      //●ＭＭＰコマンドを実行
+//--------------------------
+//【メイン】キュー処理を実行
+//--------------------------
+#if   (MODE == MODE_MAIN)
+      modeMain::RUN();
+//--------------------------
+//【サブ】キュー処理を実行
+//--------------------------
+#elif (MODE == MODE_SUB)
+      modeSub::RUN();
 #endif
+//--------------------------
+      //│
+      //●実行結果をレスポンス
+//--------------------------
+//【メイン】JSON／TXT選択
+//--------------------------
+#if   (MODE == MODE_MAIN)
+      IS_JSON ? SEND_CONN_JSON() : SEND_CONN();
+//--------------------------
+//【サブ】TXTのみ
+//--------------------------
+#elif (MODE == MODE_SUB)
+      SEND_CONN();
+#endif
+//--------------------------
+      //┴
+    }); /* this{}/onNotFound() */
+    //┴
+  }/* registRoutes() */
+#endif
+//############################
+//# 1.ブリッジはサーバ機能なし
+//############################
+
 
 //========================================================
 // 担務（公開機能）
@@ -367,11 +385,17 @@ public:
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
   AdapterHTTP(MmpContext& argCtx) : AdapterBase(argCtx) {
+//--------------------------
+//【ブリッジ】
+//--------------------------
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
     Serial.printf(" [OK] HTTP\n");
     //┴
+//--------------------------
+//【ブリッジ以外】
+//--------------------------
 #else
     //┬
     //○サービス資源を生成
@@ -383,9 +407,13 @@ public:
     Serial.printf(" [OK] HTTP (PORT=[%d])\n", MY_PORT);
     //┴
 #endif
+//--------------------------
   } /* constractor AdapterHTTP() */
 
 
+//############################
+//# 転送機能はブリッジのみ
+//############################
 #if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // 転送受付
@@ -420,33 +448,43 @@ public:
     //┴
   };
 #endif
+//############################
 
   //━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
   void handle() override {
+//--------------------------
+// 転送機能はブリッジのみ
+//--------------------------
 #if (MODE == MODE_BRIDGE)
     //┬
-    //○転送依頼を確認
-    if (ctx.bridge.Stat != BSTAT::REQ || ADP_ID != ctx.bridge.adpID) return;
-    //│＼（自分宛に転送依頼がない場合）
+    //●前処理
+    if (handle_Begin()) return;
+    //│＼（進行NGの場合）
     //│ ▼終了：早期リターン
     //│
-    //○進行状況を［処理中］にセット
-    ctx.bridge.Stat == BSTAT::BUSY;
+    //○転送処理を開始
+    if (modeBridge::TARNS_BEGIN(ADP_ID)) return
+    //│＼（転送要求が無い場合）
+    //│ ▼終了：早期リターン
     //│
-    //●転送を受付
+    //●転送を実施
     trans();
-    if (ctx.strFrame != "") ctx.bridge.Stat = BSTAT::DONE;
-    //│＼（[エラーあり]の場合）
-        //○進行状況を[処理済]にセット
-        //┴
+    //│
+    //○転送処理を終了
+    modeBridge::TARNS_END();
     //┴
+//--------------------------
+// ブリッジはサーバ機能なし
+//--------------------------
 #else
     //┬
     //○ルーティングを指示（その後も同期処理）
     MY_NET->handleClient();
     //┴
 #endif
+//--------------------------
   } /* handle() */
+
 }; /* class AdapterHTTP */

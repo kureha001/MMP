@@ -2,83 +2,15 @@
 //========================================================
 // 接続部門／共通課：ストリーム受信係
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.2 (2026/09/14)
+// ・分割取得を廃止
+// ・超過チェックを廃止
 //========================================================
 
 //########################################################
 //# 処理詳細
 //########################################################
 namespace adpFnStream{
-  //─────────────────
-  // スロット初期化
-  //----------------------------------
-  // 経路アダプタの名前空間で派生(名称:INIT_SLOT)
-  //─────────────────
-  void SS_INI_SLOT_BASE(SS_SLOT_TYPE& argSlot){
-    argSlot.used   = false; // スロット有効性を「無効」
-    argSlot.isOver = false; // 容量超過フラグを「OFF」
-    argSlot.rx     = ""   ; // 受信バッファをクリア
-    argSlot.rx.reserve(SS_RX_SIZE); // 容量確保
-  } /* SS_INI_SLOT_BASE */
-
-  //─────────────────
-  // ストリーム型のデータ処理
-  //----------------------------------
-  // 引数：
-  // ・受信バッファ
-  // ・オーバーフローフラグ
-  // ・エラーメッセージ
-  //----------------------------------
-  // 戻り値：受信継続の要否（論理値）
-  // ・true ：受信継続が「不要」
-  // ・false：受信継続が「必要」
-  //─────────────────
-  bool READ_STREAM(
-    SS_SLOT_TYPE argBASE  , // スロット(ベース)
-    String       &argFrame  // エラーMSG返却
-){
-    //┬
-    //○オーバーフロー発生を確認
-    if (argBASE.rx.length() > SS_RX_SIZE) {
-    //│＼（発生した場合）
-        //○オーバーフロー中へ移行
-        //○受信バッファをクリア
-        //▼返却：受信継続が「不要」
-        argBASE.isOver = true;
-        argBASE.rx     = ""  ;
-        return true;
-    } /* END-if */
-    //│
-    //○取り込み状態を確認
-    if (!argBASE.rx.endsWith("!")) return false;
-    //│＼（終端に達していない場合）
-    //│ ▼返却：受信継続が「必要」
-    //│
-    //○オーバーフロー中を確認
-    if (argBASE.isOver) {
-    //│＼（オーバーフロー中の場合）
-        //○オーバーフロー中を解除
-        //○受信バッファをクリア
-        //●エラーコードをフレームにセット
-        //▼返却：受信継続が「不要」
-        argBASE.isOver = false  ;
-        argBASE.rx     = ""     ;
-        argFrame       = "#DFL!";
-        return true;
-    } /* END-if */
-    //│
-    //●受信バッファをURI形式に変換
-    adpFnBase::FORMAT_URI(argBASE.rx);
-    //│
-    //○フレームを作成
-    argFrame       = argBASE.rx;
-    argBASE.rx     = ""     ;
-    //│
-    //▼返却：受信継続が「不要」
-    return true;
-  } /* READ_STREAM() */
-
-
 //========================================================
 // 担務（公開機能）
 //========================================================
@@ -86,25 +18,29 @@ namespace adpFnStream{
   // ストリームからフレームを取得
   //----------------------------------
   // 引数：(参照)接続管理スロット
-  //----------------------------------
-  // 戻り値：フレーム作成状況（論理値）
-  // ・true ：完成
-  // ・false：未完成
   //━━━━━━━━━━━━━━━━━
-  String GET_FRAME(
-    Stream&      argConn, // 通信資源
-    SS_SLOT_TYPE argBASE  // スロット(ベース)
-  ){
-    String retFrame = "";
-    bool   isStop = false;
-
-    while (argConn.available()){             ; // 受信バッファあり
-      argBASE.rx += (char)argConn.read()     ; // 1バイト受信
-      isStop = READ_STREAM(argBASE, retFrame); // 処理判断
-      if (isStop) break                      ; // 継続無し
-    } /* END-while */
-
-    return retFrame; // フレーム返却(エラーコード含む)
+  String GET_FRAME(Stream& argConn){
+    //┬
+    //○受信の有無を確認
+    if (!argConn.available()) return "";
+    //│＼（受信がない場合）
+    //│ ▼終了：早期リターン
+    //│
+    String strRX = "";
+    while (!strRX.endsWith("!") && argConn.available()) strRX += (char)argConn.read();
+    //◎┐受信データを取込
+      //│＼（終端に達した場合）
+      //│ ▽完了：走査終了
+      //│
+      //○受信データを受信バッファに加える
+      //┴
+    //│
+    //○受信データを補正
+    adpFnBase::FORMAT_URI(strRX);
+    //│
+    //▼返却：フレーム値
+    return strRX;
+    //┴
   } /* GET_FRAME() */
 
 } /* namespace adpFuncStream */

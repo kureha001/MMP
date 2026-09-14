@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11)
+// Ver 1.3.2 (2026/09/14)
+// ・標準スロットを廃止
 //========================================================
 
 //========================================================
@@ -36,17 +37,17 @@ private:
     int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
 //========================================================
-// 接続情報管理
+// 接続管理
 //========================================================
   //─────────────────
   // 基本情報
   //─────────────────
-  int            SS_SLOTS = 2   ; // 固定スロット(USB(CDC)に限定)
-  struct T_SS_SLOT{
-    SS_SLOT_TYPE Base           ; // 基本メンバ
-    Stream*      CONN  = nullptr; // アクセス資源(参照)
+  int SLOTs = 0; // コンストラクタで決定
+  struct T_SLOT{
+    bool    used = false  ; // 基本メンバ
+    Stream* CONN = nullptr; // アクセス資源(参照)
   };
-  T_SS_SLOT*     ssTBL          ; // 事前予約
+  T_SLOT* TBL        ; // 事前予約
 
 //========================================================
 // レスポンス
@@ -73,23 +74,23 @@ private:
   void ON_RECIVE(){
     //┬
     //◎┐スロットを走査
-    for (int ID = 0; ID < SS_SLOTS; ID++) {
+    for (int ID = 0; ID < SLOTs; ID++) {
       //│＼（最後のスロットに達した場合）
       //│ ▼完了：走査を終了
       //│
       //○スロットの状態を確認
-      if (ssTBL[ID].CONN == nullptr) continue;
+      if (TBL[ID].CONN == nullptr) continue;
       //│＼（未使用の場合）
       //│ ▽次へ：次のスロットを走査
       //│
       //●ストリームを受信
-      String retFrame = adpFnStream::GET_FRAME(*(ssTBL[ID].CONN), ssTBL[ID].Base);
+      String retFrame = adpFnStream::GET_FRAME(*(TBL[ID].CONN));
       if (retFrame == "") continue;
       //│＼（フレームが未完成の場合）
       //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue(ssTBL[ID].CONN, retFrame, ID);
+      pushQueue(TBL[ID].CONN, retFrame, ID);
       //┴
     } /* END-for */
     //┴
@@ -120,21 +121,34 @@ public:
     //┬
     //●┐接続管理TBLを作成
       //○領域を確保
-      SS_SLOTS = (MODE == MODE_MAIN) ? 2 :1;
-      ssTBL    = new T_SS_SLOT[SS_SLOTS];
+//--------------------------
+// サブは複数スロット
+//--------------------------
+#if (MODE == MODE_SUB)
+      SLOTs = 2;
+//--------------------------
+// サブ以外は単一スロット
+//--------------------------
+#else
+      SLOTs = 1;
+#endif
+//--------------------------
+      TBL   = new T_SLOT[SLOTs];
       //│
       //○USB(CDC)をセット
-      ssTBL[0].Base.used = true   ; // 使用中
-      ssTBL[0].CONN      = &Serial; // 参照先を登録
+      TBL[0].used = true    ; // 使用中
+      TBL[0].CONN = &Serial1; // 参照先を登録
       //│
-      //○動作モードを確認
-      if (MODE == MODE_MAIN) {
-      //│＼（メインモードの場合）
-          //○UART1以降をセット
-          ssTBL[1].Base.used = true    ; // 使用中
-          ssTBL[1].CONN      = &Serial1; // 参照先を登録
-          //┴
+//--------------------------
+// サブは複数スロット
+//--------------------------
+#if (MODE == MODE_SUB)
+      //○UART1以降をセット
+      TBL[1].used = true    ; // 使用中
+      TBL[1].CONN = &Serial2; // 参照先を登録
       } /* END-if */
+#endif
+//--------------------------
     //│
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
@@ -147,10 +161,14 @@ public:
     );
     //│
     //○メッセージ表示
-    Serial.println(" [OK] UART (PORT=[0][1])");
+    String strMSG = (MODE == MODE_SUB) ? "1,2" : "1";
+    Serial.println(" [OK] UART (PORT=[%s])", strMSG);
     //┴
   } /* constractor AdapterUART() */
 
+//############################
+//# ステータス制御はブリッジのみ
+//############################
 #if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // ポーリングの前処理
@@ -168,12 +186,13 @@ public:
         //○進行状況を［待機中］にセット
         //▼終了：早期リターン（進行OK）
         ctx.resMSG = ctx.strFrame;
-        SEND_CONN(ssTBL[ctx.bridge.slotID].CONN);
+        SEND_CONN(TBL[ctx.bridge.slotID].CONN);
         ctx.bridge.Stat = BSTAT::IDLE;
         return false;
     } /* END-switch */
     return true; // 想定外：進行NG
   } /* handle_Begin() */
 #endif
+//############################
 
 }; /* class AdapterUART */

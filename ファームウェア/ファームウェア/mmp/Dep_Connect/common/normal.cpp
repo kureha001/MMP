@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／共通課：一般処理係
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.2 (2026/09/14)
+// ・[SETUP_CTX()]を追加([AdapterQueueBase]の処理を移動)
 //========================================================
 
 //########################################################
@@ -42,6 +43,20 @@
       if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
       {str.remove(str.length()-1);} else {break;}
     } /* END-if */
+  } /* FORMAT_URI() */
+
+  //━━━━━━━━━━━━━━━━━
+  // コンテキストを初期化
+  //━━━━━━━━━━━━━━━━━
+  void SETUP_CTX(int argAID, String argFrame) {
+    ctx.adpID    = argAID; // アダプタID
+    ctx.strFrame = argFrame; // フレーム
+    if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
+    if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
+    ctx.resMSG  = ""  ; // レスポンスMSG
+    ctx.cmdPath = ""  ; // コマンドパス
+    ctx.authCD  = ""  ; // 認証コード
+    ctx.accID   = -1  ; // アクセスID
   } /* FORMAT_URI() */
 
 } /* namespace adpFnBase */

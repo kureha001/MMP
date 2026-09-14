@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：IIC 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) 
+// Ver 1.3.2 (2026/09/14)
+// ・データ長制限を固有に持つよう変更
 //========================================================
 //┬
 //□┐インクルード
@@ -43,6 +44,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
+    const int DATA_LENGTH = 80; // データ長制限
     static const uint8_t IIC_ADDR_MIN = 0xA0;
     static const uint8_t IIC_ADDR_MAX = 0xA4;
     String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
@@ -90,7 +92,7 @@ private:
       Wire.endTransmission(false);
       //│
       //○リクエストをスレーブから取得
-      Wire.requestFrom(ID, SS_RX_SIZE); // 指定サイズ分取得する
+      Wire.requestFrom(ID, DATA_LENGTH); // 指定サイズ分取得する
       while (Wire.available()) retFrame += (char)Wire.read();
       //│
       //○末尾の余分をカット

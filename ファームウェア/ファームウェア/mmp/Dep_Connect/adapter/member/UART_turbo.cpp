@@ -36,6 +36,14 @@ private:
     const int ADP_ID = ADP_ID_UART;
 
 //========================================================
+// 接続管理
+//========================================================
+  //─────────────────
+  // 基本情報
+  //─────────────────
+  Stream* CONN = &Serial1;
+
+//========================================================
 // レスポンス
 //========================================================
   //━━━━━━━━━━━━━━━━━
@@ -44,7 +52,7 @@ private:
   void SEND_CONN() {
     //┬
     //○クライアントにレスポンス
-    Serial1.print(ctx.resMSG);
+    CONN->print(ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -106,24 +114,14 @@ public:
     //│＼（進行NGの場合）
     //│ ▼終了：早期リターン
     //│
-    //○受信の有無を確認
-    if (!Serial1.available()) return;
-    //│＼（受信がない場合）
+    //●ストリームを受信
+    String retFrame = adpFnStream::GET_FRAME(*(CONN));
+    if (retFrame == "") return;
+    //│＼（受信データがない場合）
     //│ ▼終了：早期リターン
     //│
-    //◎┐受信データを取込
-    String strRX = "";
-    while (!strRX.endsWith("!")) {
-      //│＼（終端に達した場合）
-      //│ ▽完了：走査終了
-      //│
-      //○受信データを受信バッファに加える
-      if (Serial1.available()) strRX += (char)Serial1.read();
-      //┴
-    } /* END-while */
-    //│
     //●コンテキストを初期化
-    adpFnBase::SETUP_CTX(ADP_ID, strRX);
+    adpFnBase::SETUP_CTX(ADP_ID, retFrame);
     //│
     //●コマンドを実行
 //--------------------------

@@ -58,7 +58,7 @@ private:
   void SEND_CONN(Stream* argConn) override {
     //┬
     //○クライアントにレスポンス
-    if (argConn != nullptr) argConn->print(ctx.resMSG);
+    argConn->print(ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -86,7 +86,7 @@ private:
       //●ストリームを受信
       String retFrame = adpFnStream::GET_FRAME(*(TBL[ID].CONN));
       if (retFrame == "") continue;
-      //│＼（フレームが未完成の場合）
+      //│＼（受信データがない場合）
       //│ ▽次へ：次のスロットを走査
       //│
       //○キューに登録（基底クラスの pushQueue を呼出し）

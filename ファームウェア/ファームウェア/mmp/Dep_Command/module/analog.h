@@ -102,7 +102,7 @@ public:
 
     // ───────────────────────────────
     // 機能 : 信号入力（入力バッファに更新）
-    // 書式 : ANALOG/IN
+    // 書式 : ANALOG/INPUT
     // 引数 : なし
     // 戻り : _ResOK
     // ───────────────────────────────
@@ -119,21 +119,21 @@ public:
         for (int i = 0; i < 4; i++) {
           pinMode(g_ADDR_PINS[i], OUTPUT);
           digitalWrite(g_ADDR_PINS[i], (ch>>i) & 1);
-        }
+        } /* END-for */
 
-        delayMicroseconds(10); //時間調整
+        delayMicroseconds(10); //時間調整(μs)
 
         // データバスから読取り
         for (int dev = 0; dev < SLOT.SwitchCnt; dev++) {
           const int pin = g_DATA_PINS[dev];
           SLOT.Values[ch*4 + dev] = analogRead(pin);
-        }
-      }
+        } /* END-for */
+      } /* END-for */
 
       // ３．後処理：
       _ResOK();
       return;
-    }
+    } /* ANALOG/INPUT */
 
     // ───────────────────────────────
     // 機能 : 入力バッファ参照
@@ -164,7 +164,7 @@ public:
       // ３．後処理：
       _ResValue(res);
       return;
-    }
+    } 
 
   //━━━━━━━━━━━━━━━━━
   // コマンド名エラー

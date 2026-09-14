@@ -146,7 +146,6 @@ public:
       //○UART1以降をセット
       TBL[1].used = true    ; // 使用中
       TBL[1].CONN = &Serial2; // 参照先を登録
-      } /* END-if */
 #endif
 //--------------------------
     //│
@@ -162,7 +161,7 @@ public:
     //│
     //○メッセージ表示
     String strMSG = (MODE == MODE_SUB) ? "1,2" : "1";
-    Serial.println(" [OK] UART (PORT=[%s])", strMSG);
+    Serial.printf(" [OK] UART (PORT=[%s])\n", strMSG.c_str());
     //┴
   } /* constractor AdapterUART() */
 

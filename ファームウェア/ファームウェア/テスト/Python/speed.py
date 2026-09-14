@@ -16,7 +16,7 @@ CONNECTION_MODE = 'COM'   # シリアル
 #CONNECTION_MODE = 'BLE'   # Bluetooth LE
 
 # 表示フラグ: True で毎コマンドのログを出力 / False で結果のみ出力
-VERBOSE_LOG = True
+VERBOSE_LOG = False
 
 # COM（シリアル通信）設定
 COM_PORT = 'COM11'

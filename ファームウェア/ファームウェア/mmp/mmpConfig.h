@@ -64,7 +64,7 @@
   //─────────────────
   //□メインモード：IIC以外は選択可能
   #if   (MODE == MODE_MAIN)
-    #define ADP_TCP  false
+    #define ADP_TCP  true
     #define ADP_HTTP false
     #define ADP_WSOC false
     #define ADP_ESPN false

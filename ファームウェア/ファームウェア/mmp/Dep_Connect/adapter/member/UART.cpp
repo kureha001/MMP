@@ -28,7 +28,7 @@ public:
 
 private:
 //========================================================
-// アダプタの基本
+//§基本情報
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 一般情報
@@ -37,7 +37,7 @@ private:
     int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
 //========================================================
-// 接続管理
+//§接続管理
 //========================================================
   //─────────────────
   // 基本情報
@@ -50,7 +50,7 @@ private:
   T_SLOT* TBL        ; // 事前予約
 
 //========================================================
-// レスポンス
+//§返信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
@@ -66,7 +66,7 @@ private:
   } /* SEND_CONN() */
 
 //========================================================
-// データ受信
+//§受信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
@@ -98,9 +98,7 @@ private:
 
   //━━━━━━━━━━━━━━━━━
   // スレッド処理の定義
-  // ※この関数はスタティックにする
   //━━━━━━━━━━━━━━━━━
-  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
   static void StreamQueue(void *pvParameters) {
     AdapterUART* self = static_cast<AdapterUART*>(pvParameters);
     for (;;) {
@@ -109,9 +107,56 @@ private:
     }
   } /* StreamQueue() */
 
+  //━━━━━━━━━━━━━━━━━
+  // 並列処理の開始
+  //━━━━━━━━━━━━━━━━━
+  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
+  void RUN_TASK() {
+    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
+    xTaskCreate(
+      StreamQueue           , // 実行するタスク関数
+      String(ADP_ID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &TaskHandle             // タスクハンドル
+    );
+  } /* RUN_TASK() */
+  
+//############################
+//# 転送機能はブリッジのみ
+//############################
+#if (MODE == MODE_BRIDGE)
+//========================================================
+//§転送処理
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // ポーリングの前処理
+  //━━━━━━━━━━━━━━━━━
+  bool handle_Begin() override final {
+    //┬
+    //◇ブリッジマスタとして進行を制御
+    switch (ctx.bridge.Stat) {
+      case BSTAT::IDLE: return false; // 待機中：進行OK
+      case BSTAT::REQ : return true ; // 依頼中：進行NG
+      case BSTAT::BUSY: return true ; // 処理中：進行NG
+      case BSTAT::DONE:               // 処理済：進行OK
+        //○コンテクストにレスポンス内容をセット
+        //●ブリッジ元にレスポンス
+        //○進行状況を［待機中］にセット
+        //▼終了：早期リターン（進行OK）
+        ctx.resMSG = ctx.strFrame;
+        SEND_CONN(TBL[ctx.bridge.slotID].CONN);
+        ctx.bridge.Stat = BSTAT::IDLE;
+        return false;
+    } /* END-switch */
+    return true; // 想定外：進行NG
+  } /* handle_Begin() */
+#endif
+//############################
 
 //========================================================
-// 担務（公開機能）
+//§公開機能
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━
@@ -149,49 +194,13 @@ public:
 #endif
 //--------------------------
     //│
-    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
-    xTaskCreate(
-      StreamQueue           , // 実行するタスク関数
-      String(ADP_ID).c_str(), // タスク名（デバッグ用）
-      4096                  , // スタックサイズ（バイト単位）
-      this                  , // パラメータ
-      2                     , // 優先度
-      &TaskHandle             // タスクハンドル
-    );
+    //●受信タスクを起動
+    RUN_TASK();
     //│
     //○メッセージ表示
     String strMSG = (MODE == MODE_SUB) ? "1,2" : "1";
     Serial.printf(" [OK] UART (PORT=[%s])\n", strMSG.c_str());
     //┴
   } /* constractor AdapterUART() */
-
-//############################
-//# ステータス制御はブリッジのみ
-//############################
-#if (MODE == MODE_BRIDGE)
-  //━━━━━━━━━━━━━━━━━
-  // ポーリングの前処理
-  //━━━━━━━━━━━━━━━━━
-  bool handle_Begin() override {
-    //┬
-    //◇ブリッジマスタとして進行を制御
-    switch (ctx.bridge.Stat) {
-      case BSTAT::IDLE: return false; // 待機中：進行OK
-      case BSTAT::REQ : return true ; // 依頼中：進行NG
-      case BSTAT::BUSY: return true ; // 処理中：進行NG
-      case BSTAT::DONE:               // 処理済：進行OK
-        //○コンテクストにレスポンス内容をセット
-        //●ブリッジ元にレスポンス
-        //○進行状況を［待機中］にセット
-        //▼終了：早期リターン（進行OK）
-        ctx.resMSG = ctx.strFrame;
-        SEND_CONN(TBL[ctx.bridge.slotID].CONN);
-        ctx.bridge.Stat = BSTAT::IDLE;
-        return false;
-    } /* END-switch */
-    return true; // 想定外：進行NG
-  } /* handle_Begin() */
-#endif
-//############################
 
 }; /* class AdapterUART */

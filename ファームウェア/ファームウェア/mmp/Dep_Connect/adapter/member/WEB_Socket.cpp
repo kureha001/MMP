@@ -33,7 +33,7 @@ public:
 
 private:
 //========================================================
-// アダプタの基本
+//§基本情報
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 一般情報
@@ -53,7 +53,7 @@ private:
     static AdapterWEB_Socket* MY_INSTANS; // 静的コールバックからのルーティング用
 
 //========================================================
-// レスポンス
+//§返信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
@@ -71,7 +71,7 @@ private:
   } /* SEND_CONN() */
 
 //========================================================
-// データ受信
+//§受信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
@@ -109,7 +109,74 @@ private:
   } /* ON_RECIVE() */
 
 //========================================================
-// 担務（公開機能）
+//§転送処理
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // ポーリング用前処理
+  //━━━━━━━━━━━━━━━━━
+  bool handle_Begin() override final {
+#if (MODE == MODE_BRIDGE)
+    //※クライアントは未接続でも loop() を回し続けて接続状態の変化を検知
+    //※接続の有無に関わらず、後続へ進める（false）
+    //┬
+    //○WebSocketの処理を進める（イベント発火）
+    MY_NET.loop();
+    //│
+    //▼終了：正常
+    return false;
+    //┴
+#else
+    //┬
+    //○サーバはインスタンス未生成（Null）の場合は進行不可（true）
+    if (!MY_NET) return true;
+    //│
+    //○WebSocketの処理を進める（イベント発火）
+    MY_NET->loop();
+    //│
+    //▼終了：正常
+    return false;
+    //┴
+#endif
+  } /* handle_begin() */
+
+//############################
+//# 転送機能はブリッジのみ
+//############################
+#if (MODE == MODE_BRIDGE)
+  //━━━━━━━━━━━━━━━━━
+  // ポーリング用後処理
+  //━━━━━━━━━━━━━━━━━
+  void trans() override final {
+    //┬
+    //◇クライアントを起動
+    if (!MY_NET.isConnected()) {
+      String   ip   = ctx.bridge.Dat1;
+      uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
+      MY_INSTANS = this;
+      MY_NET.onEvent(ON_RECIVE); 
+      MY_NET.begin(ip.c_str(), port, "/");
+      //│
+      //○接続するまでまつ。
+      unsigned long startTime = millis();
+      while(!MY_NET.isConnected() && millis() - startTime < 10000){
+        MY_NET.loop();
+        delay(200);
+      }
+      //│
+      //○タイムアウトはエラーCDをセット
+      if (!MY_NET.isConnected()) {ctx.strFrame = "#TIM!"; return;}
+      //┴
+    }
+    //│
+    //○リクエストを転送
+    MY_NET.sendTXT(ctx.strFrame);
+    //┴
+  };
+#endif
+//############################
+
+//========================================================
+//§公開機能
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━
@@ -137,67 +204,6 @@ public:
 #endif
   } /* constractor AdapterWEB_Socket() */
 
-
-#if (MODE == MODE_BRIDGE)
-  //━━━━━━━━━━━━━━━━━
-  // 転送受付
-  //━━━━━━━━━━━━━━━━━
-  void trans() {
-    //┬
-    //◇クライアントを起動
-    if (!MY_NET.isConnected()) {
-      String   ip   = ctx.bridge.Dat1;
-      uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
-      MY_INSTANS = this;
-      MY_NET.onEvent(ON_RECIVE); 
-      MY_NET.begin(ip.c_str(), port, "/");
-      //│
-      //○接続するまでまつ。
-      unsigned long startTime = millis();
-      while(!MY_NET.isConnected() && millis() - startTime < 10000){
-        MY_NET.loop();
-        delay(200);
-      }
-      //│
-      //○タイムアウトはエラーCDをセット
-      if (!MY_NET.isConnected()) {ctx.strFrame = "#TIM!"; return;}
-      //┴
-    }
-    //│
-    //○リクエストを転送
-    MY_NET.sendTXT(ctx.strFrame);
-    //┴
-  };
-#endif
-
-  //━━━━━━━━━━━━━━━━━
-  // ポーリング用前処理
-  //━━━━━━━━━━━━━━━━━
-  bool handle_Begin() override {
-#if (MODE == MODE_BRIDGE)
-    //※クライアントは未接続でも loop() を回し続けて接続状態の変化を検知
-    //※接続の有無に関わらず、後続へ進める（false）
-    //┬
-    //○WebSocketの処理を進める（イベント発火）
-    MY_NET.loop();
-    //│
-    //▼終了：正常
-    return false;
-    //┴
-#else
-    //┬
-    //○サーバはインスタンス未生成（Null）の場合は進行不可（true）
-    if (!MY_NET) return true;
-    //│
-    //○WebSocketの処理を進める（イベント発火）
-    MY_NET->loop();
-    //│
-    //▼終了：正常
-    return false;
-    //┴
-#endif
-  } /* handle_begin() */
-  
 }; /* class AdapterWEB_Socket */
 
 //━━━━━━━━━━━━━━━━━

@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／共通課：一般処理係
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 // ・[SETUP_CTX()]を追加([AdapterQueueBase]の処理を移動)
 //========================================================
 
@@ -17,15 +18,26 @@
   // デバッグログ表示
   //━━━━━━━━━━━━━━━━━
   void SHOW_LOG(){
+
     if (!ctx.sysLog) return;
-    Serial.println(String("\n======================================"));
-    Serial.println("Frame [" + String(ctx.strFrame) + "]");
-    Serial.printf ("AID[%d] SID[%d] TID[%d](Stat[%d])\n", ctx.adpID, ctx.bridge.slotID, ctx.bridge.adpID, ctx.bridge.Stat);
-    Serial.printf ("TDat[%s][%s][%s]\n", String(ctx.bridge.Dat1), String(ctx.bridge.Dat2), String(ctx.bridge.Dat3));
-    Serial.printf ("ACD[%s] : AccID[%d]/[%d]\n",String(ctx.authCD), ctx.accID, ctx.accIDS);
-    Serial.print  ("Path[" + String(ctx.cmdPath) + "] = ");
-    Serial.println("MSG["  + String(ctx.resMSG ) + "]");
-    Serial.println(String("======================================"));
+    char msg[128];
+
+    Log::prtln(String("\n============== MMP LOG ==============="));
+
+    Log::prtln("Frame [" + String(ctx.strFrame) + "]");
+
+    snprintf(msg, sizeof(msg), "AID[%d] SID[%d] TID[%d](Stat[%d])", ctx.adpID, ctx.bridge.slotID, ctx.bridge.adpID, ctx.bridge.Stat);
+    Log::prtln(String(msg));
+
+    snprintf(msg, sizeof(msg), "TDat[%s][%s][%s]", String(ctx.bridge.Dat1), String(ctx.bridge.Dat2), String(ctx.bridge.Dat3));
+    Log::prtln(String(msg));
+
+    snprintf(msg, sizeof(msg), "ACD[%s] : AccID[%d]/[%d]",String(ctx.authCD), ctx.accID, ctx.accIDS);
+    Log::prtln(String(msg));
+
+    Log::prtln("Path[" + String(ctx.cmdPath) + "] = MSG["  + String(ctx.resMSG ) + "]");
+
+    Log::prtln(String("======================================"));
   } /* P9_SHOW_LOG() */
 
   //━━━━━━━━━━━━━━━━━

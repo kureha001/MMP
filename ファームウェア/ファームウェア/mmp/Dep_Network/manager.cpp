@@ -2,7 +2,8 @@
 //========================================================
 // 通信部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 // ・UARTを強制使用に変更
 //========================================================
 
@@ -69,15 +70,20 @@ namespace DepNetwork{
   //━━━━━━━━━━━━━━━━━
   void INIT() {
     //┬
-    //○USB(CDC)ポートを初期化
-    Serial.begin(115200);          // USB(CDC)
-    Serial.setDebugOutput(false);  // SDKデバッグ出力を抑止
-    delay(500);                   // 安定するまで待つ
+    //○ログ出力用ポートを初期化
+#if (MODE == MODE_SUB)
+    Serial.begin(SERIAL_BPS);
+    Serial.setDebugOutput(false);
+#else
+    Serial1.begin(SERIAL_BPS, SERIAL_8N1, 17, 18);
+    Serial1.setDebugOutput(false);
+#endif
+    delay(500);                    // 安定するまで待つ
     //│
     //○始業のあいさつ（開始）
-    Serial.println("<<通信デバイスの初期化>>");
-    Serial.println(" [UART device]"  );
-    Serial.println("  [OK] USB (CDC) -> 115200bps");
+    Log::prtln("<<通信デバイスの初期化>>");
+    Log::prtln(" [UART device]"  );
+    Log::prtln("  [OK] USB (CDC) -> 115200bps");
     //│
     //◎┐デバイス課の担当に業務遂行を指示
     for (size_t devID = 0; devID < DBs; ++devID) {

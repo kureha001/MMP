@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：WEB Socket 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/06) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //□┐インクルード
@@ -186,7 +187,7 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
-    Serial.println(" [OK] WEB Socket");
+    Log::prtln(" [OK] WEB Socket");
     //┴
 #else
     //┬
@@ -199,7 +200,9 @@ public:
     MY_NET->begin()                       ; // サーバ起動
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] WEB Socket (PORT=[%d])\n", MY_PORT);
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] WEB Socket (PORT=[%d])", MY_PORT);
+    Log::prtln(String(msg));
     //┴
 #endif
   } /* constractor AdapterWEB_Socket() */

@@ -2,7 +2,8 @@
 //========================================================
 // 環境設定
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 // ・ベース部と選択部を分離
 // ・モード別にカテゴリ化
 // ・ターボモードを追加
@@ -22,6 +23,15 @@
   #define BOARD_ESP32_S3_TINY 10
   #define BOARD_M5STAMP_S3    11
   #define BOARD_PICO2W        20
+
+  //─────────────────
+  // シリアルのボーレート
+  //─────────────────
+  //int SERIAL_BPS = 115200;
+  int SERIAL_BPS = 921600;
+  //int SERIAL_BPS = 1000000;
+  //int SERIAL_BPS = 2000000;
+  //int SERIAL_BPS = 3000000;
 
   //─────────────────
   // 動作モード
@@ -56,7 +66,7 @@
   //─────────────────
   // 高速モード
   //─────────────────
-  #define TURBO true
+  #define TURBO false
 
   //─────────────────
   // モード別に経路アダプタ選択
@@ -65,10 +75,10 @@
   //□メインモード：IIC以外は選択可能
   #if   (MODE == MODE_MAIN)
     #define ADP_TCP  true
-    #define ADP_HTTP false
-    #define ADP_WSOC false
-    #define ADP_ESPN false
-    #define ADP_BLE  false
+    #define ADP_HTTP true
+    #define ADP_WSOC true
+    #define ADP_ESPN true
+    #define ADP_BLE  true
 
   //□サブモード：すべて選択可能
   #elif (MODE == MODE_SUB)
@@ -88,4 +98,22 @@
 
   #endif
 
-  #endif // CONFIG_H
+ namespace Log{
+  void prtln(String argMSG) {
+    #if   (MODE == MODE_SUB)
+      Serial.println(argMSG);
+    #else
+      Serial1.println(argMSG);
+    #endif
+  } /* prtln() */
+
+  void prt(String argMSG) {
+    #if (MODE == MODE_SUB)
+      Serial.print(argMSG);    
+    #else
+      Serial1.print(argMSG);    
+    #endif
+  } /* prt() */
+ } /* namespace Log */
+
+#endif // CONFIG_H

@@ -26,11 +26,7 @@
   //━━━━━━━━━━━━━━━━━
   // TCP RAW
   //━━━━━━━━━━━━━━━━━
-#if TURBO
-  #include "TCP_TURBO.cpp"
-#else
   #include "TCP.cpp"
-#endif
   namespace adpTCP{
     void START()  ; // サービス開始の指示
     void HANDLE() ; // ポーリングのハンドル

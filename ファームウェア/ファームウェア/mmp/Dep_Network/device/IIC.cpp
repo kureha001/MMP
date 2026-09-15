@@ -2,7 +2,8 @@
 //========================================================
 // 通信部門／デバイス課：IIC 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -31,18 +32,18 @@ namespace devIIC {
   //━━━━━━━━━━━━━━━━━
   static bool READ_JSON() {
     if (!LittleFS.begin(true)) {
-      Serial.println("   [NG] LittleFS のマウントに失敗しました");
+      Log::prtln("   [NG] LittleFS のマウントに失敗しました");
       return false;
     }
 
     if (!LittleFS.exists(FILE_PATH)) {
-      Serial.println("   [NG] device.json が存在しません (起動停止)");
+      Log::prtln("   [NG] device.json が存在しません (起動停止)");
       return false;
     }
 
     File f = LittleFS.open(FILE_PATH, "r");
     if (!f) {
-      Serial.println("   [NG] device.json のオープンに失敗しました");
+      Log::prtln("   [NG] device.json のオープンに失敗しました");
       return false;
     }
 
@@ -51,7 +52,7 @@ namespace devIIC {
     f.close();
 
     if (err) {
-      Serial.println("   [NG] device.json のパースに失敗しました");
+      Log::prtln("   [NG] device.json のパースに失敗しました");
       return false;
     }
 
@@ -59,7 +60,7 @@ namespace devIIC {
     SCL_PIN = doc["iic"]["scl"] | -1;
 
     if (SDA_PIN < 0 || SCL_PIN < 0) {
-      Serial.println("   [NG] 不正な SDA/SCL ピン設定です");
+      Log::prtln("   [NG] 不正な SDA/SCL ピン設定です");
       return false;
     }
 
@@ -78,7 +79,7 @@ namespace devIIC {
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START() {
-    Serial.println(" [I2C device]");
+    Log::prtln(" [I2C device]");
 
     // １．起動ガード：device.json の読み込み
     if (!READ_JSON()) {
@@ -90,7 +91,9 @@ namespace devIIC {
     Wire.begin(SDA_PIN, SCL_PIN);
 
     // ３．完了出力＆有効性セット
-    Serial.printf("   [OK] IIC -> SDA[%d], SCL[%d]\n", SDA_PIN, SCL_PIN);
+    char msg[128];
+    snprintf(msg, sizeof(msg), "   [OK] IIC -> SDA[%d], SCL[%d]\n", SDA_PIN, SCL_PIN);
+    Log::prt (String(msg));
     ENABLED = true;
   } /* START() */
 

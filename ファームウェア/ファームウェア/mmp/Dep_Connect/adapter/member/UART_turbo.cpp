@@ -41,7 +41,7 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  Stream* CONN = &Serial1;
+  Stream* CONN = &Serial; // USB(CDC)だけをセット
 
 //========================================================
 //§返信処理
@@ -101,7 +101,7 @@ public:
   AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○メッセージ表示
-    Serial.println(" [OK] UART Hi-Speed (PORT=[1])");
+    Log::prtln(" [OK] UART Hi-Speed (PORT=[1])");
     //┴
   } /* constractor AdapterUART() */
 

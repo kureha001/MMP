@@ -2,7 +2,8 @@
 //========================================================
 // コマンド部門／モジュール課：MP3プレイヤー 担当
 //--------------------------------------------------------
-// Ver 1.3.1 (2026/09/13) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -41,7 +42,7 @@ public:
   : ModuleBase(ctx, name, desc) {
     //┬
     //○開始
-    Serial.println(" [MP3：DFPlayer mini]");
+    Log::prtln(" [MP3：DFPlayer mini]");
     //│
     //◎┐初期設定
     for (int ID = 0; ID < SER_MAX; ++ID) {
@@ -55,14 +56,16 @@ public:
       if (MP3[ID].begin(*SER[ID])) ENABLE[ID] = true;
       //│
       //○結果表示
-      Serial.printf(
-        "　 [%s] Device  ID : %d (Serial%d)\n",
+      char msg[128];
+      snprintf(msg, sizeof(msg), 
+        "　 [%s] Device  ID : %d (Serial%d)",
         (ENABLE[ID] ? "OK" : "NG"), ID, (ID + SER_START)
       );
+      Log::prtln(String(msg));
     } /* END-for */
     //│
     //○終了
-    Serial.println("");
+    Log::prtln("");
     //┴
   }; /* Constractor ModuleMP3 */
 

@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：BLE 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //□┐インクルード
@@ -162,7 +163,7 @@ public:
       devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
     //│
     //○メッセージ表示
-    Serial.println(" [OK] BLE");
+    Log::prtln(" [OK] BLE");
     //┴
 #else
     //┬
@@ -173,7 +174,9 @@ public:
     if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] BLE (NAME=[%s])\n", devBLE::MY_NAME);
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] BLE (NAME=[%s])\n", devBLE::MY_NAME);
+    Log::prtln(String(msg));
     //┴
 #endif
   } /* constractor AdapterBLE() */

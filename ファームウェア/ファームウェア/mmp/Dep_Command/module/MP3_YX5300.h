@@ -2,7 +2,8 @@
 //========================================================
 // コマンド部門／モジュール課：MP3プレイヤー 担当
 //--------------------------------------------------------
-// Ver 1.3.1 (2026/09/13) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -41,7 +42,7 @@ public:
   : ModuleBase(ctx, name, desc) {
     //┬
     //○開始
-    Serial.println(" [MP3：YX5300 Chip]");
+    Log::prtln(" [MP3：YX5300 Chip]");
     //│
     //◎┐初期設定
     for (int ID = 0; ID < SER_MAX; ++ID) {
@@ -55,11 +56,13 @@ public:
       //│
       //○結果反映
       ENABLE[ID] = true; 
-      Serial.printf("　 [OK] Device  ID : %d (Serial%d)\n", ID, ID + SER_START);
+      char msg[128];
+      snprintf(msg, sizeof(msg), "　 [OK] Device  ID : %d (Serial%d)\n", ID, ID + SER_START);
+      Log::prtln(String(msg));
     } /* END-for */
     //│
     //○終了
-    Serial.println("");
+    Log::prtln("");
     //┴
   }; /* Constractor ModuleMP3 */
 

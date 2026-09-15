@@ -2,7 +2,8 @@
 //========================================================
 // コマンド部門／モジュール課：PWM出力 担当
 //--------------------------------------------------------
-// Ver 1.2.3 (2026/09/07) IIC開始を通信デバイス部門へ移管 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -75,7 +76,7 @@ public:
   ModulePwm(MmpContext& ctx, const char* name, const char* desc)
   : ModuleBase(ctx, name, desc) {
 
-    Serial.println(" [PWM：PCA9685]");
+    Log::prtln(" [PWM：PCA9685]");
 
     // I2Cアドレス0x40から接続走査
     // ※最大64(i2cアドレス：0x40～0x7F)
@@ -103,7 +104,7 @@ public:
     const int datCount = ctx.accIDS;              // ユーザ数
     void* p = calloc(datCount, sizeof(UserData)); // 全要素 0 で確保
     if (!p) {
-      Serial.println(String("　 [NG] メモリ不足です"));
+      Log::prtln(String("　 [NG] メモリ不足です"));
       return;
     }
     g_USR_DAT = static_cast<UserData*>(p);
@@ -127,11 +128,11 @@ public:
       }
     }
 
-    if (g_DEV_IDs < 0) Serial.println(String("　 [NG] Device  ID : Not Found"));
-    else               Serial.println(String("　 [OK] Device  ID : 0 ～ ") + String(g_DEV_IDs));
-    if (g_CH_IDs < 0 ) Serial.println(String("　 [NG] Channel ID : Not Found"));
-    else               Serial.println(String("　 [OK] Channel ID : 0 ～ ") + String(g_CH_IDs));
-    Serial.println("");
+    if (g_DEV_IDs < 0) Log::prtln(String("　 [NG] Device  ID : Not Found"));
+    else               Log::prtln(String("　 [OK] Device  ID : 0 ～ ") + String(g_DEV_IDs));
+    if (g_CH_IDs < 0 ) Log::prtln(String("　 [NG] Channel ID : Not Found"));
+    else               Log::prtln(String("　 [OK] Channel ID : 0 ～ ") + String(g_CH_IDs));
+    Log::prtln("");
   }
 
   //========================================================

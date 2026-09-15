@@ -2,7 +2,8 @@
 //========================================================
 // コマンド部門／モジュール課：アナログ入力 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/03) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 
 //########################################################
@@ -36,12 +37,12 @@ public:
   ModuleAnalog(MmpContext& ctx, const char* name, const char* desc)
   : ModuleBase(ctx, name, desc) {
 
-    Serial.println(" [ANALOG：HC4067]");
+    Log::prtln(" [ANALOG：HC4067]");
 
     // ユーザ別データのメモリ確保
     void* p = calloc(ctx.accIDS, sizeof(UserData)); // 全要素0で初期化して確保
     if (!p) {
-      Serial.println(String("　 [NG] メモリ不足です"));
+      Log::prtln(String("　 [NG] メモリ不足です"));
       return;
     }
     g_USR_DAT = static_cast<UserData*>(p);
@@ -52,9 +53,9 @@ public:
       g_USR_DAT[i].PlayerCnt = 1; // 使用範囲(プレイヤ数;チャンネル数)
     }
 
-    Serial.println(String("　 [OK] Device  ID : 0 ～ 3 "));
-    Serial.println(String("　 [OK] Channel ID : 0 ～ 16"));
-    Serial.println("");
+    Log::prtln(String("　 [OK] Device  ID : 0 ～ 3 "));
+    Log::prtln(String("　 [OK] Channel ID : 0 ～ 16"));
+    Log::prtln("");
   }
 
   //========================================================

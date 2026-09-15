@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 // ・標準スロットを廃止
 //========================================================
 
@@ -164,33 +165,27 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //●┐接続管理TBLを作成
-      //○領域を確保
+    //●接続管理TBLを作成
 //--------------------------
 // サブは複数スロット
 //--------------------------
 #if (MODE == MODE_SUB)
-      SLOTs = 2;
+    //  GPIO側だけをセット
+    SLOTs = 2;
+    TBL   = new T_SLOT[SLOTs];
+    TBL[0].used = true    ;
+    TBL[0].CONN = &Serial1;
+    TBL[1].used = true    ;
+    TBL[1].CONN = &Serial2;
 //--------------------------
 // サブ以外は単一スロット
 //--------------------------
 #else
-      SLOTs = 1;
-#endif
-//--------------------------
-      TBL   = new T_SLOT[SLOTs];
-      //│
-      //○USB(CDC)をセット
-      TBL[0].used = true    ; // 使用中
-      TBL[0].CONN = &Serial1; // 参照先を登録
-      //│
-//--------------------------
-// サブは複数スロット
-//--------------------------
-#if (MODE == MODE_SUB)
-      //○UART1以降をセット
-      TBL[1].used = true    ; // 使用中
-      TBL[1].CONN = &Serial2; // 参照先を登録
+    //  USB(CDC)だけをセット
+    SLOTs = 1;
+    TBL   = new T_SLOT[SLOTs];
+    TBL[0].used = true   ;
+    TBL[0].CONN = &Serial;
 #endif
 //--------------------------
     //│
@@ -198,8 +193,10 @@ public:
     RUN_TASK();
     //│
     //○メッセージ表示
-    String strMSG = (MODE == MODE_SUB) ? "1,2" : "1";
-    Serial.printf(" [OK] UART (PORT=[%s])\n", strMSG.c_str());
+    char msg[128];
+    String port = (MODE == MODE_SUB) ? "1,2" : "1";
+    snprintf(msg, sizeof(msg), " [OK] UART (PORT=[%s])", port.c_str());
+    Log::prtln(String(msg));
     //┴
   } /* constractor AdapterUART() */
 

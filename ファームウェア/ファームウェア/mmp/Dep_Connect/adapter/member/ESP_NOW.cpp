@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：ESP-NOW 担当
 //--------------------------------------------------------
-// Ver 1.3.1 (2026/09/09) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //□┐インクルード
@@ -182,13 +183,13 @@ public:
     //│
     //○サービス資源を生成
     if (esp_now_init() != ESP_OK) {
-        Serial.println(" [NG] ESP-NOW (初期化失敗)");
+        Log::prtln(" [NG] ESP-NOW (初期化失敗)");
         return;
     } /* END-if */
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
     //○メッセージ表示
-    Serial.println(" [OK] ESP-NOW (MAC=[" + String(WiFi.macAddress()) + "])");
+    Log::prtln(" [OK] ESP-NOW (MAC=[" + String(WiFi.macAddress()) + "])");
     //┴
   } /* constractor AdapterESPNOW() */
 

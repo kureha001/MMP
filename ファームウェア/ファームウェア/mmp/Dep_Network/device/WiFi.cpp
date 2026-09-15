@@ -2,7 +2,8 @@
 //========================================================
 // 通信部門／デバイス課：WiFi 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -280,9 +281,9 @@ namespace devWiFi {
   // 処理結果表示ヘルパ
   //─────────────────
   void RUN_INFO(String pSSID, String pName, String pIP) {
-    Serial.println(String("      [OK] SSID: ") + pSSID.c_str());
-    Serial.println(String("      [OK] HOST: ") + pName.c_str());
-    Serial.println(String("      [OK] IP  : ") + pIP.c_str()  );
+    Log::prtln(String("      [OK] SSID: ") + pSSID.c_str());
+    Log::prtln(String("      [OK] HOST: ") + pName.c_str());
+    Log::prtln(String("      [OK] IP  : ") + pIP.c_str()  );
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -308,7 +309,7 @@ namespace devWiFi {
       //┴
     //│
     //○ヘッダ表示(ラベル名、SSID)
-    Serial.print(String("    ") + pLabel.c_str() + String(" / ") + pSSID.c_str() + String(" "));
+    Log::prt("    " + String(pLabel) + " / " + String(pSSID) + " ");
     //│
     //○┐仮接続
       //○切断して少し待つ
@@ -323,12 +324,12 @@ namespace devWiFi {
       //│
       //○接続を確認
       uint32_t t0 = millis();
-      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < WAIT_MS){Serial.print("."); delay(WAIT_MS_INT);}
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < WAIT_MS){Log::prt("."); delay(WAIT_MS_INT);}
       if    (WiFi.status() != WL_CONNECTED) {
       //│＼（しばらく待っても接続できない場合）
           //○接続を切断
           //▼返却:接続に失敗
-          Serial.println(" [NG] DHCP");
+          Log::prtln(" [NG] DHCP");
           return false;
       } /* END-if */
       //┴
@@ -347,7 +348,7 @@ namespace devWiFi {
           //○正常処理を表示
           //●ステータスを表示
           //▼返却：接続に成功(DHCPのまま採用)
-          Serial.println(" [OK] useing DHCP-IP(1)]");
+          Log::prtln(" [OK] useing DHCP-IP(1)]");
           RUN_INFO(pSSID, pName, WiFi.localIP().toString());
           return true;
       } /* END-if */
@@ -359,7 +360,7 @@ namespace devWiFi {
           //○正常処理を表示
           //●ステータスを表示
           //▼返却：接続に成功(DHCPのまま採用)
-          Serial.println(" [OK] useing DHCP-IP(2)");
+          Log::prtln(" [OK] useing DHCP-IP(2)");
           RUN_INFO(pSSID, pName, WiFi.localIP().toString());
           return true;
       } /* END-if */
@@ -381,18 +382,18 @@ namespace devWiFi {
       //│
     //○接続を確認
       t0 = millis();
-      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < WAIT_MS){Serial.print("."); delay(WAIT_MS_INT);}
+      while (WiFi.status() != WL_CONNECTED && (millis()-t0) < WAIT_MS){Log::prt("."); delay(WAIT_MS_INT);}
       if    (WiFi.status() != WL_CONNECTED) {
       //│ ＼（しばらく待っても接続できない場合）
           //○エラーを表示
           //▼返却:接続に成功
-          Serial.println(" [NG] STA-IP");
+          Log::prtln(" [NG] STA-IP");
           return false;
       } /* END-if */
       //┴
     //│
     //○接続情報を表示
-    Serial.println(" Connected.");
+    Log::prtln(" Connected.");
     RUN_INFO(pSSID, pName, WiFi.localIP().toString());
     //│
     //▼返却:接続成功
@@ -421,7 +422,7 @@ namespace devWiFi {
     //│ ＼（起動に失敗した場合）
         //○エラーを表示
         //▼返却:起動に失敗
-        Serial.println("     [NG] softAP");
+        Log::prtln("     [NG] softAP");
         return false;
     } /* END-if*/
     //│
@@ -444,9 +445,9 @@ namespace devWiFi {
   //・false：読込に失敗
   //━━━━━━━━━━━━━━━━━
   bool P1_ReadConfig(){
-    if (!LittleFS.begin(true)        ){Serial.println("     [NG] 初期化に失敗"  );return false;}
-    if (!LittleFS.exists(FILE_PATH)){Serial.println("     [NG] ファイルが無い");return false;}
-    if (!READ_JSON()                 ){Serial.println("     [NG] 読込に失敗"    );return false;}
+    if (!LittleFS.begin(true)        ){Log::prtln("     [NG] 初期化に失敗"  );return false;}
+    if (!LittleFS.exists(FILE_PATH)){Log::prtln("     [NG] ファイルが無い");return false;}
+    if (!READ_JSON()                 ){Log::prtln("     [NG] 読込に失敗"    );return false;}
     return true;
 } /* P1_ReadConfig() */
 
@@ -532,27 +533,27 @@ namespace devWiFi {
   void START(){
     //┬
     //○開始表示
-    Serial.println(" [Wi-Fi Network device]");
+    Log::prtln(" [Wi-Fi Network device]");
     bool isOK = false;
     //│
     //●P1.設定ファイル読込
     // 【前提条件】無条件
-    Serial.println("   1.設定ファイルの読込");
+    Log::prtln("   1.設定ファイルの読込");
     isOK = P1_ReadConfig();
     //│
     //◇┐P2.設定ファイルに従い起動
     if (isOK) {
       //├┐（設定ファイルが読み込めた場合）
-        Serial.println("   2.設定ファイルに従い起動します");
+        Log::prtln("   2.設定ファイルに従い起動します");
         //│
         //●P2-1.ＳＴＡモードでを起動
-        Serial.println("   [STA mode]");
+        Log::prtln("   [STA mode]");
         isOK = P21_MODE_STA();
         //│
         //●P2-2.ＡＰモードで起動
         // 【前提条件】STAモードの起動に失敗
         if (!isOK) {
-          Serial.println("   [AP mode]");
+          Log::prtln("   [AP mode]");
           isOK = P22_MODE_AP();
         }
         //┴
@@ -561,7 +562,7 @@ namespace devWiFi {
     //●P3.緊急モードで起動
     // 【前提条件】設定ファイルの内容での起動に失敗
     if (!isOK) {
-        Serial.println("   3.緊急モードで起動します");
+        Log::prtln("   3.緊急モードで起動します");
         isOK = P3_MODE_ALTERNATIVE();
     } /* END-if */
     //│

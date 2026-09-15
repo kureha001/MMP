@@ -16,11 +16,14 @@ CONNECTION_MODE = 'COM'   # シリアル
 #CONNECTION_MODE = 'BLE'   # Bluetooth LE
 
 # 表示フラグ: True で毎コマンドのログを出力 / False で結果のみ出力
+#VERBOSE_LOG = True
 VERBOSE_LOG = False
 
 # COM（シリアル通信）設定
-COM_PORT = 'COM11'
-BAUDRATE = 2000000
+#COM_PORT = 'COM11'
+COM_PORT = 'COM145'
+BAUDRATE = 921600
+#BAUDRATE = 2000000
 
 # ネットワーク設定
 TCP_IP    = '192.168.2.99'
@@ -68,16 +71,20 @@ class DeviceConnection:
         if self.mode == 'COM':
             self.conn = serial.Serial(self.com_port, self.baudrate, timeout=self.timeout)
             await asyncio.sleep(2)  # 接続安定化待ち
+
         elif self.mode == 'TCP':
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.conn.settimeout(self.timeout)
             self.conn.connect((self.tcp_ip, self.tcp_port))
+
         elif self.mode == 'WS':
             uri = f"ws://{self.tcp_ip}:{self.ws_port}"
             self.conn = await websockets.connect(uri)
+
         elif self.mode == 'HTTP':
             # ステートレスのため事前接続なし
             pass
+
         elif self.mode == 'BLE':
             print(f"BLEデバイス [{self.ble_name}] をスキャン中... (タイムアウト: 10秒)")
             

@@ -2,7 +2,8 @@
 //========================================================
 // コマンド部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.1 (2026/09/13) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード(機能モジュール群)
@@ -94,7 +95,7 @@ namespace DepCommand {
     //│ ▼終了：早期リターン
     //│
     //○始業のあいさつ（開始）
-    Serial.println("<<機能モジュールの初期化>>");
+    Log::prtln("<<機能モジュールの初期化>>");
     //│
     //○参加名簿と共に部下を招集（システムモジュール）
     MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
@@ -109,18 +110,18 @@ namespace DepCommand {
 #endif
     //│
     //◎┐担当の点呼
-    Serial.print(" Add In ->");
+    Log::prt(" Add In ->");
     for (auto* mod : MODULE){
       //│＼（全機能モジュールを走査し終えた場合）
       //│ ▼完了：走査を終える
       //│
       //●機能モジュール名を表示
-      Serial.print(String(" [") + String(mod->getModName()) + String("]"));
+      Log::prt(String(" [") + String(mod->getModName()) + String("]"));
       //┴
     } /* END-for */
     //│
     //○始業のあいさつ（終了）
-    Serial.println("");
+    Log::prtln("");
     //┴
   } /* INIT() */
 

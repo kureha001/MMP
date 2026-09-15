@@ -177,25 +177,25 @@ class 本体:
         #┬
         if pyxel.btnr(pyxel.KEY_UP):
             DS.情報.MMP中央値 += 5
-            if DS.情報.MMP中央値 > 1020 : DS.情報.MMP中央値 = 0
+            if DS.情報.MMP中央値 > DS.情報.MMP最大値 : DS.情報.MMP中央値 = 0
             #●クリック音を鳴らす
             音声.クリック音()
         #│
         if pyxel.btnr(pyxel.KEY_DOWN):
             DS.情報.MMP中央値 -= 5
-            if DS.情報.MMP中央値 < 0    : DS.情報.MMP中央値 = 1020
+            if DS.情報.MMP中央値 < 0 : DS.情報.MMP中央値 = DS.情報.MMP最大値
             #●クリック音を鳴らす
             音声.クリック音()
         #│
         if pyxel.btnr(pyxel.KEY_LEFT):
             DS.情報.MMP反応率 -= 1
-            if DS.情報.MMP反応率 < 1    : DS.情報.MMP反応率 = 20
+            if DS.情報.MMP反応率 < 1 : DS.情報.MMP反応率 = 30
             #●クリック音を鳴らす
             音声.クリック音()
         #│
         if pyxel.btnr(pyxel.KEY_RIGHT):
             DS.情報.MMP反応率 += 1
-            if DS.情報.MMP反応率 > 20   : DS.情報.MMP反応率 = 0
+            if DS.情報.MMP反応率 > 30: DS.情報.MMP反応率 = 0
             #●クリック音を鳴らす
             音声.クリック音()
         #┴

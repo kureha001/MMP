@@ -2,23 +2,14 @@
 //========================================================
 // 通信部門／デバイス課：UART 担当
 //--------------------------------------------------------
-// Ver 1.2.2 (2026/09/04) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 
 //########################################################
 //# 処理詳細
 //########################################################
 namespace devUART {
-//========================================================
-// 共通資源
-//========================================================
-  //─────────────────
-  // ハードウェアのスペック
-  //─────────────────
-  //int IntBaud = 921600;
-  //int IntBaud = 1000000;
-  int IntBaud = 2000000;
-  //int IntBaud = 3000000;
 
 //========================================================
 // 担務（公開機能）
@@ -33,27 +24,16 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
 
-    // UARTポートを起動
-    #if (BOARD == BOARD_ESP32_S3_TINY)
-      Serial1.begin(IntBaud, SERIAL_8N1, 17, 18);
-      // ※メインモードは、Serial2をMP3プレイヤーで使用
-      #if (BOARD != MMP_TYPE_MAIN)
-        Serial2.begin(IntBaud, SERIAL_8N1, 11, 12);
-      #endif
-
-    #elif (BOARD == BOARD_M5STAMP_S3)
-      Serial1.begin(IntBaud, SERIAL_8N1,  1,  2);
-
-    #elif (BOARD == BOARD_PICO2W)
-      Serial1.begin(IntBaud, SERIAL_8N1, 13, 17);
-      Serial2.begin(IntBaud, SERIAL_8N1,  5,  9);
-
-    #else
-      #error "【設定エラー】ボードが未定義です！"
-    #endif
+    //○UARTポートを起動
+#if (MODE == MODE_SUB)
+    Serial1.begin(SERIAL_BPS, SERIAL_8N1, 17, 18);
+    Serial2.begin(SERIAL_BPS, SERIAL_8N1, 11, 12);
+#else
+    Serial.begin(SERIAL_BPS);
+#endif
 
     //○有効性セット
-    Serial.println("　[OK] UART(#01) -> " + String(IntBaud) + "bps");
+    Log::prtln("　[OK] UART(#01) -> " + String(SERIAL_BPS) + "bps");
     ENABLED = true;
   } /* START() */
 } /* namespace devUART */

@@ -2,7 +2,8 @@
 //========================================================
 // 通信部門／デバイス課：BLE 担当
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11) 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -54,18 +55,18 @@ namespace devBLE {
   //━━━━━━━━━━━━━━━━━
   static bool READ_JSON() {
     if (!LittleFS.begin(true)) {
-      Serial.println("   [NG] LittleFS のマウントに失敗しました");
+      Log::prtln("   [NG] LittleFS のマウントに失敗しました");
       return false;
     }
 
     if (!LittleFS.exists(FILE_PATH)) {
-      Serial.println("   [NG] device.json が存在しません (起動停止)");
+      Log::prtln("   [NG] device.json が存在しません (起動停止)");
       return false;
     }
 
     File f = LittleFS.open(FILE_PATH, "r");
     if (!f) {
-      Serial.println("   [NG] device.json のオープンに失敗しました");
+      Log::prtln("   [NG] device.json のオープンに失敗しました");
       return false;
     }
 
@@ -74,13 +75,13 @@ namespace devBLE {
     f.close();
 
     if (err) {
-      Serial.println("   [NG] device.json のパースに失敗しました");
+      Log::prtln("   [NG] device.json のパースに失敗しました");
       return false;
     }
 
     const char* name = doc["dev_name"] | "";
     if (strlen(name) == 0) {
-      Serial.println("   [NG] 不正な dev_name 設定です");
+      Log::prtln("   [NG] 不正な dev_name 設定です");
       return false;
     }
 
@@ -102,7 +103,7 @@ namespace devBLE {
   void START() {
     //┬
     //○開始メッセージを表示
-    Serial.println(" [Bluetooth device]"  );
+    Log::prtln(" [Bluetooth device]"  );
     //│
     //○起動ガード：device.json の読み込み
     if (!READ_JSON()) {
@@ -136,8 +137,8 @@ namespace devBLE {
     }
 
     if (targetDevice == nullptr) {
-      Serial.println("   [NG] ターゲットデバイスが見つかりません");
-      Serial.println("");
+      Log::prtln("   [NG] ターゲットデバイスが見つかりません");
+      Log::prtln("");
       ENABLED = false;
       return;
     }
@@ -145,8 +146,8 @@ namespace devBLE {
     //○BLEクライアント（セントラル）を生成して接続
     MY_CLI = BLEDevice::createClient();
     if (MY_CLI == nullptr || !MY_CLI->connect(targetDevice)) {
-      Serial.println("   [NG] ペリフェラルへの接続に失敗");
-      Serial.println("");
+      Log::prtln("   [NG] ペリフェラルへの接続に失敗");
+      Log::prtln("");
       delete targetDevice;
       ENABLED = false;
       return;
@@ -157,8 +158,8 @@ namespace devBLE {
     //○サービスおよびキャラクタリスティックのリソースを取得・保持
     BLERemoteService* pService = MY_CLI->getService(BLEUUID(UUID_SERVICE));
     if (pService == nullptr) {
-      Serial.println("   [NG] サービスが見つかりません");
-      Serial.println("");
+      Log::prtln("   [NG] サービスが見つかりません");
+      Log::prtln("");
       ENABLED = false;
       return;
     }
@@ -167,16 +168,16 @@ namespace devBLE {
     BLE_CLI_TX = pService->getCharacteristic(BLEUUID(UUID_TX));
 
     if (BLE_CLI_RX == nullptr || !BLE_CLI_RX->canWrite()) {
-      Serial.println("   [NG] キャラクタリスティック(RX)準備に失敗");
-      Serial.println("");
+      Log::prtln("   [NG] キャラクタリスティック(RX)準備に失敗");
+      Log::prtln("");
       ENABLED = false;
       return;
     }
 
     //○終了メッセージを表示
-    Serial.println(String("   [OK] bridge target : ") + MY_NAME.c_str()     );
-    Serial.println(String("   [OK] service UUID  : ") + String(UUID_SERVICE));
-    Serial.println("");
+    Log::prtln(String("   [OK] bridge target : ") + MY_NAME.c_str()     );
+    Log::prtln(String("   [OK] service UUID  : ") + String(UUID_SERVICE));
+    Log::prtln("");
     ENABLED = true;
 
 #else
@@ -187,8 +188,8 @@ namespace devBLE {
     MY_SRV = BLEDevice::createServer();
     if (MY_SRV == nullptr) {
     //│＼（サーバ生成に失敗した場合）
-        Serial.println("   [NG] サーバ生成に失敗");
-        Serial.println("");
+        Log::prtln("   [NG] サーバ生成に失敗");
+        Log::prtln("");
         ENABLED = false;
         return;
     } /* END-if */
@@ -197,8 +198,8 @@ namespace devBLE {
     BLEService *pService = MY_SRV->createService(UUID_SERVICE);
     if (pService == nullptr) {
     //│＼（サービス生成に失敗した場合）
-        Serial.println("   [NG] サービス生成に失敗");
-        Serial.println("");
+        Log::prtln("   [NG] サービス生成に失敗");
+        Log::prtln("");
         ENABLED = false;
         return;
     } /* END-if */
@@ -233,8 +234,8 @@ namespace devBLE {
       BLEAdvertising *BLE_ADV = BLEDevice::getAdvertising();
       if (BLE_ADV == nullptr) {
       //│＼（資源取得に失敗した場合）
-          Serial.println("   [NG] ペアリング準備に失敗");
-          Serial.println("");
+          Log::prtln("   [NG] ペアリング準備に失敗");
+          Log::prtln("");
           ENABLED = false;
           return;
       } /* END-if */
@@ -258,11 +259,11 @@ namespace devBLE {
       //┴
     //│
     //○終了メッセージを表示
-    Serial.println(String("   [OK] device name : ") + MY_NAME.c_str()     );
-    Serial.println(String("   [OK] service UUID: ") + String(UUID_SERVICE));
-    Serial.println(String("   [OK] recive  UUID: ") + String(UUID_RX)     );
-    Serial.println(String("   [OK] send    UUID: ") + String(UUID_TX)     );
-    Serial.println("");
+    Log::prtln(String("   [OK] device name : ") + MY_NAME.c_str()     );
+    Log::prtln(String("   [OK] service UUID: ") + String(UUID_SERVICE));
+    Log::prtln(String("   [OK] recive  UUID: ") + String(UUID_RX)     );
+    Log::prtln(String("   [OK] send    UUID: ") + String(UUID_TX)     );
+    Log::prtln("");
     //│
     //○有効性セット
     ENABLED = true;

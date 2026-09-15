@@ -11,7 +11,8 @@
 // 追加ライブラリ：
 // - WebSockets by Markus Sattler
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11) 正式版 
+// Ver 1.3.2 (2026/09/15)
+// ・UARTポートの見直し 
 //========================================================
 #pragma once
 //┬
@@ -71,9 +72,11 @@
     if (MODE == MODE_BRIDGE) strMode = "BRIDGE";
     //│
     //○開始メッセージを出力
-    Serial.println("-----------------------------");
-    Serial.printf (" MMP %s [MODE: %s]\n", ctx.sysVer, strMode);
-    Serial.println("-----------------------------");
+    Log::prtln("-----------------------------");
+    char msg[128];
+    snprintf(msg, sizeof(msg), " MMP %s [MODE: %s]", ctx.sysVer, strMode);
+    Log::prtln(String(msg));
+    Log::prtln("-----------------------------");
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {

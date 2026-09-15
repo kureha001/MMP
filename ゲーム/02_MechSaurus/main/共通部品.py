@@ -38,7 +38,7 @@ class 運搬機():
     def 電飾制御(引数_活性可否): #① True:活性化／False:非活性化
 		#┬
         #○引数に応じてPWM値を設定する
-        PWM値 = (DS.仕様.ハード.ANA最大値) if 引数_活性可否 else (-1)
+        PWM値 = (DS.仕様.ハード.PWM最大値) if 引数_活性可否 else (-1)
         #│
         #≫運搬機の電飾を活性制御する
         MMP.接続.PWM.OUTPUT(DS.obj.運搬機[0].仕様.電飾No, PWM値)

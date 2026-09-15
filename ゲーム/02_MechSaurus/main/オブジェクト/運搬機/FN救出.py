@@ -76,12 +76,7 @@ class 本体:
             #│
             #○センサ値を取得する
             チャンネルNo = self.仕様.チャンネル一覧[装置No]            
-            センサ値     = MMP.接続.ANALOG.ROUNDD(
-                                self._仕様.ポートNo         ,
-                                チャンネルNo                ,
-                                DS.仕様.ハード.HC4067の丸め ,
-                                10
-                                )
+            センサ値     = MMP.接続.ANALOG.ROUNDD(self._仕様.ポートNo, チャンネルNo)
             通過判定     = センサ値 > self.仕様.センサ閾値
             if 通過判定: continue
             #│＼（『通過なし』の場合）

@@ -1,427 +1,190 @@
-# MMP Python ライブラリ
+# MMP シリアル通信 コマンド一覧
 
-本書は **MMP Python ライブラリ**の構造や設計思想を説明します。  
-> 目的：アプリ開発者・実装者が「頭に地図を入れたまま」実装/運用/拡張できる状態にする
+> コードネーム：Rottenmeier(ロッテンマイヤー)
 
-.Net Framework(DLL/COM)版やArduino版とは異なり、Pythonは多くの**Python言語処理系**や**通信経路**に対応します。その為、他のライブラリとは異なる、特殊な構造を持ちます。
+本書はMMPに搭載するマイコンのファームウェアに関するコマンド一覧マニュアルです。
+
+---
+## 戻り値
+コマンドを実行すると、**必ず5文字**の戻り値があります。
+
+**(コマンド実行)**
+- コマンドは、コマンド名(3文字)で指定
+- 引数が必要な物は、区切り文字（`:`）を付加
+- 末尾には、終端文字（`!`）を付加
+
+**(戻り値)**  
+正常と異常のコード、どちらかを戻します。**いずれも5文字固定**です。  
+
+|種別|戻り値|概要|
+|----|------|----|
+|正常|`_OK_!`|**取得値のない**コマンドの場合|
+||`XXXX!`<BR>(`16進4桁＋'!'`)|**取得値のある**コマンドの場合|
+|異常|`<コマンド名>!!`|**処理で異常が発生**|
+||`<コマンド名>?!`|**コマンド名が不明か、引数の誤り**|
+
+**(数値表記の規約)**  
+送受信する数値は **16進・大文字・ゼロ埋め固定桁**で表記します。例：ID/ポート=`%02X`、角度=`%03X`、PWM/戻り値=`%04X`。
 
 ---
 
-## 0. 全体像(レイヤ構造)
-`ユーザアプリ`は`MMP.py`を用いて**接続経路を確保し、APIが利用できる**ようにします。
-> `MMP.py`の背後には、複数のモジュールが動的に連携し、さまざまな利用シーンに応えます。
+## アナログ入力関連
+**4個のHC4067**を搭載し、合計**64ch**（16ch×4）のアナログ入力をおこないます。  
+以下の順序でアナログ値を取得します。
 
-はじめに、`ユーザアプリ`は`MMP.py`に利用シーン(`Python種別`,`接続方式`)を指定します。すると、適切な`Adapter`が選択され、どの利用シーンでも同じ方法で`API`が利用できるように構成されます。
-> `ユーザアプリ`は`MMP.py`で生成された`通信ハンドル`を通して、APIを利用します。
-> `ユーザアプリ`は`MMP.py`と`API`の間にある仕組みを意識することなく、開発することが出来ます。
+- `ANS`コマンドで、取得範囲をセット
+- `ANU`コマンドで、その時点のアナログ値をバッファ
+- `ANR`コマンドで、必要な箇所のアナログ値を参照
+- 必要に応じて、1番目か2番目から繰り返し
 
-```mermaid
-flowchart TD
-    A[App: ユーザアプリ] --> B[MMP.py<br/>Entry/Factory]
-    B -->|ConnSpec 解析| C{Adapter 選択}
-    C --> C1[mmp_adapter_cpython.py]
-    C --> C2[mmp_adapter_micro.py]
-    C --> C3[mmp_adapter_circuit.py]
-    C --> C4[mmp_adapter_tcp.py]
-    C1 --> D[mmp_adapter_base.py<br/>契約]
-    C2 --> D
-    C3 --> D
-    C4 --> D
-    D --> E[mmp_core.py<br/>機能API: Info/Digital/Analog/Pwm/Audio/I2C]
-```
-<br>
+| コマンド| 引数| 概要| 戻り値|
+|----------|-------------------------------------------------------|-----------------------|-----------------------------|
+| `ANS`| `CH`=プレイヤー数(1–16)<br>`MUX`=スイッチ数(1–4)| アナログ入力の設定| `_OK_!` 正常<br>`ANS!!` 異常|
+| `ANU`| なし| アナログ値を一括更新| `_OK_!` 正常|
+| `ANR`| `CH`=プレイヤー番号(0–15)<br>`MUX`=スイッチ番号(0–3)| スイッチ番号の<BR>アナログ値を返す| `XXXX!` 正常<br>`ANR!!` 異常|
 
-各ファイルは **アプリと同じフォルダ** または **PYTHONPATH** に配置します。
-|ファイル名|内容|
-|-----------------------|----------------------------|
-| MMP.py                |本書の入口 |
-| mmp_core.py           |機能API・ロジック|
-| mmp_adapter_base.py   |アダプタ抽象クラス|
-| mmp_adapter_cpython.py|CPythonアダプタ|
-| mmp_adapter_micro.py  |MicroPythonアダプタ|
-| mmp_adapter_circuit.py|CircuitPythonアダプタ|
-| mmp_adapter_tcp.py    |TCPブリッジ[CPython]アダプタ|
-
-<br>
-
-**ポイント**
-- `App` は **MMP.py** を唯一の入口として利用(`new_client()` / `MmpAdapterFactory()`)。
-- **ConnSpec**(`tcp://...` / `auto`)を **MMP.py** が解釈し、適切な Adapter を import。
-- `mmp_core.py` は **通信を知らない**。**Adapter** だけを相手にする。
+> 備考：プレイヤー番号/スイッチ番号は **0始まり** です。
 
 ---
 
-## 1. シーケンス(接続〜コマンド応答)
-2つの段階を経て、接続経路を確立します。
+## デジタル入出力関連
+MMPのマイコンボードのGPIOからデジタル入出力をおこないます。  
+（ユーザに解放されたGPIOは `3` / `6` / `7`）
 
-1. 初めに通信ポートを確保します。
-> 通信ポートを開きます。物理的なシリアルポートやＴＣＰポートで開きます。
-
-2. 通信ポートを用い、相手がMMPであることを確認します。
-> MMPが持つバージョン取得のコマンドで判断します。
-
-各Adapterが`mmp_adapter_base.py`がもつ主要メソッドをオーバーロードし、`mmp_core.py`が備える`低レイヤ用ラッパー`がアクセスします。
-
-```mermaid
-sequenceDiagram
-    participant App
-    participant MMP as MMP.py (Factory)
-    participant Ad as Adapter (Transport)
-    participant Core as mmp_core (機能API)
-    App->>MMP: new_client("tcp://192.168.2.113:3331")
-    MMP-->>App: MmpClient(Ad=TcpAdapter)
-    App->>Core: ConnectAutoBaud()
-    Core->>Ad: open_baud(115200)  # TCPは記録のみ
-    Ad-->>Core: True/False
-    Core->>Ad: clear_input()
-    Core->>Ad: write_ascii("VER!")
-    loop 応答待ち
-        Core->>Ad: read_one_char()
-        Ad-->>Core: 'V'/'E'/'R'/'!'/None
-    end
-    Core-->>App: 接続成功 + 応答データ
-```
-
-**要旨**
-- 上位(Core)は **1文字読み**で応答を組み立てる。
-- Adapter は **I/O とタイムアウト**を責任持って処理(`select` 等)。
-- **ボーレートは Adapter に渡すが、TCPでは実通信に影響しない**(記録のみ)。
+| コマンド| 引数| 概要| 戻り値|
+|----------|--------------|------------------------|-----------------------------|
+| `POW`| `PORT`<BR>`VAL`| GPIOピンへ出力| `_OK_!` 正常<br>`POW!!` 異常|
+| `POR`| `PORT`| GPIOピンの入力値を取得| `XXXX!` 正常<br>`POR!!` 異常|
+| `IO`| `PORT`<BR>`VAL`| 出力後、入力値を取得| `XXXX!` 正常<br>`IO!!`  異常|
 
 ---
 
-## 2. クラス関係(主要コンポーネント)
-各Adapterは`mmp_adapter_base.py`がもつ主要メソッドをオーバーロードします。
-> これらは、`mmp_core.py`が備える`低レイヤ用ラッパー`から利用されます。
+## ＰＷＭ関連（PCA9685）
+**最大16個のPCA9685**を搭載でき、**1個あたり16ch**のPWM出力をおこないます。  
+I2Cは MMP の GPIO `4(SDA)`・`5(SCL)` を使用します。  
+外部5Vを入力できるため、5Vリレーを `VAL=4095` で駆動するような使い方も可能です。  
+`PWI` を実行しない場合、一般的なサーボ（SG90相当）の内容をデフォルト設定しています。
 
-```mermaid
-classDiagram
-    class MmpClient{
-        +ConnectAutoBaud()
-        +ConnectWithBaud(baud)
-        +Close()
-        +IsOpen
-        +ConnectedPort
-        +ConnectedBaud
-        +LastError
-        +Info/Digital/Analog/Pwm/Audio/I2c
-    }
-    class MmpAdapterBase{
-        <<interface>>
-        +open_baud(baud) bool
-        +close() void
-        +clear_input() void
-        +write_ascii(s) void
-        +read_one_char() str|None
-        +flush() void
-        +sleep_ms(ms) void
-        +now_ms() int
-    }
-    class MmpAdapter_TCP{
-        +host
-        +port
-        +timeout_s
-        -_sock
-        -_is_open
-        +open_baud(baud)
-        +read_one_char()
-        ...
-    }
-    class MMP_py{
-        +MmpAdapterFactory(conn)
-        +new_client(conn)
-    }
-    MmpClient --> MmpAdapterBase : uses
-    MmpAdapter_TCP ..|> MmpAdapterBase : implements
-    MMP_py --> MmpAdapter_TCP : import/instantiate
-```
+| コマンド| 引数     | 概要| 戻り値|
+|----------|----------------------------------------------------------------------|------------------------------|-----------------------------|
+| `PWM`| `CH`=チャンネル番号(0–255)<BR>`VAL`=出力値(0–4095,`%04X`)| 指定チャンネルへ<BR>PWM出力| `_OK_!` 正常<br>`PWM!!` 異常|
+| `PWA`| `CH`=チャンネル番号(0–255)<BR>`ANG`=角度(0–180,`%03X`)| 指定チャンネルへ<BR>角度指定出力| `_OK_!` 正常<br>`PWA!!` 異常|
+| `PWI`| `RS`=開始角(0–360,`%03X`)<BR>`RE`=終了角(0–360,`%03X`)<BR>`PS`=開始PWM(0–4095,`%04X`)<BR>`PE`=終了PWM(0–4095,`%04X`)| サーボ特性<BR>(角度↔PWM)設定| `_OK_!` 正常<br>`PWI!!` 異常|
+
+> 備考：現在はボード全体の特性を設定します（将来、各ch個別設定に拡張予定）。
 
 ---
 
-## 3. 使い方(最短)
+## ＭＰ３関連（DFPlayer mini）
+**2個のDFPlayer mini**を搭載し、MP3ファイルの再生をおこないます（同時再生可）。
 
-### 3-1 TCPブリッジ方式
-> `ser2netサーバ`を経由した、もっとも簡単な接続経路です。
-> ユーザアプリを搭載するマシンに、物理的なシリアル接続は不要です。
-> LAN環境さえあれば、容易な運用形態を実現できます。
-> wifi環境であれば、無線化することにより、より簡便になります。
+**(接続注意)**
+- GPIO `8(TX)`,`9(RX)`： 1台目のDFPlayer用
+- GPIO `0(TX)`,`1(RX)`： 2台目のDFPlayer用
+- GPIOシリアルで外部と通信する場合、1台目のDFPlayerのみが利用可能
 
-#### 3-1.1. `new_client()` を使う
-```python
-from MMP import new_client
+| コマンド| 引数形式| 説明| 戻り値|
+|-----------------|--------------------------------------------|-------------------------------------------------------------|--------------------------------------|
+| `DIR:id:ff:ss`| `id`=1–2<BR>`ff`=フォルダ<BR>`ss`=曲番号| 指定フォルダ内<BR>の曲を再生| `_OK_!` 正常<BR>`DIR!!` 異常|
+| `DSP:id`| `id`=1–2| 再生を停止| `_OK_!` 正常<BR>`DSP!!` 異常|
+| `DPA:id`| `id`=1–2| 再生を一時停止| `_OK_!` 正常<BR>`DPA!!` 異常|
+| `DPR:id`| `id`=1–2| 再生を再開| `_OK_!` 正常<BR>`DPR!!` 異常|
+| `DEF:id:eq`| `id`=1–2<BR>`eq`=EQ(0–5)| EQ設定<BR>・0:Normal<BR>・1:Pop<BR>・2:Rock<BR>・3:Jazz<BR>・4:Classic<BR>・5:Bass| `_OK_!` 正常<BR>`DEF!!` 異常|
+| `VOL:id:nn`| `id`=1–2<BR>`nn`=音量(0–30)| 音量設定| `_OK_!` 正常<BR>`VOL!!` 異常|
+| `DST:id:st`| `id`=1–2<BR>`st`=状態項目(1–5)| 状態取得<BR>・1:再生状態<BR>・2:音量<BR>・3:EQ<BR>・4:総ファイル数<BR>・5:現在番号）| `XXXX!` 正常<BR>`DST!!` 異常|
 
-# TCP(ser2net, socket://)
-cli = new_client("tcp://192.168.2.113:3331?timeout=0.2")
-
-# 直結(実行系で自動選択：CPython/Micro/Circuit)
-cli = new_client("auto")
-
-if cli.ConnectAutoBaud():
-    print("VER:", cli.Info.Version())
-else:
-    print("接続失敗:", cli.LastError)
-```
-
-#### 3-1.2. `MmpAdapterFactory()` を直接使う
-```python
-from mmp_core import MmpClient
-from MMP      import MmpAdapterFactory
-
-adapter = MmpAdapterFactory(conn="tcp://192.168.2.113:3331?timeout=0.5")
-cli     = MmpClient(adapter)
-```
-
-### 3-2. シリアル方式
-> シリアル通信を経由した、小規模な接続経路です。
-> ユーザアプリを搭載するマシンとMMPを、シリアルケーブルで接続します。
-> TCPブリッジよりもケーブルが邪魔になりますが、通信環境が不要であるメリットがあります。
-
-#### 3-2.1. CPython(Windows/Linux/macOS)
-ポート・通信速度を自動検出します。
-走査ではじめに接続確認できたポートを採用します。
-ポート番号が若いものから順に捜査します。
-```python
-from MMP import new_client
-
-# 実行系に合わせて CPython 用シリアルアダプタが選ばれ、
-# COM/tty を自動スキャンして接続します。
-cli = new_client("auto")
-
-if cli.ConnectAutoBaud():
-    print("Port :", cli.ConnectedPort)   # 例) COM5 / /dev/ttyACM0 / /dev/tty.usbmodem*
-    print("Baud :", cli.ConnectedBaud)
-    print("VER  :", cli.Info.Version())
-else:
-    print("接続失敗:", cli.LastError)
-```
-
-### 3-2.2. MicroPython
-通信速度を自動検出します。
-```python
-from MMP import new_client
-
-# 実行系が MicroPython なら、自動で Micro 用アダプタを選択します。
-cli = new_client("auto")
-
-if cli.ConnectAutoBaud():
-    print("VER:", cli.Info.Version())
-else:
-    print("接続失敗:", cli.LastError)
-```
-### 3-2.3. CircuitPython
-通信速度を自動検出します。
-```py
-from MMP import new_client
-
-# 実行系が CircuitPython なら、自動で Circuit 用アダプタを選択します。
-cli = new_client("auto")
-
-if cli.ConnectAutoBaud():
-    print("VER:", cli.Info.Version())
-else:
-    print("接続失敗:", cli.LastError)
-```
-
----
-## 4. Adapter
-各`Adapter` は `mmp_adapter_base.py` の **同一I/F** を実装(オーバーロード)します。
-これらは、`mmp_core.py`が備える`低レイヤ用ラッパー`から利用されます。
-
-4部のグループで構成されています。
-|グループ    |説明                    |
-|------------|------------------------|
-|通信ハンドル|通信を司るオブジェクト  |
-|プロパティ  |様々なステータスを参照  |
-|通信関連    |MMPと通信するための機能 |
-|ヘルパー    |時間に関するヘルパー機能|
-
-```python
-class MmpAdapterBase:
-
-    # 通信ハンドル
-    _uart           = None
-
-    # プロパティ
-    _is_open        = False
-    _connected_port = None
-    _connected_baud = None
-    _lastError      = None
-
-    # 通信関連
-    def open_baud(self, baud:int) -> bool: ...
-    def close(self) -> None: ...
-    def clear_input(self) -> None: ...
-    def write_ascii(self, s:str) -> None: ...
-    def read_one_char(self) -> str|None: ...
-    def flush(self) -> None: ...
-
-    # ヘルパー
-    def sleep_ms(self, ms:int) -> None: ...
-    def now_ms(self) -> int: ...
-```
-
-#### 実装状況
-|通信ハンドル|C(Pydroid)|C(PC)|Micro|Circuit|
-|---|---|---|---|---|
-|_uart|CDC(usb4a)<br>TCP(非CDCをブリッジ)<br>TCP(ser2net)<br>|非CDC･CDC<br>TCP(ser2net)|非CDCT<br>TCP(ser2net)|非CDC<br>TCP(ser2net)|
-
-| プロパティ|C(CDC,非CDC)|Micro(非CDC)|Circuit(非CDC)|C(TCP)|C(TCP)|C(TCP)|
-|---|---|---|---|---|---|---|
-|_is_open       |○|○|○|○|
-|_connected_port|○(例: `COM5`/`/dev/ttyACM0`)|○|○|○(`tcp://host:port`)|
-|_connected_baud|○(物理値)|○|○|○(**記録のみ**)|
-|_lastError     |○|○|○|○|
-
-|メソッド|C(Serial)|Micro(Serial)|Circuit(Serial)|C(TCP)|備考|
-|---|---|---|---|---|---|
-|open_baud(baud)|○|○|○|○|TCPは**ボーレートは記録のみ**|
-|close()         |○|○|○|○|TCPは`shutdown/close`|
-|clear_input()   |○|○|○|○|TCPは`select`で読み捨て|
-|write_ascii(s)  |○|○|○|○|TCPは`sendall`|
-|read_one_char() |○|○|○|○|TCPは`select+recv(1)`|
-|flush()         |○(UART flush)|○(簡易)|○(簡易)|－|TCPは**no-op**|
-|sleep_ms()      |○|○|  ○|○|`time.sleep`系|
-|now_ms()        |○|○|  ○|○|`monotonic()`系|
-> 注：Micro/Circuit の flush() は環境差が大きいため簡易、TCPは概念なしでno-op。
-
-## 5. Adapterの個別情報
-各`Adapter` は `mmp_adapter_base.py` の **同一I/F** を実装しますが、`Adapter`によっては実装に差異があります。
-この章では、`Adapter`個々の詳細を解説します。
-
-#### 5-1. TCPブリッジ方式
-#### 5-1.1. CPython
-|トピック|解説|
-|---|---|
-|依存      |`socket`, `select`, `time`(標準ライブラリのみ)|
-|低遅延    |`TCP_NODELAY` を既定ON(小パケット即送信)|
-|安定性    |`SO_KEEPALIVE`(Linuxでは `TCP_KEEP*` を任意設定)|
-|ボーレート|`ConnectedBaud` に**記録のみ**(通信には無関係)|
-
-|メソッド|要点|
-|---|---|
-|open_baud    |接続確立・内部状態更新。失敗時は`False`＋`_lastError`|
-|clear_input  |`select`で可読分を複数回読み捨て|
-|write_ascii  |`sendall`で全送出|
-|read_one_char|`select`＋`recv(1)`／EOF検出で`_is_open=False`|
-|flush`       |**no-op**|
-
-#### 5-1.2. MicroPython
-～作成中～
-
-#### 5-1.3. CircuitPython
-～作成中～
-
-
-#### 5-2. シリアル方式
-#### 5-2.1. CPython
-|トピック|解説|
-|---|---|
-|依存      |`pyserial`(列挙・接続・flush対応)|
-|ポート検出|COM/`/dev/tty*`/`/dev/cu.*` を**若番→順に総当たり**|
-|同期      |`clear_input()`で残骸を捨て**コマンド前に整流**|
-
-|メソッド|要点|
-|---|---|
-|open_baud    |指定ボーレートで`Serial`をopen／タイムアウト設定|
-|clear_input  |`reset_input_buffer()` 等で受信側クリア|
-|write_ascii  |`write(s.encode('ascii','ignore'))`|
-|read_one_char|`read(1)`／無ければ`None`|
-|flush`       |`flush()`(出力バッファのドレイン)|
-
-
-#### 5-2.2. MicroPython
-|トピック|解説|
-|---|---|
-|依存|`machine.UART` 等／ボード固有のピン割当|
-|注意|`typing` 不要・`select` 非依存で軽量に|
-
-|メソッド|要点|
-|---|---|
-|open_baud    | `UART(id, baudrate, bits, parity, stop)`|
-|clear_input  | `while uart.any(): uart.read()`|
-|write_ascii  | `uart.write()`|
-|read_one_char| `uart.read(1)`／無ければ`None`|
-|flush`       | 簡易(概念限定)|
-
-
-#### 5-2.3. CircuitPython
-|トピック|解説|
-|---|---|
-|依存|`busio.UART`(ボードにより`board.TX/RX`指定)|
-|注意|`select` 非対応／`wifi+socketpool`は**別アダプタ**で扱う予定|
-
-|メソッド|要点|
-|---|---|
-|open_baud    |`busio.UART(tx, rx, baudrate, parity, bits, stop)`|
-|clear_input  |`while uart.in_waiting: uart.read(1)`|
-|write_ascii  |`uart.write(bytes)`|
-|read_one_char|`uart.read(1)`／無ければ`None`|
-|flush        |簡易(概念限定)|
+> 備考：`DPL` / `DQT` / `DTC` / `DRP` などは未実装です。
 
 ---
 
-## 6. ConnSpec(接続指定子)と分岐
-`ユーザアプリ`の指示に応じて、適切な通信経路を確立します。
+## I2C関連
+MMPのGPIO `4(SDA)`,`5(SCL)` でI2C通信します。
 
-```mermaid
-flowchart LR
-    CS[ConnSpec] -->|tcp://host:port| TCP[mmp_adapter_tcp]
-    CS -->|auto| AUTO[実行系で分岐]
-    AUTO -->|CPython| CPY[mmp_adapter_cpython]
-    AUTO -->|MicroPython| MIC[mmp_adapter_micro]
-    AUTO -->|CircuitPython| CIR[mmp_adapter_circuit]
+| コマンド| 引数| 概要| 戻り値|
+|----------|----------------------|----------------------------|-----------------------------|
+| `I2W`| `ADDR`<BR>`REG`<BR>`VAL`| I2Cバスへ<BR>1バイト書き込み| `_OK_!` 正常<BR>`I2W!!` 異常|
+| `I2R`| `ADDR`<BR>`REG`| I2Cバスから<BR>1バイト読み込み| `XXXX!` 正常<BR>`I2R!!` 異常|
+
+---
+
+## システム確認情報
+各種システム情報を確認します。アプリケーション側で、事前に機器（PCA9685/DFPlayer）の接続情報を確認する際に用います。
+
+| コマンド| 内容| 戻り値|
+|-----------|--------------------------------------|-----------------------------------------------------|
+| `VER!`| ファームウェアの<BR>バージョン| `xyzz!`<BR>・`x`:メジャー<BR>・`y`:マイナー<BR>・`zz`:リビジョン）|
+| `PWX:id!`| PCA9685 の<BR>**機器ID=0–15**の接続状況| `0001!` 接続あり<BR>`0000!` 接続なし|
+| `DPX:id!`| DFPlayer の<BR>**機器ID=1–2**の接続状況| `0001!` 接続あり<BR>`0000!` 接続なし|
+
+---
+
+# シリアル通信設定
+
+## 概要
+**起動時に使用するシリアルポート（USB/GPIOシリアル）・通信速度を選択**する仕組みを備えています。  
+用途に応じた通信方法を選択できます。
+
+## 通信方式の選択
+※GPIOはファームウェアで内部プルアップを指定済み
+
+| シリアル種別| スイッチ1| 抵抗状態| 使用ポート|
+|--------------|-----------|-------------------------------|----------------------------|
+| USBシリアル| `GPIO2`| **プルアップ状態** `HIGH`| `Serial`|
+| GPIOシリアル| `GPIO2`| **プルダウン状態<BR>オープン** `LOW`| `Serial1`<BR>（TX=0,RX=1）|
+
+## 通信速度の選択
+GPIOをGNDに接続することで、スイッチがONになります。
+マイコン起動時に、この組み合わせを照会し、GPIOシリアルの通信速度を決定します。
+決定された通信速度は、マイコンに内蔵されたRGB-LEDの点灯色で判断できます。
+> GPIOはファームウェアで内部プルアップを指定済み
+
+| スイッチ2<BR>（`GPIO14`）| スイッチ3<BR>（`GPIO15`）| ボーレート<BR>(通信速度)|RGBLED<BR>点灯色|
+|----|----|----|----|
+| OFF| OFF| 115200|赤色|
+| ON| OFF| 9600|緑色|
+| OFF| ON| 230400|青色|
+| ON| ON| 921600|紫色|
+
+---
+
+# GPIOシリアルでの接続方法
+
+## USBシリアルモジュールと MMP の接続表
+| USBシリアルモジュール| 接続| MMPピン|
+|-----------------------|------|--------------------|
+| TX| →| GPIO1 (Serial1 RX)|
+| RX| ←| GPIO0 (Serial1 TX)|
+| GND| →| GND|
+| 3.3V または 5V| →| 3.3V または VBUS|
+
+## シリアル選択ピンの設定
+| MMPピン| 接続先|
+|---------|--------|
+| GPIO2| GND|
+
+## シリアル通信設定（TeraTermなど）
+| 項目| 設定値|
+|----------------|-----------------|
+| ボーレート| スイッチ2,3参照|
+| データビット| 8|
+| パリティ| なし|
+| ストップビット| 1|
+| フロー制御| なし|
+| 改行コード(送)| CR+LF|
+| 改行コード(受)| 自動判別|
+| 文字コード| UTF-8（推奨）|
+
+---
+
+# 使用例
+
+## 例：アナログ入力す方法
+TeraTermから以下の順に入力。
+数値は16進数でやり取りします。
+反応が `_OK_!` または `XXXX!`（16進）なら正常です。
+
 ```
-
-- `tcp://192.168.2.113:3331?timeout=0.2`
-- `auto`(直結の自動選択)
-
----
-
-## 7. エラーハンドリングと再試行(指針)
-
-- `open_baud()`：成功/失敗の **bool** を返し、`LastError` に理由文字列。
-- 読み取り：切断(`recv==0`)を検知したら `IsOpen=False` に落とす。
-- 明示的リトライ(例)：
-```python
-from MMP import new_client
-for attempt in range(3):
-    cli = new_client("tcp://192.168.2.113:3331?timeout=0.5")
-    if cli.ConnectAutoBaud():
-        break
-    cli.Close()
+ANS:10:04!      ← 16人分(0x10),4スイッチ
+ANU!            ← 全アナログ入力更新（バッファに格納）
+ANR:01:02!      ← プレイヤー1のスイッチ2の値（例：02F3!）
 ```
-
----
-
-## 8. テスト・拡張(ロードマップ)
-
-- **モックアダプタ**で Core の単体試験(`read_one_char()` が None を返すケースなど)。
-- 将来：`mmp_adapter_tcp_tls.py`(`tls://`)や `mmp_adapter_rfc2217.py` の追加。
-- Android 直結(usb4a/Kivy)は **別アダプタ**として維持(TCPを使う限り不要)。
-
----
-
-## 9. 参考用：最小スケルトン
-
-```python
-from MMP import new_client
-
-def main():
-    cli = new_client("tcp://192.168.2.113:3331?timeout=0.2")
-    if not cli.ConnectAutoBaud():
-        print("接続失敗:", cli.LastError); return
-    print("VER:", cli.Info.Version())
-    cli.Digital.Out(10, 1)
-    cli.Pwm.Out(0, 2048)
-    cli.Close()
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 10. まとめ
-- **MMP.py = 入口/Factory**、**Adapter = 交通整理**、**Core = 機能API**。
-- App は **ConnSpec ひとつ**でどの接続でも同じコードで利用可能。
-- 新規媒体(BLE/TLS/WebSocket 等)は **Adapter 追加**で拡張できる。
-

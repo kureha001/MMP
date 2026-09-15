@@ -1,12 +1,9 @@
-// filename : Dep_Connect/adapter/base/TCP.cpp
+// filename : Dep_Connect/adapter/base/TCP_TURBO.cpp
 //========================================================
-// 接続部門／業務課／担当(標準型)：TCP 担当
+// 接続部門／業務課／担当(標準型)：TCP(高速版) 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
-// ・UARTポートの見直し 
-// ・標準スロットを廃止
-// ・プリプロセッサを最適化
-// ・スロット関連の関数名を刷新
+// Ver 1.3.2 (2026/09/14)
+// ・新規
 //========================================================
 //┬
 //□┐インクルード
@@ -29,9 +26,12 @@
 //########################################################
 //# 処理詳細
 //########################################################
-class AdapterTCP : public AdapterQueueBase<WiFiClient> {
+class AdapterTCP : public AdapterBase {
 public:
-  using AdapterQueueBase::AdapterQueueBase;
+  //━━━━━━━━━━━━━━━━━
+  // 抽象基底クラスからコンテクストを継承
+  //━━━━━━━━━━━━━━━━━
+  using AdapterBase::AdapterBase;
 
 private:
 //========================================================
@@ -40,8 +40,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int  ADP_ID = ADP_ID_TCP;
-    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+    const int ADP_ID = ADP_ID_TCP;
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
@@ -164,13 +163,14 @@ private:
 //--------------------------
   } /* SLOT_ATTACH() */
 
+
 //========================================================
 //§返信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(WiFiClient argConn) override {
+  void SEND_CONN(WiFiClient argConn) {
 //############################
 //# ブリッジは[trans()]で処理
 //############################
@@ -186,13 +186,109 @@ private:
 //############################
   } /* SEND_CONN() */
 
+//############################
+//# 転送機能はブリッジのみ
+//############################
+#if (MODE == MODE_BRIDGE)
 //========================================================
-//§受信処理
+//§転送処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // コールバック：クライアント用
+  // 転送実施
+  // ※クライアントは起動したままにする
   //━━━━━━━━━━━━━━━━━
-  void ON_RECIVE(){
+  void trans() override final {
+    //┬
+    //◇┐クライアントを起動
+    if (!MY_NET.connected()) {
+      //├┐（未接続の場合）
+        //○TCPクライアントを起動
+        String   ip   = ctx.bridge.Dat1;
+        uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
+        MY_NET.setTimeout(2000);
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = "#TR1!"; return;}
+        //│＼（接続に失敗した場合）
+        //│ ○コンテクストにエラーCDをセット
+        //│ ▼終了：早期リターン
+        //┴
+      //└┐（その他）
+        //┴
+    } /* END-if */
+    //│
+    //○リクエストを転送
+    MY_NET.print(ctx.strFrame);
+    //│
+    //●レスポンスを取得
+    String retFrame = adpFnStream::GET_FRAME(MY_NET);
+    //│
+    //○レスポンスをコンテクストに反映
+    ctx.strFrame = (retFrame == "" ? "#TR2!" : retFrame);
+    ctx.resMSG   = ctx.strFrame;
+    //┴
+  };
+
+  //━━━━━━━━━━━━━━━━━
+  // ポーリングの後処理
+  //━━━━━━━━━━━━━━━━━
+  void handle_End() override final {
+    //○転送処理を開始
+    if (modeBridge::TRANS_BEGIN(ADP_ID)) return
+    //│＼（転送要求が無い場合）
+    //│ ▼終了：早期リターン
+    //│
+    //●転送を実施
+    trans();
+    //│
+    //○転送処理を終了
+    modeBridge::TRANS_END();
+  }
+#endif
+//############################
+
+//========================================================
+//§公開機能
+//========================================================
+public:
+  //━━━━━━━━━━━━━━━━━
+  // コンストラクタ
+  //━━━━━━━━━━━━━━━━━
+  AdapterTCP(MmpContext& argCtx) : AdapterBase(argCtx) {
+//--------------------------
+// ブリッジは単一スロット
+//--------------------------
+#if (MODE == MODE_BRIDGE)
+    //┬
+    //●接続管理TBLを作成
+    SLOTs = 1;
+    TBL   = new T_SLOT[SLOTs];
+    //│
+    //○メッセージ表示
+    Serial.println(" [OK] TCP");
+    //┴
+//--------------------------
+// ブリッジ以外は複数スロット
+//--------------------------
+#else
+    //┬
+    //●接続管理TBLを作成
+    SLOTs = 10;
+    TBL   = new T_SLOT[SLOTs];
+    //│
+    //○サービス資源を生成
+    MY_NET = new WiFiServer(MY_PORT);
+    MY_NET->begin();
+    //│
+    //○メッセージ表示
+    Serial.printf(" [OK] TCP Hi-Speed (PORT=[%d])\n", MY_PORT);
+    //┴
+#endif
+//--------------------------
+  } /* constractor AdapterTCP() */
+
+  //━━━━━━━━━━━━━━━━━
+  // ポーリング用ハンドラ
+  //━━━━━━━━━━━━━━━━━
+  void handle() override {
     //┬
     //○接続管理スロットを動的アタッチ
     bool Result = SLOT_ATTACH();
@@ -219,132 +315,57 @@ private:
         //│ ▽次へ：次のスロットを走査
         //┴
       //│
-      //●ストリームを受信
+      //●レスポンスを取得
       String retFrame = adpFnStream::GET_FRAME(TBL[ID].CONN);
       if (retFrame == "") continue;
       //│＼（受信データがない場合）
       //│ ▽次へ：次のスロットを走査
-      //│
-      //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue(TBL[ID].CONN, retFrame, ID);
+//--------------------------
+//【メイン】主処理を実行
+//--------------------------
+#if   (MODE == MODE_MAIN)
+      //●コンテキストを初期化
+      //●コマンドを実行
+      //●実行結果をレスポンス
+      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
+      modeMain::RUN();
+      SEND_CONN(TBL[ID].CONN);
       //┴
+//--------------------------
+//【サブ】主処理を実行
+//--------------------------
+#elif (MODE == MODE_SUB)
+      //●コンテキストを初期化
+      //●コマンドを実行
+      //●実行結果をレスポンス
+      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
+      modeSub::RUN();
+      SEND_CONN(TBL[ID].CONN);
+      //┴
+//--------------------------
+//【ブリッジ】
+//--------------------------
+      //◇┐スレーブであるか確認
+      if(ADP_ID == ctx.bridge.adpID) {
+        //├┐（スレーブの場合）
+          //●コンテキストを初期化
+          //○ステータスを[処理済]にセット
+          adpFnBase::SETUP_CTX(ADP_ID, retFrame);
+          ctx.bridge.Stat = BSTAT::DONE;
+          //┴
+      } else continue;
+        //└┐（その他：対象外アダプタの場合）
+          //▽次へ：スキップ ※無駄なレスポンスを破棄
+      //│
+      //▼終了：早期リターン ※スレーブの処理は1件だけで良い
+      return;
+#endif
+//--------------------------
     } /* END-for */
-    //┴
-  } /* ON_RECIVE() */
-
-  //━━━━━━━━━━━━━━━━━
-  // スレッド処理の定義
-  //━━━━━━━━━━━━━━━━━
-  static void StreamQueue(void *pvParameters) {
-    AdapterTCP* self = static_cast<AdapterTCP*>(pvParameters);
-    for (;;) {
-      if (self) self->ON_RECIVE();        // 疑似コールバック関数
-      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
-    }
-  } /* StreamQueue() */
-
-
-  //━━━━━━━━━━━━━━━━━
-  // 並列処理の開始
-  //━━━━━━━━━━━━━━━━━
-  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
-  void RUN_TASK() {
-    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
-    xTaskCreate(
-      StreamQueue           , // 実行するタスク関数
-      String(ADP_ID).c_str(), // タスク名（デバッグ用）
-      4096                  , // スタックサイズ（バイト単位）
-      this                  , // パラメータ
-      2                     , // 優先度
-      &TaskHandle             // タスクハンドル
-    );
-  } /* RUN_TASK() */
-
-//############################
-//# 転送機能はブリッジのみ
-//############################
-#if (MODE == MODE_BRIDGE)
-//========================================================
-//§転送処理
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // 転送実施
-  //━━━━━━━━━━━━━━━━━
-  void trans() override final {
-    //┬
-    //◇┐クライアントを起動
-    if (!MY_NET.connected()) {
-      //├┐（未接続の場合）
-        //│
-        //○TCPクライアントを起動
-        String   ip   = ctx.bridge.Dat1;
-        uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
-        MY_NET.setTimeout(2000);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = "#CNT!"; return;}
-        //│＼（接続に失敗した場合）
-        //│ ○コンテクストにエラーCDをセット
-        //│ ▼終了：早期リターン
-        //│
-        //○0番スロットをリセットして自身を登録準備
-        SLOT_INI(TBL[0]);
-        //│
-        //●受信タスクを起動
-        RUN_TASK();
-        //┴
-      //└┐（その他）
-        //┴
-    } /* END-if */
-    //│
-    //○リクエストを転送
-    MY_NET.print(ctx.strFrame);
-    //┴
-  };
-#endif
-//############################
-
-//========================================================
-//§公開機能
-//========================================================
-public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
-  //━━━━━━━━━━━━━━━━━
-  AdapterTCP(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
-//--------------------------
-// ブリッジは単一スロット
-//--------------------------
-#if (MODE == MODE_BRIDGE)
-    //┬
-    //●接続管理TBLを作成
-    SLOTs = 1;
-    TBL   = new T_SLOT[SLOTs];
-    //│
-    //○メッセージ表示
-    Log::prtln(" [OK] TCP");
-    //┴
-//--------------------------
-// ブリッジ以外は複数スロット
-//--------------------------
-#else
-    //┬
-    //●接続管理TBLを作成
-    SLOTs = 10;
-    TBL   = new T_SLOT[SLOTs];
-    //│
-    //○サービス資源を生成
-    MY_NET = new WiFiServer(MY_PORT);
-    MY_NET->begin();
-    //│
-    //●受信タスクを別スレッドとして起動
-    RUN_TASK();
-    //│
-    //○メッセージ表示
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] TCP (PORT=[%d])", MY_PORT);
-    Log::prtln(String(msg));
-    //┴
-#endif
-//--------------------------
-  } /* constractor AdapterTCP() */
+  //│
+  //●後処理
+  handle_End();
+  //┴
+  } /* handle() */
 
 }; /* class AdapterTCP */

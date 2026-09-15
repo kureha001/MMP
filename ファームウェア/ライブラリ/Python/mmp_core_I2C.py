@@ -35,7 +35,7 @@ class _I2C:
             f"{cmd}:{addr}:{reg}:{val}!",
             self.TimeOut
             )
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # 読み出し

@@ -256,6 +256,10 @@ private:
   // クライアントに送信(通常の5バイト)
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(){
+//############################
+//# ブリッジは[trans()]で処理
+//############################
+#if (MODE != MODE_BRIDGE)
     //┬
     //○テキストをレスポンス
     ADD_CROSS(*MY_NET);
@@ -264,6 +268,8 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
+//############################
   } /* SEND_CONN() */
 
 //========================================================
@@ -459,7 +465,7 @@ public:
 #if (MODE == MODE_BRIDGE)
     //┬
     //○転送処理を開始
-    if (modeBridge::TARNS_BEGIN(ADP_ID)) return
+    if (modeBridge::TRANS_BEGIN(ADP_ID)) return
     //│＼（転送要求が無い場合）
     //│ ▼終了：早期リターン
     //│
@@ -467,7 +473,7 @@ public:
     trans();
     //│
     //○転送処理を終了
-    modeBridge::TARNS_END();
+    modeBridge::TRANS_END();
     //┴
 //--------------------------
 // ブリッジはサーバ機能なし

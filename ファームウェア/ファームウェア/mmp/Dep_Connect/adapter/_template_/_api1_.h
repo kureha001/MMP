@@ -80,9 +80,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   // ポーリングの後処理
   //━━━━━━━━━━━━━━━━━
-  bool handle_End() override final {
+  void handle_End() override final {
     //○転送処理を開始
-    if (modeBridge::TARNS_BEGIN(getAID())) return
+    if (modeBridge::TRANS_BEGIN(getAID())) return;
     //│＼（転送要求が無い場合）
     //│ ▼終了：早期リターン
     //│
@@ -90,7 +90,7 @@ public:
     trans();
     //│
     //○転送処理を終了
-    modeBridge::TARNS_END();
+    modeBridge::TRANS_END();
   }
 #endif
 //############################
@@ -169,7 +169,9 @@ public:
           //┴
       } else if(getAID() == ctx.bridge.adpID) {
         //├┐（スレーブの場合）
+          //○コンテクストにレスポンス内容をセット
           //○ステータスを[処理済]にセット
+          ctx.resMSG      = popDat.frame;
           ctx.bridge.Stat = BSTAT::DONE;
           //┴
       } else continue;

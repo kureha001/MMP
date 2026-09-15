@@ -20,10 +20,14 @@ VERBOSE_LOG = True
 #VERBOSE_LOG = False
 
 # COM（シリアル通信）設定
-#COM_PORT = 'COM11'
-COM_PORT = 'COM145'
-BAUDRATE = 921600
-#BAUDRATE = 2000000
+#COM_PORT = 'COM145' # メイン
+COM_PORT  = 'COM23' # ブリッジ
+BAUDRATE = 115200
+#COM_TRANS = ""
+#COM_TRANS = "BRIDGE/TCP:192.168.2.99:8081!" # ○：遅い
+#COM_TRANS = "BRIDGE/WSOC:192.168.2.99:8082!" # ○：遅い
+COM_TRANS = "BRIDGE/ESPN:50787D17BEE0!" # ○：無線で最速
+#COM_TRANS = "BRIDGE/BLE!" # ×：繋がらない
 
 # ネットワーク設定
 TCP_IP    = '192.168.2.99'
@@ -94,11 +98,9 @@ class DeviceConnection:
         elif self.mode == 'BLE':
             print(f"BLEデバイス [{self.ble_name}] をスキャン中... (タイムアウト: 10秒)")
             
-            # find_device_by_name のタイムアウトを10秒に延長
             device = await BleakScanner.find_device_by_name(self.ble_name, timeout=10.0)
             
             if not device:
-                # 名前で直接引けない場合、全体スキャンからローカル名を部分一致検索
                 print(f"[{self.ble_name}] の直接検出に失敗。周辺デバイスを一覧検索します...")
                 devices = await BleakScanner.discover(timeout=5.0)
                 for d in devices:
@@ -237,6 +239,12 @@ async def main():
         )
         await dev.connect()
         print("接続完了。")
+
+        # COM_TRANS が設定されている場合、接続後に最初に一度だけ実行
+        if COM_TRANS:
+            print(f"転送設定送信 (COM_TRANS): {COM_TRANS}")
+            res_trans = await execute_cmd_5bytes(dev, COM_TRANS)
+            print(f"転送設定応答: {res_trans}")
 
         # 初期設定・ログオフ
         print(f"初期設定送信: {setup_cmd}")

@@ -124,11 +124,11 @@ public:
     //●コンテキストを初期化
     adpFnBase::SETUP_CTX(ADP_ID, retFrame);
     //│
-    //●コマンドを実行
 //--------------------------
 //【メイン】主処理を実行
 //--------------------------
 #if   (MODE == MODE_MAIN)
+    //●コマンドを実行
     modeMain::RUN();
     //│
     //●実行結果をレスポンス
@@ -138,6 +138,7 @@ public:
 //【サブ】主処理を実行
 //--------------------------
 #elif (MODE == MODE_SUB)
+    //●コマンドを実行
     modeSub::RUN();
     //│
     //●実行結果をレスポンス
@@ -147,9 +148,6 @@ public:
 //【ブリッジ】マスタ処理
 //--------------------------
 #elif (MODE == MODE_BRIDGE)
-    //○スロットIDを退避
-    ctx.bridge.slotID = popDat.slotID;
-    //│
     //◆┐ブリッジ処理を実行
     modeBridge::RUN();
     if (ctx.resMSG == "") ctx.bridge.Stat = BSTAT::REQ;

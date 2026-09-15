@@ -61,8 +61,12 @@ def TCPブリッジ情報取得(conn: str):
 #=================================================================
 def アダプタ生成(module_name: str):
     try:
+        print("アダプタ[" + module_name + "]を生成します。")
+        print(" ...step1.")
         mod = __import__(module_name)
+        print(" ...step2.")
         Adp = getattr(mod, "MmpAdapter")
+        print(" ...step3.生成に成功")
         return Adp
     except Exception as e:
         raise ImportError(f"'{module_name}.py' の読込失敗: {e}") from e
@@ -81,6 +85,7 @@ def アダプタ生成(module_name: str):
 def ファクトリ別接続(conn="auto"):
 
     print(conn)
+    print("ファクトリ[" + conn + "]を適用します。")
 
     # 0) usb4a
     if isinstance(conn, str) and conn.lower().startswith("usb4a://"):
@@ -140,10 +145,12 @@ def 通信接続(conn="auto"):
     global 接続
     try:
         接続 = MmpClient(ファクトリ別接続(conn))
+        
+        print("接続を開始します。")
         if 接続.ConnectAutoBaud():
             print(f"　・通信ポート　: {接続.ConnectedPort}")
             print(f"　・通信速度　　: {接続.ConnectedBaud}bps")
-            print( "　・バージョン  : {}".format(接続.INFO.VERSION()))
+            print( "　・バージョン  : {}".format(接続.SYS.VERSION()))
             print( "　・PCA9685 [0] : 0x{:04X}".format(接続.PWM.INFO.CONNECT()))
             print( "　・DFPlayer[1] : 0x{:04X}".format(接続.MP3.INFO.CONNECT(1)))
             return True

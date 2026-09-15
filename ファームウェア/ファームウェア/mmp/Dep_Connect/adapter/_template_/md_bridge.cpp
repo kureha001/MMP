@@ -127,7 +127,7 @@
   //━━━━━━━━━━━━━━━━━
   // 転送処理を開始
   //━━━━━━━━━━━━━━━━━
-  bool TARNS_BEGIN(int argAID) {
+  bool TRANS_BEGIN(int argAID) {
     //┬
     //○転送依頼を確認
     if (ctx.bridge.Stat != BSTAT::REQ || argAID != ctx.bridge.adpID) return true;
@@ -140,12 +140,12 @@
     //▼終了：正常終了
     return false;
     //┴
-  } /* TARNS_BEGIN() */
+  } /* TRANS_BEGIN() */
 
   //━━━━━━━━━━━━━━━━━
   // 転送処理を終了
   //━━━━━━━━━━━━━━━━━
-  void TARNS_END() {
+  void TRANS_END() {
     //┬
     //○処理結果を確認 ※trans()で即時レスポンスもある為
     if (ctx.strFrame != "") ctx.bridge.Stat = BSTAT::DONE;
@@ -153,6 +153,6 @@
     //│ ○進行状況を[処理済]にセット
     //│ ┴
     //┴
-  } /* TARNS_END() */
+  } /* TRANS_END() */
 
 } /* namespace modeBridge */

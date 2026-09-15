@@ -20,11 +20,59 @@ class _MP3:
         self.TimeOut = argTimeOut
         self.INFO    = self._Info (p, self.TimeOut)
         self.SET     = self._Set  (p, self.TimeOut)
-        self.TRACK   = self._Track(p, self.TimeOut)
 
 #━━━━━━━━━━━━━━━
 # コマンド
 #━━━━━━━━━━━━━━━
+    #─────────────
+    # トラック再生
+    #─────────────
+    def PLAYF(self,
+        dev     :int,   # ① デバイスID
+        dir     :int,   # ② フォルダID
+        file    :int,   # ③ ファイルID(フォルダ内)
+    ) -> int:
+        cmd = f"MP3/PLAYF:{dev}:{dir}:{file}!"
+        res = self._p._send_command(cmd, self.TimeOut) 
+        ok, v = _getValue(res); 
+        return (v) if ok else (-1)
+
+    #─────────────
+    # 停止
+    #─────────────
+    def STOP(self,
+        dev :int,   # ① デバイスID
+    ) -> int:
+        cmd = "MP3/STOP"
+        cmd = f"{cmd}:{dev}!"
+        res = self._p._send_command(cmd, self.TimeOut) 
+        ok, v = _getValue(res); 
+        return (v) if ok else (-1)
+
+    #─────────────
+    # 一時停止
+    #─────────────
+    def PAUSE(self,
+        dev :int,   # ① デバイスID
+    ) -> int:
+        cmd = "MP3/PAUSE"
+        cmd = f"{cmd}:{dev}!"
+        res = self._p._send_command(cmd, self.TimeOut) 
+        ok, v = _getValue(res); 
+        return (v) if ok else (-1)
+
+    #─────────────
+    # 開始
+    #─────────────
+    def START(self,
+        dev :int,   # ① デバイスID
+    ) -> int:
+        cmd = "MP3/START"
+        cmd = f"{cmd}:{dev}!"
+        res = self._p._send_command(cmd, self.TimeOut) 
+        ok, v = _getValue(res); 
+        return (v) if ok else (-1)
+
     #─────────────
     # サブ：デバイス設定
     #─────────────
@@ -37,6 +85,19 @@ class _MP3:
             self.TimeOut = argTimeOut
 
         #─────────────
+        # ループ再生有無
+        #─────────────
+        def LOOP(self,
+            dev     :int,   # ① デバイスID
+            enable  :int,   # ② ループ再生有無
+        ) -> int:
+            cmd = "MP3/SET/LOOP"
+            cmd = f"{cmd}:{dev}:{1 if enable else 0}!"
+            res = self._p._send_command(cmd, self.TimeOut) 
+            ok, v = _getValue(res); 
+            return (v) if ok else (-1)
+
+        #─────────────
         # 音量
         #─────────────
         def VOLUME(self,
@@ -46,7 +107,7 @@ class _MP3:
             cmd = "MP3/SET/VOLUME"
             cmd = f"{cmd}:{dev}:{vol}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # イコライザ
@@ -58,80 +119,7 @@ class _MP3:
             cmd = "MP3/SET/EQ"
             cmd = f"{cmd}:{dev}:{mode}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            return res == "!!!!!"
-
-    #─────────────
-    # サブ：トラック
-    #─────────────
-    class _Track:
-        #─────────────
-        # コンストラクタ
-        #─────────────
-        def __init__(self, p, argTimeOut):
-            self._p = p
-            self.TimeOut = argTimeOut
-
-        #─────────────
-        # トラック再生
-        #─────────────
-        def PLAY(self,
-            dev     :int,   # ① デバイスID
-            dir     :int,   # ② フォルダID
-            file    :int,   # ③ ファイルID(フォルダ内)
-        ) -> int:
-            cmd = f"MP3/TRACK/PLAY:{dev}:{dir}:{file}!"
-            res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _getValue(res); 
-            return (v) if ok else (-1)
-
-        #─────────────
-        # ループ再生有無
-        #─────────────
-        def LOOP(self,
-            dev     :int,   # ① デバイスID
-            enable  :int,   # ② ループ再生有無
-        ) -> int:
-            cmd = "MP3/TRACK/LOOP"
-            cmd = f"{cmd}:{dev}:{1 if enable else 0}!"
-            res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _getValue(res); 
-            return (v) if ok else (-1)
-
-        #─────────────
-        # 停止
-        #─────────────
-        def STOP(self,
-            dev :int,   # ① デバイスID
-        ) -> int:
-            cmd = "MP3/TRACK/STOP"
-            cmd = f"{cmd}:{dev}!"
-            res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _getValue(res); 
-            return (v) if ok else (-1)
-
-        #─────────────
-        # 一時停止
-        #─────────────
-        def PAUSE(self,
-            dev :int,   # ① デバイスID
-        ) -> int:
-            cmd = "MP3/TRACK/PAUSE"
-            cmd = f"{cmd}:{dev}!"
-            res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _getValue(res); 
-            return (v) if ok else (-1)
-
-        #─────────────
-        # 開始
-        #─────────────
-        def START(self,
-            dev :int,   # ① デバイスID
-        ) -> int:
-            cmd = "MP3/TRACK/START"
-            cmd = f"{cmd}:{dev}!"
-            res = self._p._send_command(cmd, self.TimeOut) 
-            ok, v = _getValue(res); 
-            return (v) if ok else (-1)
+            return res == "_OK_!"
 
     #─────────────
     # サブ：インフォメーション

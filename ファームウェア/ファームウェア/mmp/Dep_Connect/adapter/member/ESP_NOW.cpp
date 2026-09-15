@@ -107,6 +107,10 @@ private:
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(String argConn) override {
+//############################
+//# ブリッジは[trans()]で処理
+//############################
+#if (MODE != MODE_BRIDGE)
     //┬
     //●MACアドレス文字列をデコード
     uint8_t macBuf[6]; stringToMac(argConn, macBuf);
@@ -117,6 +121,8 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
+#endif
+//############################
   } /* SEND_CONN() */
 
 //========================================================

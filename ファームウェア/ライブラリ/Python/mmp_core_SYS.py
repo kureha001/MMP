@@ -31,56 +31,12 @@ class _System:
     #─────────────
     def BOOT(self) -> bool:
         res = self._p._send_command("SYS/BOOT!", self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # ログレベル設定
     #─────────────
     def LOG(self, val:int) -> bool:
-        cmd = f"SYS/SET_LOG:{val}!"
+        cmd = f"SYS/SET/LOG:{val}!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
-
-    #━━━━━━━━━━━━━━━
-    # サブ：ブリッジ設定
-    #━━━━━━━━━━━━━━━
-    class _Bridge:
-        #─────────────
-        # コンストラクタ
-        #─────────────
-        def __init__(self, p, argTimeOut):
-            self._p = p
-            self.TimeOut = argTimeOut
-
-        #─────────────
-        # TCP
-        #─────────────
-        def TCP(self,
-            ip      :str = "192.168.2.99",   # ① IPアドレス
-            port    :int = 8081,             # ② ポート番号
-        ) -> bool:
-            cmd = f"@TCP:{ip}:{port}!"
-            res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
-
-        #─────────────
-        # WebSocket
-        #─────────────
-        def WSOC(self,
-            ip      :str = "192.168.2.99",   # ① IPアドレス
-            port    :int = 8082,             # ② ポート番号
-        ) -> bool:
-            cmd = f"@WSOC:{ip}:{port}!"
-            res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
-
-        #─────────────
-        # Web API
-        #─────────────
-        def WAPI(self,
-            ip      :str = "192.168.2.99",   # ① IPアドレス
-            port    :int = 8080,             # ② ポート番号
-        ) -> bool:
-            cmd = f"@WAPI:{ip}:{port}!"
-            res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+        return res == "_OK_!"

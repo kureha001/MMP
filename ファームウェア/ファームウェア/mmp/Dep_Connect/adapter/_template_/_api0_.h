@@ -39,8 +39,8 @@ public:
     //□実行ハンドル
     virtual void handle() = 0;
     //│
-    //□ポーリングの前処理
-    virtual bool handle_End() {return false;}
+    //□ポーリングの後処理
+    virtual void handle_End() {}
     //│
     //□転送受付（未登録はコンテクストにエラーCDをセット）
     virtual void trans() {ctx.strFrame = "#BR0!";};

@@ -38,4 +38,4 @@ class _Digital:
     def OUTPUT(self, gpio:int, val:int) -> bool:
         cmd = f"DIGITAL/OUTPUT:{gpio}:{'1' if (val & 1) else '0'}!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"

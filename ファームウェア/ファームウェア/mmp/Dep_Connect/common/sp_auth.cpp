@@ -342,7 +342,7 @@ namespace adpFnAuth{
     if (ctx.cmdPath == SP_CMD_START) {
       //├┐（「認証CD発行コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()){ctx.resMSG = "#SS1!";}
+        if(NEW_USER()){ctx.resMSG = RCD::AuthErr1;}
         //│＼（失敗した場合）
         //│ ○レスポンスにエラーIDをセット
         //│ ┴
@@ -359,7 +359,7 @@ namespace adpFnAuth{
     //│
     //●ユーザ認証を実施
     ctx.accID = GET_EXIST_AID(ctx.authCD);
-    if (ctx.accID < 0){ctx.resMSG = "#SS2!"; return true;}
+    if (ctx.accID < 0){ctx.resMSG = RCD::AuthErr2; return true;}
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│

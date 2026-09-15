@@ -31,12 +31,12 @@ class _System:
     #─────────────
     def BOOT(self) -> bool:
         res = self._p._send_command("SYS/BOOT!", self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # ログレベル設定
     #─────────────
     def LOG(self, val:int) -> bool:
-        cmd = f"SYS/SET_LOG:{val}!"
+        cmd = f"SYS/SET/LOG:{val}!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"

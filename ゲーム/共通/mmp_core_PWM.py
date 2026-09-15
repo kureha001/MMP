@@ -34,7 +34,7 @@ class _Pwm:
     ) -> bool:
         cmd = f"PWM/OUTPUT:{chId}:{pwmVal}!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # サブ：インフォメーション
@@ -83,7 +83,7 @@ class _Pwm:
                 f"{pwmFrom}:{pwmTo}!"
             )
             res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # プリセット削除
@@ -94,7 +94,7 @@ class _Pwm:
         ) -> bool:
             cmd = f"PWM/ANGLE/RESET:{chIDfrom}:{chIDto}!"
             res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # ＰＷＭ出力
@@ -136,7 +136,7 @@ class _Pwm:
                 f"{leftLow}:{leftHigh}!"
             )
             res    = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # プリセット削除
@@ -148,7 +148,7 @@ class _Pwm:
             cmd = "PWM/ROTATE/RESET"
             cmd = f"{cmd}:{chIDfrom}:{chIDto}!"
             res = self._p._send_command(cmd, self.TimeOut)
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # ＰＷＭ出力

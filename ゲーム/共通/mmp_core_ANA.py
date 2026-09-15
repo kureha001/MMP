@@ -37,7 +37,7 @@ class _Analog:
     ) -> bool:
         cmd = f"ANALOG/SETUP:{chs}:{devs}!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # 信号入力(バッファ格納)
@@ -45,7 +45,7 @@ class _Analog:
     def INPUT(self) -> bool:
         cmd = "ANALOG/INPUT!"
         res = self._p._send_command(cmd, self.TimeOut)
-        return res == "!!!!!"
+        return res == "_OK_!"
 
     #─────────────
     # バッファ読取：丸めなし

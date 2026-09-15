@@ -142,24 +142,23 @@ private:
   static const char* SEND_MSG(const String& argID){
 
     // 共通のコード
-    if (argID == "!!!!!") return "OK:戻り値無し"            ;
-    if (argID == "#CMD!") return "NG:コマンド名が不正"      ;
-    if (argID == "#CHK!") return "NG:引数チェックで違反"    ;
-    if (argID == "#INI!") return "NG:データが未初期化"      ;
-    if (argID == "#DEV!") return "NG:使用不可のデバイス"    ;
-    if (argID == "#FIL!") return "NG:ファイル操作が異常終了";
-    if (argID == "#NOD!") return "NG:データ項目名が不正"    ;
-    if (argID == "#VAL!") return "NG:数値が基底範囲外"      ;
-    if (argID == "#NOM!") return "NG:機能モジュールが無い"  ;
+    if (argID == RCD::OK    ) return "OK:戻り値無し"            ;
+    if (argID == RCD::NotMod) return "NG:機能モジュールが無い"  ;
+    if (argID == RCD::NotCmd) return "NG:コマンド名が不正"      ;
+    if (argID == RCD::ChkErr) return "NG:引数チェックで違反"    ;
+    if (argID == RCD::IniErr) return "NG:データが未初期化"      ;
+    if (argID == RCD::DevErr) return "NG:使用不可のデバイス"    ;
+    if (argID == RCD::FilErr) return "NG:ファイル操作が異常終了";
+    if (argID == RCD::NoDErr) return "NG:データ項目名が不正"    ;
+    if (argID == RCD::ValErr) return "NG:数値が基底範囲外"      ;
+
+    if (argID == RCD::AuthErr1) return "NG:認証管理の開始に失敗";
+    if (argID == RCD::AuthErr2) return "NG:認証に失敗"          ;
 
     // アダプタ独自のコード
-    if (argID == "!VAL!") return "OK:数値"                  ;
-    if (argID == "!STR!") return "OK:文字列"                ;
-    if (argID == "#DFL!") return "NG:フレーム長オーバー"    ;
-    if (argID == "#SSZ!") return "NG:接続スロット不足"      ;
-    if (argID == "!SS0!") return "OK:ユーザ認証に成功"      ;
-    if (argID == "#SS1!") return "NG:認証管理の開始に失敗"  ;
-    if (argID == "#SS2!") return "NG:認証に失敗"            ;
+    if (argID == RCD::OK_Auth) return "OK:ユーザ認証に成功"     ;
+    if (argID == RCD::OK_VAL ) return "OK:数値"                 ;
+    if (argID == RCD::OK_STR ) return "OK:文字列"               ;
  
     return "NG:その他のエラー";
   } /* SEND_MSG() */
@@ -187,12 +186,12 @@ private:
         //○MSGIDを独自IDに書き換え
         //○取得値を文字列型にセット
         //○処理結果をセット
-        msgID     = "!SS0!"   ; // 認証開始
-        jsDat.Str = ctx.resMSG; // 取得値(文字列)
-        jsDat.Res = true      ; // 正常
+        msgID     = RCD::OK_Auth; // 認証開始
+        jsDat.Str = ctx.resMSG  ; // 取得値(文字列)
+        jsDat.Res = true        ; // 正常
         //┴
 
-    } else if (msgID == "!!!!!") {
+    } else if (msgID == RCD::OK) {
       //├┐（正常系：戻り値なし の場合）
         //○処理結果を正常にセット
         jsDat.Res = true ; // 正常
@@ -207,7 +206,7 @@ private:
             //○MSGIDを独自IDに書き換え
             //○処理結果をセット
             //●取得値を数値型にセット
-            msgID = "!VAL!"                  ; // 数値型
+            msgID = RCD::OK_VAL              ; // 数値型
             jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
             jsDat.Res = true                 ; // 正常
             //┴
@@ -217,7 +216,7 @@ private:
             //○MSGIDを独自IDに書き換え
             //○処理結果をセット
             //●取得値を数値型にセット
-            msgID = "!STR!"                  ; // 文字列型
+            msgID = RCD::OK_STR              ; // 文字列型
             jsDat.Str = ctx.resMSG           ; // 取得値(文字列)
             jsDat.Res = true                 ; // 正常
             //┴

@@ -171,7 +171,7 @@ namespace DepCommand {
         //┴
       //│
       //○エラーメッセージを返却
-      if (regCount == 0){ctx.resMSG = "#CMD!"; return;}
+      if (regCount == 0){ctx.resMSG = RCD::NotCmd; return;}
         // ＼（登録数がゼロの場合）
           //▼エラーメッセージを返却
       //┴
@@ -202,7 +202,7 @@ namespace DepCommand {
       } /* END-for */
     //│
     //○エラーメッセージを返却
-    ctx.resMSG = "#NOM!";
+    ctx.resMSG = RCD::NotMod;
     //┴
   } /* RunCommand() */
 

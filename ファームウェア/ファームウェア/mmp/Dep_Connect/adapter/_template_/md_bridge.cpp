@@ -104,7 +104,7 @@
     bool isTrans = Trans_Route();
     //│
     //○転送先の設定漏れを確認
-    if (ctx.bridge.adpID < 0) {ctx.resMSG = "#BR1!"; return;}
+    if (ctx.bridge.adpID < 0) {ctx.resMSG = RCD::Trn1Err; return;}
     //│＼（転送先が[未設定]の場合）
     //│ ○コンテクストにエラーCDをセット
     //│ ▼終了：早期リターン
@@ -120,7 +120,7 @@
     ctx.bridge.Dat3 = DAT[3];
     //│
     //○コンテクストに[正常終了]をセット
-    ctx.resMSG = "!!!!!";
+    ctx.resMSG = RCD::OK;
     //┴
   } /* RUN() */
 

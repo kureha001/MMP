@@ -73,14 +73,14 @@ public:
     //─────────────────
     // 基本レスポンス
     //─────────────────
-    inline void _ResOK    (){ctx.resMSG = "!!!!!";} // 正常終了
-    inline void _ResNotCmd(){ctx.resMSG = "#CMD!";} // コマンド名が不正
-    inline void _ResChkErr(){ctx.resMSG = "#CHK!";} // 引数チェックで不正
-    inline void _ResIniErr(){ctx.resMSG = "#INI!";} // データが未初期化
-    inline void _ResDevErr(){ctx.resMSG = "#DEV!";} // 使用不可のデバイス
-    inline void _ResFilErr(){ctx.resMSG = "#FIL!";} // ファイル操作が異常終了
-    inline void _ResNoDErr(){ctx.resMSG = "#NOD!";} // データ項目名が不正  
-    inline void _ResValErr(){ctx.resMSG = "#VAL!";} // 数値変換エラー  
+    inline void _ResOK    (){ctx.resMSG = RCD::OK;    } // 正常終了
+    inline void _ResNotCmd(){ctx.resMSG = RCD::NotCmd;} // コマンド名が不正
+    inline void _ResChkErr(){ctx.resMSG = RCD::ChkErr;} // 引数チェックで不正
+    inline void _ResIniErr(){ctx.resMSG = RCD::IniErr;} // データが未初期化
+    inline void _ResDevErr(){ctx.resMSG = RCD::DevErr;} // 使用不可のデバイス
+    inline void _ResFilErr(){ctx.resMSG = RCD::FilErr;} // ファイル操作が異常終了
+    inline void _ResNoDErr(){ctx.resMSG = RCD::NoDErr;} // データ項目名が不正  
+    inline void _ResValErr(){ctx.resMSG = RCD::ValErr;} // 数値変換エラー  
 
     //─────────────────
     // 戻値用：十進数変換

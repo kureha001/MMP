@@ -107,7 +107,7 @@ class _MP3:
             cmd = "MP3/SET/VOLUME"
             cmd = f"{cmd}:{dev}:{vol}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            return res == "!!!!!"
+            return res == "_OK_!"
 
         #─────────────
         # イコライザ
@@ -119,7 +119,7 @@ class _MP3:
             cmd = "MP3/SET/EQ"
             cmd = f"{cmd}:{dev}:{mode}!"
             res = self._p._send_command(cmd, self.TimeOut) 
-            return res == "!!!!!"
+            return res == "_OK_!"
 
     #─────────────
     # サブ：インフォメーション

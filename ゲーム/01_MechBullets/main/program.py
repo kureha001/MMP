@@ -57,6 +57,8 @@ class 本体:
         #│
         #●MMPを初期化する
         MMP.通信接続()
+        MMP.接続.ANALOG.分解能   = DS.仕様.ハード.ANA分解能
+        MMP.接続.ANALOG.丸め単位 = DS.仕様.ハード.HC4067の丸め
         MMP.接続.ANALOG.SETUP(
             DS.仕様.ハード.HC4067の個数,
             DS.仕様.ハード.HC4067のCh数,

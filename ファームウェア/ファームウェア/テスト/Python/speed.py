@@ -16,8 +16,8 @@ CONNECTION_MODE = 'COM'   # シリアル
 #CONNECTION_MODE = 'BLE'   # Bluetooth LE
 
 # 表示フラグ: True で毎コマンドのログを出力 / False で結果のみ出力
-#VERBOSE_LOG = True
-VERBOSE_LOG = False
+VERBOSE_LOG = True
+#VERBOSE_LOG = False
 
 # COM（シリアル通信）設定
 #COM_PORT = 'COM11'
@@ -69,7 +69,13 @@ class DeviceConnection:
     async def connect(self):
         """非同期接続処理"""
         if self.mode == 'COM':
-            self.conn = serial.Serial(self.com_port, self.baudrate, timeout=self.timeout)
+            self.conn = serial.Serial()
+            self.conn.port     = self.com_port
+            self.conn.baudrate = self.baudrate
+            self.conn.timeout  = self.timeout
+            self.conn.dtr      = False
+            self.conn.rts      = False
+            self.conn.open()
             await asyncio.sleep(2)  # 接続安定化待ち
 
         elif self.mode == 'TCP':

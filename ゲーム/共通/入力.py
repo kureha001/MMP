@@ -10,7 +10,8 @@ import MMP # アプリとのコネクション
 class 情報:
 
     # 16ポート毎・4Chごとの状態：ON(True)/OFF(False) 
-    状態 = tuple([False] * 4 for _ in range(16))
+    状態   = tuple([False] * 4 for _ in range(16))
+    分解能 = 12
 
 #────────────────────────────────────
 # OFFに関しては、立下げを検出できる
@@ -34,7 +35,7 @@ def 入力走査(
     for 各Ch in 引数_Ch一覧:
         #│
         #○スイッチ状態を求める
-        値 = MMP.接続.ANALOG.ROUND(各Ch,0,引数_丸め,10)
+        値 = MMP.接続.ANALOG.ROUND(各Ch,0,引数_丸め,情報.分解能)
         判定 = (値 > 引数_閾値) if 引数_閾値 > 0 else (値 < -引数_閾値)
         #│
         #◇┐入力状況を走査する

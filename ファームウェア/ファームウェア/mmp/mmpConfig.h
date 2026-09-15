@@ -66,7 +66,7 @@
   //─────────────────
   // 高速モード
   //─────────────────
-  #define TURBO false
+  #define TURBO true
 
   //─────────────────
   // モード別に経路アダプタ選択
@@ -74,11 +74,11 @@
   //─────────────────
   //□メインモード：IIC以外は選択可能
   #if   (MODE == MODE_MAIN)
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
-    #define ADP_ESPN true
-    #define ADP_BLE  true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
+    #define ADP_ESPN false
+    #define ADP_BLE  false
 
   //□サブモード：すべて選択可能
   #elif (MODE == MODE_SUB)

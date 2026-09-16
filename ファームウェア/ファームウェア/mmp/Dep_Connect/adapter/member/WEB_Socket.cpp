@@ -163,13 +163,13 @@ private:
       //│
       //○接続するまでまつ。
       unsigned long startTime = millis();
-      while(!MY_NET.isConnected() && millis() - startTime < 10000){
+      while(!MY_NET.isConnected() && millis() - startTime < LIMIT::TIMEOUT_CONNECT){
         MY_NET.loop();
         delay(200);
       }
       //│
       //○タイムアウトはエラーCDをセット
-      if (!MY_NET.isConnected()) {ctx.strFrame = "#TIM!"; return;}
+      if (!MY_NET.isConnected()) {ctx.strFrame = RCD::Trn1Err; return;}
       //┴
     }
     //│

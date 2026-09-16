@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART(高速版) 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/15)
 // ・新規
 //========================================================
 
@@ -52,9 +52,8 @@ private:
   void SEND_CONN() {
     //┬
     //○クライアントにレスポンス
-    CONN->print(ctx.resMSG);
-    //│
     //●ログ出力
+    CONN->print(ctx.resMSG);
     adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
@@ -77,11 +76,9 @@ private:
       case BSTAT::REQ : return true ; // 依頼中：進行NG
       case BSTAT::BUSY: return true ; // 処理中：進行NG
       case BSTAT::DONE:               // 処理済：進行OK
-        //○コンテクストにレスポンス内容をセット
         //●ブリッジ元にレスポンス
         //○進行状況を［待機中］にセット
         //▼終了：早期リターン（進行OK）
-        ctx.resMSG = ctx.strFrame;
         SEND_CONN();
         ctx.bridge.Stat = BSTAT::IDLE;
         return false;
@@ -101,7 +98,7 @@ public:
   AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○メッセージ表示
-    Log::prtln(" [OK] UART Hi-Speed (PORT=[1])");
+    Log::prtln(" [OK] UART Hi-Speed (PORT=[USB CDC])");
     //┴
   } /* constractor AdapterUART() */
 
@@ -129,9 +126,8 @@ public:
 //--------------------------
 #if   (MODE == MODE_MAIN)
     //●コマンドを実行
-    modeMain::RUN();
-    //│
     //●実行結果をレスポンス
+    modeMain::RUN();
     SEND_CONN();
     //┴
 //--------------------------
@@ -139,22 +135,21 @@ public:
 //--------------------------
 #elif (MODE == MODE_SUB)
     //●コマンドを実行
-    modeSub::RUN();
-    //│
     //●実行結果をレスポンス
+    modeSub::RUN();
     SEND_CONN();
     //┴
 //--------------------------
 //【ブリッジ】マスタ処理
 //--------------------------
 #elif (MODE == MODE_BRIDGE)
-    //◆┐ブリッジ処理を実行
     modeBridge::RUN();
     if (ctx.resMSG == "") ctx.bridge.Stat = BSTAT::REQ;
+    else SEND_CONN();
+    //◆┐ブリッジ処理を実行
       //├┐（リクエストが[MMPコマンド転送]の場合）
         //○進捗状況を[依頼中]にセット
         //┴
-    else SEND_CONN();
       //└┐（その他：[特殊コマンド実行][システムコマンド実行][エラーあり]）
         //●ブリッジ元にレスポンス
         //┴

@@ -401,7 +401,7 @@ private:
     String cmd    = ctx.strFrame;
     String strURL = String("http://") + ip + ":" + port + "/" + cmd;
     MY_NET.begin(strURL);
-    if (MY_NET.GET() <= 0) {ctx.strFrame = "#TR1!"; return;}
+    if (MY_NET.GET() <= 0) {ctx.strFrame = RCD::Trn1Err; return;}
     //│＼（接続に失敗した場合）
     //│ ○コンテクストにエラーCDをセット
     //│ ▼終了：早期リターン
@@ -413,7 +413,7 @@ private:
     MY_NET.end();
     //│
     //○レスポンスをコンテクストに反映
-    ctx.strFrame = (retFrame == "" ? "#TR2!" : retFrame);
+    ctx.strFrame = (retFrame == "" ? RCD::Trn2Err : retFrame);
     ctx.resMSG   = ctx.strFrame;
     //┴
   };
@@ -448,7 +448,7 @@ public:
     //│
     //○メッセージ表示
     char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] HTTP (PORT=[%d])\n", MY_PORT);
+    snprintf(msg, sizeof(msg), " [OK] HTTP (PORT=[%d])", MY_PORT);
     Log::prtln(String(msg));
     //┴
 #endif

@@ -7,6 +7,19 @@ import urllib.request
 from bleak import BleakScanner, BleakClient
 
 # ==========================================
+# 測定・パラメータ設定
+# ==========================================
+iterations   = 5
+MAX_CHANNELS = 2
+MAX_PINS     = 4   
+
+# ==========================================
+# ログ出力の設定
+# ==========================================
+LOG_PYTHON  = False  # Pyhon側のログ
+LOG_MMP     = False  # MMP側のログ
+
+# ==========================================
 # 動作モード・通信パラメータ設定
 # ==========================================
 CONNECTION_MODE = 'COM'   # シリアル
@@ -15,18 +28,15 @@ CONNECTION_MODE = 'COM'   # シリアル
 #CONNECTION_MODE = 'HTTP'  # HTTP
 #CONNECTION_MODE = 'BLE'   # Bluetooth LE
 
-# 表示フラグ: True で毎コマンドのログを出力 / False で結果のみ出力
-VERBOSE_LOG = True
-#VERBOSE_LOG = False
-
 # COM（シリアル通信）設定
-#COM_PORT = 'COM145' # メイン
-COM_PORT  = 'COM23' # ブリッジ
-BAUDRATE = 115200
-#COM_TRANS = ""
+BAUDRATE = 921600
+COM_PORT = 'COM145' # メイン
+#COM_PORT  = 'COM23' # ブリッジ
+#COM_PORT  = 'COM10' # サブ
+COM_TRANS = ""
 #COM_TRANS = "BRIDGE/TCP:192.168.2.99:8081!" # ○：遅い
 #COM_TRANS = "BRIDGE/WSOC:192.168.2.99:8082!" # ○：遅い
-COM_TRANS = "BRIDGE/ESPN:50787D17BEE0!" # ○：無線で最速
+#COM_TRANS = "BRIDGE/ESPN:50787D17BEE0!" # ◎：無線で最速
 #COM_TRANS = "BRIDGE/BLE!" # ×：繋がらない
 
 # ネットワーク設定
@@ -39,11 +49,6 @@ HTTP_PORT = 8080
 BLE_DEVICE_NAME  = 'MMP-ESP32S3'
 BLE_UART_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  # 書き込み用 (例: Nordic UART Service)
 BLE_UART_TX_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  # 受信/通知用
-
-# 測定・パラメータ設定
-iterations   = 10  
-MAX_CHANNELS = 3   
-MAX_PINS     = 4   
 
 setup_cmd    = f"ANALOG/SETUP:{MAX_CHANNELS}:{MAX_PINS}!"
 cmds_per_set = 1 + (MAX_CHANNELS * MAX_PINS)
@@ -242,18 +247,20 @@ async def main():
 
         # COM_TRANS が設定されている場合、接続後に最初に一度だけ実行
         if COM_TRANS:
-            print(f"転送設定送信 (COM_TRANS): {COM_TRANS}")
             res_trans = await execute_cmd_5bytes(dev, COM_TRANS)
-            print(f"転送設定応答: {res_trans}")
+            print(f"転送設定送信: {COM_TRANS} ... {res_trans}")
+
+        # ＭＭＰのログをオフ
+        if LOG_MMP:
+          res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:1!")
+          print(f"ログ出力制御: [ON] ... {res_log}")
+        else:
+          res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:0!")
+          print(f"ログ出力制御: [OFF] ... {res_log}")
 
         # 初期設定・ログオフ
-        print(f"初期設定送信: {setup_cmd}")
         res_setup = await execute_cmd_5bytes(dev, setup_cmd)
-        print(f"初期設定応答: {res_setup}")
-
-        print("測定開始処理: SYS/SET/LOG:0!")
-        res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:0!")
-        print(f"ログオフ応答: {res_log}")
+        print(f"アナログ設定: {setup_cmd} ... {res_setup}")
 
         durations = []
 
@@ -270,14 +277,14 @@ async def main():
                     read_cmd = f"ANALOG/READ:{ch - 1}:{pin - 1}!"
                     res = await execute_cmd_5bytes(dev, read_cmd)
                     
-                    if VERBOSE_LOG:
+                    if LOG_PYTHON:
                         print(f" [{ch}][{pin}] (ID:{ch-1},{pin-1}) : {res}")
 
             end_time = time.perf_counter()
             elapsed = end_time - start_time
             durations.append(elapsed)
 
-            if VERBOSE_LOG:
+            if LOG_PYTHON:
                 avg_cmd_ms = (elapsed / cmds_per_set) * 1000
                 print(f"進捗: {i + 1}/{iterations} 回完了 | セット時間: {elapsed:.3f} s | 1コマンド平均: {avg_cmd_ms:.3f} ms")
 
@@ -295,10 +302,6 @@ async def main():
         print(f"最悪セット処理時間 : {max(durations):.3f} s")
         print(f"----------------------------------------")
         print(f"1コマンド平均時間  : {avg_single_cmd_duration:.3f} ms / コマンド")
-
-        # ログオン戻し
-        await execute_cmd_5bytes(dev, "SYS/SET/LOG:1!")
-        await dev.close()
 
     except Exception as e:
         print(f"エラーが発生しました: {e}")

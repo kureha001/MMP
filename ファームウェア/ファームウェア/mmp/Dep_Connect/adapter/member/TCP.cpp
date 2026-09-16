@@ -279,8 +279,8 @@ private:
         //○TCPクライアントを起動
         String   ip   = ctx.bridge.Dat1;
         uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
-        MY_NET.setTimeout(2000);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = "#CNT!"; return;}
+        MY_NET.setTimeout(LIMIT::TIMEOUT_CONNECT);
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○コンテクストにエラーCDをセット
         //│ ▼終了：早期リターン
@@ -315,7 +315,7 @@ public:
 //--------------------------
 #if (MODE == MODE_BRIDGE)
     //┬
-    //●接続管理TBLを作成
+    //○接続管理TBLを作成
     SLOTs = 1;
     TBL   = new T_SLOT[SLOTs];
     //│
@@ -327,7 +327,7 @@ public:
 //--------------------------
 #else
     //┬
-    //●接続管理TBLを作成
+    //○接続管理TBLを作成
     SLOTs = 10;
     TBL   = new T_SLOT[SLOTs];
     //│

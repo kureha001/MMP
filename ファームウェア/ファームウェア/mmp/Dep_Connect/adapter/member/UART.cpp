@@ -2,8 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
-// ・UARTポートの見直し 
+// Ver 1.3.2 (2026/09/16)
+// ・メインモード専用に変更
 // ・標準スロットを廃止
 //========================================================
 
@@ -43,7 +43,7 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  int SLOTs = 0; // コンストラクタで決定
+  int SLOTs = 2;
   struct T_SLOT{
     bool    used = false  ; // 基本メンバ
     Stream* CONN = nullptr; // アクセス資源(参照)
@@ -124,36 +124,6 @@ private:
     );
   } /* RUN_TASK() */
   
-//############################
-//# 転送機能はブリッジのみ
-//############################
-#if (MODE == MODE_BRIDGE)
-//========================================================
-//§転送処理
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // ポーリングの前処理
-  //━━━━━━━━━━━━━━━━━
-  bool handle_Begin() override final {
-    //┬
-    //◇ブリッジマスタとして進行を制御
-    switch (ctx.bridge.Stat) {
-      case BSTAT::IDLE: return false; // 待機中：進行OK
-      case BSTAT::REQ : return true ; // 依頼中：進行NG
-      case BSTAT::BUSY: return true ; // 処理中：進行NG
-      case BSTAT::DONE:               // 処理済：進行OK
-        //●ブリッジ元にレスポンス
-        //○進行状況を［待機中］にセット
-        //▼終了：早期リターン（進行OK）
-        SEND_CONN(TBL[ctx.bridge.slotID].CONN);
-        ctx.bridge.Stat = BSTAT::IDLE;
-        return false;
-    } /* END-switch */
-    return true; // 想定外：進行NG
-  } /* handle_Begin() */
-#endif
-//############################
-
 //========================================================
 //§公開機能
 //========================================================
@@ -164,37 +134,17 @@ public:
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
     //●接続管理TBLを作成
-//--------------------------
-// サブは複数スロット
-//--------------------------
-#if (MODE == MODE_SUB)
-    //  GPIO側だけをセット
-    SLOTs = 2;
-    TBL   = new T_SLOT[SLOTs];
-    TBL[0].used = true    ;
-    TBL[0].CONN = &Serial1;
+    TBL = new T_SLOT[SLOTs];
+    TBL[0].CONN = &Serial ; // ログ出力と兼用
+    TBL[0].used = true    ; // アプリ利用時はログOFF
+    TBL[1].CONN = &Serial1; // サブとの接続専用
     TBL[1].used = true    ;
-    TBL[1].CONN = &Serial2;
-//--------------------------
-// サブ以外は単一スロット
-//--------------------------
-#else
-    //  USB(CDC)だけをセット
-    SLOTs = 1;
-    TBL   = new T_SLOT[SLOTs];
-    TBL[0].used = true   ;
-    TBL[0].CONN = &Serial;
-#endif
-//--------------------------
     //│
     //●受信タスクを起動
     RUN_TASK();
     //│
     //○メッセージ表示
-    char msg[128];
-    String port = (MODE == MODE_SUB) ? "1,2" : "1";
-    snprintf(msg, sizeof(msg), " [OK] UART (PORT=[%s])", port.c_str());
-    Log::prtln(String(msg));
+    Log::prtln(" [OK] UART (PORT=[USB(CDC),Serial2])");
     //┴
   } /* constractor AdapterUART() */
 

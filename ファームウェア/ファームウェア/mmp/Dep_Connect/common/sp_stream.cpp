@@ -26,14 +26,23 @@ namespace adpFnStream{
     //│＼（受信がない場合）
     //│ ▼終了：早期リターン
     //│
-    String strRX = "";
-    while (!strRX.endsWith("!") && argConn.available()) strRX += (char)argConn.read();
     //◎┐受信データを取込
+    String strRX = "";
+    unsigned long startTime = millis();
+    while (!strRX.endsWith("!")) {
       //│＼（終端に達した場合）
       //│ ▽完了：走査終了
       //│
-      //○受信データを受信バッファに加える
+      //○経過時間を確認
+      if (millis() - startTime > LIMIT::TIMEOUT_READ) return RCD::TimOut;
+      //│＼（タイムアウトした場合）
+      //│ ▼終了：早期リターン[エラーCD]
+      //│
+      //○受信データがある場合のみバッファに追加
+      if (argConn.available())  strRX += (char)argConn.read();
+      else vTaskDelay(1 / portTICK_PERIOD_MS);
       //┴
+    }
     //│
     //○受信データを補正
     adpFnBase::FORMAT_URI(strRX);

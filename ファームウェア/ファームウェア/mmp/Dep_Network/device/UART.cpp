@@ -24,16 +24,21 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
 
-    //○UARTポートを起動
-#if (MODE == MODE_SUB)
-    Serial1.begin(SERIAL_BPS, SERIAL_8N1, 17, 18);
-    Serial2.begin(SERIAL_BPS, SERIAL_8N1, 11, 12);
-#else
+    //○通常利用ポートを起動
     Serial.begin(SERIAL_BPS);
+    String strUse = "USB(CDC)";
+
+    //○メイン接続用ポートを起動
+#if (MODE == MODE_SUB)
+    Serial2.begin(SERIAL_BPS, SERIAL_8N1, 11, 12);
+    strUse += ",Serial2";
 #endif
 
     //○有効性セット
-    Log::prtln("　[OK] UART(#01) -> " + String(SERIAL_BPS) + "bps");
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] UART (PORT=[%s] %sbps)", strUse.c_str(), String(SERIAL_BPS).c_str());
+    Log::prtln(String(msg));
+
     ENABLED = true;
   } /* START() */
 } /* namespace devUART */

@@ -139,7 +139,7 @@ private:
     //┬
     //○初期化資源の接続健全性を確認
     if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
-      {ctx.strFrame = "#CNT!"; return;}
+      {ctx.strFrame = RCD::Trn1Err; return;}
     //│
     //○確立済みの通信口（RX）へリクエストを書き込み（非同期送出）
     if (devBLE::BLE_CLI_RX != nullptr)

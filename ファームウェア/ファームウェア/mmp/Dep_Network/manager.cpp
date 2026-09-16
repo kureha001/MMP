@@ -71,13 +71,8 @@ namespace DepNetwork{
   void INIT() {
     //┬
     //○ログ出力用ポートを初期化
-#if (MODE == MODE_SUB)
-    Serial.begin(SERIAL_BPS);
-    Serial.setDebugOutput(false);
-#else
     Serial1.begin(SERIAL_BPS, SERIAL_8N1, 17, 18);
     Serial1.setDebugOutput(false);
-#endif
     delay(500);                    // 安定するまで待つ
     //│
     //○始業のあいさつ（開始）

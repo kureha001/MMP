@@ -206,7 +206,7 @@ private:
         String   ip   = ctx.bridge.Dat1;
         uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
         MY_NET.setTimeout(2000);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = "#TR1!"; return;}
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○コンテクストにエラーCDをセット
         //│ ▼終了：早期リターン
@@ -222,7 +222,7 @@ private:
     String retFrame = adpFnStream::GET_FRAME(MY_NET);
     //│
     //○レスポンスをコンテクストに反映
-    ctx.strFrame = (retFrame == "" ? "#TR2!" : retFrame);
+    ctx.strFrame = (retFrame == "" ? RCD::Trn2Err : retFrame);
     ctx.resMSG   = ctx.strFrame;
     //┴
   };

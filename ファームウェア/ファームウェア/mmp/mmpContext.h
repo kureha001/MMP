@@ -25,7 +25,7 @@
   //┬
   //■システム情報
   const String sysVer  = "V132!"  ; // バージョン
-  bool         sysLog  = true     ; // ログ表示
+  bool         sysLog  = false     ; // ログ表示
   //│
   //■リクエスト情報
   int          adpID    = -1; // 経路アダプタID
@@ -33,7 +33,7 @@
   String       cmdPath  = ""; // コマンドパス
   String       authCD   = ""; // 認証コード
   //│
-  //■転送情報（ブリッジモードで使用）
+  //■転送情報
   T_BRIDGE     bridge;
   //│
   //■ユーザメモリ情報（特定の機能モジュールで使用）

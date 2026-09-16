@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（サブモード）
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/16)
+// ・タイムアウトを導入
 // ・システムコマンド部をSys_Command()へ分離
 //========================================================
 
@@ -43,20 +44,34 @@
     //│ ▼終了：早期リターン
     //│
     //○リクエストをMMPメインへ転送
-    Serial1.print(ctx.strFrame);
+    if (ctx.sysLog) Log::prtln("(1/3) Requested to MMP(MAIN).");
+    Serial2.print(ctx.strFrame);
     //│
     //◎┐受信待ちデータの取り込み
+    if (ctx.sysLog) Log::prtln("(2/3) Reading from MMP(MAIN).");
     String strRX = "";
+    unsigned long startTime = millis();
     while (!strRX.endsWith("!")) {
       //│＼（終端に達した場合）
       //│ ▽完了：走査終了
       //│
+      //○経過時間を確認
+      if (millis() - startTime > LIMIT::TIMEOUT_READ) {
+      //│＼（タイムアウトした場合）
+          //○コンテクストにエラーCDを反映
+          //▼終了：早期リターン
+          ctx.resMSG = RCD::TimOut;
+          if (ctx.sysLog) Log::prtln("(3/3) Error:Response timeout from MMP(MAIN).");
+          return;
+      } /* END-if */
+      //│
       //○受信データを受信バッファに加える
-      if (Serial1.available()) strRX += (char)Serial1.read();
+      if (Serial2.available()) strRX += (char)Serial2.read();
       //┴
     } /* END-while */
     //│
     //○コンテクストに[MMP本体からのレスポンス]を反映
+    if (ctx.sysLog) Log::prtln("(3/3) Success.");
     ctx.resMSG = strRX;
     //┴
   } /* RUN() */

@@ -23,7 +23,7 @@ namespace DepNetwork{
 //========================================================
 // 共有資源
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+   //━━━━━━━━━━━━━━━━━
   // 部下を招集
   //━━━━━━━━━━━━━━━━━
   //┬
@@ -71,7 +71,7 @@ namespace DepNetwork{
   void INIT() {
     //┬
     //○ログ出力用ポートを初期化
-    Serial1.begin(SERIAL_BPS, SERIAL_8N1, 17, 18);
+    Serial1.begin(SERIAL_BPS, SERIAL_8N1, devUART::PIN1_RX, devUART::PIN1_TX);
     Serial1.setDebugOutput(false);
     delay(500);                    // 安定するまで待つ
     //│

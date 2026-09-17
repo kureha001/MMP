@@ -43,7 +43,7 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  int SLOTs = 2;
+  int SLOTs = 0; // コンストラクタで決定
   struct T_SLOT{
     bool    used = false  ; // 基本メンバ
     Stream* CONN = nullptr; // アクセス資源(参照)
@@ -123,7 +123,37 @@ private:
       &TaskHandle             // タスクハンドル
     );
   } /* RUN_TASK() */
-  
+
+//############################
+//# 転送機能はブリッジのみ
+//############################
+#if (MODE == MODE_BRIDGE)
+//========================================================
+//§転送処理
+//========================================================
+  //━━━━━━━━━━━━━━━━━
+  // ポーリングの前処理
+  //━━━━━━━━━━━━━━━━━
+  bool handle_Begin() override final {
+    //┬
+    //◇ブリッジマスタとして進行を制御
+    switch (ctx.bridge.Stat) {
+      case BSTAT::IDLE: return false; // 待機中：進行OK
+      case BSTAT::REQ : return true ; // 依頼中：進行NG
+      case BSTAT::BUSY: return true ; // 処理中：進行NG
+      case BSTAT::DONE:               // 処理済：進行OK
+        //●ブリッジ元にレスポンス
+        //○進行状況を［待機中］にセット
+        //▼終了：早期リターン（進行OK）
+        SEND_CONN(TBL[ctx.bridge.slotID].CONN);
+        ctx.bridge.Stat = BSTAT::IDLE;
+        return false;
+    } /* END-switch */
+    return true; // 想定外：進行NG
+  } /* handle_Begin() */
+#endif
+//############################
+
 //========================================================
 //§公開機能
 //========================================================
@@ -133,12 +163,28 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
+    //┬
     //●接続管理TBLを作成
+//--------------------------
+// メインはサブ機接続を確保
+//--------------------------
+#if (MODE == MODE_MAIN)
+    SLOTs = 2;
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; // ログ出力と兼用
     TBL[0].used = true    ; // アプリ利用時はログOFF
     TBL[1].CONN = &Serial1; // サブとの接続専用
     TBL[1].used = true    ;
+//--------------------------
+// メイン以外はUSB-CDCのみ
+//--------------------------
+#else
+    SLOTs = 1;
+    TBL = new T_SLOT[SLOTs];
+    TBL[0].CONN = &Serial ; // ログ出力と兼用
+    TBL[0].used = true    ; // アプリ利用時はログOFF
+#endif
+//--------------------------
     //│
     //●受信タスクを起動
     RUN_TASK();

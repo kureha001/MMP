@@ -20,9 +20,10 @@
   // [device/member/UART] PIN設定に仕様
   // [device/member/IIC ] PIN設定に仕様
   //─────────────────
-  #define BOARD_ESP32_S3_TINY 10
-  #define BOARD_M5STAMP_S3    11
-  #define BOARD_PICO2W        20
+  #define BOARD_ESP32_S3_TINY       10
+  #define BOARD_ESP32_S3_SUPER_MINI 11
+  #define BOARD_M5STAMP_S3          12
+  #define BOARD_PICO2W              20
 
   //─────────────────
   // シリアルのボーレート
@@ -54,8 +55,8 @@
 //========================================================
 // コンパイルオプション
 //========================================================
-  #define BOARD BOARD_ESP32_S3_TINY // ターゲット・ボード
-  #define MODE  MODE_MAIN            // 動作モード
+  #define BOARD BOARD_ESP32_S3_TINY
+  #define MODE  MODE_MAIN         // 動作モード
 
   // UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
@@ -86,7 +87,7 @@
   //□ブリッジモード用
   #elif (MODE == MODE_BRIDGE)
     #define ADP_TCP  false
-    #define ADP_HTTP true
+    #define ADP_HTTP false
     #define ADP_WSOC false
     #define ADP_ESPN true
     #define ADP_BLE  false
@@ -139,7 +140,7 @@ namespace LIMIT{
 //========================================================
 namespace Log{
   void prtln(String argMSG) {
-    #if (MODE == MODE_MAIN)
+    #if (MODE == MODE_MAIN) 
       Serial.println(argMSG);
     #else
       Serial1.println(argMSG);

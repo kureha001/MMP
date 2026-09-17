@@ -10,13 +10,26 @@
 //# 処理詳細
 //########################################################
 namespace devUART {
-
+//========================================================
+// 共有資源
+//========================================================
 //========================================================
 // 担務（公開機能）
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 基本情報
   //━━━━━━━━━━━━━━━━━
+  #if BOARD == BOARD_ESP32_S3_SUPER_MINI
+    const int PIN1_RX = 8;
+    const int PIN1_TX = 9;
+  #else
+    const int PIN1_RX = 17;
+    const int PIN1_TX = 18;
+  #endif
+
+  const int PIN2_RX = 11;
+  const int PIN2_TX = 12;
+
   bool ENABLED = false; // 有効判定：有効：true、無効：false
 
   //━━━━━━━━━━━━━━━━━
@@ -28,9 +41,9 @@ namespace devUART {
     Serial.begin(SERIAL_BPS);
     String strUse = "USB(CDC)";
 
-    //○メイン接続用ポートを起動
+    //○サブモードでメインモード機と接続するポートを起動
 #if (MODE == MODE_SUB)
-    Serial2.begin(SERIAL_BPS, SERIAL_8N1, 11, 12);
+    Serial2.begin(SERIAL_BPS, SERIAL_8N1, PIN2_RX, PIN2_TX);
     strUse += ",Serial2";
 #endif
 

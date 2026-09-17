@@ -29,8 +29,8 @@ private:
 
     DFRobotDFPlayerMini MP3[SER_MAX]; // コンテナ
     HardwareSerial*     SER[SER_MAX]; // MP3プレイヤに割り当てるシリアルデバイス
-    int  PIN_RX[SER_MAX] = {11, 0}  ; // シリアルデバイスのピン（RX） 
-    int  PIN_TX[SER_MAX] = {12, 0}  ; // シリアルデバイスのピン（TX）
+    int  PIN_RX[SER_MAX] = {devUART::PIN2_RX, 0}  ; // シリアルデバイスのピン（RX） 
+    int  PIN_TX[SER_MAX] = {devUART::PIN2_TX, 0}  ; // シリアルデバイスのピン（TX）
     bool ENABLE[SER_MAX] = {false, false}; // MP3プレイヤの有効性
 
 //--------------------------------------------------------

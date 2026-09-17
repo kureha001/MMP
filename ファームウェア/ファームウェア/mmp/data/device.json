@@ -1,5 +1,5 @@
 {
-  "dev_name": "MMP-ESP32S3",
+  "dev_name": "MMP-TURBO",
   "iic": {
     "sda": 16,
     "scl": 15

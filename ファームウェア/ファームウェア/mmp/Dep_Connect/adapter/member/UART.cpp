@@ -79,19 +79,11 @@ private:
       //│＼（最後のスロットに達した場合）
       //│ ▼完了：走査を終了
       //│
-      //○スロットの状態を確認
-      if (TBL[ID].CONN == nullptr) continue;
-      //│＼（未使用の場合）
-      //│ ▽次へ：次のスロットを走査
-      //│
       //●ストリームを受信
       String retFrame = adpFnStream::GET_FRAME(*(TBL[ID].CONN));
-      if (retFrame == "") continue;
-      //│＼（受信データがない場合）
-      //│ ▽次へ：次のスロットを走査
       //│
-      //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue(TBL[ID].CONN, retFrame, ID);
+      //●キューに登録（基底クラスの pushQueue を呼出し）
+      if (retFrame != "") pushQueue(TBL[ID].CONN, retFrame, ID);
       //┴
     } /* END-for */
     //┴

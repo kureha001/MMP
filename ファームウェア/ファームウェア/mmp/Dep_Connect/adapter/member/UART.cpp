@@ -48,7 +48,7 @@ private:
     bool    used = false  ; // 基本メンバ
     Stream* CONN = nullptr; // アクセス資源(参照)
   };
-  T_SLOT* TBL        ; // 事前予約
+  T_SLOT* TBL             ; // 事前予約
 
 //========================================================
 //§返信処理
@@ -155,7 +155,6 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    Log::prtln(" [UART]");
     //●接続管理TBLを作成
 //--------------------------
 // メイン
@@ -164,26 +163,31 @@ public:
     SLOTs = 2;
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; TBL[0].used = true;
-    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブと通信
-    Log::prtln("   - USB(CDC)  <---> Client"   );
-    Log::prtln("   - Serial #1 <---> Sub-moode");
+    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブとの通信用
+    String msg = " [OK] UART (USB CDC + Serial #1)";
 //--------------------------
-// メイン以外
+// サブ
 //--------------------------
+#elif (MODE == MODE_SUB)
+    SLOTs = 2;
+    TBL = new T_SLOT[SLOTs];
+    TBL[0].CONN = &Serial ; TBL[0].used = true;
+    TBL[1].CONN = &Serial2; TBL[1].used = true;
+    String msg = " [OK] UART (USB CDC + Serial #2)";
 #else
     SLOTs = 3;
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; TBL[0].used = true;
-    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブ：メインと通信
+    TBL[1].CONN = &Serial1; TBL[1].used = true;
     TBL[2].CONN = &Serial2; TBL[2].used = true;
-    Log::prtln("   - USB(CDC)  <---> Client"   );
-    if (MODE = MODE_SUB) Log::prtln("   - Serial #1 <---> Main-mode");
-    else                 Log::prtln("   - Serial #1 <---> Client");
-    Log::prtln("   - Serial #2 <---> Client");
+    String msg = " [OK] UART (USB CDC + Serial #1,2)";
 #endif
     //│
     //●受信タスクを起動
     RUN_TASK();
+    //│
+    //○メッセージ表示
+    Log::prtln(msg);
     //┴
   } /* constractor AdapterUART() */
 

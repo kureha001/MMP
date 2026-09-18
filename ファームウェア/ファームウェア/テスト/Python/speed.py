@@ -10,7 +10,7 @@ from bleak import BleakScanner, BleakClient
 # 測定・パラメータ設定
 # ==========================================
 iterations   = 10
-MAX_CHANNELS = 2
+MAX_CHANNELS = 3
 MAX_PINS     = 4   
 
 # ==========================================
@@ -33,7 +33,7 @@ BAUDRATE = 921600
 
 #-------------------------------------------------------------------------------------------------
 #■メイン<<USB-CDC>>
-#COM_PORT = 'COM145' # 全部          : 1.809 ms (100%)
+#COM_PORT = 'COM50' # 全部          : 1.809 ms (100%) ★故障★
 #COM_PORT = 'COM50'  # UART          : 1.103 ms ( 61%)
 #COM_PORT = 'COM49'  # ターボ&ESP-NOW: 0.472 ms ( 30%)
 #COM_PORT = 'COM48'  # ターボ        : 0.434 ms ( 28%)
@@ -60,7 +60,7 @@ COM_TRANS = ""
 #■MAIN
 #COM_TRANS = "BRIDGE/TCP:192.168.2.99:8081!"
 #COM_TRANS = "BRIDGE/WSOC:192.168.2.99:8082!"
-#COM_TRANS = "BRIDGE/ESPN:50787D17BEE0!" # COM145:全部
+#COM_TRANS = "BRIDGE/ESPN:50787D18448C!" # COM50:全部
 #COM_TRANS = "BRIDGE/ESPN:50787D17BE20!" # COM49 :ターボ+ESP-NOW
 #COM_TRANS = "BRIDGE/BLE:MMP-ESP32S3!"   # ×：繋がらない
 #■SUB
@@ -277,18 +277,18 @@ async def main():
         await dev.connect()
         print("接続完了。")
 
+        # ＭＭＰのログをオフ
+        if LOG_MMP:
+            res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:1!")
+            print(f"ログ出力制御: [ON] ... {res_log}")
+        else:
+            res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:0!")
+            print(f"ログ出力制御: [OFF] ... {res_log}")
+
         # COM_TRANS が設定されている場合、接続後に最初に一度だけ実行
         if COM_TRANS:
             res_trans = await execute_cmd_5bytes(dev, COM_TRANS)
             print(f"転送設定送信: {COM_TRANS} ... {res_trans}")
-
-        # ＭＭＰのログをオフ
-        if LOG_MMP:
-          res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:1!")
-          print(f"ログ出力制御: [ON] ... {res_log}")
-        else:
-          res_log = await execute_cmd_5bytes(dev, "SYS/SET/LOG:0!")
-          print(f"ログ出力制御: [OFF] ... {res_log}")
 
         # 初期設定・ログオフ
         res_setup = await execute_cmd_5bytes(dev, setup_cmd)

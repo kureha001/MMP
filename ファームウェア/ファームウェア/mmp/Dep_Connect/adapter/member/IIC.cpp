@@ -147,7 +147,7 @@ public:
     //│
     //○メッセージ表示
     char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] IIC (ADR=[%d]->[%d]", IIC_ADDR_MIN, IIC_ADDR_MAX);
+    snprintf(msg, sizeof(msg), " [OK] IIC (ADR = %d -> %d", IIC_ADDR_MIN, IIC_ADDR_MAX);
     Log::prtln(String(msg));
     //┴
   } /* constractor AdapterIIC() */

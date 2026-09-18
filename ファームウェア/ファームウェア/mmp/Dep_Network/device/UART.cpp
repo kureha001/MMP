@@ -5,13 +5,6 @@
 // Ver 1.3.2 (2026/09/17)
 // ・UARTはここですべて管理
 // ・UARTポートの見直し 
-//--------------------------------------------------------
-// [ ESP32-S3 (送信側) ]            [ ESP32-S3 (受信側) ]
-//      TXD (GPIO 17) ---------------> RXD (GPIO 13)
-//      RXD (GPIO 18) <--------------- TXD (GPIO 12)
-//      RTS (GPIO 19) ---------------> CTS (GPIO )
-//      CTS (GPIO 20) <--------------- RTS (GPIO )
-//      GND           ---------------> GND
 //========================================================
 
 //########################################################
@@ -48,10 +41,10 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
     char msg[100];
-    String msgUSB = "   [--] USB CDC -> none";
-    String msg0   = "   [--] Serial0 -> none";
-    String msg1   = "   [--] Serial1 -> none";
-    String msg2   = "   [--] Serial2 -> none";
+    String msgUSB = "   [--] USB CDC";
+    String msg0   = "   [--] Serial #0";
+    String msg1   = "   [--] Serial #1";
+    String msg2   = "   [--] Serial #2";
     //│
     //○USB CDCを起動(クライアント用)
     Serial.begin(BPS);
@@ -59,15 +52,14 @@ namespace devUART {
     //│
     //○Serial0を起動(ログ用)
     Serial0.begin(BPS_LOG, SERIAL_8N1, PIN0_RX, PIN0_TX);
-    snprintf(msg, sizeof(msg), "   [OK] Serial0 -> %d bps ==> log", BPS_LOG);
+    snprintf(msg, sizeof(msg), "   [OK] Serial #0 -> %d bps ==> log", BPS_LOG);
     msg0 = msg;
     //│
     //○Serial1を起動(メイン・サブ：クロス接続用／ブリッジ：クライアント用)
     int intBps = (MODE == MODE_BRIDGE) ? BPS : BPS_CROSS;
     Serial1.begin(intBps, SERIAL_8N1, PIN1_RX, PIN1_TX);
-    Serial1.setDebugOutput(false);
-    snprintf(msg, sizeof(msg), "   [OK] Serial1 -> %d bps / Rx:%d Tx:%d", intBps, PIN1_RX, PIN1_TX);
-    msg1 = msg; msg1 += (MODE == MODE_MAIN) ? " / main <=> sub" : " <=> Client";
+    snprintf(msg, sizeof(msg), "   [OK] Serial #1 -> %d bps / Rx:%d Tx:%d", intBps, PIN1_RX, PIN1_TX);
+    msg1 = msg; msg1 += (MODE == MODE_BRIDGE) ? " <=> Client" : " / main <=> sub";
     //│
 //------------------------------------
 // MAINはMP3で使用するのでbeginしない
@@ -75,7 +67,7 @@ namespace devUART {
 #if MODE != MODE_MAIN
     //○Serial2を起動(クライアント)
       Serial2.begin(BPS, SERIAL_8N1, PIN2_RX, PIN2_TX);
-      snprintf(msg, sizeof(msg), "   [OK] Serial2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS_CROSS, PIN2_RX, PIN2_TX);
+      snprintf(msg, sizeof(msg), "   [OK] Serial #2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS, PIN2_RX, PIN2_TX);
       msg2 = msg;
 #endif
 //------------------------------------

@@ -195,7 +195,7 @@ public:
     esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
     //│
     //○メッセージ表示
-    Log::prtln(" [OK] ESP-NOW (MAC=[" + String(WiFi.macAddress()) + "])");
+    Log::prtln(" [OK] ESP-NOW (MAC = " + String(WiFi.macAddress()));
     //┴
   } /* constractor AdapterESPNOW() */
 

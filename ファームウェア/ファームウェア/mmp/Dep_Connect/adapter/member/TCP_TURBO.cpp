@@ -279,7 +279,7 @@ public:
     MY_NET->begin();
     //│
     //○メッセージ表示
-    Serial.printf(" [OK] TCP Hi-Speed (PORT=[%d])\n", MY_PORT);
+    Serial.printf(" [OK] TCP Hi-Speed (PORT = %d)\n", MY_PORT);
     //┴
 #endif
 //--------------------------

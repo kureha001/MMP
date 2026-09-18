@@ -2,7 +2,8 @@
 //========================================================
 // 通信部門／デバイス課：担当割一覧
 //--------------------------------------------------------
-// Ver 1.3.0 (2026/09/11) 
+// Ver 1.3.2 (2026/09/18)
+// ・UARTポートの見直し 
 //========================================================
 #pragma once
 
@@ -14,8 +15,6 @@
   //━━━━━━━━━━━━━━━━━
   #include "UART.cpp"
   namespace devUART{
-    extern const int PIN1_RX;
-    extern const int PIN1_TX;
     extern const int PIN2_RX;
     extern const int PIN2_TX;
     extern bool ENABLED ; // 有効性

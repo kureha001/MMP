@@ -70,15 +70,6 @@ namespace DepNetwork{
   //━━━━━━━━━━━━━━━━━
   void INIT() {
     //┬
-    //○ログ出力用ポートを初期化
-    Serial1.begin(SERIAL_BPS, SERIAL_8N1, devUART::PIN1_RX, devUART::PIN1_TX);
-    Serial1.setDebugOutput(false);
-    delay(500);                    // 安定するまで待つ
-    //│
-    //○始業のあいさつ（開始）
-    Log::prtln("<<通信デバイスの初期化>>");
-    Log::prtln(" [UART device]"  );
-    Log::prtln("  [OK] USB (CDC) -> 115200bps");
     //│
     //◎┐デバイス課の担当に業務遂行を指示
     for (size_t devID = 0; devID < DBs; ++devID) {

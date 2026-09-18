@@ -533,7 +533,7 @@ namespace devWiFi {
   void START(){
     //┬
     //○開始表示
-    Log::prtln(" [Wi-Fi Network device]");
+    Log::prtln(" [Wi-Fi]");
     bool isOK = false;
     //│
     //●P1.設定ファイル読込

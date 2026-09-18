@@ -79,7 +79,7 @@ namespace devIIC {
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START() {
-    Log::prtln(" [I2C device]");
+    Log::prtln(" [I2C]");
 
     // １．起動ガード：device.json の読み込み
     if (!READ_JSON()) {

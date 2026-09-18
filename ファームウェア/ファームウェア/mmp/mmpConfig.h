@@ -16,28 +16,9 @@
 // ベース（編集禁止）
 //========================================================
   //─────────────────
-  // ターゲット・ボード
-  // [device/member/UART] PIN設定に仕様
-  // [device/member/IIC ] PIN設定に仕様
-  //─────────────────
-  #define BOARD_ESP32_S3_TINY       10
-  #define BOARD_ESP32_S3_SUPER_MINI 11
-  #define BOARD_M5STAMP_S3          12
-  #define BOARD_PICO2W              20
-
-  //─────────────────
-  // シリアルのボーレート
-  //─────────────────
-  //int SERIAL_BPS = 115200;
-  int SERIAL_BPS = 921600;
-  //int SERIAL_BPS = 1000000;
-  //int SERIAL_BPS = 2000000;
-  //int SERIAL_BPS = 3000000;
-
-  //─────────────────
   // 経路アダプタ
   //─────────────────
-    #define ADP_UART true  //※メイン・ブリッジは必須
+    #define ADP_UART true  //※どのモードも必須
     #define ADP_TCP  false
     #define ADP_HTTP false
     #define ADP_WSOC false
@@ -55,8 +36,7 @@
 //========================================================
 // コンパイルオプション
 //========================================================
-  #define BOARD BOARD_ESP32_S3_TINY
-  #define MODE  MODE_MAIN         // 動作モード
+  #define MODE  MODE_SUB // 動作モード
 
   // UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
@@ -68,15 +48,14 @@
 
   //□メインモード用
   #if   (MODE == MODE_MAIN)
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
-    #define ADP_ESPN true
-    #define ADP_BLE  true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
+    #define ADP_ESPN false
+    #define ADP_BLE  false
 
   //□サブモード用
   #elif (MODE == MODE_SUB)
-    #define ADP_UART true
     #define ADP_TCP  true
     #define ADP_HTTP true
     #define ADP_WSOC true

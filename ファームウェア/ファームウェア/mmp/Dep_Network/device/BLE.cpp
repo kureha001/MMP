@@ -103,7 +103,7 @@ namespace devBLE {
   void START() {
     //┬
     //○開始メッセージを表示
-    Log::prtln(" [Bluetooth device]"  );
+    Log::prtln(" [Bluetooth]"  );
     //│
     //○起動ガード：device.json の読み込み
     if (!READ_JSON()) {

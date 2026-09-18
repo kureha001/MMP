@@ -99,7 +99,7 @@ public:
         if (!_Str2Int(dat[1], intLv, 0, 1)){_ResChkErr(); return;}
 
       // ２．出力レベルをセット
-      ctx.sysLog = (intLv == 0 ? false : true);
+      Log::ENABLE = (intLv == 0 ? false : true);
 
       // ３．後処理：
       _ResOK();

@@ -76,7 +76,7 @@
     char msg[128];
     snprintf(msg, sizeof(msg), " MMP %s [MODE: %s]", ctx.sysVer, strMode);
     Log::prtln(String(msg));
-    snprintf(msg, sizeof(msg), " Log Output:[%s]", (ctx.sysLog ? "ON" : "OFF"));
+    snprintf(msg, sizeof(msg), " Log Output:[%s]", (Log::ENABLE ? "ON" : "OFF"));
     Log::prtln(String(msg));
     Log::prtln("-----------------------------");
     //│

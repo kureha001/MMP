@@ -19,7 +19,7 @@
   //━━━━━━━━━━━━━━━━━
   void SHOW_LOG(){
 
-    if (!ctx.sysLog) return;
+    if (!Log::ENABLE) return;
     char msg[128];
 
     Log::prtln(String("\n============== MMP LOG ==============="));

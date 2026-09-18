@@ -29,16 +29,18 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   // ボーレート
   //━━━━━━━━━━━━━━━━━
-  const int BPS     = 921600;
-  const int BPS_LOG = 921600;
-  const int BPS_SUB = 3000000;
+  const int BPS       = 921600;
+  const int BPS_LOG   = 921600;
+  const int BPS_CROSS = 3000000;
 
   //━━━━━━━━━━━━━━━━━
   // ピンアサイン
   //━━━━━━━━━━━━━━━━━
-  const int PIN1_RX = (MODE == MODE_MAIN) ? 17 : 8;
+  const int PIN0_RX = 43; // ログ用
+  const int PIN0_TX = 44;
+  const int PIN1_RX = (MODE == MODE_MAIN) ? 17 : 8; // main<=>sub or Client
   const int PIN1_TX = (MODE == MODE_MAIN) ? 18 : 9;
-  const int PIN2_RX = (MODE == MODE_MAIN) ? 11 :10;
+  const int PIN2_RX = (MODE == MODE_MAIN) ? 11 :10; // MP3 or Client
   const int PIN2_TX = (MODE == MODE_MAIN) ? 12 :11;
 
   //━━━━━━━━━━━━━━━━━
@@ -46,27 +48,37 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   void START(){
     char msg[100];
-    String msg0 = "   [--] USB CDC -> none";
-    String msg1 = "   [--] Serial1 -> none";
-    String msg2 = "   [--] Serial2 -> none";
+    String msgUSB = "   [--] USB CDC -> none";
+    String msg0   = "   [--] Serial0 -> none";
+    String msg1   = "   [--] Serial1 -> none";
+    String msg2   = "   [--] Serial2 -> none";
     //│
-    //○Serial0(USB CDC)を起動
-    Serial.begin();
-    msg0 = "   [OK] USB CDC";
+    //○USB CDCを起動(クライアント用)
+    Serial.begin(BPS);
+    msgUSB = "   [OK] USB CDC <=> Client";
     //│
-    //○Serial1を起動(メインはサブ接続、その他はログ出力)
-    int intBps = (MODE == MODE_MAIN) ? BPS_SUB : BPS_LOG;
+    //○Serial0を起動(ログ用)
+    Serial0.begin(BPS_LOG, SERIAL_8N1, PIN0_RX, PIN0_TX);
+    snprintf(msg, sizeof(msg), "   [OK] Serial0 -> %d bps ==> log", BPS_LOG);
+    msg0 = msg;
+    //│
+    //○Serial1を起動(メイン・サブ：クロス接続用／ブリッジ：クライアント用)
+    int intBps = (MODE == MODE_BRIDGE) ? BPS : BPS_CROSS;
     Serial1.begin(intBps, SERIAL_8N1, PIN1_RX, PIN1_TX);
     Serial1.setDebugOutput(false);
     snprintf(msg, sizeof(msg), "   [OK] Serial1 -> %d bps / Rx:%d Tx:%d", intBps, PIN1_RX, PIN1_TX);
-    msg1 = msg; msg1 += (MODE == MODE_MAIN) ? " <=> sub-mode" : " ==> log";
+    msg1 = msg; msg1 += (MODE == MODE_MAIN) ? " / main <=> sub" : " <=> Client";
     //│
-    //○Serial2を起動(サブがメインに接続)
-    if (MODE == MODE_SUB){
-      Serial2.begin(BPS_SUB, SERIAL_8N1, PIN2_RX, PIN2_TX);
-      snprintf(msg, sizeof(msg), "   [OK] Serial2 -> %d bps / Rx:%d Tx:%d <=> main-mode", BPS_SUB, PIN2_RX, PIN2_TX);
+//------------------------------------
+// MAINはMP3で使用するのでbeginしない
+//------------------------------------
+#if MODE != MODE_MAIN
+    //○Serial2を起動(クライアント)
+      Serial2.begin(BPS, SERIAL_8N1, PIN2_RX, PIN2_TX);
+      snprintf(msg, sizeof(msg), "   [OK] Serial2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS_CROSS, PIN2_RX, PIN2_TX);
       msg2 = msg;
-    }
+#endif
+//------------------------------------
     //│
     //○メッセージ表示
     delay(2000);

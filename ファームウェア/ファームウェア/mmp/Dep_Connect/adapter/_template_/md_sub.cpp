@@ -44,11 +44,11 @@
     //│ ▼終了：早期リターン
     //│
     //○リクエストをMMPメインへ転送
-    if (ctx.sysLog) Log::prtln("(1/3) Requested to MMP(MAIN).");
-    Serial2.print(ctx.strFrame);
+    if (Log::ENABLE) Log::prtln("(1/3) Requested to MMP(MAIN).");
+    Serial1.print(ctx.strFrame);
     //│
     //◎┐受信待ちデータの取り込み
-    if (ctx.sysLog) Log::prtln("(2/3) Reading from MMP(MAIN).");
+    if (Log::ENABLE) Log::prtln("(2/3) Reading from MMP(MAIN).");
     String strRX = "";
     unsigned long startTime = millis();
     while (!strRX.endsWith("!")) {
@@ -61,17 +61,17 @@
           //○コンテクストにエラーCDを反映
           //▼終了：早期リターン
           ctx.resMSG = RCD::TimOut;
-          if (ctx.sysLog) Log::prtln("(3/3) Error:Response timeout from MMP(MAIN).");
+          if (Log::ENABLE) Log::prtln("(3/3) Error:Response timeout from MMP(MAIN).");
           return;
       } /* END-if */
       //│
       //○受信データを受信バッファに加える
-      if (Serial2.available()) strRX += (char)Serial2.read();
+      if (Serial1.available()) strRX += (char)Serial1.read();
       //┴
     } /* END-while */
     //│
     //○コンテクストに[MMP本体からのレスポンス]を反映
-    if (ctx.sysLog) Log::prtln("(3/3) Success.");
+    if (Log::ENABLE) Log::prtln("(3/3) Success.");
     ctx.resMSG = strRX;
     //┴
   } /* RUN() */

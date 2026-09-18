@@ -297,13 +297,14 @@ public:
 
         // ２．コマンド実行 ※エラーならリトライ
         int res = -1;
-        for (int tries = 0; tries < 50 && res == -1; ++tries) {
-          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = MP3[idx].readState()            ;res = MP3[idx].readState()            ;} 
-          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = MP3[idx].readVolume()           ;res = MP3[idx].readVolume()           ;}
-          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = MP3[idx].readEQ()               ;res = MP3[idx].readEQ()               ;}
-          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = MP3[idx].readCurrentFileNumber();res = MP3[idx].readCurrentFileNumber();}
-          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = MP3[idx].readFileCounts()       ;res = MP3[idx].readFileCounts()       ;}
+        for (int tries = 0; tries < 10 && res == -1; ++tries) {
+          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = MP3[idx].readState()            ;} 
+          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = MP3[idx].readVolume()           ;}
+          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = MP3[idx].readEQ()               ;}
+          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = MP3[idx].readCurrentFileNumber();}
+          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = MP3[idx].readFileCounts()       ;}
           if (res != -1) break;
+          delay(10); //時間調整(μs)
         }
 
         // ３．後処理：
@@ -343,9 +344,10 @@ public:
   void reTrackkState(int idx){
     // ※エラーならリトライ
     int res = -1;
-    for (int tries = 0; tries < 50 && res == -1; ++tries) {
+    for (int tries = 0; tries < 10 && res == -1; ++tries) {
       res = MP3[idx].readState();
       if (res != -1) break;
+      delay(10); //時間調整(μs)
     } /* END-for*/
     _ResValue(res);
   } /* reTrackkState() */

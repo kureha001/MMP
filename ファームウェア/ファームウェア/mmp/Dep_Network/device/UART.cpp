@@ -5,6 +5,13 @@
 // Ver 1.3.2 (2026/09/17)
 // ・UARTはここですべて管理
 // ・UARTポートの見直し 
+//--------------------------------------------------------
+// [ ESP32-S3 (送信側) ]            [ ESP32-S3 (受信側) ]
+//      TXD (GPIO 17) ---------------> RXD (GPIO 13)
+//      RXD (GPIO 18) <--------------- TXD (GPIO 12)
+//      RTS (GPIO 19) ---------------> CTS (GPIO )
+//      CTS (GPIO 20) <--------------- RTS (GPIO )
+//      GND           ---------------> GND
 //========================================================
 
 //########################################################
@@ -24,15 +31,15 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   const int BPS     = 921600;
   const int BPS_LOG = 921600;
-  const int BPS_SUB = 5000000;
+  const int BPS_SUB = 3000000;
 
   //━━━━━━━━━━━━━━━━━
   // ピンアサイン
   //━━━━━━━━━━━━━━━━━
   const int PIN1_RX = (MODE == MODE_MAIN) ? 17 : 8;
   const int PIN1_TX = (MODE == MODE_MAIN) ? 18 : 9;
-  const int PIN2_RX = 11;
-  const int PIN2_TX = 12;
+  const int PIN2_RX = (MODE == MODE_MAIN) ? 11 :10;
+  const int PIN2_TX = (MODE == MODE_MAIN) ? 12 :11;
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
@@ -42,8 +49,6 @@ namespace devUART {
     String msg0 = "   [--] USB CDC -> none";
     String msg1 = "   [--] Serial1 -> none";
     String msg2 = "   [--] Serial2 -> none";
-    String msg3 = "   [--] Serial3 -> none";
-    String msg4 = "   [--] Serial4 -> none";
     //│
     //○Serial0(USB CDC)を起動
     Serial.begin();
@@ -53,13 +58,13 @@ namespace devUART {
     int intBps = (MODE == MODE_MAIN) ? BPS_SUB : BPS_LOG;
     Serial1.begin(intBps, SERIAL_8N1, PIN1_RX, PIN1_TX);
     Serial1.setDebugOutput(false);
-    snprintf(msg, sizeof(msg), "   [OK] Serial1 -> %d bps / Rx[%d] Tx[%d]", intBps, PIN1_RX, PIN1_TX);
+    snprintf(msg, sizeof(msg), "   [OK] Serial1 -> %d bps / Rx:%d Tx:%d", intBps, PIN1_RX, PIN1_TX);
     msg1 = msg; msg1 += (MODE == MODE_MAIN) ? " <=> sub-mode" : " ==> log";
     //│
     //○Serial2を起動(サブがメインに接続)
     if (MODE == MODE_SUB){
       Serial2.begin(BPS_SUB, SERIAL_8N1, PIN2_RX, PIN2_TX);
-      snprintf(msg, sizeof(msg), "   [OK] Serial2 -> %d bps / Rx[%d] Tx[%d] <=> main-mode", BPS_SUB, PIN2_RX, PIN2_TX);
+      snprintf(msg, sizeof(msg), "   [OK] Serial2 -> %d bps / Rx:%d Tx:%d <=> main-mode", BPS_SUB, PIN2_RX, PIN2_TX);
       msg2 = msg;
     }
     //│
@@ -70,8 +75,6 @@ namespace devUART {
     Log::prtln(msg0);
     Log::prtln(msg1);
     Log::prtln(msg2);
-    Log::prtln(msg3);
-    Log::prtln(msg4);
     //│
     //○有効性セット
     ENABLED = true;

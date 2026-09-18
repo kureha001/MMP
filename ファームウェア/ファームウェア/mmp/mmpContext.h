@@ -25,7 +25,6 @@
   //┬
   //■システム情報
   const String sysVer  = "V132!"  ; // バージョン
-  bool         sysLog  = false     ; // ログ表示
   //│
   //■リクエスト情報
   int          adpID    = -1; // 経路アダプタID

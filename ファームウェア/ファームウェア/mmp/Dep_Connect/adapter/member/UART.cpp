@@ -155,34 +155,35 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //┬
+    Log::prtln(" [UART]");
     //●接続管理TBLを作成
 //--------------------------
-// メインはサブ機接続を確保
+// メイン
 //--------------------------
 #if (MODE == MODE_MAIN)
     SLOTs = 2;
     TBL = new T_SLOT[SLOTs];
-    TBL[0].CONN = &Serial ; // ログ出力と兼用
-    TBL[0].used = true    ; // アプリ利用時はログOFF
-    TBL[1].CONN = &Serial1; // サブとの接続専用
-    TBL[1].used = true    ;
+    TBL[0].CONN = &Serial ; TBL[0].used = true;
+    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブと通信
+    Log::prtln("   - USB(CDC)  <---> Client"   );
+    Log::prtln("   - Serial #1 <---> Sub-moode");
 //--------------------------
-// メイン以外はUSB-CDCのみ
+// メイン以外
 //--------------------------
 #else
-    SLOTs = 1;
+    SLOTs = 3;
     TBL = new T_SLOT[SLOTs];
-    TBL[0].CONN = &Serial ; // ログ出力と兼用
-    TBL[0].used = true    ; // アプリ利用時はログOFF
+    TBL[0].CONN = &Serial ; TBL[0].used = true;
+    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブ：メインと通信
+    TBL[2].CONN = &Serial2; TBL[2].used = true;
+    Log::prtln("   - USB(CDC)  <---> Client"   );
+    if (MODE = MODE_SUB) Log::prtln("   - Serial #1 <---> Main-mode");
+    else                 Log::prtln("   - Serial #1 <---> Client");
+    Log::prtln("   - Serial #2 <---> Client");
 #endif
-//--------------------------
     //│
     //●受信タスクを起動
     RUN_TASK();
-    //│
-    //○メッセージ表示
-    Log::prtln(" [OK] UART (PORT=[USB(CDC),Serial2])");
     //┴
   } /* constractor AdapterUART() */
 

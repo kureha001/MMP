@@ -4,6 +4,7 @@
 //--------------------------------------------------------
 // Ver 1.3.2 (2026/09/19)
 // ・SofwareSerial化
+// ・余分なコードを削除
 // ・UARTポートの見直し 
 //========================================================
 //┬
@@ -21,17 +22,11 @@ private:
 //━━━━━━━━━━━━━━━━━
 // デバイス情報
 //━━━━━━━━━━━━━━━━━
-    bool IS_LOOP = true; // 自動リピート（初期値ON）
-    int  WAIT_MS = 500 ; // 待ち時間(ms)
-
-    static const int SER_MAX   = 2; // 将来拡張できる上限
-    static const int SER_CNT   = 1; // 現在用意できている個数
-    int              SER_START = 2; // Serial2を使うため(将来拡張予定)
-
-    DFRobotDFPlayerMini MP3[SER_MAX]; // コンテナ
-    int  PIN_RX[SER_MAX] = {devUART::PIN2_RX, 0}  ; // シリアルデバイスのピン（RX） 
-    int  PIN_TX[SER_MAX] = {devUART::PIN2_TX, 0}  ; // シリアルデバイスのピン（TX）
-    bool ENABLE[SER_MAX] = {false, false}; // MP3プレイヤの有効性
+    //─────────────────
+    // 基本
+    //─────────────────
+    DFRobotDFPlayerMini MP3[devUART::MP3_MAX];      // コンテナ
+    bool ENABLE[devUART::MP3_MAX] = {false, false}; // MP3プレイヤの有効性
 
 //--------------------------------------------------------
 public:
@@ -45,10 +40,10 @@ public:
     Log::prtln(" [MP3：DFPlayer mini]");
     //│
     //◎┐初期設定
-    for (int ID = 0; ID < SER_MAX; ++ID) {
+    for (int ID = 0; ID < devUART::MP3_MAX; ++ID) {
       //│
       //○シリアルボートを確認
-      if (ID == SER_CNT) break;
+      if (ID == devUART::MP3_CNT) break;
       //│
       //○MP3プレイヤーを生成
       if (MP3[ID].begin(*devUART::MP3[ID])) ENABLE[ID] = true;

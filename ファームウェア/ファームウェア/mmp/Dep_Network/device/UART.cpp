@@ -28,7 +28,9 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   // ソフトウェアシリアル
   //━━━━━━━━━━━━━━━━━
-  SoftwareSerial* MP3[2];
+  const int       MP3_MAX = 2 ; // 将来拡張できる上限
+  const int       MP3_CNT = 1 ; // 現在用意できている個数
+  SoftwareSerial* MP3[MP3_MAX];
 
   //━━━━━━━━━━━━━━━━━
   // ボーレート
@@ -47,8 +49,11 @@ namespace devUART {
   const int PIN2_RX = (MODE == MODE_MAIN) ? 13 :10; // MP3 or Client
   const int PIN2_TX = (MODE == MODE_MAIN) ? 14 :11;
 
-  const int PIN_MP3_RX = 11; // Software Serial
-  const int PIN_MP3_TX = 12;
+  // MP3プレイヤ用
+  const int PIN_MP3_1_RX = 11;
+  const int PIN_MP3_1_TX = 12;
+  const int PIN_MP3_2_RX = -1;
+  const int PIN_MP3_2_TX = -1;
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
@@ -87,8 +92,8 @@ namespace devUART {
 #if MODE == MODE_MAIN
     //○Serial3を起動(クライアント)
     MP3[0] = new SoftwareSerial(0); 
-    MP3[0]->begin(9600, SWSERIAL_8N1, PIN_MP3_RX, PIN_MP3_TX, false, 256);
-    snprintf(msg, sizeof(msg),"   [OK] MP3 #0 -> %d bps / Rx:%d Tx:%d", 9600, PIN_MP3_RX, PIN_MP3_TX);
+    MP3[0]->begin(9600, SWSERIAL_8N1, PIN_MP3_1_RX, PIN_MP3_1_TX, false, 256);
+    snprintf(msg, sizeof(msg),"   [OK] for MP3 #0 -> %d bps / Rx:%d Tx:%d", 9600, PIN_MP3_1_RX, PIN_MP3_1_TX);
     msgMP3 = msg;
 #endif
     //│

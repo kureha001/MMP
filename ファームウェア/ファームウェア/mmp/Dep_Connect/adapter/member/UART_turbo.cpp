@@ -98,7 +98,7 @@ public:
   AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
     //┬
     //○メッセージ表示
-    Log::prtln(" [OK] UART Hi-Speed (PORT=[USB CDC])");
+    Log::prtln(" [OK] UART Hi-Speed / USB(CDC) only");
     //┴
   } /* constractor AdapterUART() */
 

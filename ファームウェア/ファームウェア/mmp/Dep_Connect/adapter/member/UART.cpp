@@ -166,7 +166,7 @@ public:
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; TBL[0].used = true;
     TBL[1].CONN = &Serial2; TBL[1].used = true;
-    String msg = " [OK] UART (USB CDC + Serial #2)";
+    String msg = " [OK] UART USB(CDC)+Serial#2";
 //--------------------------
 // サブ以外
 //・メイン：サブとの接続ポートを登録
@@ -178,7 +178,7 @@ public:
     TBL[0].CONN = &Serial ; TBL[0].used = true;
     TBL[1].CONN = &Serial1; TBL[1].used = true; //※サブとの接続用
     TBL[2].CONN = &Serial2; TBL[2].used = true;
-    String msg = " [OK] UART (USB CDC + Serial #1,2)";
+    String msg = " [OK] UART / USB(CDC) + Serial#1,2";
 #endif
 //--------------------------
     //│

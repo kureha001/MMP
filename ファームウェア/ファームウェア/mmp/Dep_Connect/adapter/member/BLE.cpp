@@ -179,7 +179,7 @@ public:
     //│
     //○メッセージ表示
     char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] BLE (NAME = %s)", devBLE::MY_NAME);
+    snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
     Log::prtln(String(msg));
     //┴
 #endif

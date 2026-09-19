@@ -448,7 +448,7 @@ public:
     //│
     //○メッセージ表示
     char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] HTTP (PORT = %d)", MY_PORT);
+    snprintf(msg, sizeof(msg), " [OK] HTTP / PORT.%d", MY_PORT);
     Log::prtln(String(msg));
     //┴
 #endif

@@ -2,15 +2,14 @@
 //========================================================
 // 通信部門／デバイス課：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/1)
+// Ver 1.3.2 (2026/09/19)
 // ・ソフトウェアシリアル追加
-// ・UARTはここですべて管理
 // ・UARTポートの見直し 
 //========================================================
 //┬
 //■┐インクルード
   //■Arduinoシステム
-  #include <SoftwareSerial.h>
+    #include <SoftwareSerial.h>
 //┴┴
 
 //########################################################
@@ -26,13 +25,6 @@ namespace devUART {
   bool ENABLED = false; // 有効判定：有効：true、無効：false
 
   //━━━━━━━━━━━━━━━━━
-  // ソフトウェアシリアル
-  //━━━━━━━━━━━━━━━━━
-  const int       MP3_MAX = 2 ; // 将来拡張できる上限
-  const int       MP3_CNT = 1 ; // 現在用意できている個数
-  SoftwareSerial* MP3[MP3_MAX];
-
-  //━━━━━━━━━━━━━━━━━
   // ボーレート
   //━━━━━━━━━━━━━━━━━
   const int BPS       = 921600;
@@ -42,18 +34,50 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   // ピンアサイン
   //━━━━━━━━━━━━━━━━━
-  const int PIN0_RX = 43; // ログ用
-  const int PIN0_TX = 44;
-  const int PIN1_RX = (MODE == MODE_MAIN) ? 17 : 8; // main<=>sub or Client
-  const int PIN1_TX = (MODE == MODE_MAIN) ? 18 : 9;
-  const int PIN2_RX = (MODE == MODE_MAIN) ? 13 :10; // MP3 or Client
-  const int PIN2_TX = (MODE == MODE_MAIN) ? 14 :11;
+    //─────────────────
+    //【Serial0】ログ専用
+    //─────────────────
+    const int P0_RX = 43;
+    const int P0_TX = 44;
 
-  // MP3プレイヤ用
-  const int PIN_MP3_1_RX = 11;
-  const int PIN_MP3_1_TX = 12;
-  const int PIN_MP3_2_RX = -1;
-  const int PIN_MP3_2_TX = -1;
+    //─────────────────
+    //【Serial1】
+    // ・メ イ ン： サブとの連携用
+    // ・サ　　ブ： メインとの連携用
+    // ・ブリッヂ： クライアント用
+    //─────────────────
+    const int P1_RX = (MODE == MODE_MAIN) ? 17 : 8;
+    const int P1_TX = (MODE == MODE_MAIN) ? 18 : 9;
+
+    //─────────────────
+    //【Serial2】クライアント専用
+    //─────────────────
+    const int P2_RX = (MODE == MODE_MAIN) ? 13 :10;
+    const int P2_TX = (MODE == MODE_MAIN) ? 14 :11;
+
+//###################################
+// メイン
+//###################################
+#if MODE == MODE_MAIN
+    //─────────────────
+    // SoftwareSerial：MP3プレイヤ専用
+    //─────────────────
+    const int MP3_BPS = 9600    ; // 通信速度
+    const int MP3_MAX = 2       ; // 拡張可能な個数
+    const int MP3_CNT = 1       ; // 実装個数
+    SoftwareSerial* MP3[MP3_MAX]; // コンテナ
+      //─────────────────
+      // デバイス１
+      //─────────────────
+      const int MP3_RX1 = 11;
+      const int MP3_TX1 = 12;
+      //─────────────────
+      // デバイス２
+      //─────────────────
+      const int MP3_RX2 = -1;
+      const int MP3_TX2 = -1;
+#endif
+//###################################
 
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
@@ -66,39 +90,40 @@ namespace devUART {
     String msg2   = "   [--] Serial #2";
     String msgMP3 = "";
     //│
-    //○USB CDCを起動(クライアント用)
+    //○【USB CDC】を起動
     Serial.begin(BPS);
     msgUSB = "   [OK] USB CDC <=> Client";
     //│
-    //○Serial0を起動(ログ用)
-    Serial0.begin(BPS_LOG, SERIAL_8N1, PIN0_RX, PIN0_TX);
+    //○【Serial0】を起動
+    Serial0.begin(BPS_LOG, SERIAL_8N1, P0_RX, P0_TX);
     snprintf(msg, sizeof(msg), "   [OK] Serial #0 -> %d bps ==> log", BPS_LOG);
     msg0 = msg;
     //│
-    //○Serial1を起動(メイン・サブ：クロス接続用／ブリッジ：クライアント用)
-    int intBps = (MODE == MODE_BRIDGE) ? BPS : BPS_CROSS;
-    Serial1.begin(intBps, SERIAL_8N1, PIN1_RX, PIN1_TX);
-    snprintf(msg, sizeof(msg), "   [OK] Serial #1 -> %d bps / Rx:%d Tx:%d", intBps, PIN1_RX, PIN1_TX);
+    //○【Serial1】を起動
+    int intBps = (MODE == MODE_BRIDGE) ? BPS : BPS_CROSS; // 通信速度：用途別に変更
+    Serial1.begin(intBps, SERIAL_8N1, P1_RX, P1_TX);
+    snprintf(msg, sizeof(msg), "   [OK] Serial #1 -> %d bps / Rx:%d Tx:%d", intBps, P1_RX, P1_TX);
     msg1 = msg; msg1 += (MODE == MODE_BRIDGE) ? " <=> Client" : " / main <=> sub";
     //│
-    //○Serial2を起動(クライアント)
-    Serial2.begin(BPS, SERIAL_8N1, PIN2_RX, PIN2_TX);
-    snprintf(msg, sizeof(msg), "   [OK] Serial #2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS, PIN2_RX, PIN2_TX);
+    //○【Serial2】を起動
+    Serial2.begin(BPS, SERIAL_8N1, P2_RX, P2_TX);
+    snprintf(msg, sizeof(msg), "   [OK] Serial #2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS, P2_RX, P2_TX);
     msg2 = msg;
     //│
-//------------------------------------
-// 機能モジュール(MP3)で使用
-//------------------------------------
+//###################################
+// メイン：機能モジュール用
+//###################################
 #if MODE == MODE_MAIN
-    //○Serial3を起動(クライアント)
+    //○【MP3用】を起動
     MP3[0] = new SoftwareSerial(0); 
-    MP3[0]->begin(9600, SWSERIAL_8N1, PIN_MP3_1_RX, PIN_MP3_1_TX, false, 256);
-    snprintf(msg, sizeof(msg),"   [OK] for MP3 #0 -> %d bps / Rx:%d Tx:%d", 9600, PIN_MP3_1_RX, PIN_MP3_1_TX);
+    MP3[0]->begin(MP3_BPS, SWSERIAL_8N1, MP3_RX1, MP3_TX1, false, 256);
+    snprintf(msg, sizeof(msg),"   [OK] for MP3 #0 -> %d bps / Rx:%d Tx:%d", MP3_BPS, MP3_RX1, MP3_TX1);
     msgMP3 = msg;
 #endif
+//###################################
     //│
     //○メッセージ表示
-    delay(2000);
+    delay(1000);
     Log::prtln("<<通信デバイスの初期化>>");
     Log::prtln(" [UART]"  );
     Log::prtln(msg0);

@@ -18,7 +18,7 @@
   //─────────────────
   // 経路アダプタ
   //─────────────────
-    #define ADP_UART true  //※どのモードも必須
+    #define ADP_UART true
     #define ADP_TCP  false
     #define ADP_HTTP false
     #define ADP_WSOC false
@@ -36,40 +36,42 @@
 //========================================================
 // コンパイルオプション
 //========================================================
-  #define MODE  MODE_MAIN
+  #define MODE  MODE_BRIDGE
 
   // UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
   // 強制制御：[Dep_Connect/adapter/base/_index_.h]にて実施
-  //・メ イ ン：サブ機と接続できない
-  //・サ　　ブ：強制的に適用
-  //・ブリッジ：強制的に適用
+  //・メ イ ン：サブ連携できない
+  //・サ　　ブ：GPIO UART使用不可
+  //・ブリッジ：GPIO UART使用不可
   #define TURBO false
 
   //□メインモード用
   #if   (MODE == MODE_MAIN)
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
-    #define ADP_ESPN true
-    #define ADP_BLE  true
-
-  //□サブモード用
-  #elif (MODE == MODE_SUB)
+    #define ADP_UART true 
     #define ADP_TCP  false
     #define ADP_HTTP false
     #define ADP_WSOC false
     #define ADP_ESPN false
     #define ADP_BLE  false
-    #define ADP_IIC  false
 
-  //□ブリッジモード用
-  #elif (MODE == MODE_BRIDGE)
+  //□サブモード用
+  #elif (MODE == MODE_SUB)
+    #define ADP_UART false 
     #define ADP_TCP  false
     #define ADP_HTTP false
     #define ADP_WSOC false
     #define ADP_ESPN true
     #define ADP_BLE  false
+    #define ADP_IIC  false
+
+  //□ブリッジモード用
+  #elif (MODE == MODE_BRIDGE)
+    #define ADP_TCP  true
+    #define ADP_HTTP true
+    #define ADP_WSOC true
+    #define ADP_ESPN true
+    #define ADP_BLE  true
 
   #endif
 

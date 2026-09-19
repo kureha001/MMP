@@ -23,11 +23,13 @@
   //│
   //□モジュール課：担当
   #include "module/system.h"      // システム管理
+#if MODE == MODE_MAIN
   #include "module/analog.h"      // アナログ入力
   #include "module/digital.h"     // デジタル入出力
   #include "module/pwm.h"         // PWM出力
   #include "module/IIC.h"         // IIC通信
   #include "module/MP3.h" // MP3プレイヤー
+#endif
 //┴┴
 
 //########################################################
@@ -45,40 +47,8 @@ namespace DepCommand {
     #define DAT_COUNT      10 // コマンド＋引数の個数
     #define REQUEST_LENGTH 96 // リクエスト全体のバッファ長
     //│
-    //□機能モジュール情報
-    struct T_MOD {
-    const char* name; // 名前
-    const char* desc; // 説明
-    };
-    //┴
-
-  //─────────────────
-  // 出席名簿を作成
-  //─────────────────
-    //┬
-    //□空の名簿を用意
+    //□担当名簿
     std::vector<ModuleBase*> MODULE;
-    //│
-    //□担当のプロファイル（名前・説明）カードを用意
-    static const T_MOD modSYS    = {"SYS"    , "System Management"   };
-    static const T_MOD modANA_I  = {"ANALOG" , "Analog Input"        };
-    static const T_MOD modDIG_IO = {"DIGITAL", "Digital Input/Output"};
-    static const T_MOD modPWM    = {"PWM"    , "PWM Output"          };
-    static const T_MOD modIIC    = {"IIC"    , "IIC Read/Write"      };
-    static const T_MOD modMP3    = {"MP3"    , "MP3 Player"          };
-    //│
-    //□出席名簿にプロファイルカードを格納
-    static const T_MOD* const MOD_LIST[] = {
-        &modSYS,
-        &modANA_I,
-        &modDIG_IO,
-        &modPWM,
-        &modIIC,
-        &modMP3,
-    };
-    //│
-    //□出席名簿の総件数
-    static const size_t MODs = sizeof(MOD_LIST) / sizeof(MOD_LIST[0]);
     //┴
 
 //========================================================
@@ -97,16 +67,14 @@ namespace DepCommand {
     //○始業のあいさつ（開始）
     Log::prtln("<<機能モジュールの初期化>>");
     //│
-    //○参加名簿と共に部下を招集（システムモジュール）
-    MODULE.push_back(new ModuleSystem (ctx, modSYS.name   , modSYS.desc   ));
-    //│
-#if (MODE == MODE_MAIN)
-    //○参加名簿と共に部下を招集（メインモード用モジュール）
-    MODULE.push_back(new ModuleAnalog (ctx, modANA_I.name , modANA_I.desc ));
-    MODULE.push_back(new ModuleDigital(ctx, modDIG_IO.name, modDIG_IO.desc));
-    MODULE.push_back(new ModulePwm    (ctx, modPWM.name   , modPWM.desc   ));
-    MODULE.push_back(new ModuleIIC    (ctx, modIIC.name   , modIIC.desc   ));
-    MODULE.push_back(new ModuleMP3    (ctx, modMP3.name   , modMP3.desc   ));
+    //○担当を招集
+    MODULE.push_back(new ModuleSystem (ctx, "SYS"    , "System Management"   ));
+#if MODE == MODE_MAIN
+    MODULE.push_back(new ModuleAnalog (ctx, "ANALOG" , "Analog Input"        ));
+    MODULE.push_back(new ModuleDigital(ctx, "DIGITAL", "Digital Input/Output"));
+    MODULE.push_back(new ModulePwm    (ctx, "PWM"    , "PWM Output"          ));
+    MODULE.push_back(new ModuleIIC    (ctx, "IIC"    , "IIC Read/Write"      ));
+    MODULE.push_back(new ModuleMP3    (ctx, "MP3"    , "MP3 Player"          ));
 #endif
     //│
     //◎┐担当の点呼

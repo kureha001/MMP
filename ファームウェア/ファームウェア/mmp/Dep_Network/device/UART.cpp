@@ -4,7 +4,7 @@
 //--------------------------------------------------------
 // Ver 1.3.2 (2026/09/19)
 // ・ソフトウェアシリアル追加
-// ・UARTポートの見直し 
+// ・UARTポートの全体見直し 
 //========================================================
 //┬
 //■┐インクルード
@@ -56,9 +56,9 @@ namespace devUART {
     const int P2_TX = (MODE == MODE_MAIN) ? 14 :11;
 
 //###################################
-// メイン
-//###################################
 #if MODE == MODE_MAIN
+//・メ イ ン：機能モジュールで利用
+//###################################
     //─────────────────
     // SoftwareSerial：MP3プレイヤ専用
     //─────────────────
@@ -90,30 +90,55 @@ namespace devUART {
     String msg2   = "   [--] Serial #2";
     String msgMP3 = "";
     //│
+//###################################
+#if ADP_UART || MODE == MODE_BRIDGE
+//・メ イ ン：任意
+//・サ　　ブ：任意
+//・ブリッジ：任意
+//###################################
     //○【USB CDC】を起動
     Serial.begin(BPS);
     msgUSB = "   [OK] USB CDC <=> Client";
+#endif
+//###################################
     //│
-    //○【Serial0】を起動
+    //○【Serial0】を起動 ※全モードで強制
     Serial0.begin(BPS_LOG, SERIAL_8N1, P0_RX, P0_TX);
     snprintf(msg, sizeof(msg), "   [OK] Serial #0 -> %d bps ==> log", BPS_LOG);
     msg0 = msg;
     //│
+//###################################
+#if (ADP_UART || MODE != MODE_MAIN) && TURBO == false
+//※ターボでは無効
+//・メ イ ン：任意（無しはサブ連携不可）
+//・サ　　ブ：強制（メイン連携の為）
+//・ブリッジ：強制（GPIOクライアント用）
+//###################################
     //○【Serial1】を起動
     int intBps = (MODE == MODE_BRIDGE) ? BPS : BPS_CROSS; // 通信速度：用途別に変更
     Serial1.begin(intBps, SERIAL_8N1, P1_RX, P1_TX);
     snprintf(msg, sizeof(msg), "   [OK] Serial #1 -> %d bps / Rx:%d Tx:%d", intBps, P1_RX, P1_TX);
     msg1 = msg; msg1 += (MODE == MODE_BRIDGE) ? " <=> Client" : " / main <=> sub";
+#endif
+//###################################
     //│
+//###################################
+#if (ADP_UART || MODE == MODE_BRIDGE) && TURBO == false
+//※ターボでは無効
+//・メ イ ン：任意
+//・サ　　ブ：任意
+//・ブリッジ：強制（GPIOクライアント用）
+//###################################
     //○【Serial2】を起動
     Serial2.begin(BPS, SERIAL_8N1, P2_RX, P2_TX);
     snprintf(msg, sizeof(msg), "   [OK] Serial #2 -> %d bps / Rx:%d Tx:%d <=> Client", BPS, P2_RX, P2_TX);
     msg2 = msg;
+#endif
+//###################################
     //│
 //###################################
-// メイン：機能モジュール用
-//###################################
 #if MODE == MODE_MAIN
+//###################################
     //○【MP3用】を起動
     MP3[0] = new SoftwareSerial(0); 
     MP3[0]->begin(MP3_BPS, SWSERIAL_8N1, MP3_RX1, MP3_TX1, false, 256);

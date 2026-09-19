@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/16)
+// Ver 1.3.2 (2026/09/19)
 // ・UARTポートの制限を見直し 
 // ・プリプロセッサ判定を整理
 // ・スロット構造体を削除
@@ -116,8 +116,8 @@ namespace DepConnect{
       //│
       //○┐個別係
         //│
-        //○UART担当(メイン・ブリッジは必須、サブは任意)
-        #if ADP_UART || MODE == MODE_MAIN || MODE == MODE_BRIDGE
+        //○UART担当(ブリッジは必須)
+        #if ADP_UART || MODE == MODE_BRIDGE
         if (devUART::ENABLED) ADAPTER.push_back(new AdapterUART(ctx));
         #endif
         //│

@@ -1,8 +1,9 @@
-// filename : Dep_Command/module/MP3_DFPlayerMini.h
+// filename : Dep_Command/module/MP3.h
 //========================================================
 // コマンド部門／モジュール課：MP3プレイヤー 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/19)
+// ・SofwareSerial化
 // ・UARTポートの見直し 
 //========================================================
 //┬
@@ -28,7 +29,6 @@ private:
     int              SER_START = 2; // Serial2を使うため(将来拡張予定)
 
     DFRobotDFPlayerMini MP3[SER_MAX]; // コンテナ
-    HardwareSerial*     SER[SER_MAX]; // MP3プレイヤに割り当てるシリアルデバイス
     int  PIN_RX[SER_MAX] = {devUART::PIN2_RX, 0}  ; // シリアルデバイスのピン（RX） 
     int  PIN_TX[SER_MAX] = {devUART::PIN2_TX, 0}  ; // シリアルデバイスのピン（TX）
     bool ENABLE[SER_MAX] = {false, false}; // MP3プレイヤの有効性
@@ -47,20 +47,15 @@ public:
     //◎┐初期設定
     for (int ID = 0; ID < SER_MAX; ++ID) {
       //│
-      //○シリアルボートを用意
+      //○シリアルボートを確認
       if (ID == SER_CNT) break;
-      SER[ID] = new HardwareSerial(ID + SER_START); 
-      SER[ID]->begin(9600, SERIAL_8N1, PIN_RX[ID], PIN_TX[ID]);
       //│
       //○MP3プレイヤーを生成
-      if (MP3[ID].begin(*SER[ID])) ENABLE[ID] = true;
+      if (MP3[ID].begin(*devUART::MP3[ID])) ENABLE[ID] = true;
       //│
       //○結果表示
       char msg[128];
-      snprintf(msg, sizeof(msg), 
-        "　 [%s] Device  ID : %d (Serial%d)",
-        (ENABLE[ID] ? "OK" : "NG"), ID, (ID + SER_START)
-      );
+      snprintf(msg, sizeof(msg), "　 [%s] Device #%d", (ENABLE[ID] ? "OK" : "NG"), ID);
       Log::prtln(String(msg));
     } /* END-for */
     //│
@@ -253,7 +248,7 @@ public:
   //━━━━━━━━━━━━━━━━━
     // ───────────────────────────────
     // 機能：機器の状態
-    // 書式：X:<機器番号1〜4>!
+    // 書式：X:<機器番号1〜2>!
     // 制限 : とくになし
     // 戻値："xyzz!" x:メジャー／y:マイナー／zz:リビジョン
     // ───────────────────────────────
@@ -295,16 +290,20 @@ public:
         int idx = 0;
         if (!checkDev(dat[1], idx)) return;
 
-        // ２．コマンド実行 ※エラーならリトライ
-        int res = -1;
-        for (int tries = 0; tries < 10 && res == -1; ++tries) {
-          if      (strcmp(Cmd,"INFO/TRACK" ) == 0){res = MP3[idx].readState()            ;} 
-          else if (strcmp(Cmd,"INFO/VOLUME") == 0){res = MP3[idx].readVolume()           ;}
-          else if (strcmp(Cmd,"INFO/EQ"    ) == 0){res = MP3[idx].readEQ()               ;}
-          else if (strcmp(Cmd,"INFO/FILEID") == 0){res = MP3[idx].readCurrentFileNumber();}
-          else if (strcmp(Cmd,"INFO/FILES" ) == 0){res = MP3[idx].readFileCounts()       ;}
+        // ２．コマンド実行
+        // ※なぜか複数回実施しないと正常値が得られない
+        // ※エラーならリトライ
+        int res  = -1;
+        int cnt1 = 5;
+        int cnt2 = 3;
+        int i    = 0;
+        for (int tries = 0; tries < cnt1 && res == -1; ++tries) {
+          if      (strcmp(Cmd,"INFO/TRACK" ) == 0) for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readState()            ;}
+          else if (strcmp(Cmd,"INFO/VOLUME") == 0) for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readVolume()           ;}
+          else if (strcmp(Cmd,"INFO/EQ"    ) == 0) for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readEQ()               ;}
+          else if (strcmp(Cmd,"INFO/FILEID") == 0) for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readCurrentFileNumber();}
+          else if (strcmp(Cmd,"INFO/FILES" ) == 0) for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readFileCounts()       ;}
           if (res != -1) break;
-          delay(10); //時間調整(μs)
         }
 
         // ３．後処理：
@@ -342,12 +341,15 @@ public:
   // 対象トラック状況
   // ───────────────
   void reTrackkState(int idx){
+    // ※なぜか複数回実施しないと正常値が得られない
     // ※エラーならリトライ
     int res = -1;
-    for (int tries = 0; tries < 10 && res == -1; ++tries) {
-      res = MP3[idx].readState();
+    int cnt1 = 5;
+    int cnt2 = 3;
+    int i    = 0;
+    for (int tries = 0; tries < cnt1 && res == -1; ++tries) {
+      for (i=0;i<cnt2;++i){delay(10);res=MP3[idx].readState();}
       if (res != -1) break;
-      delay(10); //時間調整(μs)
     } /* END-for*/
     _ResValue(res);
   } /* reTrackkState() */

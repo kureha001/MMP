@@ -2,8 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/16)
-// ・メインモード専用に変更
+// Ver 1.3.2 (2026/09/19)
+// ・使用するUARTをモード別に構築
 // ・標準スロットを廃止
 //========================================================
 
@@ -157,31 +157,30 @@ public:
     //┬
     //●接続管理TBLを作成
 //--------------------------
-// メイン
-//--------------------------
-#if (MODE == MODE_MAIN)
-    SLOTs = 2;
-    TBL = new T_SLOT[SLOTs];
-    TBL[0].CONN = &Serial ; TBL[0].used = true;
-    TBL[1].CONN = &Serial1; TBL[1].used = true; // サブとの通信用
-    String msg = " [OK] UART (USB CDC + Serial #1)";
-//--------------------------
 // サブ
+//・ブリッジ：すべてクライアント用
+//・メインとの接続ポートは登録しない
 //--------------------------
-#elif (MODE == MODE_SUB)
+#if (MODE == MODE_SUB)
     SLOTs = 2;
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; TBL[0].used = true;
     TBL[1].CONN = &Serial2; TBL[1].used = true;
     String msg = " [OK] UART (USB CDC + Serial #2)";
+//--------------------------
+// サブ以外
+//・メイン：サブとの接続ポートを登録
+//・ブリッジ：すべてクライアント用
+//--------------------------
 #else
     SLOTs = 3;
     TBL = new T_SLOT[SLOTs];
     TBL[0].CONN = &Serial ; TBL[0].used = true;
-    TBL[1].CONN = &Serial1; TBL[1].used = true;
+    TBL[1].CONN = &Serial1; TBL[1].used = true; //※サブとの接続用
     TBL[2].CONN = &Serial2; TBL[2].used = true;
     String msg = " [OK] UART (USB CDC + Serial #1,2)";
 #endif
+//--------------------------
     //│
     //●受信タスクを起動
     RUN_TASK();

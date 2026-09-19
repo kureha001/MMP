@@ -81,19 +81,22 @@ namespace devIIC {
   void START() {
     Log::prtln(" [I2C]");
 
-    // １．起動ガード：device.json の読み込み
+    //○起動ガード：device.json の読み込み
     if (!READ_JSON()) {
       ENABLED = false;
       return;
     }
 
-    // ２．IICバスの初期化
+    //○IICバスの初期化
     Wire.begin(SDA_PIN, SCL_PIN);
 
-    // ３．完了出力＆有効性セット
+    //○メッセージ表示
     char msg[128];
     snprintf(msg, sizeof(msg), "   [OK] IIC -> SDA[%d], SCL[%d]\n", SDA_PIN, SCL_PIN);
     Log::prt (String(msg));
+    Log::prtln("");
+
+    //○有効性セット
     ENABLED = true;
   } /* START() */
 

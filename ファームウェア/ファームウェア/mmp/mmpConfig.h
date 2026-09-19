@@ -56,11 +56,11 @@
 
   //□サブモード用
   #elif (MODE == MODE_SUB)
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
-    #define ADP_ESPN true
-    #define ADP_BLE  true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
+    #define ADP_ESPN false
+    #define ADP_BLE  false
     #define ADP_IIC  false
 
   //□ブリッジモード用

@@ -15,8 +15,6 @@
   //━━━━━━━━━━━━━━━━━
   #include "UART.cpp"
   namespace devUART{
-    extern const int PIN2_RX;
-    extern const int PIN2_TX;
     extern bool ENABLED ; // 有効性
     void START()        ; // デバイス開始の指示
   }

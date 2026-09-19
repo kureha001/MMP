@@ -566,6 +566,9 @@ namespace devWiFi {
         isOK = P3_MODE_ALTERNATIVE();
     } /* END-if */
     //│
+    //○終了表示
+    Log::prtln("");
+    //│
     //○有効性セット
     ENABLED = isOK;
     //┴

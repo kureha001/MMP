@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：WEB Socket 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/20)
+// ・ブリッジモードの不具合対応
 // ・UARTポートの見直し 
 //========================================================
 //┬
@@ -117,9 +118,9 @@ private:
 //§転送処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // ポーリング用前処理
+  // 前処理(一般)
   //━━━━━━━━━━━━━━━━━
-  bool handle_Begin() override final {
+  bool handle_Setup() override final {
 #if (MODE == MODE_BRIDGE)
     //※クライアントは未接続でも loop() を回し続けて接続状態の変化を検知
     //※接続の有無に関わらず、後続へ進める（false）
@@ -142,7 +143,7 @@ private:
     return false;
     //┴
 #endif
-  } /* handle_begin() */
+  }
 
 //############################
 //# 転送機能はブリッジのみ
@@ -168,13 +169,13 @@ private:
         delay(200);
       }
       //│
-      //○タイムアウトはエラーCDをセット
-      if (!MY_NET.isConnected()) {ctx.strFrame = RCD::Trn1Err; return;}
+      //○完了MSGにエラーCDをセット
+      if (!MY_NET.isConnected()) {ctx.bridge.MSG = RCD::Trn1Err; return;}
       //┴
     }
     //│
-    //○リクエストを転送
-    MY_NET.sendTXT(ctx.strFrame);
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    MY_NET.sendTXT(ctx.bridge.Frame);
     //┴
   };
 #endif
@@ -190,24 +191,39 @@ public:
   AdapterWEB_Socket(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
 #if (MODE == MODE_BRIDGE)
     //┬
-    //○メッセージ表示
-    Log::prtln(" [OK] WEB Socket");
+    //○┐前処理
+      //○（処理なし）
+      //┴
+    //│
+    //○┐主処理
+      //○（処理なし）
+      //┴
+    //│
+    //○┐後処理
+      //○メッセージ表示
+      Log::prtln(" [OK] WEB Socket");
+      //┴
     //┴
 #else
     //┬
-    //○インスタンスを取得
-    MY_INSTANS = this;
+    //○┐前処理
+      //○インスタンスを登録
+      MY_INSTANS = this;
+      //┴
     //│
-    //○サーバのサービスを開始
-    MY_NET = new WebSocketsServer(MY_PORT); // サーバ生成
-    MY_NET->onEvent(ON_RECIVE)            ; // コールバック関数登録
-    MY_NET->begin()                       ; // サーバ起動
+    //○┐主処理
+      //○サーバのサービスを開始
+      MY_NET = new WebSocketsServer(MY_PORT); // サーバ生成
+      MY_NET->onEvent(ON_RECIVE)            ; // コールバック関数登録
+      MY_NET->begin()                       ; // サーバ起動
+      //┴
     //│
-    //○メッセージ表示
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] WEB Socket / PORT.%d", MY_PORT);
-    Log::prtln(String(msg));
-    //┴
+    //○┐後処理
+      //○メッセージ表示
+      char msg[128];
+      snprintf(msg, sizeof(msg), " [OK] WEB Socket / PORT.%d", MY_PORT);
+      Log::prtln(String(msg));
+      //┴
 #endif
   } /* constractor AdapterWEB_Socket() */
 

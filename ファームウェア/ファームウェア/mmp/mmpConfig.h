@@ -99,6 +99,7 @@ namespace RCD{
   const String AuthErr2 = "#SS2!"; // 認証NG
 
   //ブリッジモード用
+  const String Trn0Err = "#TR0!"; // ブリッジ対象外 
   const String Trn1Err = "#TR1!"; // 
   const String Trn2Err = "#TR2!"; // 
 

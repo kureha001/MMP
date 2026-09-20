@@ -31,7 +31,7 @@
     //─────────────────
     #include "md_bridge.cpp"
     namespace modeBridge{
-      void RUN();
+      void RUN(int argSID, String argFrame);
       bool TRANS_BEGIN(int argAID);
       void TRANS_END();
     }

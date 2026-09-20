@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：ESP-NOW 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/20)
+// ・ブリッジモードの不具合対応
 // ・UARTポートの見直し 
 //========================================================
 //┬
@@ -113,12 +114,10 @@ private:
 #if (MODE != MODE_BRIDGE)
     //┬
     //●MACアドレス文字列をデコード
-    uint8_t macBuf[6]; stringToMac(argConn, macBuf);
-    //│
     //●クライアントにレスポンス    
-    sendRaw(macBuf, ctx.resMSG);
-    //│
     //●ログ出力
+    uint8_t macBuf[6]; stringToMac(argConn, macBuf);
+    sendRaw(macBuf, ctx.resMSG);
     adpFnBase::SHOW_LOG();
     //┴
 #endif
@@ -168,8 +167,8 @@ private:
     uint8_t macBuf[6] = {0};
     rawStringToMac(ctx.bridge.Dat1, macBuf);
     //│
-    //●リクエストを転送
-    sendRaw(macBuf, ctx.strFrame);
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    sendRaw(macBuf, ctx.bridge.Frame);
     //┴
   };
 #endif
@@ -184,18 +183,24 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterESPNOW(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //○インスタンスを登録
-    MY_INSTANS = this;
+    //○┐前処理
+      //○インスタンスを登録
+      MY_INSTANS = this;
+      //┴
     //│
-    //○サービス資源を生成
-    if (esp_now_init() != ESP_OK) {
-        Log::prtln(" [NG] ESP-NOW (初期化失敗)");
-        return;
-    } /* END-if */
-    esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
+    //○┐主処理
+      //○サービス資源を生成
+      if (esp_now_init() != ESP_OK) {
+          Log::prtln(" [NG] ESP-NOW (初期化失敗)");
+          return;
+      } /* END-if */
+      esp_now_register_recv_cb(ON_RECIVE); // コールバック関数登録
+      //┴
     //│
-    //○メッセージ表示
-    Log::prtln(" [OK] ESP-NOW / MAC." + String(WiFi.macAddress()));
+    //○┐後処理
+      //○メッセージ表示
+      Log::prtln(" [OK] ESP-NOW / MAC." + String(WiFi.macAddress()));
+      //┴
     //┴
   } /* constractor AdapterESPNOW() */
 

@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：TCP(高速版) 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/20)
 // ・新規
 //========================================================
 //┬
@@ -163,7 +163,6 @@ private:
 //--------------------------
   } /* SLOT_ATTACH() */
 
-
 //========================================================
 //§返信処理
 //========================================================
@@ -171,9 +170,9 @@ private:
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(WiFiClient argConn) {
-//############################
-//# ブリッジは[trans()]で処理
-//############################
+//--------------------------
+//➡ブリッジ：trans()で処理
+//--------------------------
 #if (MODE != MODE_BRIDGE)
     //┬
     //○クライアントにレスポンス
@@ -183,11 +182,12 @@ private:
     adpFnBase::SHOW_LOG();
     //┴
 #endif
-//############################
+//--------------------------
   } /* SEND_CONN() */
 
+
 //############################
-//# 転送機能はブリッジのみ
+//# 転送処理はブリッジのみ
 //############################
 #if (MODE == MODE_BRIDGE)
 //========================================================
@@ -206,42 +206,59 @@ private:
         String   ip   = ctx.bridge.Dat1;
         uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
         MY_NET.setTimeout(2000);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = RCD::Trn1Err; return;}
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
-        //│ ○コンテクストにエラーCDをセット
+        //│ ○完了MSGにエラーCDをセット
         //│ ▼終了：早期リターン
         //┴
       //└┐（その他）
         //┴
     } /* END-if */
     //│
-    //○リクエストを転送
+    //○退避したフレームでリクエスト
     MY_NET.print(ctx.strFrame);
     //│
-    //●レスポンスを取得
-    String retFrame = adpFnStream::GET_FRAME(MY_NET);
+    //●フレームに受信データをセット
+    String ctx.strFrame = adpFnStream::GET_FRAME(MY_NET);
+    if (ctx.strFrame == "") ctx.bridge.MSG == RCD::Trn2Err;
+    //│＼（接続に失敗した場合）
+    //│ ○完了MSGにエラーCDをセット
+    //│ ▼終了：早期リターン
     //│
-    //○レスポンスをコンテクストに反映
-    ctx.strFrame = (retFrame == "" ? RCD::Trn2Err : retFrame);
-    ctx.resMSG   = ctx.strFrame;
+    //○終了MSGに[フレーム内容]をセット
+    ctx.bridge.MSG = ctx.strFrame;
     //┴
-  };
+  } /* trans() */
 
   //━━━━━━━━━━━━━━━━━
-  // ポーリングの後処理
+  // 前処理(ブリッジ用)
   //━━━━━━━━━━━━━━━━━
-  void handle_End() override final {
-    //○転送処理を開始
-    if (modeBridge::TRANS_BEGIN(ADP_ID)) return
-    //│＼（転送要求が無い場合）
-    //│ ▼終了：早期リターン
+  bool handle_SetupBridge() override {
+    //┬
+    //●進行判定を取得
+    bool retGo = modeBridge::TRANS_BEGIN(ADP_ID);
+    //│＼（[依頼中]ではない場合）
+    //│ ▼終了：早期リターン（進行OK/NG)
+    //│
+    //○処理対象を確認
+    if (ADP_ID != ctx.bridge.adpID || ctx.bridge.Stat != BSTAT::REQ)
+    return retGo;
+    //│＼（[スレーブ以外]または[依頼中以外]場合）
+    //│ ▼終了：早期リターン（進行判定)
+    //│
+    //○進行状況を[処理中]にセット
+    ctx.bridge.Stat = BSTAT::BUSY;
     //│
     //●転送を実施
     trans();
     //│
-    //○転送処理を終了
-    modeBridge::TRANS_END();
-  }
+    //●転送処理（終了）...進行状況を[処理済]に遷移
+    TmodeBridge::TRANS_END()
+    //│
+    //▼返却：正常終了(進行判定)
+    return retGo;
+    //┴
+  } /* handle_SetupBridge() */
 #endif
 //############################
 
@@ -320,14 +337,15 @@ public:
       if (retFrame == "") continue;
       //│＼（受信データがない場合）
       //│ ▽次へ：次のスロットを走査
+      //│
+      //●コンテキストを初期化
+      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
 //--------------------------
 //【メイン】主処理を実行
 //--------------------------
 #if   (MODE == MODE_MAIN)
-      //●コンテキストを初期化
       //●コマンドを実行
       //●実行結果をレスポンス
-      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
       modeMain::RUN();
       SEND_CONN(TBL[ID].CONN);
       //┴
@@ -335,37 +353,50 @@ public:
 //【サブ】主処理を実行
 //--------------------------
 #elif (MODE == MODE_SUB)
-      //●コンテキストを初期化
       //●コマンドを実行
       //●実行結果をレスポンス
-      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
       modeSub::RUN();
       SEND_CONN(TBL[ID].CONN);
       //┴
 //--------------------------
 //【ブリッジ】
 //--------------------------
-      //◇┐スレーブであるか確認
-      if(ADP_ID == ctx.bridge.adpID) {
-        //├┐（スレーブの場合）
-          //●コンテキストを初期化
-          //○ステータスを[処理済]にセット
-          adpFnBase::SETUP_CTX(ADP_ID, retFrame);
-          ctx.bridge.Stat = BSTAT::DONE;
-          //┴
-      } else continue;
-        //└┐（その他：対象外アダプタの場合）
-          //▽次へ：スキップ ※無駄なレスポンスを破棄
+      //○スレーブを確認
+      if (ADP_ID != ctx.bridge.adpID) continue;
+      //│＼（アダプタが[対象外]の場合）
+      //│ ▽次へ：次のキューを走査
       //│
-      //▼終了：早期リターン ※スレーブの処理は1件だけで良い
-      return;
+      //◇┐[依頼中→処理中]に遷移
+      if(ctx.bridge.Stat == BSTAT::REQ ) {
+        //├┐（[依頼中]の場合）
+          //○進行状況を[処理中]にセット
+          //●転送を実施
+          //●転送処理（終了）...進捗状況を[処理済]に遷移
+          ctx.bridge.Stat = BSTAT::BUSY;
+          trans();
+          modeBridge::TRANS_END();
+          //┴
+        //└┐（その他）
+          //┴
+      } /* END-if */
+      //│
+      //◇┐[処理中→処理済]に遷移
+      if (ctx.bridge.Stat == BSTAT::BUSY) {
+        //├┐（[処理中] の場合）
+          //○レスポンスMSGに[完了MSG内容]をセット
+          //○進行状況を[処理済]にセット
+          //▼終了：早期リターン ※1件ずつ処理
+          ctx.resMSG      = ctx.bridge.MSG;
+          ctx.bridge.Stat = BSTAT::DONE;
+          return;
+        //└┐（その他）
+          //┴
+      } /* END-if */
+      //┴
 #endif
 //--------------------------
     } /* END-for */
-  //│
-  //●後処理
-  handle_End();
-  //┴
+    //┴
   } /* handle() */
 
 }; /* class AdapterTCP */

@@ -58,7 +58,7 @@
       //○経過時間を確認
       if (millis() - startTime > LIMIT::TIMEOUT_READ) {
       //│＼（タイムアウトした場合）
-          //○コンテクストにエラーCDを反映
+          //○レスポンスMSGにエラーCDを反映
           //▼終了：早期リターン
           ctx.resMSG = RCD::TimOut;
           if (Log::ENABLE) Log::prtln("(3/3) Error:Response timeout from MMP(MAIN).");
@@ -70,7 +70,7 @@
       //┴
     } /* END-while */
     //│
-    //○コンテクストに[MMP本体からのレスポンス]を反映
+    //○レスポンスMSGに[MMP本体からのレスポンス]を反映
     if (Log::ENABLE) Log::prtln("(3/3) Success.");
     ctx.resMSG = strRX;
     //┴

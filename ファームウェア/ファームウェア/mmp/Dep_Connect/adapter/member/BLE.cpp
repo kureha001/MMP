@@ -2,7 +2,8 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：BLE 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/20)
+// ・ブリッジモードの不具合対応
 // ・UARTポートの見直し 
 //========================================================
 //┬
@@ -137,13 +138,22 @@ private:
   //━━━━━━━━━━━━━━━━━
   void trans() override final {
     //┬
-    //○初期化資源の接続健全性を確認
+    //○クライアント資源の状態を確認
     if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
-      {ctx.strFrame = RCD::Trn1Err; return;}
+    {ctx.bridge.MSG = RCD::Trn1Err; return;}
+    //│＼（状態が[未接続]の場合）
+    //│ ○完了MSGにエラーCDをセット
+    //│ ▼終了：早期リターン
     //│
-    //○確立済みの通信口（RX）へリクエストを書き込み（非同期送出）
-    if (devBLE::BLE_CLI_RX != nullptr)
-      devBLE::BLE_CLI_RX->writeValue(ctx.strFrame.c_str(), ctx.strFrame.length());
+    //○通信口（RX）の状態を確認
+    if (devBLE::BLE_CLI_RX == nullptr)
+    {ctx.bridge.MSG = RCD::Trn2Err; return;}
+    //│＼（状態が[未接続]の場合）
+    //│ ○完了MSGにエラーCDをセット
+    //│ ▼終了：早期リターン
+    //│
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    devBLE::BLE_CLI_RX->writeValue(ctx.bridge.Frame.c_str(), ctx.bridge.Frame.length());
     //┴
   };
 #endif
@@ -157,30 +167,36 @@ public:
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
   AdapterBLE(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
-#if (MODE == MODE_BRIDGE)
     //┬
-    //○インスタンスを取得
-    MY_INSTANS = this;
+    //○┐前処理
+      //○インスタンスを登録
+      MY_INSTANS = this;
+      //┴
     //│
-    //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
-    if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
-      devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
+#if (MODE == MODE_BRIDGE)
+    //○┐主処理
+      //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
+      if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
+        devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
+      //┴
     //│
-    //○メッセージ表示
-    Log::prtln(" [OK] BLE");
+    //○┐後処理
+      //○メッセージ表示
+      Log::prtln(" [OK] BLE");
+      //┴
     //┴
 #else
-    //┬
-    //○インスタンスを取得
-    MY_INSTANS = this;
+    //○┐主処理
+      //○受信コールバックを登録
+      if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
+      //┴
     //│
-    //○受信コールバックを登録
-    if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
-    //│
-    //○メッセージ表示
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
-    Log::prtln(String(msg));
+    //○┐後処理
+      //○メッセージ表示
+      char msg[128];
+      snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
+      Log::prtln(String(msg));
+      //┴
     //┴
 #endif
   } /* constractor AdapterBLE() */

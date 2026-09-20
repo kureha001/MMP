@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART(高速版) 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/20)
 // ・新規
 //========================================================
 
@@ -68,22 +68,33 @@ private:
   //━━━━━━━━━━━━━━━━━
   // ポーリングの前処理
   //━━━━━━━━━━━━━━━━━
-  bool handle_Begin() override final {
+  bool handle_SetupBridge() override final {
     //┬
-    //◇ブリッジマスタとして進行を制御
-    switch (ctx.bridge.Stat) {
-      case BSTAT::IDLE: return false; // 待機中：進行OK
-      case BSTAT::REQ : return true ; // 依頼中：進行NG
-      case BSTAT::BUSY: return true ; // 処理中：進行NG
-      case BSTAT::DONE:               // 処理済：進行OK
-        //●ブリッジ元にレスポンス
-        //○進行状況を［待機中］にセット
-        //▼終了：早期リターン（進行OK）
-        SEND_CONN();
-        ctx.bridge.Stat = BSTAT::IDLE;
-        return false;
-    } /* END-switch */
-    return true; // 想定外：進行NG
+    //○┐前処理
+      //●マスタとして進行判定
+      switch (ctx.bridge.Stat) {
+        case BSTAT::IDLE: return false; // 待機中➡進行OK ※リクエスト受付
+        case BSTAT::REQ : return true ; // 依頼中➡進行NG
+        case BSTAT::BUSY: return true ; // 処理中➡進行NG
+        case BSTAT::DONE: break       ; // 処理済⇒後続処理
+        default         : return true ; // 想定外➡進行NG
+      } /* END-switch */
+      //┴
+    //│
+    //○┐主処理
+      //●クライアントにレスポンス
+      //○進行状況を[待機中]に遷移
+      SEND_CONN();
+      ctx.bridge.Stat = BSTAT::IDLE;
+      //┴
+    //│
+    //○┐後処理
+      //○コンテクスト(ブリッジ関係)を初期化
+      ctx.bridge.Frame = ""; // フレーム：空
+      ctx.bridge.MSG   = ""; // 完了MSG ：空
+      //│
+      //▼返却：正常終了(進行OK)
+      return false;
   } /* handle_Begin() */
 #endif
 //############################
@@ -107,54 +118,62 @@ public:
   //━━━━━━━━━━━━━━━━━
   void handle() override final {
     //┬
-    //●前処理
-    if (handle_Begin()) return;
-    //│＼（進行NGの場合）
-    //│ ▼終了：早期リターン
+    //○┐前処理
+      //●ブリッジ用
+      if (handle_SetupBridge()) return;
+      //│＼（進行NGの場合）
+      //│ ▼終了：早期リターン
+      //┴
     //│
-    //●ストリームを受信
-    String retFrame = adpFnStream::GET_FRAME(*(CONN));
-    if (retFrame == "") return;
-    //│＼（受信データがない場合）
-    //│ ▼終了：早期リターン
-    //│
-    //●コンテキストを初期化
-    adpFnBase::SETUP_CTX(ADP_ID, retFrame);
-    //│
+    //○┐主処理
+      //●ストリームを受信
+      String retFrame = adpFnStream::GET_FRAME(*(CONN));
+      if (retFrame == "") return;
+      //│＼（受信データがない場合）
+      //│ ▼終了：早期リターン
+      //│
+      //●コンテキストを初期化
+      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
+      //│
 //--------------------------
-//【メイン】主処理を実行
+//➡メイン
 //--------------------------
 #if   (MODE == MODE_MAIN)
-    //●コマンドを実行
-    //●実行結果をレスポンス
-    modeMain::RUN();
-    SEND_CONN();
-    //┴
+      //●コマンドを実行
+      //●実行結果をレスポンス
+      modeMain::RUN();
+      SEND_CONN();
+      //┴
 //--------------------------
-//【サブ】主処理を実行
+//➡サブ
 //--------------------------
 #elif (MODE == MODE_SUB)
-    //●コマンドを実行
-    //●実行結果をレスポンス
-    modeSub::RUN();
-    SEND_CONN();
-    //┴
+      //●コマンドを実行
+      //●実行結果をレスポンス
+      modeSub::RUN();
+      SEND_CONN();
+      //┴
 //--------------------------
 //【ブリッジ】マスタ処理
 //--------------------------
 #elif (MODE == MODE_BRIDGE)
-    modeBridge::RUN();
-    if (ctx.resMSG == "") ctx.bridge.Stat = BSTAT::REQ;
-    else SEND_CONN();
-    //◆┐ブリッジ処理を実行
-      //├┐（リクエストが[MMPコマンド転送]の場合）
-        //○進捗状況を[依頼中]にセット
-        //┴
-      //└┐（その他：[特殊コマンド実行][システムコマンド実行][エラーあり]）
-        //●ブリッジ元にレスポンス
-        //┴
-    //┴
+      //●ブリッジ処理を実行
+      modeBridge::RUN();
+      if (ctx.resMSG != "") {SEND_CONN(); return:}
+      //│＼（[内部コマンド応答済][エラーあり]の場合）
+      //│ ○クライアントにレスポンス
+      //│ ▼終了：早期リターン
+      //│
+      //○進捗状況を[依頼中]にセット
+      //▼終了：早期リターン ※1件ずつ処理
+      ctx.bridge.Stat = BSTAT::REQ;
+      return;
 #endif
+    //│
+    //○┐後処理
+      //○（処理なし）
+      //┴
+    //┴
 //--------------------------
 } /* handle() */
 

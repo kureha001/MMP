@@ -2,8 +2,9 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：TCP 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
-// ・UARTポートの見直し 
+// Ver 1.3.2 (2026/09/20)
+// ・ブリッジモードの不具合対応
+// ・UARTポートの見直し
 // ・標準スロットを廃止
 // ・プリプロセッサを最適化
 // ・スロット関連の関数名を刷新
@@ -280,9 +281,9 @@ private:
         String   ip   = ctx.bridge.Dat1;
         uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
         MY_NET.setTimeout(LIMIT::TIMEOUT_CONNECT);
-        if (!MY_NET.connect(ip.c_str(), port)) {ctx.strFrame = RCD::Trn1Err; return;}
+        if (!MY_NET.connect(ip.c_str(), port)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
-        //│ ○コンテクストにエラーCDをセット
+        //│ ○完了MSGにエラーCDをセット
         //│ ▼終了：早期リターン
         //│
         //○0番スロットをリセットして自身を登録準備
@@ -295,8 +296,8 @@ private:
         //┴
     } /* END-if */
     //│
-    //○リクエストを転送
-    MY_NET.print(ctx.strFrame);
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    MY_NET.print(ctx.bridge.Frame);
     //┴
   };
 #endif

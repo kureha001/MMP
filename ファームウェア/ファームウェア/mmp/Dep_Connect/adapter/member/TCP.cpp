@@ -316,33 +316,49 @@ public:
 //--------------------------
 #if (MODE == MODE_BRIDGE)
     //┬
-    //○接続管理TBLを作成
-    SLOTs = 1;
-    TBL   = new T_SLOT[SLOTs];
+    //○┐前処理
+      //○（処理なし）
+      //┴
     //│
-    //○メッセージ表示
-    Log::prtln(" [OK] TCP");
+    //○┐主処理
+      //○接続管理TBLを作成
+      SLOTs = 1;
+      TBL   = new T_SLOT[SLOTs];
+      //┴
+    //│
+    //○┐後処理
+      //○メッセージ表示
+      Log::prtln(" [OK] TCP");
+      //┴
     //┴
 //--------------------------
 // ブリッジ以外は複数スロット
 //--------------------------
 #else
     //┬
-    //○接続管理TBLを作成
-    SLOTs = 10;
-    TBL   = new T_SLOT[SLOTs];
+    //○┐前処理
+      //○（処理なし）
+      //┴
     //│
-    //○サービス資源を生成
-    MY_NET = new WiFiServer(MY_PORT);
-    MY_NET->begin();
+    //○┐主処理
+      //○接続管理TBLを作成
+      SLOTs = 10;
+      TBL   = new T_SLOT[SLOTs];
+      //│
+      //○サービス資源を生成
+      MY_NET = new WiFiServer(MY_PORT);
+      MY_NET->begin();
+      //│
+      //●受信タスクを別スレッドとして起動
+      RUN_TASK();
+      //┴
     //│
-    //●受信タスクを別スレッドとして起動
-    RUN_TASK();
-    //│
-    //○メッセージ表示
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] TCP / PORT.%d", MY_PORT);
-    Log::prtln(String(msg));
+    //○┐後処理
+      //○メッセージ表示
+      char msg[128];
+      snprintf(msg, sizeof(msg), " [OK] TCP / PORT.%d", MY_PORT);
+      Log::prtln(String(msg));
+      //┴
     //┴
 #endif
 //--------------------------

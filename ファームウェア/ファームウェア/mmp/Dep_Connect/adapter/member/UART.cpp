@@ -143,8 +143,9 @@ private:
     //│
     //○┐主処理
       //●クライアント(退避済スロット)にレスポンス
-      //○進行状況を[待機中]に遷移
       SEND_CONN(TBL[ctx.bridge.slotID].CONN);
+      //│
+      //○進行状況を[待機中]に遷移
       ctx.bridge.Stat  = BSTAT::IDLE;
       //┴
     //│

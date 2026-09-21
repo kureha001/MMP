@@ -2,10 +2,7 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/19)
-// ・UARTポートの制限を見直し 
-// ・プリプロセッサ判定を整理
-// ・スロット構造体を削除
+// Ver 1.3.2 (2026/09/21)
 //========================================================
 //┬
 //□┐インクルード
@@ -16,44 +13,20 @@
 //┴┴
 
 //========================================================
-// 共有資源
-//========================================================
-//┬
-//□┐情報
-  //│
-  //□経路ID
-  inline constexpr int ADP_ID_UART = 0;
-  inline constexpr int ADP_ID_TCP  = 1;
-  inline constexpr int ADP_ID_HTTP = 2;
-  inline constexpr int ADP_ID_WSOC = 3;
-  inline constexpr int ADP_ID_BLE  = 4;
-  inline constexpr int ADP_ID_ESPN = 5;
-  inline constexpr int ADP_ID_IIC  = 6;
-  //│
-  //□ブリッジの進捗状況
-  namespace BSTAT {
-    inline constexpr int IDLE = 0; // 待機中
-    inline constexpr int REQ  = 1; // 依頼中（マスタ→スレーブ）
-    inline constexpr int BUSY = 2; // 処理中（スレーブ実行中）
-    inline constexpr int DONE = 3; // 処理済（応答・完了）
-  }
-//┴┴
-
-//========================================================
 // 組織図
 //========================================================
 //┬
 //□┐接続部門
   //□共通課
-  #include "common/_index_.h"
+  #include "common/__index.h"
   //│
   //□┐業務課
     //│
     //□作業標準：抽象基底クラス、モード部品
-    #include "adapter/_template_/_index_.h"
+    #include "template/__index.h"
     //│
     //□担当
-    #include "adapter/member/_index_.h" 
+    #include "adapter/__index.h" 
 //┴┴┴
 
 //########################################################

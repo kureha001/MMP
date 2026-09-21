@@ -22,14 +22,14 @@ namespace devUART {
    //━━━━━━━━━━━━━━━━━
   // 基本情報
   //━━━━━━━━━━━━━━━━━
-  bool ENABLED = false; // 有効判定：有効：true、無効：false
+  bool ENABLED = false; // 有効判定[有効:true／無効:false]
 
   //━━━━━━━━━━━━━━━━━
   // ボーレート
   //━━━━━━━━━━━━━━━━━
-  const int BPS       = 921600;
-  const int BPS_LOG   = 921600;
-  const int BPS_CROSS = 3000000;
+  const int BPS       =  921600; // クライアント接続用
+  const int BPS_LOG   =  921600; // ログ出力用
+  const int BPS_CROSS = 3000000; // メイン・サブ連携
 
   //━━━━━━━━━━━━━━━━━
   // ピンアサイン
@@ -151,6 +151,7 @@ namespace devUART {
     delay(1000);
     Log::prtln("<<通信デバイスの初期化>>");
     Log::prtln(" [UART]"  );
+    Log::prtln(msgUSB);
     Log::prtln(msg0);
     Log::prtln(msg1);
     Log::prtln(msg2);

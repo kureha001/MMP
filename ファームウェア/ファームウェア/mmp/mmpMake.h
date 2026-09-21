@@ -54,7 +54,7 @@
     #define ADP_BLE  true
   //(2)サブ用
   #elif (MODE == MODE_SUB)
-    #define ADP_UART true 
+    #define ADP_UART false 
     #define ADP_TCP  false
     #define ADP_HTTP false
     #define ADP_WSOC false

@@ -1,17 +1,38 @@
-// filename : Dep_Connect/common/_index_.h
+// filename : Dep_Connect/common/__index.h
 //========================================================
 // 接続部門／共通課：担当割一覧
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
-// ・[adpFnBase::SETUP_CTX()]を追加([AdapterQueueBase]の処理を移動)
-// ・[adpFnAuth::]を非公開化
+// Ver 1.3.2 (2026/09/21)
 //========================================================
 #ifndef CONN_COMMON_H
 #define CONN_COMMON_H
 #pragma once
 
 //========================================================
-// 担務
+//§部門共有情報
+//========================================================
+//┬
+//□┐情報
+  //□経路ID
+  inline constexpr int ADP_ID_UART = 0;
+  inline constexpr int ADP_ID_TCP  = 1;
+  inline constexpr int ADP_ID_HTTP = 2;
+  inline constexpr int ADP_ID_WSOC = 3;
+  inline constexpr int ADP_ID_BLE  = 4;
+  inline constexpr int ADP_ID_ESPN = 5;
+  inline constexpr int ADP_ID_IIC  = 6;
+  //│
+  //□ブリッジの進捗状況
+  namespace BSTAT {
+    inline constexpr int IDLE = 0; // 待機中
+    inline constexpr int REQ  = 1; // 依頼中（マスタ→スレーブ）
+    inline constexpr int BUSY = 2; // 処理中（スレーブ実行中）
+    inline constexpr int DONE = 3; // 処理済（応答・完了）
+  }
+//┴┴
+
+//========================================================
+//§担当
 //========================================================
   //━━━━━━━━━━━━━━━━━
   // 一般処理

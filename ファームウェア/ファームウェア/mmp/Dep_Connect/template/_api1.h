@@ -1,18 +1,13 @@
-// filename : Dep_Connect/adapter/_template_/_api1_.h
+// filename : Dep_Connect/template/api1.h
 //========================================================
 // 接続部門／業務課／作業標準：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
 // Ver 1.3.2 (2026/09/21)
-// ・ブリッジの初期化を共通部品化
-// ・ブリッジモードの不具合対応
-// ・コンテキスト初期化を共通へ移動
-// ・転送処理の共通部を[modeBridge]に部品化
-// ・[handle_Setup()]を[AdapterBase]へ移動
 //========================================================
 #define CONN_ADP_API1_H
 #define CONN_ADP_API1_H
 
-#include "_api0_.h"
+#include "_api0.h"
 #include <queue>
 #include <mutex>
 

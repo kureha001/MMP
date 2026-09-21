@@ -1,10 +1,8 @@
-// filename : Dep_Connect/adapter/_template_/md_sub.cpp
+// filename : Dep_Connect/template/md_sub.cpp
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（サブモード）
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/16)
-// ・タイムアウトを導入
-// ・システムコマンド部をSys_Command()へ分離
+// Ver 1.3.2 (2026/09/21)
 //========================================================
 
 //########################################################
@@ -44,11 +42,11 @@
     //│ ▼終了：早期リターン
     //│
     //○リクエストをMMPメインへ転送
-    if (Log::ENABLE) Log::prtln("(1/3) Requested to MMP(MAIN).");
+    Log::Outln("(1/3) Requested to MMP(MAIN).");
     Serial1.print(ctx.strFrame);
     //│
     //◎┐受信待ちデータの取り込み
-    if (Log::ENABLE) Log::prtln("(2/3) Reading from MMP(MAIN).");
+    Log::Outln("(2/3) Reading from MMP(MAIN).");
     String strRX = "";
     unsigned long startTime = millis();
     while (!strRX.endsWith("!")) {
@@ -61,7 +59,7 @@
           //○レスポンスMSGにエラーCDを反映
           //▼終了：早期リターン
           ctx.resMSG = RCD::TimOut;
-          if (Log::ENABLE) Log::prtln("(3/3) Error:Response timeout from MMP(MAIN).");
+          Log::Outln("(3/3) Error:Response timeout from MMP(MAIN).");
           return;
       } /* END-if */
       //│
@@ -71,7 +69,7 @@
     } /* END-while */
     //│
     //○レスポンスMSGに[MMP本体からのレスポンス]を反映
-    if (Log::ENABLE) Log::prtln("(3/3) Success.");
+    Log::Outln("(3/3) Success.");
     ctx.resMSG = strRX;
     //┴
   } /* RUN() */

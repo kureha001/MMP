@@ -1,10 +1,8 @@
-// filename : Dep_Connect/adapter/member/BLE.cpp
+// filename : Dep_Connect/adapter/BLE.cpp
 //========================================================
 // 接続部門／業務課／担当(標準型)：BLE 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/20)
-// ・ブリッジモードの不具合対応
-// ・UARTポートの見直し 
+// Ver 1.3.2 (2026/09/21)
 //========================================================
 //┬
 //□┐インクルード
@@ -19,7 +17,7 @@
 //□┐接続部門
   //□┐業務課
     //□担当
-    #include "_index_.h"
+    #include "__index.h"
 //┴┴┴
 
 //########################################################
@@ -87,7 +85,7 @@ private:
       //│＼（通信デバイスが起動していない場合）
       //│ ▼終了：早期リターン
       //│
-    //○未取り込みデータを受信
+      //○未取り込みデータを受信
       String rxValue = pCharacteristic->getValue();
       if (rxValue.length() <= 0) return;
       //│＼（空の場合）
@@ -125,6 +123,10 @@ private:
     //┴
   } /* ON_RECIVE_NOTIFY() */
 #endif
+
+//========================================================
+//§ハンドル前処理
+//========================================================
 
 //############################
 //# 転送機能はブリッジのみ
@@ -168,13 +170,13 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterBLE(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //○┐前処理
+    //○┐【前処理】
       //○インスタンスを登録
       MY_INSTANS = this;
       //┴
     //│
 #if (MODE == MODE_BRIDGE)
-    //○┐主処理
+    //○┐【主処理】
       //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
       if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
         devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
@@ -186,7 +188,7 @@ public:
       //┴
     //┴
 #else
-    //○┐主処理
+    //○┐【主処理】
       //○受信コールバックを登録
       if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
       //┴

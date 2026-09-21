@@ -24,55 +24,54 @@
     #define ADP_WSOC false
     #define ADP_ESPN false
     #define ADP_BLE  false
-    #define ADP_IIC  false //※メイン・ブリッジは使用不可
+    #define ADP_IIC  false //※メイン・ブリッジは不可
 
   //─────────────────
   // 動作モード
   //─────────────────
-  #define MODE_MAIN    0 // メインモード
-  #define MODE_SUB     1 // サブモード
-  #define MODE_BRIDGE  2 // ブリッジモード
+  #define MODE_MAIN    0 // メイン
+  #define MODE_SUB     1 // サブ
+  #define MODE_BRIDGE  2 // ブリッジ
 
 //========================================================
 // コンパイルオプション
 //========================================================
-  #define MODE  MODE_BRIDGE
+  //①動作モード
+  #define MODE MODE_BRIDGE
 
-  // UART高速モード
+  //②UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
-  // 強制制御：[Dep_Connect/adapter/base/_index_.h]にて実施
-  //・メ イ ン：サブ連携できない
-  //・サ　　ブ：GPIO UART使用不可
-  //・ブリッジ：GPIO UART使用不可
+  // [Dep_Connect/adapter/_index_.h]にて分岐
+  //・メ イ ン：サブ連携が不可
+  //・サ　　ブ：GPIO UARTの使用が不可(USB-CDC,メイン連携は可)
+  //・ブリッジ：GPIO UARTの使用が不可(USB-CDCは可)
   #define TURBO false
 
-  //□メインモード用
+  //③モード別プリセット
+  //(1)メイン用
   #if   (MODE == MODE_MAIN)
     #define ADP_UART true 
-    #define ADP_TCP  false
-    #define ADP_HTTP false
-    #define ADP_WSOC false
-    #define ADP_ESPN false
-    #define ADP_BLE  false
-
-  //□サブモード用
-  #elif (MODE == MODE_SUB)
-    #define ADP_UART false 
-    #define ADP_TCP  false
-    #define ADP_HTTP false
-    #define ADP_WSOC false
+    #define ADP_TCP  true
+    #define ADP_HTTP true
+    #define ADP_WSOC true
     #define ADP_ESPN true
-    #define ADP_BLE  false
-    #define ADP_IIC  false
-
-  //□ブリッジモード用
+    #define ADP_BLE  true
+  //(2)サブ用
+  #elif (MODE == MODE_SUB)
+    #define ADP_UART true 
+    #define ADP_TCP  true
+    #define ADP_HTTP true
+    #define ADP_WSOC true
+    #define ADP_ESPN true
+    #define ADP_BLE  true
+    #define ADP_IIC  true
+  //(3)ブリッジ用
   #elif (MODE == MODE_BRIDGE)
     #define ADP_TCP  true
     #define ADP_HTTP true
     #define ADP_WSOC true
     #define ADP_ESPN true
     #define ADP_BLE  true
-
   #endif
 
 #endif // CONFIG_H

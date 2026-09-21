@@ -2,8 +2,9 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：UART 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/20)
-// ・ブリッジモードの不具合対応
+// Ver 1.3.2 (2026/09/21)
+// ・ブリッジの初期化を共通部品化
+// ・ブリッジの不具合対応
 // ・使用するUARTをモード別に構築
 // ・標準スロットを廃止
 //========================================================
@@ -85,7 +86,7 @@ private:
       //●キューに登録（基底クラスの pushQueue を呼出し）
       if (retFrame != "") pushQueue(TBL[ID].CONN, retFrame, ID);
       //┴
-    } /* END-for */
+    } /* for */
     //┴
   } /* ON_RECIVE() */
 
@@ -130,32 +131,21 @@ private:
   //━━━━━━━━━━━━━━━━━
   bool handle_SetupBridge() override final {
     //┬
-    //○┐前処理
-      //●マスタとして進行判定
-      switch (ctx.bridge.Stat) {
-        case BSTAT::IDLE: return false; // 待機中➡進行OK ※リクエスト受付
-        case BSTAT::REQ : return true ; // 依頼中➡進行NG
-        case BSTAT::BUSY: return true ; // 処理中➡進行NG
-        case BSTAT::DONE: break       ; // 処理済⇒後続処理あり
-        default         : return true ; // 想定外➡進行NG
-      } /* END-switch */
+    //○┐【前処理】
+      //○(処理なし)
       //┴
     //│
-    //○┐主処理
-      //●クライアント(退避済スロット)にレスポンス
-      SEND_CONN(TBL[ctx.bridge.slotID].CONN);
-      //│
-      //○進行状況を[待機中]に遷移
-      ctx.bridge.Stat  = BSTAT::IDLE;
+    //○┐【主処理】
+      //●スタートアップ(マスタ用)を実施
+      bool retGo = modeBridge::MASTER(
+        TBL[ctx.bridge.slotID].CONN,           // 退避済スロット
+        [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
+      );
       //┴
     //│
-    //○┐後処理
-      //○コンテクスト(ブリッジ関係)を初期化
-      ctx.bridge.Frame = ""; // フレーム：空
-      ctx.bridge.MSG   = ""; // 完了MSG ：空
-      //│
-      //▼返却：正常終了(進行OK)
-      return false;
+    //○┐【後処理】
+      //▼返却：正常終了(進行判定)
+      return retGo;
     //┴
   } /* handle_SetupBridge() */
 #endif
@@ -170,11 +160,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
     //┬
-    //○┐前処理
+    //○┐【前処理】
       //○（処理なし）
       //┴
     //│
-    //○┐主処理
+    //○┐【主処理】
       //●接続管理TBLを作成
 //--------------------------
 // サブ
@@ -206,7 +196,7 @@ public:
       RUN_TASK();
       //┴
     //│
-    //○┐後処理
+    //○┐【後処理】
       //○メッセージ表示
       Log::prtln(msg);
       //┴

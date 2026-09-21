@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/base/TCP_TURBO.cpp
 //========================================================
-// 接続部門／業務課／担当(標準型)：TCP(高速版) 担当
+// 接続部門／業務課／担当(標準型)：TCP(RAW)高速版 担当
 //--------------------------------------------------------
 // Ver 1.3.2 (2026/09/20)
 // ・新規
@@ -100,7 +100,7 @@ private:
     if (!TBL[ID].used) return ID;
     //│＼（未使用の場合）
     //│ ▼返却：当該スロットIDを返す
-    } /* END-for */
+    } /* for */
     //│
     //▼返却：エラーCD(空きスロットがない)
     return -1;
@@ -158,7 +158,7 @@ private:
     TBL[ID].CONN = newConn; // TCP接続(実体)を登録
     TBL[ID].CONN.setNoDelay(true); // TCPパケット遅延制御
     //┴
-    } //* END-while */
+    } //* while */
 #endif
 //--------------------------
   } /* SLOT_ATTACH() */
@@ -213,7 +213,7 @@ private:
         //┴
       //└┐（その他）
         //┴
-    } /* END-if */
+    } /* if */
     //│
     //○退避したフレームでリクエスト
     MY_NET.print(ctx.strFrame);
@@ -324,7 +324,7 @@ public:
             //▽次へ：次のスロットを走査
             SLOT_INI(TBL[ID]);
             continue;
-        } /* END-if */
+        } /* if */
         //│
         //○使用状況を確認
         if (!TBL[ID].used) continue;
@@ -378,7 +378,7 @@ public:
           //┴
         //└┐（その他）
           //┴
-      } /* END-if */
+      } /* if */
       //│
       //◇┐[処理中→処理済]に遷移
       if (ctx.bridge.Stat == BSTAT::BUSY) {
@@ -391,11 +391,11 @@ public:
           return;
         //└┐（その他）
           //┴
-      } /* END-if */
+      } /* if */
       //┴
 #endif
 //--------------------------
-    } /* END-for */
+    } /* for */
     //┴
   } /* handle() */
 

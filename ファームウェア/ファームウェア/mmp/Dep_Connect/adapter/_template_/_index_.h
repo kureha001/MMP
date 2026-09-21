@@ -2,11 +2,17 @@
 //========================================================
 // 接続部門／業務課／作業標準：在籍一覧
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.3.2 (2026/09/21)
+// ・ブリッジの初期化を共通部品化
 // ・コンテキスト初期化を共通へ移動
 // ・転送処理の共通部品を追加
 //========================================================
 #pragma once
+//┬
+//□┐インクルード
+  //□Arduinoシステム
+  #include <functional>
+//┴┴
 
 //========================================================
 // 担務
@@ -31,9 +37,9 @@
     //─────────────────
     #include "md_bridge.cpp"
     namespace modeBridge{
-      void RUN(int argSID, String argFrame);
-      bool TRANS_BEGIN(int argAID);
-      void TRANS_END();
+      void RUN  (int argSID, String argFrame);
+      bool MASER(Stream* argConn, std::function<void(Stream*)> argSendConn);
+      bool SLAVE(int     argAID , std::function<void()       > argTrans   );
     }
 
 //========================================================

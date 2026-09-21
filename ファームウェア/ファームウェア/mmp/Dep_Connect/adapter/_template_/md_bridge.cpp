@@ -2,20 +2,32 @@
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（ブリッジモード）
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/20)
-// ・ブリッジモードの不具合対応
-// ・システムコマンド部をSys_Command()へ分離
+// Ver 1.3.2 (2026/09/21)
+// ・ブリッジの初期化を共通部品化
+// ・ブリッジの不具合対応
+// ・システムコマンド部をRun_SysCmd()へ分離
 // ・[AdapterQueueBase]転送処理の共通部を部品化
 //========================================================
+//┬
+//□┐インクルード
+  //□Arduinoシステム
+  #include <functional>
+//┴┴
 
 //########################################################
 //# 処理詳細
 //########################################################
  namespace modeBridge{
+//========================================================
+//§共有資源
+//========================================================
+  //─────────────────
+  // 転送パラメータ
+  //─────────────────
   String DAT[4];
 
 //========================================================
-//【非公開機能】
+//§非公開機能
 //========================================================
   //─────────────────
   // 内部コマンドに応答
@@ -25,9 +37,9 @@
   //  true ：あり
   //  false：なし
   //─────────────────
-  bool Sys_Command() {
+  bool Run_SysCmd() {
     //┬
-    //○┐前処理
+    //○┐【前処理】
       //●フレームを整形
       adpFnBase::FORMAT_URI(ctx.bridge.Frame);
       //│
@@ -37,30 +49,30 @@
       //│ ▼終了：早期リターン（なし）
       //┴
     //│
-    //○┐主処理
+    //○┐【主処理】
       //●コマンドを実行
       ctx.cmdPath = ctx.bridge.Frame; // コマンドパスをセット
       DepCommand::RunCommand()      ; // 実行結果は[ctx.resMSG]にセットされる
       //┴
     //│
-    //○┐後処理
+    //○┐【後処理】
       //▼終了：リターン（あり）
       return true;
     //┴
-  }
+  } /* Run_SysCmd() */
 
   //─────────────────
   // コマンド名と引数を取得
   //─────────────────
-  void Make_Data() {
+  void Run_MakeData() {
     //┬
-    //○┐前処理
+    //○┐【前処理】
       //○フレームを補正
       String strCMD = ctx.bridge.Frame;
       strCMD.replace("!", "");
       //┴
     //│
-    //○┐主処理
+    //○┐【主処理】
       //◎┐フレームをコマンド名と引数に分解
       int lastIndex = 0;
       for (int i = 0; i < 4; i++) {
@@ -73,14 +85,14 @@
         DAT[i] = strCMD.substring(lastIndex, index);
         lastIndex = index + 1;
         //┴
-      } /* END-for */
+      } /* for */
       //┴
     //│
-    //○┐後処理
+    //○┐【後処理】
       //○（処理なし）
       //┴
     //┴
-  }
+  } /* Run_MakeData() */
 
   //─────────────────
   // 転送先を切替
@@ -90,14 +102,14 @@
   //  true ：あり
   //  false：なし
   //─────────────────
-  bool Trans_Route() {
+  bool Run_TransRoute() {
     //┬
-    //○┐前処理
+    //○┐【前処理】
       //●コマンド名と引数を取得
-      Make_Data();
+      Run_MakeData();
       //┴
     //│
-    //○┐主処理
+    //○┐【主処理】
       //○転送先をセット
       bool isOn = false;
       int  ID   = -1;
@@ -113,36 +125,37 @@
       if (isOn) ctx.bridge.adpID = ID;
       //┴
     //│
-    //○┐後処理
+    //○┐【後処理】
       //▼返却：正常終了（転送先変更の有無）
       return isOn;
     //┴
-  }
+  } /* Run_TransRoute() */
+
 
 //========================================================
-//【公開機能】
+//§公開機能
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // ブリッジモード
+  // ブリッジモード実行
   //━━━━━━━━━━━━━━━━━
   void RUN(int argSID, String argFrame){
     //┬
-    //○┐前処理
-      //○スロットIDをブリッジ用に退避
-      //○フレームをブリッジ用に退避
-      ctx.bridge.slotID = argSID;
-      ctx.bridge.Frame  = argFrame;          
+    //○┐【前処理】
+      //○コンテクスト(ブリッジ用)を初期化
+      ctx.bridge.slotID = argSID  ; //スロットIDを退避
+      ctx.bridge.Frame  = argFrame; //フレームを退避
+      ctx.bridge.MSG    = ""      ; //完了MSGをクリア
       //┴
     //│
-    //○┐主処理
+    //○┐【主処理】
       //○┐内部コマンドに応答
         //●内部コマンドに応答(内部処理)
-        if (Sys_Command()) return;
+        if (Run_SysCmd()) return;
         //│＼（[あり]の場合）
         //│ ▼終了：早期リターン
         //│
         //●転送先を切替
-        bool isTrans = Trans_Route();
+        bool isTrans = Run_TransRoute();
         //┴
       //│
       //○┐現状を評価
@@ -164,7 +177,7 @@
       ctx.bridge.Dat3 = DAT[3];
       //┴
     //│
-    //○┐後処理
+    //○┐【後処理】
       //○レスポンスMSGに[正常終了]をセット
       ctx.resMSG = RCD::OK;
       //┴
@@ -172,58 +185,92 @@
   } /* RUN() */
 
   //━━━━━━━━━━━━━━━━━
-  // 転送処理（開始）
+  // 前処理（マスタ用）
+  //【引数】
+  // ・レスポンス関数（ポインタ）
   //━━━━━━━━━━━━━━━━━
-  bool TRANS_BEGIN(int argAID) {
+  bool MASTER(
+    Stream*                      argConn,    // 実際に送信するストリーム
+    std::function<void(Stream*)> argSendConn // 送信処理の関数
+  ) {
     //┬
-    //○┐前処理
+    //○┐【前処理】
+      //●マスタとして進行判定
+      switch (ctx.bridge.Stat) {
+        case BSTAT::IDLE: return false; // 待機中➡進行OK(リクエスト受付の為)
+        case BSTAT::REQ : return true ; // 依頼中➡進行NG
+        case BSTAT::BUSY: return true ; // 処理中➡進行NG
+        case BSTAT::DONE: break       ; // 処理済⇒後続処理へ
+        default         : return true ; // 想定外➡進行NG
+      } /* switch */
+      //┴
+    //│
+    //○┐【主処理】
+      //●クライアントにレスポンスト
+      argSendConn(argConn);
+      //│
+      //○進行状況を[待機中]に遷移
+      ctx.bridge.Stat = BSTAT::IDLE;
+      //┴
+    //│
+    //○┐【後処理】
+      //▼返却：正常終了(進行OK)
+      return false;
+      //┴
+    //┴
+  } /* MASTER() */
+
+  //━━━━━━━━━━━━━━━━━
+  // 前処理（スレーブ用）
+  //----------------------------------
+  //【引数】
+  // ・アダプタID
+  // ・転送関数（ポインタ）
+  //━━━━━━━━━━━━━━━━━
+  bool SLAVE(
+    int                   argAID,  // アダプタID
+    std::function<void()> argTrans // 転送関数（ポインタ）
+  ) {
+    //┬
+    //○┐【前処理】
       //○スレーブを確認
       if (argAID != ctx.bridge.adpID) return true;
       //│＼（スレーブではない場合）
       //│ ▼終了：早期リターン（進行NG)
-      //┴
-    //│
-    //○┐主処理
-      //○進捗状況による判定
+      //│
+      //○進捗状況による進行判定
       switch (ctx.bridge.Stat) {
         case BSTAT::IDLE: return true ; // 待機中➡進行NG
-        case BSTAT::REQ : return true ; // 依頼中➡進行NG ※この後[処理中]に遷移
-        case BSTAT::BUSY: return false; // 処理中➡進行OK ※キュー処理の為
+        case BSTAT::REQ : break       ; // 依頼中➡(後続処理へ)
+        case BSTAT::BUSY: return false; // 処理中➡進行OK(キュー処理の為)
         case BSTAT::DONE: return true ; // 処理済➡進行NG
         default         : return true ; // 想定外➡進行NG
-      } /* END-switch */
+      } /* switch */
       //┴
     //│
-    //○┐後処理
-      //○（処理なし）
-      //┴
-  } /* TRANS_BEGIN() */
-
-  //━━━━━━━━━━━━━━━━━
-  // 転送処理（終了）
-  //----------------------------------
-  // trans()が即時応答用の処理
-  // 即時応答では[ctx.bridge.*]を使用
-  //━━━━━━━━━━━━━━━━━
-  void TRANS_END() {
-    //┬
-    //○┐前処理
-      //○完了MSGを確認
-      if (ctx.bridge.MSG == "") return;
-      //│＼（[空]の場合）
-      //│ ▼終了：早期リターン
-      //┴
+    //○┐【主処理】
+      //○進行状況を[処理中]に遷移
+      ctx.bridge.Stat = BSTAT::BUSY;
+      //│
+      //●転送を実施
+      argTrans();
+      //│
+      //◇┐即時応答に対応
+      if (ctx.bridge.MSG != "") {
+        //├┐（完了MSGが[内容あり]の場合）
+          //○マスタが処理できるようレスポンスMSGへ反映
+          //○進行状況を[処理済]にセット
+          ctx.resMSG      = ctx.bridge.MSG;
+          ctx.bridge.Stat = BSTAT::DONE;
+          //┴
+        //└┐（その他）
+          //┴
+      } /* if */
     //│
-    //○┐主処理
-      //○レスポンスMSGに[完了MSG内容]をセット
-      //○進行状況を[処理済]にセット
-      ctx.resMSG      = ctx.bridge.MSG;
-      ctx.bridge.Stat = BSTAT::DONE;
-      //┴
-    //│
-    //○┐後処理
-      //○（処理なし）
-      //┴
-  } /* TRANS_END() */
+    //○┐【後処理】
+      //▼返却：正常終了(進行NG)
+      return true;
+    //┴
+  } /* SLAVE() */
 
 } /* namespace modeBridge */

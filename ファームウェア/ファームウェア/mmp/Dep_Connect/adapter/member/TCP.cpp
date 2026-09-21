@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/base/TCP.cpp
 //========================================================
-// 接続部門／業務課／担当(標準型)：TCP 担当
+// 接続部門／業務課／担当(標準型)：TCP(RAW) 担当
 //--------------------------------------------------------
 // Ver 1.3.2 (2026/09/20)
 // ・ブリッジモードの不具合対応
@@ -102,7 +102,7 @@ private:
     if (!TBL[ID].used) return ID;
     //│＼（未使用の場合）
     //│ ▼返却：当該スロットIDを返す
-    } /* END-for */
+    } /* for */
     //│
     //▼返却：エラーCD(空きスロットがない)
     return -1;
@@ -160,7 +160,7 @@ private:
     TBL[ID].CONN = newConn; // TCP接続(実体)を登録
     TBL[ID].CONN.setNoDelay(true); // TCPパケット遅延制御
     //┴
-    } //* END-while */
+    } //* while */
 #endif
 //--------------------------
   } /* SLOT_ATTACH() */
@@ -212,7 +212,7 @@ private:
             //▽次へ：次のスロットを走査
             SLOT_INI(TBL[ID]);
             continue;
-        } /* END-if */
+        } /* if */
         //│
         //○使用状況を確認
         if (!TBL[ID].used) continue;
@@ -229,7 +229,7 @@ private:
       //○キューに登録（基底クラスの pushQueue を呼出し）
       pushQueue(TBL[ID].CONN, retFrame, ID);
       //┴
-    } /* END-for */
+    } /* for */
     //┴
   } /* ON_RECIVE() */
 
@@ -294,7 +294,7 @@ private:
         //┴
       //└┐（その他）
         //┴
-    } /* END-if */
+    } /* if */
     //│
     //○退避したフレームでリクエスト(非同期でデータ受信)
     MY_NET.print(ctx.bridge.Frame);

@@ -9,10 +9,10 @@
 // - Patition Scheme : Huge APP(3MB No OTA/1MB SPIFFS)
 //--------------------------------------------------------
 // 追加ライブラリ：
-// - WebSockets by Markus Sattler
+// - WebSockets        by Markus Sattler
 // - EspSoftwareSerial by Peter Lerup, Dirk Kaar
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.3.2 (2026/09/21)
 // ・UARTポートの見直し 
 //========================================================
 #pragma once
@@ -28,19 +28,24 @@
 //========================================================
 //┬
 //□┐情報
-  //□環境設定
-  //□コンテクスト（実体化）
-  #include "mmpConfig.h"
-  #include "mmpContext.h"
+  //□システム構築
+  #include "mmpMake.h"
+  //│
+  //□システム共通
+  #include "mmp.h"
+  //│
+  //□コンテクスト
   MmpContext ctx;
 //│┴
 //│
 //□┐組織
   //□通信部門
-  //□コマンド部門
-  //□接続部門
   #include "Dep_Network/manager.h"
+  //│
+  //□コマンド部門
   #include "Dep_Command/manager.h"
+  //│
+  //□接続部門
   #include "Dep_Connect/manager.h"
 //┴┴
 
@@ -53,10 +58,12 @@
   void initialize(){
     //┬
     //●通信部門に始業指示
-    //●コマンド部門に始業指示
-    //●接続部門に始業指示
     DepNetwork::INIT();
+    //│
+    //●コマンド部門に始業指示
     DepCommand::INIT();
+    //│
+    //●接続部門に始業指示
     DepConnect::INIT();
     //┴
   } /* initialize() */
@@ -94,9 +101,10 @@
 //========================================================
 void setup(){
   //┬
-  //●2-1.資源を初期化
-  //●2-2.オープニングを表示
+  //●資源を初期化
   initialize();
+  //│
+  //●オープニングを表示
   opening();
   //┴
 } /* setup() */

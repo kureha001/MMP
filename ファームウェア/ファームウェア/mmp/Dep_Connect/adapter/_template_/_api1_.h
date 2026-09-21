@@ -59,6 +59,9 @@ public:
     const String& frame, // フレーム
     const int     SID    // スロットID ※対象外はダミー値をセット
   ) {
+    String msg = "["+ String(getAID()) + "] push:" + frame;
+    Log::Outln(msg);
+
     if (frame.length() < 1) return;
     std::lock_guard<std::mutex> lock(queueMutex);
     rxQueue.push({conn, frame, SID});
@@ -68,11 +71,24 @@ public:
   // キューからの取り出し
   //━━━━━━━━━━━━━━━━━
   bool popQueue(QueueItem& outItem) {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    if (rxQueue.empty()) return false;
-    outItem = rxQueue.front();
-    rxQueue.pop();
-    return true;
+    //┬
+    //○┐【前処理】
+      //┴
+    //│
+    //○┐【主処理】
+      std::lock_guard<std::mutex> lock(queueMutex);
+      if (rxQueue.empty()) return false;
+      //│
+      outItem = rxQueue.front();
+      rxQueue.pop();
+      //┴
+    //│
+    //○┐【後処理】
+      String msg = "[" + String(getAID()) + "] pop :" + outItem.frame;
+      Log::Outln(msg);
+      //│
+      return true;
+      //┴
   }
 
 //############################
@@ -171,19 +187,22 @@ public:
             //│
             //○進捗状況を[依頼中]に遷移
             //▼終了：早期リターン ※1件ずつ処理
+            Log::Outln("1.待機中→依頼中");
             ctx.bridge.Stat  = BSTAT::REQ;
             return;
 
-        } else if (ctx.bridge.Stat == BSTAT::BUSY && getAID() != ctx.bridge.adpID) {
+        } else if (ctx.bridge.Stat == BSTAT::BUSY && getAID() == ctx.bridge.adpID) {
           //├┐（[処理中]かつ[スレーブ] の場合）
             //○レスポンスMSGに[フレーム内容]をセット
             //○進行状況を[処理済]に遷移
             //▼終了：早期リターン ※1件ずつ処理
+            Log::Outln("3.処理中→処理済(キュー)");
             ctx.resMSG      = ctx.strFrame;
             ctx.bridge.Stat = BSTAT::DONE;
             return;
           //└┐（その他）
             //○なにもしない（キューは空振りになる）
+            Log::Outln("0.空振り(キュー)");
             //┴
         } /* switch */
         //┴

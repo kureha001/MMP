@@ -167,10 +167,7 @@ public:
     //○┐【主処理】
       //●接続管理TBLを作成
 //--------------------------
-// サブ
-//・ブリッジ：すべてクライアント用
-//・メインとの接続ポートは登録しない
-//--------------------------
+//➡サブ
 #if (MODE == MODE_SUB)
       SLOTs = 2;
       TBL = new T_SLOT[SLOTs];
@@ -178,10 +175,7 @@ public:
       TBL[1].CONN = &Serial2; TBL[1].used = true;
       String msg = " [OK] UART USB(CDC)+Serial#2";
 //--------------------------
-// サブ以外
-//・メイン：サブとの接続ポートを登録
-//・ブリッジ：すべてクライアント用
-//--------------------------
+// ➡サブ以外
 #else
       SLOTs = 3;
       TBL = new T_SLOT[SLOTs];
@@ -189,7 +183,7 @@ public:
       TBL[1].CONN = &Serial1; TBL[1].used = true; //※サブとの接続用
       TBL[2].CONN = &Serial2; TBL[2].used = true;
       String msg = " [OK] UART / USB(CDC) + Serial#1,2";
-#endif
+#endif /* サブ,サブ以外 */
 //--------------------------
       //│
       //●受信タスクを起動

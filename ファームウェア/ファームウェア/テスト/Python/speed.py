@@ -9,14 +9,14 @@ from bleak import BleakScanner, BleakClient
 # ==========================================
 # 測定・パラメータ設定
 # ==========================================
-iterations   = 1
-MAX_CHANNELS = 1
+iterations   = 10
+MAX_CHANNELS = 3
 MAX_PINS     = 4   
 
 # ==========================================
 # ログ出力の設定
 # ==========================================
-LOG_PYTHON  = True  # Pyhon側のログ
+LOG_PYTHON  = False  # Pyhon側のログ
 LOG_MMP     = False  # MMP側のログ
 
 # ==========================================
@@ -90,7 +90,7 @@ COM_PORT = 'COM61'
 COM_TRANS = ""
 #【ESP NOW】
 #□メイン
-#COM_TRANS = "BRIDGE/ESPN:50787D18448C!" # COM50:全部のせ
+COM_TRANS = "BRIDGE/ESPN:50787D18448C!" # COM50:全部のせ
 #COM_TRANS = "BRIDGE/ESPN:50787D17BE20!" # COM49:ESP-NOWのみ
 #◇サブ
 #COM_TRANS = "BRIDGE/ESPN:90DA72734DE4!" # COM59:全部のせ

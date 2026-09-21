@@ -197,11 +197,11 @@
     //○┐【前処理】
       //●マスタとして進行判定
       switch (ctx.bridge.Stat) {
-        case BSTAT::IDLE: return false; // 待機中➡進行OK(リクエスト受付の為)
-        case BSTAT::REQ : return true ; // 依頼中➡進行NG
-        case BSTAT::BUSY: return true ; // 処理中➡進行NG
-        case BSTAT::DONE: break       ; // 処理済⇒後続処理へ
-        default         : return true ; // 想定外➡進行NG
+        case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
+        case BSTAT::REQ : return true ; // 依頼済➡×
+        case BSTAT::BUSY: return true ; // 処理中➡×
+        case BSTAT::DONE: break       ; // 処理済は後続処理へ
+        default         : return true ; // 想定外➡×
       } /* switch */
       //┴
     //│
@@ -210,6 +210,7 @@
       argSendConn(argConn);
       //│
       //○進行状況を[待機中]に遷移
+      Log::Outln("4.処理済→待機中");
       ctx.bridge.Stat = BSTAT::IDLE;
       //┴
     //│
@@ -240,16 +241,17 @@
       //│
       //○進捗状況による進行判定
       switch (ctx.bridge.Stat) {
-        case BSTAT::IDLE: return true ; // 待機中➡進行NG
-        case BSTAT::REQ : break       ; // 依頼中➡(後続処理へ)
-        case BSTAT::BUSY: return false; // 処理中➡進行OK(キュー処理の為)
-        case BSTAT::DONE: return true ; // 処理済➡進行NG
-        default         : return true ; // 想定外➡進行NG
+        case BSTAT::IDLE: return true ; // 待機中➡×
+        case BSTAT::REQ : break       ; // 依頼済は後続処理へ
+        case BSTAT::BUSY: return false; // 処理中➡○キュー応答
+        case BSTAT::DONE: return true ; // 処理済➡×
+        default         : return true ; // 想定外➡×
       } /* switch */
       //┴
     //│
     //○┐【主処理】
       //○進行状況を[処理中]に遷移
+      Log::Outln("2.依頼済→処理中");
       ctx.bridge.Stat = BSTAT::BUSY;
       //│
       //●転送を実施
@@ -260,6 +262,7 @@
         //├┐（完了MSGが[内容あり]の場合）
           //○マスタが処理できるようレスポンスMSGへ反映
           //○進行状況を[処理済]にセット
+          Log::Outln("3.処理中→処理済(即時)");
           ctx.resMSG      = ctx.bridge.MSG;
           ctx.bridge.Stat = BSTAT::DONE;
           //┴

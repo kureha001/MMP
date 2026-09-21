@@ -51,27 +51,27 @@
   //(1)メイン用
   #if   (MODE == MODE_MAIN)
     #define ADP_UART true 
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
     #define ADP_ESPN true
-    #define ADP_BLE  true
+    #define ADP_BLE  false
   //(2)サブ用
   #elif (MODE == MODE_SUB)
     #define ADP_UART true 
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
     #define ADP_ESPN true
-    #define ADP_BLE  true
-    #define ADP_IIC  true
+    #define ADP_BLE  false
+    #define ADP_IIC  false
   //(3)ブリッジ用
   #elif (MODE == MODE_BRIDGE)
-    #define ADP_TCP  true
-    #define ADP_HTTP true
-    #define ADP_WSOC true
+    #define ADP_TCP  false
+    #define ADP_HTTP false
+    #define ADP_WSOC false
     #define ADP_ESPN true
-    #define ADP_BLE  true
+    #define ADP_BLE  false
   #endif
 
 #endif // CONFIG_H
@@ -120,7 +120,9 @@ namespace LIMIT{
 // ログ出力
 //========================================================
 namespace Log{
-  bool ENABLE = false; // ログ出力有効性
+  bool ENABLE   = false; // ログ出力有効性
   void prtln(String argMSG) {Serial0.println(argMSG);}
   void prt  (String argMSG) {Serial0.print  (argMSG);}
+  void Outln(String argMSG) {if(ENABLE) prtln(argMSG);}
+  void Out  (String argMSG) {if(ENABLE) prt  (argMSG);}
 } /* namespace Log */

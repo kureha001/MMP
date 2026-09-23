@@ -54,7 +54,7 @@
       //│ ▽完了：走査終了
       //│
       //○経過時間を確認
-      if (millis() - startTime > LIMIT::TIMEOUT_READ) {
+      if (millis() - startTime > LIMIT::TIME_READ) {
       //│＼（タイムアウトした場合）
           //○レスポンスMSGにエラーCDを反映
           //▼終了：早期リターン

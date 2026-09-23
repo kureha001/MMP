@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／担当(標準型)：WEB Socket 担当
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/22)
 //========================================================
 //┬
 //□┐インクルード
@@ -44,13 +44,25 @@ private:
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
+    static AdapterWEB_Socket* MY_TASK          ; // タスク識別(インスタンス)
+    int                       MY_PORT = 8082   ; // ポート番号
+//--------------------------
+//➡ブリッジ：クライアント
 #if (MODE == MODE_BRIDGE)
-    WebSocketsClient  MY_NET           ; // WebSocketクライアント
+    WebSocketsClient          MY_NET           ; // クライアント(実体)
+//➡ブリッジ以外：
 #else
-    WebSocketsServer* MY_NET  = nullptr; // WebSocketサーバ
-    int               MY_PORT = 8082   ; // ポート番号
-#endif
-    static AdapterWEB_Socket* MY_INSTANS; // 静的コールバックからのルーティング用
+    WebSocketsServer*         MY_NET  = nullptr; // サーバ(ポインタ)
+#endif /* ➡ブリッジ ➡ブリッジ以外 */
+//--------------------------
+
+//========================================================
+//§各種ヘルパ
+//========================================================
+
+//========================================================
+//§接続管理
+//========================================================
 
 //========================================================
 //§返信処理
@@ -82,34 +94,52 @@ private:
   //━━━━━━━━━━━━━━━━━
   static void ON_RECIVE(
 #if (MODE != MODE_BRIDGE)
-    uint8_t   num    , // クライアント番号
+    uint8_t   argNUM , // クライアント番号
 #endif
-    WStype_t  type   , // イベント種別
-    uint8_t * payload, // 受信データ
-    size_t    length   // 受信データ長
+    WStype_t  argTYPE, // イベント種別
+    uint8_t * argDATA, // 受信データ
+    size_t    argLEN   // 受信データ長
   ){
     //┬
-    //○インスタンスを確認
-    if (!MY_INSTANS) return;
-    //│＼（通信デバイスが起動していない場合）
-    //│ ▼終了：早期リターン
+    //○┐【前処理】
+      //○インスタンスを確認
+      if (!MY_TASK) return;
+      //│＼（通信デバイスが起動していない場合）
+      //│ ▼終了：早期リターン
+      //│
+      //○イベントの種類を確認
+      if (argTYPE != WStype_TEXT) return;
+      //│＼（テキスト以外の場合）
+      //│ ▼終了：早期リターン
+      //│
+      //○受信データを確認
+      if (argDATA == nullptr || argLEN < 1) return;
+      //│＼（空の場合）
+      //│ ▼終了：早期リターン
+      //┴
     //│
-    //○イベントの種類を確認
-    if (type != WStype_TEXT) return;
-    //│＼（テキスト以外の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○未取り込みデータを受信
-    if (payload == nullptr || length < 1) return;
-    //│＼（空の場合）
-    //│ ▼終了：早期リターン
-    //│
-    //○受信データをキューに追加（基底クラスの pushQueue を呼出し）
+    //○┐【主処理】
+      //○┐キュー情報を取得
+        //○接続情報を取得（クライアント番号）
 #if (MODE == MODE_BRIDGE)
-    uint8_t num = 0;
+        uint8_t qConn = 0;
+#else
+        uint8_t qConn = argNUM;
 #endif
-    MY_INSTANS->pushQueue(num, String((char*)payload), 0);
-    //┴
+        //│
+        //○フレームを取得
+        String qFrame = String((char*)argDATA);
+        //│
+        //●スロットIDを取得(ダミー値)
+        int qSID = 0;
+        //┴
+      //│
+      //●キューを登録
+      MY_TASK->pushQueue(qConn, qFrame, qSID);
+      //┴
+    //│
+    //○┐【後処理】
+    //┴┴
   } /* ON_RECIVE() */
 
 //========================================================
@@ -155,30 +185,41 @@ private:
   //━━━━━━━━━━━━━━━━━
   void trans() override final {
     //┬
-    //◇クライアントを起動
-    if (!MY_NET.isConnected()) {
-      String   ip   = ctx.bridge.Dat1;
-      uint16_t port = (uint16_t)ctx.bridge.Dat2.toInt();
-      MY_INSTANS = this;
-      MY_NET.onEvent(ON_RECIVE); 
-      MY_NET.begin(ip.c_str(), port, "/");
-      //│
-      //○接続するまでまつ。
-      unsigned long startTime = millis();
-      while(!MY_NET.isConnected() && millis() - startTime < LIMIT::TIMEOUT_CONNECT){
-        MY_NET.loop();
-        delay(200);
-      }
-      //│
-      //○完了MSGにエラーCDをセット
-      if (!MY_NET.isConnected()) {ctx.bridge.MSG = RCD::Trn1Err; return;}
+    //○┐【前処理】
+      //○宛先情報を取得
+      String transIP = ctx.bridge.Dat1;
       //┴
-    }
     //│
-    //○退避したフレームでリクエスト(非同期でデータ受信)
-    MY_NET.sendTXT(ctx.bridge.Frame);
-    //┴
-  };
+    //○┐【主処理】
+      //◇┐クライアントを起動
+      if (!MY_NET.isConnected()) {
+        //├┐（未接続の場合）
+          //│
+          //○受信タスク（コールバック）を登録
+          MY_TASK  = this;
+          MY_NET.onEvent(ON_RECIVE); 
+          //│
+          //○クライアントを起動（成功するまで一定時間リトライ）
+          MY_NET.begin(transIP.c_str(), MY_PORT, "/");
+          unsigned long startTime = millis();
+          while(!MY_NET.isConnected() && millis() - startTime < LIMIT::TIME_CONNECT)
+          {MY_NET.loop(); delay(200);}
+          if (!MY_NET.isConnected()) {ctx.bridge.MSG = RCD::Trn1Err; return;}
+          //│＼（接続に失敗した場合）
+          //│ ○完了MSGにエラーCDをセット
+          //│ ▼終了：早期リターン
+          //┴
+        //└┐（その他）
+          //┴
+      } /* if */
+      //│
+      //○退避したフレームでリクエスト(非同期でデータ受信)
+      MY_NET.sendTXT(ctx.bridge.Frame);
+      //┴
+    //│
+    //○┐【後処理】
+    //┴┴
+  } /* trans() */
 #endif
 //############################
 
@@ -190,14 +231,14 @@ public:
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
   AdapterWEB_Socket(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
-#if (MODE == MODE_BRIDGE)
     //┬
     //○┐【前処理】
-      //○（処理なし）
       //┴
     //│
+//--------------------------
+//➡ブリッジ：[サーバ][受信タスク]が不要
+#if (MODE == MODE_BRIDGE)
     //○┐【主処理】
-      //○（処理なし）
       //┴
     //│
     //○┐【後処理】
@@ -205,27 +246,28 @@ public:
       Log::prtln(" [OK] WEB Socket");
       //┴
     //┴
+//➡ブリッジ以外：[サーバ][受信タスク]が必要
 #else
-    //┬
-    //○┐【前処理】
-      //○インスタンスを登録
-      MY_INSTANS = this;
-      //┴
-    //│
     //○┐主処理
-      //○サーバのサービスを開始
+      //○サーバを生成
       MY_NET = new WebSocketsServer(MY_PORT); // サーバ生成
-      MY_NET->onEvent(ON_RECIVE)            ; // コールバック関数登録
+      //│
+      //●受信タスクを登録
+      MY_TASK = this                        ; // タスク識別を取得
+      MY_NET->onEvent(ON_RECIVE)            ; // コールバック関数で登録
+      //│
+      //○サーバを起動
       MY_NET->begin()                       ; // サーバ起動
       //┴
     //│
     //○┐【後処理】
       //○メッセージ表示
       char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] WEB Socket / PORT.%d", MY_PORT);
+      snprintf(msg, sizeof(msg), " [OK] WEB Socket (PORT %d)", MY_PORT);
       Log::prtln(String(msg));
       //┴
-#endif
+#endif /* ➡ブリッジ｜➡ブリッジ以外 */
+//--------------------------
   } /* constractor AdapterWEB_Socket() */
 
 }; /* class AdapterWEB_Socket */
@@ -233,4 +275,4 @@ public:
 //━━━━━━━━━━━━━━━━━
 // インスタンス管理用
 //━━━━━━━━━━━━━━━━━
-AdapterWEB_Socket* AdapterWEB_Socket::MY_INSTANS = nullptr;
+AdapterWEB_Socket* AdapterWEB_Socket::MY_TASK = nullptr;

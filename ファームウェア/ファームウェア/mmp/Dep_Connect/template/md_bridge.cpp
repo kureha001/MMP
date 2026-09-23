@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務課／作業標準：モード処理係（ブリッジモード）
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/22)
 //========================================================
 //┬
 //□┐インクルード
@@ -110,11 +110,12 @@
       bool isOn = false;
       int  ID   = -1;
       if      (DAT[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラーにする
+      else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = ADP_ID_UDP ;}
       else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = ADP_ID_TCP ;}
       else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = ADP_ID_WSOC;}
       else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = ADP_ID_HTTP;}
-      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = ADP_ID_BLE ;}
       else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = ADP_ID_ESPN;}
+      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = ADP_ID_BLE ;}
       else if (DAT[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = ADP_ID_IIC ;}
       //│
       //○転送先を変更

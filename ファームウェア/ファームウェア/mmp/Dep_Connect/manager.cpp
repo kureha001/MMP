@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/22)
 //========================================================
 //┬
 //□┐インクルード
@@ -64,19 +64,24 @@ namespace DepConnect{
       //◇┐WiFi係
       if (devWiFi::ENABLED) {
         //├┐（通信部門で[WiFi準備]が完了している場合）
+          //○UDP担当
+          #if ADP_UDP
+          ADAPTER.push_back(new AdapterUDP(ctx));
+          #endif
+          //│
           //○TCP担当
           #if ADP_TCP
           ADAPTER.push_back(new AdapterTCP(ctx));
           #endif
           //│
-          //○HTTP担当
-          #if ADP_HTTP
-          ADAPTER.push_back(new AdapterHTTP(ctx));
-          #endif
-          //│
           //○WebSocket担当
           #if ADP_WSOC
           ADAPTER.push_back(new AdapterWEB_Socket(ctx));
+          #endif
+          //│
+          //○HTTP担当
+          #if ADP_HTTP
+          ADAPTER.push_back(new AdapterHTTP(ctx));
           #endif
           //│
           //○ESP-NOW担当

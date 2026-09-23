@@ -32,7 +32,7 @@ namespace adpFnStream{
       //│ ▽完了：走査終了
       //│
       //○経過時間を確認
-      if (millis() - startTime > LIMIT::TIMEOUT_READ) return RCD::TimOut;
+      if (millis() - startTime > LIMIT::TIME_READ) return RCD::TimOut;
       //│＼（タイムアウトした場合）
       //│ ▼終了：早期リターン[エラーCD]
       //│

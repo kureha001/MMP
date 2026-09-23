@@ -86,7 +86,6 @@ namespace devWiFi {
     //━━━━━━━━━━━━━━━
     typeRecord DB;
 
-
 //========================================================
 // 各種ヘルパ
 //========================================================
@@ -523,11 +522,6 @@ namespace devWiFi {
 // 担務（公開機能）
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // 基本情報
-  //━━━━━━━━━━━━━━━━━
-  bool ENABLED = false; // 有効判定：有効：true、無効：false
-
-  //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START(){
@@ -568,9 +562,16 @@ namespace devWiFi {
     //│
     //○終了表示
     Log::prtln("");
-    //│
-    //○有効性セット
-    ENABLED = isOK;
     //┴
   } /* START() */
+
+  //━━━━━━━━━━━━━━━━━
+  // 有効性確認
+  //━━━━━━━━━━━━━━━━━
+  bool ENABLED(bool argLog){
+    bool ret = (WiFi.status() == WL_CONNECTED);
+    if (ret == false && argLog) Log::prtln("[ERROR] WiFiが未接続です。");
+    return ret;
+  } /* ENABLED() */
+
 } /* namespace devWiFi */

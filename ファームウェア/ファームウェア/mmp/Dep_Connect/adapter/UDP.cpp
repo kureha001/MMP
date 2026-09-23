@@ -68,10 +68,9 @@ private:
 //========================================================
   int SLOTs = 0; // コンストラクタで決定
   struct T_SLOT {
-    bool          used      = false             ; // 使用状況
-    IPAddress     CONN_IP   = IPAddress(0,0,0,0); // 接続元（IPアドレス）
-    uint16_t      CONN_Port = 0                 ; // 接続元（ポート番号）
-    unsigned long timeStamp = 0                 ; // タイムスタンプ
+    bool          used      = false; // 使用状況
+    String        CONN      = ""   ; // 接続識別子（IP:Port）
+    unsigned long timeStamp = 0    ; // タイムスタンプ
   };
   T_SLOT* TBL = nullptr;
 
@@ -79,16 +78,13 @@ private:
   // スロット内容をセット
   //─────────────────
   void SLOT_SET(
-    int              argSID , //
-    const IPAddress& argIP  , //
-    uint16_t         argPort  //
+    int           argSID , //
+    const String& argConn  //
   ) {
     //┬
     //○スロット内容をセット
     TBL[argSID].used      = true    ; // 有効性[ON]
-    TBL[argSID].CONN_IP   = argIP   ; // IPアドレスを反映
-    TBL[argSID].CONN_Port = argPort ; // ポート番号を反映
-    TBL[argSID].timeStamp = millis(); // タイムスタンプを更新
+    TBL[argSID].CONN      = argConn ; // 接続識別子を反映
     //┴
   } /* SLOT_SET() */
 
@@ -99,10 +95,7 @@ private:
   // ・0～：スロットID
   // ・-1 ：該当なし
   //─────────────────
-  int SLOT_ATTACH_ACTIVE(
-    const IPAddress& argIP  , //
-    uint16_t         argPort  //
-  ) {
+  int SLOT_GET_ACTIVE(const String& argConn) {
     //┬
     //○┐【前処理】
       //┴
@@ -115,31 +108,18 @@ private:
         //│ ▽完了：走査を終了
         //│
         //○スロット状態を確認
-        if (
-          TBL[ID].CONN_IP   == argIP   &&
-          TBL[ID].CONN_Port == argPort &&
-          TBL[ID].used
-        ) break;
+        if (TBL[ID].CONN == argConn && TBL[ID].used) break;
         //│＼（該当するスロットにヒットした場合）
         //│ ▽完了：走査を終了
         //┴
       } /* for */
-      //│
-      //○割当スロットを確認
-      if (ID >= SLOTs) return -1;
-      //│＼（該当するスロットがない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○割当スロット内容をセット
-      TBL[ID].timeStamp = millis();
       //┴
     //│
     //○┐【後処理】
-      //▼返却：正常終了（スロットID）
-      return ID;
+      //▼返却
+      return (ID < SLOTs) ? ID : -1;
     //┴
-  } /* SLOT_GET_SID() */
-
+  } /* SLOT_GET_ACTIVE() */
 
   //─────────────────
   // スロットIDを取得
@@ -148,10 +128,7 @@ private:
   // ・0～：正常終了（スロットID）
   // ・-1 ：該当なし
   //─────────────────
-  int SLOT_ATTACH_FREE(
-    const IPAddress& argIP  , //
-    uint16_t         argPort  //
-  ) {
+  int SLOT_GET_FREE() {
     //┬
     //○┐【前処理】
       //┴
@@ -169,21 +146,13 @@ private:
         //│ ▽完了：走査を終了
         //┴
       } /* for */
-      //│
-      //○走査結果を確認
-      if (ID >= SLOTs) return -1;
-      //│＼（該当するスロットがない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //●割当スロット内容をセット
-      SLOT_SET(ID, argIP, argPort);
       //┴
     //│
     //○┐【後処理】
-      //▼返却：正常終了（スロットID）
-      return ID;
+      //▼返却
+      return (ID < SLOTs) ? ID : -1;
     //┴
-  } /* SLOT_GET_SID() */
+  } /* SLOT_GET_FREE() */
 
   //─────────────────
   // 古いスロットIDを取得
@@ -191,10 +160,7 @@ private:
   // 戻り値：スロットID（数値型）
   // ・0～：スロットID
   //─────────────────
-  int SLOT_ATTACH_OLD(
-    const IPAddress& argIP  , //
-    uint16_t         argPort  //
-  ) {
+  int SLOT_GET_OLD() {
     //┬
     //○┐【前処理】
       //┴
@@ -204,56 +170,67 @@ private:
       int oldID = 0;
       unsigned long oldTime = TBL[0].timeStamp;
       for (int ID = 1; ID < SLOTs; ID++) {
-        //○スロット状態を確認
+        //│＼（すべて走査し終えた場合）
+        //│ ▽完了：走査を終了
+        //│
+        //◇┐スロット状態を確認
         if (TBL[ID].timeStamp < oldTime) {
-          oldID   = ID;
-          oldTime = TBL[ID].timeStamp;
+            oldID   = ID;
+            oldTime = TBL[ID].timeStamp;
+          //┴
+        //┴
         } /* if */
       } /* for */
-      //│
-      //●割当スロット内容をセット
-      SLOT_SET(oldID, argIP, argPort);
       //┴
     //│
     //○┐【後処理】
       //▼返却：該当なし
       return oldID;
     //┴
-  } /* SLOT_ATTACH_OLD() */
-
+  } /* SLOT_GET_OLD() */
+  
   //─────────────────
-  // 動的アタッチ
+  // スロット割当
   //----------------------------------
   // 戻り値 ：スロットID（数値）
   //─────────────────
-  int SLOT_ATTACH(
-    const IPAddress& argIP,
-    uint16_t         argPort
-  ) {
+  int SLOT_ASSIGN(const String& argConn) {
     //┬
     //○┐【前処理】
       //┴
     //│
     //○┐【主処理】
       //●既存スロットで走査
-      //●空スロットを走査
-      //●古いスロットで走査
-      int       ID = SLOT_ATTACH_ACTIVE(argIP, argPort);
-      if (ID<0) ID = SLOT_ATTACH_FREE  (argIP, argPort);
-      if (ID<0) ID = SLOT_ATTACH_OLD   (argIP, argPort);
+      int ID = SLOT_GET_ACTIVE(argConn);
+      if (ID<0) {
+        // ＼（該当する既存スロットがない場合）
+          //●空スロットを走査
+          ID             = SLOT_GET_FREE();
+          if (ID < 0) ID = SLOT_GET_OLD ();
+          // ＼（該当する空スロットがない場合）
+            //●古いスロットを走査
+            //┴
+          //│
+          //●割当スロットに内容をセット
+          SLOT_SET(ID, argConn);
+          //┴
+      } /* if */
+      //│
+      //○タイムスタンプを更新
+      TBL[ID].timeStamp = millis();
       //┴
     //│
     //○┐【後処理】
       //▼返却：スロットID
       return ID;
     //┴
-  } /* SLOT_ATTACH() */
+  } /* SLOT_ASSIGN() */
 
 //========================================================
 //§返信処理
 //========================================================
   //━━━━━━━━━━━━━━━━━
-  // クライアントにレスポンス（基底クラスの純粋仮想関数を実装）
+  // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
   void SEND_CONN(String argConn) override {
 //--------------------------
@@ -319,8 +296,8 @@ private:
           String qFrame = String(getDat);
           //┴
         //│
-        //●スロットIDを取得
-        int qSID = SLOT_ATTACH(qIP, qPort);
+        //●割当スロットIDを取得
+        int qSID = SLOT_ASSIGN(qCONN);
         //┴
       //│
       //●キューを登録

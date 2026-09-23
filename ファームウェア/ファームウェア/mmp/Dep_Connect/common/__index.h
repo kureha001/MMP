@@ -64,4 +64,11 @@
     String GET_FRAME(Stream& argConn);
   }
 
+  //━━━━━━━━━━━━━━━━━
+  // 専門処理：スロット係
+  //━━━━━━━━━━━━━━━━━
+  #include "slot.cpp"
+  namespace adpFnSlot{
+  }
+
 #endif // CONN_COMMON_H

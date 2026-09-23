@@ -74,8 +74,9 @@ private:
   //─────────────────
   int SLOTs = 0; // コンストラクタで決定
   struct T_SLOT{
-    bool       used = false;
-    WiFiClient CONN         ; // TCP接続(実体)
+    bool          used      = false;
+    WiFiClient    CONN             ; // TCP接続(実体)
+    unsigned long timeStamp = 0    ; // タイムスタンプ
   };
   T_SLOT* TBL = nullptr;
 
@@ -88,13 +89,32 @@ private:
     argSlot.used = false;
     if (argSlot.CONN) argSlot.CONN.stop();
   } /* SLOT_INI() */
-    
+
   //─────────────────
-  // 空きスロットIDを取得
+  // スロット内容をセット
+  //─────────────────
+  void SLOT_SET(
+    int              argSID , //
+    const WiFiClient argConn  //
+  ) {
+    //┬
+    //●スロットを初期化
+    SLOT_INI(TBL[argSID]);
+    //│
+    //○スロット内容をセット
+    TBL[argSID].used      = true     ; // 有効性[ON]
+    TBL[argSID].CONN      = argConn  ; // 接続識別子を反映
+    TBL[argSID].CONN.setNoDelay(true); // TCPパケット遅延制御
+    TBL[argSID].timeStamp = millis() ; // タイムスタンプを更新
+    //┴
+  } /* SLOT_SET() */
+
+  //─────────────────
+  // スロットIDを取得
   //----------------------------------
-  // 戻り値：スロットID
-  // ・0,1,2...：空きスロットのID
-  // ・-1：空きスロットが無い
+  // 戻り値：スロットID（数値型）
+  // ・0～：正常終了（スロットID）
+  // ・-1 ：該当なし
   //─────────────────
   int SLOT_GET_FREE() {
     //┬
@@ -102,34 +122,69 @@ private:
       //┴
     //│
     //○┐【主処理】
-      //◎┐先頭から走査
-      for (int ID = 0; ID < SLOTs; ID++) {
-        //│＼（全スロットを走査し終えた場合）
-        //│ ▽中断：ループ処理を中断
+      //◎┐スロットを走査
+      int  ID = 0;
+      for (ID = 0; ID < SLOTs; ID++) {
+        //│＼（すべて走査し終えた場合）
+        //│ ▽完了：走査を終了
         //│
-        //○スロットを確認
-        if (!TBL[ID].used) return ID;
-        //│＼（未使用の場合）
-        //│ ▼返却：当該スロットIDを返す
-        } /* for */
+        //○スロット状態を確認
+        if (!TBL[ID].used) break;
+        //│＼（該当するスロットにヒットした場合）
+        //│ ▽完了：走査を終了
         //┴
+      } /* for */
       //┴
     //│
     //○┐【後処理】
-      //▼返却：エラーCD(空きスロットがない)
-      return -1;
-      //┴
+      //▼返却
+      return (ID < SLOTs) ? ID : -1;
     //┴
   } /* SLOT_GET_FREE() */
 
   //─────────────────
-  // 動的アタッチ
+  // 古いスロットIDを取得
+  //----------------------------------
+  // 戻り値：スロットID（数値型）
+  // ・0～：スロットID
+  //─────────────────
+  int SLOT_GET_OLD() {
+    //┬
+    //○┐【前処理】
+      //┴
+    //│
+    //○┐【主処理】
+      //◎┐最古のスロットIDを取得
+      int oldID = 0;
+      unsigned long oldTime = TBL[0].timeStamp;
+      for (int ID = 1; ID < SLOTs; ID++) {
+        //│＼（すべて走査し終えた場合）
+        //│ ▽完了：走査を終了
+        //│
+        //◇┐スロット状態を確認
+        if (TBL[ID].timeStamp < oldTime) {
+            oldID   = ID;
+            oldTime = TBL[ID].timeStamp;
+          //┴
+        //┴
+        } /* if */
+      } /* for */
+      //┴
+    //│
+    //○┐【後処理】
+      //▼返却：該当なし
+      return oldID;
+    //┴
+  } /* SLOT_GET_OLD() */
+
+  //─────────────────
+  // 新接続のスロットを作成
   //----------------------------------
   // 戻り値 ：処理結果（論理値）
   // ・false：正常
   // ・true ：異常
   //─────────────────
-  bool SLOT_ATTACH(){
+  void SLOT_CREATE(){
 //--------------------------
 //➡ブリッジ：単一スロット
 #if (MODE == MODE_BRIDGE)
@@ -138,17 +193,10 @@ private:
       //┴
     //│
     //○┐【主処理】
-      //○0番スロットに直接割当
-      if (!TBL[0].used) {
-        SLOT_INI(TBL[0]);
-        TBL[0].used = true;
-        TBL[0].CONN = MY_NET; // クライアント接続をスロット0にセット
-        TBL[0].CONN.setNoDelay(true);
-      }
+      //●割当スロット内容をセット
+      SLOT_SET(0, MY_NET);
     //│
     //○┐【後処理】
-      //▼返却：正常終了
-      return false;
     //┴┴
 //➡ブリッジ以外：動的スロット
 #else
@@ -157,28 +205,24 @@ private:
       //┴
     //│
     //○┐【主処理】
-      //◎┐未管理のTCP接続をMMP管理対象へ登録
+      //◎┐新接続のスロットを作成
       while (true) {
         //│
-        //○新規のTCP接続を取得
+        //○未管理のTCP接続を取得
         WiFiClient newConn = MY_NET->available();
-        if (!newConn) return false;
-        //│＼（あらたな接続がない場合）
-        //│ ▼返却：正常
+        if (!newConn) return;
+        //│＼（未管理のTCP接続がない場合）
+        //│ ▼終了：早期リターン
         //│
         //●空きスロットを探す
-        int ID = SLOT_GET_FREE();
-        if (ID < 0) return true;
-        //│＼（空きスロットがない）
-        //│ ▼返却：異常
+        int       ID = SLOT_GET_FREE();
+        if (ID<0) ID = SLOT_GET_OLD ();
+        //│＼（該当する既存スロットがない場合）
+        //│ ●古いスロットを走査
+        //│ ┴
         //│
-        //●スロットを初期化
-        SLOT_INI(TBL[ID]);
-        //│
-        //○スロットに新規接続を登録
-        TBL[ID].used = true   ; // 使用中
-        TBL[ID].CONN = newConn; // TCP接続(実体)を登録
-        TBL[ID].CONN.setNoDelay(true); // TCPパケット遅延制御
+        //●割当スロット内容をセット
+        SLOT_SET(ID, newConn);
         //┴
       } //* while */
     //│
@@ -186,7 +230,7 @@ private:
     //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
-  } /* SLOT_ATTACH() */
+  } /* SLOT_CREATE() */
 
 //========================================================
 //§返信処理
@@ -226,30 +270,30 @@ private:
   void ON_RECIVE(){
     //┬
     //○┐【前処理】
-      //●接続管理スロットを動的アタッチ
-      bool Result = SLOT_ATTACH();
+      //●新接続のスロットを作成
+      SLOT_CREATE();
       //┴
     //│
     //○┐【主処理】
       //◎┐スロットを走査
       for (int qSID = 0; qSID < SLOTs; qSID++) {
-        //│＼（最後のスロットに達した場合）
+        //│＼（すべて走査し終えた場合）
         //│ ▼完了：走査を終了
         //│
-        //○┐【前処理（走査内）】
+        //○┐【前処理（走査単位）】
           //○使用状況を確認
           if (!TBL[qSID].used) continue;
           //│＼（[未使用]の場合）
           //│ ▽次へ：次のスロットを走査
           //│
           //●TCP接続状況を確認
-          if (!ENA_CLIENT(TBL[qSID].CONN, false)) {
+          if (!ENA_CLIENT(TBL[qSID].CONN, false)){SLOT_INI(TBL[qSID]); continue;}
           //│＼（[切断]の場合）
-              //○スロットを初期化する
-              //▽次へ：次のスロットを走査
-              SLOT_INI(TBL[qSID]);
-              continue;
-          } /* if */
+          //│ ●スロットを初期化する
+          //│ ▽次へ：次のスロットを走査
+          //│
+          //○タイムスタンプを更新
+          TBL[qSID].timeStamp = millis();
           //┴
         //│
         //○┐キュー情報を取得

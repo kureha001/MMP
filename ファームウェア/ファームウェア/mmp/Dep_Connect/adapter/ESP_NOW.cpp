@@ -217,8 +217,7 @@ public:
       char msg[128];
       snprintf(msg, sizeof(msg), " [OK] ESP-NOW (MAC %s)", String(WiFi.macAddress()));
       Log::prtln(String(msg));
-      //┴
-    //┴
+    //┴┴
   } /* constractor AdapterESPNOW() */
 
 }; /* class AdapterESPNOW */

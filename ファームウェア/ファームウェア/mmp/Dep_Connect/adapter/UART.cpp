@@ -189,8 +189,7 @@ public:
     //○┐【後処理】
       //○メッセージ表示
       Log::prtln(msg);
-      //┴
-    //┴
+    //┴┴
   } /* constractor AdapterUART() */
 
 }; /* class AdapterUART */

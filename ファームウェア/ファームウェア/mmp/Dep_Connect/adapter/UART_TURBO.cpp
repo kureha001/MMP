@@ -157,8 +157,7 @@ public:
     //│
     //○┐【後処理】
       //○（処理なし）
-      //┴
-    //┴
+    //┴┴
 } /* handle() */
 
 }; /* class AdapterUART */

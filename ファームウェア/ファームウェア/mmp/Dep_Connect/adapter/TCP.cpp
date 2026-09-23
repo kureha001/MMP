@@ -344,8 +344,7 @@ public:
     //○┐【後処理】
       //○メッセージ表示
       Log::prtln(" [OK] TCP");
-      //┴
-    //┴
+    //┴┴
 //➡ブリッジ以外：[スロット]が複数，[サーバ][受信タスク]が必要
 #else
     //○┐【主処理】
@@ -366,8 +365,7 @@ public:
       char msg[128];
       snprintf(msg, sizeof(msg), " [OK] TCP RAW    (PORT %d)", MY_PORT);
       Log::prtln(String(msg));
-      //┴
-    //┴
+    //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
   } /* constractor AdapterTCP() */

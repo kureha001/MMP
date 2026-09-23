@@ -185,8 +185,7 @@ public:
     //○┐後処理
       //○メッセージ表示
       Log::prtln(" [OK] BLE");
-      //┴
-    //┴
+    //┴┴
 #else
     //○┐【主処理】
       //○受信コールバックを登録
@@ -198,8 +197,7 @@ public:
       char msg[128];
       snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
       Log::prtln(String(msg));
-      //┴
-    //┴
+    //┴┴
 #endif
   } /* constractor AdapterBLE() */
 

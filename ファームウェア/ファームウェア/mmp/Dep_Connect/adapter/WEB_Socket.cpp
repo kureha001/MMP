@@ -233,8 +233,7 @@ public:
     //○┐【後処理】
       //○メッセージ表示
       Log::prtln(" [OK] WEB Socket");
-      //┴
-    //┴
+    //┴┴
 //➡ブリッジ以外：[サーバ][受信タスク]が必要
 #else
     //○┐主処理
@@ -254,7 +253,7 @@ public:
       char msg[128];
       snprintf(msg, sizeof(msg), " [OK] WEB Socket (PORT %d)", MY_PORT);
       Log::prtln(String(msg));
-      //┴
+    //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
   } /* constractor AdapterWEB_Socket() */

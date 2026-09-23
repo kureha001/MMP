@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/TCP.cpp
 //========================================================
-// 接続部門／業務課／担当(標準型)：TCP(RAW) 担当
+// 接続部門／担当：TCP(非同期キュー＋スロット型)
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/22)
 //========================================================
@@ -12,23 +12,18 @@
   #include <mutex>
 //┴┴
 
-//========================================================
-// 組織図
-//========================================================
 //┬
 //□┐接続部門
-  //□┐業務課
-    //□担当
-    #include "__index.h"
-//┴┴┴
+  //□担当：通信アダプタ
+  #include "__index.h"
+//┴┴
 
 //########################################################
-//# 処理詳細
+class AdapterTCP:
+  public AdapterQueueBase<WiFiClient>,
+  public AdapterSlotBase<WiFiClient>
 //########################################################
-class AdapterTCP : public AdapterQueueBase<WiFiClient> {
-public:
-  using AdapterQueueBase::AdapterQueueBase;
-
+{
 private:
 //========================================================
 //§基本情報
@@ -72,13 +67,8 @@ private:
   //─────────────────
   // 基本情報
   //─────────────────
-  int SLOTs = 0; // コンストラクタで決定
-  struct T_SLOT{
-    bool          used      = false;
-    WiFiClient    CONN             ; // TCP接続(実体)
-    unsigned long timeStamp = 0    ; // タイムスタンプ
-  };
-  T_SLOT* TBL = nullptr;
+  int     SLOTs = 0; // コンストラクタで決定
+  T_SLOT* TBL   = nullptr;
 
   //─────────────────
   // 初期化
@@ -108,74 +98,6 @@ private:
     TBL[argSID].timeStamp = millis() ; // タイムスタンプを更新
     //┴
   } /* SLOT_SET() */
-
-  //─────────────────
-  // スロットIDを取得
-  //----------------------------------
-  // 戻り値：スロットID（数値型）
-  // ・0～：正常終了（スロットID）
-  // ・-1 ：該当なし
-  //─────────────────
-  int SLOT_GET_FREE() {
-    //┬
-    //○┐【前処理】
-      //┴
-    //│
-    //○┐【主処理】
-      //◎┐スロットを走査
-      int  ID = 0;
-      for (ID = 0; ID < SLOTs; ID++) {
-        //│＼（すべて走査し終えた場合）
-        //│ ▽完了：走査を終了
-        //│
-        //○スロット状態を確認
-        if (!TBL[ID].used) break;
-        //│＼（該当するスロットにヒットした場合）
-        //│ ▽完了：走査を終了
-        //┴
-      } /* for */
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却
-      return (ID < SLOTs) ? ID : -1;
-    //┴
-  } /* SLOT_GET_FREE() */
-
-  //─────────────────
-  // 古いスロットIDを取得
-  //----------------------------------
-  // 戻り値：スロットID（数値型）
-  // ・0～：スロットID
-  //─────────────────
-  int SLOT_GET_OLD() {
-    //┬
-    //○┐【前処理】
-      //┴
-    //│
-    //○┐【主処理】
-      //◎┐最古のスロットIDを取得
-      int oldID = 0;
-      unsigned long oldTime = TBL[0].timeStamp;
-      for (int ID = 1; ID < SLOTs; ID++) {
-        //│＼（すべて走査し終えた場合）
-        //│ ▽完了：走査を終了
-        //│
-        //◇┐スロット状態を確認
-        if (TBL[ID].timeStamp < oldTime) {
-            oldID   = ID;
-            oldTime = TBL[ID].timeStamp;
-          //┴
-        //┴
-        } /* if */
-      } /* for */
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却：該当なし
-      return oldID;
-    //┴
-  } /* SLOT_GET_OLD() */
 
   //─────────────────
   // 新接続のスロットを作成
@@ -399,7 +321,11 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterTCP(MmpContext& argCtx) : AdapterQueueBase(argCtx) {
+  AdapterTCP(MmpContext& argCtx):
+    AdapterBase(argCtx), 
+    AdapterQueueBase<WiFiClient>(argCtx), 
+    AdapterSlotBase<WiFiClient>(argCtx)
+  {
     //┬
     //○┐【前処理】
       //●WiFi接続状況を確認

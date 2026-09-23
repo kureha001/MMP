@@ -1,12 +1,12 @@
-// filename : Dep_Connect/template/api1.h
+// filename : Dep_Connect/template/_api1.h
 //========================================================
-// 接続部門／業務課／作業標準：抽象基底クラス（非同期キュー型）
+// 接続部門／業務設計：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/23)
 //========================================================
+#ifndef CONN_ADP_API1_H
 #define CONN_ADP_API1_H
-#define CONN_ADP_API1_H
-
+#pragma once
 #include "_api0.h"
 #include <queue>
 #include <mutex>
@@ -18,11 +18,12 @@ namespace modeMain   { void RUN(); }
 namespace modeSub    { void RUN(); }
 namespace modeBridge { void RUN(); }
 
-//========================================================
-// 作業標準：抽象基底クラス（非同期キュー型）
-//========================================================
+//########################################################
 template <typename T>
-class AdapterQueueBase : public AdapterBase {
+class AdapterQueueBase :
+  virtual public AdapterBase
+//########################################################
+{
 protected:
   //━━━━━━━━━━━━━━━━━
   // キュー要素構造体
@@ -213,3 +214,4 @@ public:
   } /* handle() */
 
 }; /* class AdapterQueueBase */
+#endif

@@ -7,14 +7,14 @@
 //┬
 //□┐インクルード
   //□Arduinoシステム
-  #include <vector> // 登録コンテナが使用
-  #include <queue>  // 経路アダプタが使用
-  #include <mutex>  // 経路アダプタが使用
+  #include <vector> // 登録コンテナで利用
+  #include <queue>  // 業務設計・通信アダプタで利用
+  #include <mutex>  // 業務設計・通信アダプタで利用
 //┴┴
 
 //┬
 //□┐接続部門
-  //□共通課：共通関数、共通定義
+  //□共通課：共通関数・共通定義
   #include "common/__index.h"
   //│
   //□処理手順：モード別処理

@@ -7,9 +7,6 @@
 #ifndef CONN_ADP_API1_H
 #define CONN_ADP_API1_H
 #pragma once
-#include "_api0.h"
-#include <queue>
-#include <mutex>
 
 //========================================================
 // モード処理係（前方宣言）
@@ -61,7 +58,7 @@ public:
     if (frame.length() < 1) return;
     std::lock_guard<std::mutex> lock(queueMutex);
     rxQueue.push({conn, frame, SID});
-  }
+  } /* pushQueue() */
 
   //━━━━━━━━━━━━━━━━━
   // キューからの取り出し
@@ -84,8 +81,8 @@ public:
       Log::Outln(msg);
       //│
       return true;
-      //┴
-  }
+    //┴┴
+  } /* popQueue() */
 
 //############################
 //➡ブリッジ
@@ -209,8 +206,7 @@ public:
     //│
     //○┐【後処理】
       //○（処理なし）
-      //┴
-    //┴
+    //┴┴
   } /* handle() */
 
 }; /* class AdapterQueueBase */

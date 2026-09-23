@@ -7,6 +7,9 @@
 #ifndef CONN_ADP_API2_H
 #define CONN_ADP_API2_H
 #pragma once
+//┬
+//□┐インクルード
+//┴┴
 
 //########################################################
 template <typename T>

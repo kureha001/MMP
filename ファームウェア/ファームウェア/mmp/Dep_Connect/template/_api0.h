@@ -7,6 +7,9 @@
 #ifndef CONN_ADP_API0_H
 #define CONN_ADP_API0_H
 #pragma once
+//┬
+//□┐インクルード
+//┴┴
 
 //########################################################
 class AdapterBase {

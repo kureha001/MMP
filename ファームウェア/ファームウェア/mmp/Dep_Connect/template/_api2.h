@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務設計：抽象基底クラス（接続スロット型）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/24)
 //========================================================
 #ifndef CONN_ADP_API2_H
 #define CONN_ADP_API2_H
@@ -17,24 +17,43 @@ class AdapterSlotBase :
   virtual public AdapterBase
 //########################################################
 {
-protected:
-//========================================================
-//§基本情報
-//========================================================
-  struct T_SLOT {
-    bool          used      = false;
-    T             CONN             ; 
-    unsigned long timeStamp = 0    ;
-  };
-
-  int     SLOTs = 0;
-  T_SLOT* TBL   = nullptr;
-
 //========================================================
 //§公開機能
 //========================================================
 public:
   using AdapterBase::AdapterBase; // コンストラクタを継承
+
+protected:
+//========================================================
+//§接続管理
+//========================================================
+  //─────────────────
+  // 基本情報
+  //─────────────────
+  struct T_SLOT {
+    bool          used      = false; // 使用状況
+    T             CONN             ; // 接続識別子(テンプレート)
+    unsigned long timeStamp = 0    ; // タイムスタンプ
+  };
+
+  int     SLOTs = 0;
+  T_SLOT* TBL   = nullptr;
+
+  //─────────────────
+  // スロット内容をセット
+  //─────────────────
+  void SLOT_SET(
+    int argSID, // スロットID
+    T   argConn // 接続識別子(テンプレート)
+  ) {
+    //┬
+    //○スロット内容をセット
+    TBL[argSID].used      = true    ; // 有効性[ON]
+    TBL[argSID].CONN      = argConn ; // 接続識別子を反映
+    TBL[argSID].timeStamp = millis(); // タイムスタンプを更新
+    //┴
+  } /* SLOT_SET() */
+
   //─────────────────
   // スロットIDを取得
   //----------------------------------
@@ -102,6 +121,43 @@ public:
       return oldID;
     //┴
   } /* SLOT_GET_OLD() */
+
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//§受信処理
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // タスク関数
+  //─────────────────
+  virtual void ON_RECIVE() = 0;
+
+  //─────────────────
+  // スレッド処理の定義（FreeRTOS用）
+  //─────────────────
+  static void StreamQueue(void *pvParameters) {
+    auto* self = static_cast<AdapterSlotBase<T>*>(pvParameters);
+    for (;;) {
+      if (self) self->ON_RECIVE();        // タスク関数
+      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
+    } // for
+  } // StreamQueue()
+
+  //─────────────────
+  // 並列処理の開始
+  //─────────────────
+  TaskHandle_t MY_TASK = NULL;  // タスク識別(並列処理)
+  void RUN_TASK(int argAID) {
+    //┬
+    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
+    xTaskCreate(
+      StreamQueue           , // 実行するタスク関数
+      String(argAID).c_str(), // タスク名（デバッグ用）
+      4096                  , // スタックサイズ（バイト単位）
+      this                  , // パラメータ
+      2                     , // 優先度
+      &MY_TASK                // タスク識別を取得
+    );
+    //┴
+  } // RUN_TASK()
 
 }; /* class AdapterSlotBase */
 #endif

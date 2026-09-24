@@ -31,21 +31,21 @@ private:
   //─────────────────
   // 一般情報
   //─────────────────
-    const int  ADP_ID = ADP_ID_TCP;
-    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  const int  ADP_ID = ADP_ID_TCP;
+  int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
   //─────────────────
   // サービス関連情報
   //─────────────────
-    int         MY_PORT = 8081   ; // ポート番号
+  int         MY_PORT = 8081   ; // ポート番号
 //--------------------------
 //➡ブリッジ：クライアント
 #if (MODE == MODE_BRIDGE)
-    WiFiClient  MY_NET           ; // クライアント(実体)
+  WiFiClient  MY_NET           ; // クライアント(実体)
 //➡ブリッジ以外：サーバ
 #else
-    WiFiServer* MY_NET  = nullptr; // サーバ(ポインタ)
-#endif /* ➡ブリッジ ➡ブリッジ以外 */
+  WiFiServer* MY_NET  = nullptr; // サーバ(ポインタ)
+#endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
 
 //========================================================
@@ -103,46 +103,46 @@ private:
 //--------------------------
 //➡ブリッジ：単一スロット
 #if (MODE == MODE_BRIDGE)
-    //┬
-    //○┐【前処理】
-      //┴
-    //│
-    //○┐【主処理】
-      //●割当スロット内容をセット
-      SLOT_INI_SET(0, MY_NET);
-    //│
-    //○┐【後処理】
-    //┴┴
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
+    //●割当スロット内容をセット
+    SLOT_INI_SET(0, MY_NET);
+  //│
+  //○┐【後処理】
+  //┴┴
 //➡ブリッジ以外：動的スロット
 #else
-    //┬
-    //○┐【前処理】
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
+    //◎┐新接続のスロットを作成
+    while (true) {
+      //│
+      //○未管理のTCP接続を取得
+      WiFiClient newConn = MY_NET->available();
+      if (!newConn) return;
+      //│＼（未管理のTCP接続がない場合）
+      //│ ▼終了：早期リターン
+      //│
+      //●空きスロットを探す
+      int       ID = SLOT_GET_FREE();
+      if (ID<0) ID = SLOT_GET_OLD ();
+      //│＼（該当する既存スロットがない場合）
+      //│ ●古いスロットを走査
+      //│ ┴
+      //│
+      //●割当スロット内容をセット
+      SLOT_INI_SET(ID, newConn);
       //┴
-    //│
-    //○┐【主処理】
-      //◎┐新接続のスロットを作成
-      while (true) {
-        //│
-        //○未管理のTCP接続を取得
-        WiFiClient newConn = MY_NET->available();
-        if (!newConn) return;
-        //│＼（未管理のTCP接続がない場合）
-        //│ ▼終了：早期リターン
-        //│
-        //●空きスロットを探す
-        int       ID = SLOT_GET_FREE();
-        if (ID<0) ID = SLOT_GET_OLD ();
-        //│＼（該当する既存スロットがない場合）
-        //│ ●古いスロットを走査
-        //│ ┴
-        //│
-        //●割当スロット内容をセット
-        SLOT_INI_SET(ID, newConn);
-        //┴
-      } //* while */
-    //│
-    //○┐【後処理】
-    //┴┴
+    } //* while */
+  //│
+  //○┐【後処理】
+  //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
   } /* SLOT_CREATE() */
@@ -157,21 +157,21 @@ private:
 //--------------------------
 //➡ブリッジ以外
 #if (MODE != MODE_BRIDGE)
-    //┬
-    //○┐【前処理】
-      //●TCP接続状況を確認
-      if (!ENA_CLIENT(argConn, true)) return;
-      //┴
-    //│
-    //○┐【主処理】
-      //○クライアントにレスポンス
-      argConn.print(ctx.resMSG);
-      //┴
-    //│
-    //○┐【後処理】
-      //●ログ出力
-      adpFnBase::SHOW_LOG();
-    //┴┴
+  //┬
+  //○┐【前処理】
+    //●TCP接続状況を確認
+    if (!ENA_CLIENT(argConn, true)) return;
+    //┴
+  //│
+  //○┐【主処理】
+    //○クライアントにレスポンス
+    argConn.print(ctx.resMSG);
+    //┴
+  //│
+  //○┐【後処理】
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
+  //┴┴
 #endif /* ➡ブリッジ以外 */
 //--------------------------
   } /* SEND_CONN() */
@@ -183,50 +183,50 @@ private:
   // タスク関数
   //─────────────────
   void ON_RECIVE() override final {
-    //┬
-    //○┐【前処理】
-      //●新接続のスロットを作成
-      SLOT_CREATE();
-      //┴
-    //│
-    //○┐【主処理】
-      //◎┐スロットを走査
-      for (int qSID = 0; qSID < SLOTs; qSID++) {
-        //│＼（すべて走査し終えた場合）
-        //│ ▼完了：走査を終了
+  //┬
+  //○┐【前処理】
+    //●新接続のスロットを作成
+    SLOT_CREATE();
+    //┴
+  //│
+  //○┐【主処理】
+    //◎┐スロットを走査
+    for (int qSID = 0; qSID < SLOTs; qSID++) {
+      //│＼（すべて走査し終えた場合）
+      //│ ▼完了：走査を終了
+      //│
+      //○┐【前処理（走査単位）】
+        //○使用状況を確認
+        if (!TBL[qSID].used) continue;
+        //│＼（[未使用]の場合）
+        //│ ▽次へ：次のスロットを走査
         //│
-        //○┐【前処理（走査単位）】
-          //○使用状況を確認
-          if (!TBL[qSID].used) continue;
-          //│＼（[未使用]の場合）
-          //│ ▽次へ：次のスロットを走査
-          //│
-          //●TCP接続状況を確認
-          if (!ENA_CLIENT(TBL[qSID].CONN, false)){SLOT_INI(TBL[qSID]); continue;}
-          //│＼（[切断]の場合）
-          //│ ●スロットを初期化する
-          //│ ▽次へ：次のスロットを走査
-          //│
-          //○タイムスタンプを更新
-          TBL[qSID].timeStamp = millis();
-          //┴
+        //●TCP接続状況を確認
+        if (!ENA_CLIENT(TBL[qSID].CONN, false)){SLOT_INI(TBL[qSID]); continue;}
+        //│＼（[切断]の場合）
+        //│ ●スロットを初期化する
+        //│ ▽次へ：次のスロットを走査
         //│
-        //○┐キュー情報を取得
-          //●フレームを取得（ストリーム型）
-          String qFrame = adpFnStream::GET_FRAME(TBL[qSID].CONN);
-          if (qFrame == "") continue;
-          //│＼（受信データがない場合）
-          //│ ▽次へ：次のスロットを走査
-          //┴
-        //│
-        //●キューを登録
-        pushQueue(TBL[qSID].CONN, qFrame, qSID);
+        //○タイムスタンプを更新
+        TBL[qSID].timeStamp = millis();
         //┴
-      } /* for */
+      //│
+      //○┐キュー情報を取得
+        //●フレームを取得（ストリーム型）
+        String qFrame = adpFnStream::GET_FRAME(TBL[qSID].CONN);
+        if (qFrame == "") continue;
+        //│＼（受信データがない場合）
+        //│ ▽次へ：次のスロットを走査
+        //┴
+      //│
+      //●キューを登録
+      pushQueue(TBL[qSID].CONN, qFrame, qSID);
       //┴
-    //│
-    //○┐【後処理】
-    //┴┴
+    } /* for */
+    //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* ON_RECIVE() */
 
 //========================================================
@@ -239,40 +239,40 @@ private:
   // 転送実施
   //─────────────────
   void trans() override final {
-    //┬
-    //○┐【前処理】
-      //○宛先情報を取得
-      String transIP = ctx.bridge.Dat1;
-      //┴
+  //┬
+  //○┐【前処理】
+    //○宛先情報を取得
+    String transIP = ctx.bridge.Dat1;
+    //┴
+  //│
+  //○┐【主処理】
+    //◇┐クライアントを起動
+    if (!ENA_CLIENT(MY_NET, false)) {
+      //├┐（未接続の場合）
+        //│
+        //○クライアントを起動（成功するまでの待ち時間を指定）
+        MY_NET.setTimeout(LIMIT::TIME_CONNECT);
+        if (!MY_NET.connect(transIP.c_str(), MY_PORT)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
+        //│＼（接続に失敗した場合）
+        //│ ○完了MSGにエラーCDをセット
+        //│ ▼終了：早期リターン
+        //│
+        //○スロットを初期化
+        SLOT_INI(TBL[0]);
+        //│
+        //●受信タスクを登録
+        RUN_TASK(ADP_ID); // 並列処理で登録
+        //┴
+      //└┐（その他）
+        //┴
+    } /* if */
     //│
-    //○┐【主処理】
-      //◇┐クライアントを起動
-      if (!ENA_CLIENT(MY_NET, false)) {
-        //├┐（未接続の場合）
-          //│
-          //○クライアントを起動（成功するまでの待ち時間を指定）
-          MY_NET.setTimeout(LIMIT::TIME_CONNECT);
-          if (!MY_NET.connect(transIP.c_str(), MY_PORT)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
-          //│＼（接続に失敗した場合）
-          //│ ○完了MSGにエラーCDをセット
-          //│ ▼終了：早期リターン
-          //│
-          //○スロットを初期化
-          SLOT_INI(TBL[0]);
-          //│
-          //●受信タスクを登録
-          RUN_TASK(ADP_ID); // 並列処理で登録
-          //┴
-        //└┐（その他）
-          //┴
-      } /* if */
-      //│
-      //○退避したフレームでリクエスト(非同期でデータ受信)
-      MY_NET.print(ctx.bridge.Frame);
-      //┴
-    //│
-    //○┐【後処理】
-    //┴┴
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    MY_NET.print(ctx.bridge.Frame);
+    //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* trans() */
 #endif /* ➡ブリッジ */
 //############################
@@ -289,50 +289,50 @@ public:
   // コンストラクタ：多重継承＋仮想継承
   //─────────────────
   AdapterTCP(MmpContext& argCtx):
-    AdapterBase(argCtx), 
+    AdapterBase<WiFiClient>(argCtx), 
     AdapterQueueBase<WiFiClient>(argCtx), 
     AdapterSlotBase<WiFiClient>(argCtx)
   {
-    //┬
-    //○┐【前処理】
-      //●WiFi接続状況を確認
-      if (!devWiFi::ENABLED(true)) return;
-      //┴
-    //│
+  //┬
+  //○┐【前処理】
+    //●WiFi接続状況を確認
+    if (!devWiFi::ENABLED(true)) return;
+    //┴
+  //│
 //--------------------------
 //➡ブリッジ：[スロット]が単一，[サーバ][受信タスク]が不要
 #if (MODE == MODE_BRIDGE)
-    //○┐【主処理】
-      //○接続管理TBLを作成
-      SLOTs = 1;
-      TBL   = new T_SLOT[SLOTs];
-      //┴
-    //│
-    //○┐【後処理】
-      //○メッセージ表示
-      Log::prtln(" [OK] TCP");
-    //┴┴
+  //○┐【主処理】
+    //○接続管理TBLを作成
+    SLOTs = 1;
+    TBL   = new T_SLOT[SLOTs];
+    //┴
+  //│
+  //○┐【後処理】
+    //○メッセージ表示
+    Log::prtln(" [OK] TCP");
+  //┴┴
 //➡ブリッジ以外：[スロット]が複数，[サーバ][受信タスク]が必要
 #else
-    //○┐【主処理】
-      //○接続管理TBLを作成
-      SLOTs = 10;
-      TBL   = new T_SLOT[SLOTs];
-      //│
-      //○サーバを起動
-      MY_NET = new WiFiServer(MY_PORT);
-      MY_NET->begin();
-      //│
-      //●受信タスク（並列処理）を登録
-      RUN_TASK(ADP_ID);
-      //┴
+  //○┐【主処理】
+    //○接続管理TBLを作成
+    SLOTs = 10;
+    TBL   = new T_SLOT[SLOTs];
     //│
-    //○┐【後処理】
-      //○メッセージ表示
-      char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] TCP RAW    (PORT %d)", MY_PORT);
-      Log::prtln(String(msg));
-    //┴┴
+    //○サーバを起動
+    MY_NET = new WiFiServer(MY_PORT);
+    MY_NET->begin();
+    //│
+    //●受信タスク（並列処理）を登録
+    RUN_TASK(ADP_ID);
+    //┴
+  //│
+  //○┐【後処理】
+    //○メッセージ表示
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] TCP RAW    (PORT %d)", MY_PORT);
+    Log::prtln(String(msg));
+  //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
   } /* constractor AdapterTCP() */

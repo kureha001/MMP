@@ -14,7 +14,9 @@
 //┴┴
 
 //########################################################
-class AdapterUART : public AdapterBase {
+class AdapterUART:
+  public AdapterBase<Stream*>
+{
 //########################################################
 private:
 //========================================================
@@ -23,7 +25,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_UART;
+  const int ADP_ID = ADP_ID_UART;
 
 //========================================================
 //§接続管理
@@ -39,7 +41,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(Stream* argConn) {
+  void SEND_CONN(Stream* argConn) override final {
     //┬
     //○クライアントにレスポンス
     //●ログ出力
@@ -66,25 +68,24 @@ private:
   // 前処理(ブリッジ／マスタ)
   //─────────────────
   bool handle_SetupBridge() override final {
-    //┬
-    //○┐【前処理】
-      //○(処理なし)
-      //┴
-    //│
-    //○┐【主処理】
-      //●スタートアップ(マスタ用)を実施
-      bool retGo = modeBridge::MASTER(
-        CONN,                                  // 単一スロット
-        [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
-      );
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却：正常終了(進行判定)
-      return retGo;
+  //┬
+  //○┐【前処理】
     //┴
+  //│
+  //○┐【主処理】
+    //●スタートアップ(マスタ用)を実施
+    bool retGo = modeBridge::MASTER(
+      CONN,                                  // 単一スロット
+      [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
+    );
+    //┴
+  //│
+  //○┐【後処理】
+    //▼返却：正常終了(進行判定)
+    return retGo;
+  //┴
   } /* handle_SetupBridge() */
-#endif /* ブリッジ */
+#endif /* ➡ブリッジ */
 //############################
 
 //========================================================
@@ -94,7 +95,9 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterUART(MmpContext& argCtx) : AdapterBase(argCtx) {
+  AdapterUART(MmpContext& argCtx):
+    AdapterBase<Stream*>(argCtx)
+  {
     //┬
     //○メッセージ表示
     Log::prtln(" [OK] UART Hi-Speed / USB(CDC) only");
@@ -105,58 +108,57 @@ public:
   // ポーリング用ハンドラ
   //━━━━━━━━━━━━━━━━━
   void handle() override final {
-    //┬
-    //○┐【前処理】
-      //●ブリッジ用
-      if (handle_SetupBridge()) return;
-      //│＼（進行NGの場合）
-      //│ ▼終了：早期リターン
-      //┴
+  //┬
+  //○┐【前処理】
+    //●ブリッジ用
+    if (handle_SetupBridge()) return;
+    //│＼（進行NGの場合）
+    //│ ▼終了：早期リターン
+    //┴
+  //│
+  //○┐【主処理】
+    //●ストリームを受信
+    String retFrame = adpFnStream::GET_FRAME(*(CONN));
+    if (retFrame == "") return;
+    //│＼（受信データがない場合）
+    //│ ▼終了：早期リターン
     //│
-    //○┐【主処理】
-      //●ストリームを受信
-      String retFrame = adpFnStream::GET_FRAME(*(CONN));
-      if (retFrame == "") return;
-      //│＼（受信データがない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //●コンテキストを初期化
-      adpFnBase::SETUP_CTX(ADP_ID, retFrame);
-      //│
+    //●コンテキストを初期化
+    adpFnBase::SETUP_CTX(ADP_ID, retFrame);
+    //│
 //--------------------------
 //➡メイン
 #if   (MODE == MODE_MAIN)
-      //●コマンドを実行
-      //●実行結果をレスポンス
-      modeMain::RUN();
-      SEND_CONN(CONN);
-      //┴
+    //●コマンドを実行
+    //●実行結果をレスポンス
+    modeMain::RUN();
+    SEND_CONN(CONN);
+    //┴
 //➡サブ
 #elif (MODE == MODE_SUB)
-      //●コマンドを実行
-      //●実行結果をレスポンス
-      modeSub::RUN();
-      SEND_CONN(CONN);
-      //┴
+    //●コマンドを実行
+    //●実行結果をレスポンス
+    modeSub::RUN();
+    SEND_CONN(CONN);
+    //┴
 //➡ブリッジ
 #elif (MODE == MODE_BRIDGE)
-      //●ブリッジ処理を実行
-      modeBridge::RUN(0, retFrame);
-      if (ctx.resMSG != "") {SEND_CONN(CONN); return;}
-      //│＼（[内部コマンド応答済][エラーあり]の場合）
-      //│ ○クライアントにレスポンス
-      //│ ▼終了：早期リターン
-      //│
-      //○進捗状況を[依頼中]にセット
-      //▼終了：早期リターン ※1件ずつ処理
-      ctx.bridge.Stat = BSTAT::REQ;
-      return;
-#endif /* マスタ，サブ，ブリッジ */
-//--------------------------
+    //●ブリッジ処理を実行
+    modeBridge::RUN(0, retFrame);
+    if (ctx.resMSG != "") {SEND_CONN(CONN); return;}
+    //│＼（[内部コマンド応答済][エラーあり]の場合）
+    //│ ○クライアントにレスポンス
+    //│ ▼終了：早期リターン
     //│
-    //○┐【後処理】
-      //○（処理なし）
-    //┴┴
-} /* handle() */
+    //○進捗状況を[依頼中]にセット
+    //▼終了：早期リターン ※1件ずつ処理
+    ctx.bridge.Stat = BSTAT::REQ;
+    return;
+#endif /* ➡マスタ｜➡サブ｜➡ブリッジ */
+//--------------------------
+  //│
+  //○┐【後処理】
+  //┴┴
+  } /* handle() */
 
 }; /* class AdapterUART */

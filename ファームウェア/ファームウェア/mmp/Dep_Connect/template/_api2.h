@@ -14,14 +14,14 @@
 //########################################################
 template <typename T>
 class AdapterSlotBase :
-  virtual public AdapterBase
+  virtual public AdapterBase<T>
 //########################################################
 {
 //========================================================
 //§公開機能
 //========================================================
 public:
-  using AdapterBase::AdapterBase; // コンストラクタを継承
+  using AdapterBase<T>::AdapterBase;
 
 protected:
 //========================================================

@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：ESP-NOW(非同期キュー型)
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
@@ -27,13 +27,13 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_ESPN;
-    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  const int ADP_ID = ADP_ID_ESPN;
+  int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    static AdapterESPNOW* MY_TASK; // タスク識別(インスタンス)
+  static AdapterESPNOW* MY_TASK; // タスク識別(インスタンス)
 
 //========================================================
 //§各種ヘルパ
@@ -102,7 +102,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(String argConn) override {
+  void SEND_CONN(String argConn) override final {
 //--------------------------
 //➡ブリッジ以外
 #if (MODE != MODE_BRIDGE)
@@ -129,61 +129,61 @@ private:
     const uint8_t             *argDATA, // 受信データ
     int                       argLEN    // 受信データ長
   ) {
-    //┬
-    //○┐【前処理】
-      //○受信内容を確認
-      if (!MY_TASK) return;
-      //│＼（当該インスタンスではない場合）
-      //│ ▼終了：早期リターン
-    //│
-    //○┐【主処理】
-      //○┐キュー情報を取得
-        //●接続情報を取得（MACアドレス）
-        String qConn  = macToString(argINFO->src_addr);
-        //│
-        //○フレームを取得（パケット型）
-        String qFrame = String((const char*)argDATA, argLEN);
-        //│
-        //●スロットIDを取得(ダミー値)
-        int qSID = 0;
-        //┴
+  //┬
+  //○┐【前処理】
+    //○受信内容を確認
+    if (!MY_TASK) return;
+    //│＼（当該インスタンスではない場合）
+    //│ ▼終了：早期リターン
+  //│
+  //○┐【主処理】
+    //○┐キュー情報を取得
+      //●接続情報を取得（MACアドレス）
+      String qConn  = macToString(argINFO->src_addr);
       //│
-      //●キューを登録
-      MY_TASK->pushQueue(qConn, qFrame, qSID);
+      //○フレームを取得（パケット型）
+      String qFrame = String((const char*)argDATA, argLEN);
+      //│
+      //●スロットIDを取得(ダミー値)
+      int qSID = 0;
       //┴
     //│
-    //○┐【後処理】
-    //┴┴
+    //●キューを登録
+    MY_TASK->pushQueue(qConn, qFrame, qSID);
+    //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* ON_RECIVE() */
 
 //========================================================
 //§ハンドル前処理
 //========================================================
 
-//############################
-//➡ブリッジ
-#if (MODE == MODE_BRIDGE)
 //========================================================
 //§転送処理
 //========================================================
+//############################
+//➡ブリッジ
+#if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // 転送実施
   //━━━━━━━━━━━━━━━━━
   void trans() override final {
-    //┬
-    //○┐【前処理】
-      //●宛先情報を取得
-      uint8_t macBuf[6] = {0};
-      rawStringToMac(ctx.bridge.Dat1, macBuf);
-      //┴
-    //│
-    //○┐【主処理】
-      //○退避したフレームでリクエスト(コールバックでデータ受信)
-      sendRaw(macBuf, ctx.bridge.Frame);
-      //┴
-    //│
-    //○┐【後処理】
-    //┴┴
+  //┬
+  //○┐【前処理】
+    //●宛先情報を取得
+    uint8_t macBuf[6] = {0};
+    rawStringToMac(ctx.bridge.Dat1, macBuf);
+    //┴
+  //│
+  //○┐【主処理】
+    //○退避したフレームでリクエスト(コールバックでデータ受信)
+    sendRaw(macBuf, ctx.bridge.Frame);
+    //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* trans() */
 #endif /* ➡ブリッジ */
 //############################
@@ -195,29 +195,32 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterESPNOW(MmpContext& argCtx) : AdapterBase(argCtx), AdapterQueueBase<String>(argCtx) {
-    //┬
-    //○┐【前処理】
-      //┴
+  AdapterESPNOW(MmpContext& argCtx):
+    AdapterBase<String>(argCtx),
+    AdapterQueueBase<String>(argCtx)
+  {
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
+    //○サーバを起動
+    if (esp_now_init() != ESP_OK) {Log::prtln(" [NG] ESP-NOW"); return;}
+    //│＼（起動に失敗した場合）
+    //│ ○メッセージ表示
+    //│ ▼終了：早期リターン
     //│
-    //○┐【主処理】
-      //○サーバを起動
-      if (esp_now_init() != ESP_OK) {Log::prtln(" [NG] ESP-NOW"); return;}
-      //│＼（起動に失敗した場合）
-      //│ ○メッセージ表示
-      //│ ▼終了：早期リターン
-      //│
-      //●受信タスクを登録
-      MY_TASK = this                     ; // タスク識別を取得
-      esp_now_register_recv_cb(ON_RECIVE); // コールバック関数で登録
-      //┴
-    //│
-    //○┐【後処理】
-      //○メッセージ表示
-      char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] ESP-NOW (MAC %s)", String(WiFi.macAddress()));
-      Log::prtln(String(msg));
-    //┴┴
+    //●受信タスクを登録
+    MY_TASK = this                     ; // タスク識別を取得
+    esp_now_register_recv_cb(ON_RECIVE); // コールバック関数で登録
+    //┴
+  //│
+  //○┐【後処理】
+    //○メッセージ表示
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] ESP-NOW (MAC %s)", String(WiFi.macAddress()));
+    Log::prtln(String(msg));
+  //┴┴
   } /* constractor AdapterESPNOW() */
 
 }; /* class AdapterESPNOW */

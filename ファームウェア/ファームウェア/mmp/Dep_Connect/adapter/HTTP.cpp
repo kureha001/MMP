@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：HTTP(単発型)
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
@@ -18,7 +18,9 @@
 //┴┴
 
 //########################################################
-class AdapterHTTP : public AdapterBase {
+class AdapterHTTP:
+  public AdapterBase<WebServer&>
+{
 //########################################################
 private:
 //========================================================
@@ -27,18 +29,23 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID  = ADP_ID_HTTP;
-    bool      IS_JSON = false;
+  const int ADP_ID  = ADP_ID_HTTP;
+  bool      IS_JSON = false;
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
+//--------------------------
+//➡ブリッジ：クライアント
 #if (MODE == MODE_BRIDGE)
-    HTTPClient  MY_NET          ; // HTTPクライアント(実体)
+  HTTPClient MY_NET           ; // HTTPクライアント(実体)
+//➡ブリッジ以外：サーバ
 #else
-    WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
-    int        MY_PORT = 8080   ; // ポート番号
-#endif /* ブリッジ，ブリッジ以外 */
+  WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
+  int        MY_PORT = 8080   ; // ポート番号
+#endif /* ➡ブリッジ ➡ブリッジ以外 */
+//--------------------------
+//--------------------------
 
 //############################
 //#１.ブリッジ以外：サーバ機能
@@ -47,31 +54,31 @@ private:
 //========================================================
 //§返信処理
 //========================================================
-    //─────────────────
-    // CORS許可用HTTPヘッダ追加
-    //----------------------------------
-    // ブラウザ上のJavaScriptから呼び出すための許可設定
-    // → Webブラウザのセキュリティ制約(CORS)を通過させる
-    //─────────────────
-    inline void ADD_CROSS(WebServer& argSrv) {
-        //┬
-        //○アクセス元Webページの制限
-        //  → 制限なし
-        argSrv.sendHeader("Access-Control-Allow-Origin", "*");
-        //│
-        //○有効なHTTPメソッドを指定
-        //  → データ取得・事前確認
-        argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-        //│
-        //○許可するHTTPリクエストヘッダーを指定
-        //  → データ形式・JavaScript(Ajax)向け識別・認証情報
-        argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
-        //│
-        //○CORS確認結果をブラウザが記憶する時間を指定
-        //  ← 600秒=10分
-        argSrv.sendHeader("Access-Control-Max-Age", "600");
-        //┴
-    } /* ADD_CROSS() */
+  //─────────────────
+  // CORS許可用HTTPヘッダ追加
+  //----------------------------------
+  // ブラウザ上のJavaScriptから呼び出すための許可設定
+  // → Webブラウザのセキュリティ制約(CORS)を通過させる
+  //─────────────────
+  inline void ADD_CROSS(WebServer& argSrv) {
+    //┬
+    //○アクセス元Webページの制限
+    //  → 制限なし
+    argSrv.sendHeader("Access-Control-Allow-Origin", "*");
+    //│
+    //○有効なHTTPメソッドを指定
+    //  → データ取得・事前確認
+    argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+    //│
+    //○許可するHTTPリクエストヘッダーを指定
+    //  → データ形式・JavaScript(Ajax)向け識別・認証情報
+    argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
+    //│
+    //○CORS確認結果をブラウザが記憶する時間を指定
+    //  ← 600秒=10分
+    argSrv.sendHeader("Access-Control-Max-Age", "600");
+    //┴
+  } /* ADD_CROSS() */
 
   //─────────────────
   // JSON形式でレスポンス
@@ -238,25 +245,23 @@ private:
 //#２.メイン：JSONはメインのみ
 //############################
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // クライアントに送信(通常の5バイト)
-  //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(){
-//############################
-//# ブリッジ以外：
-//# ※ブリッジは[trans()]で処理
-//############################
+  //─────────────────
+  void SEND_CONN(WebServer& argConn) override final {
+//--------------------------
+//➡ブリッジ以外：
 #if (MODE != MODE_BRIDGE)
     //┬
     //○テキストをレスポンス
-    ADD_CROSS(*MY_NET);
-    MY_NET->send(200, "text/plain; charset=utf-8", ctx.resMSG);
+    ADD_CROSS(argConn);
+    argConn.send(200, "text/plain; charset=utf-8", ctx.resMSG);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-#endif /* ブリッジ以外 */
-//############################
+#endif /* ➡ブリッジ以外 */
+//--------------------------
   } /* SEND_CONN() */
 
 //========================================================
@@ -352,12 +357,12 @@ private:
 //➡メイン：JSON／TXT選択
 //--------------------------
 #if   (MODE == MODE_MAIN)
-      IS_JSON ? SEND_CONN_JSON() : SEND_CONN();
+      IS_JSON ? SEND_CONN_JSON() : SEND_CONN(server);
 //--------------------------
 //➡サブ：TXTのみ
 //--------------------------
 #elif (MODE == MODE_SUB)
-      SEND_CONN();
+      SEND_CONN(server);
 #endif /* メイン，サブ */
 //--------------------------
       //┴
@@ -373,16 +378,15 @@ private:
 //§ハンドル前処理
 //========================================================
 
-//############################
-//# 転送機能はブリッジのみ
-//############################
-#if (MODE == MODE_BRIDGE)
 //========================================================
 //§転送処理
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+//############################
+//➡ブリッジ
+#if (MODE == MODE_BRIDGE)
+  //─────────────────
   // 転送実施
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void trans() override final {
     //┬
     //○クライアントを起動＋リクエストを転送
@@ -407,28 +411,27 @@ private:
     ctx.resMSG   = ctx.strFrame;
     //┴
   };
-#endif /* ブリッジ */
+#endif /* ➡ブリッジ */
 //############################
 
 //========================================================
 //§公開機能
 //========================================================
 public:
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // コンストラクタ
-  //━━━━━━━━━━━━━━━━━
-  AdapterHTTP(MmpContext& argCtx) : AdapterBase(argCtx) {
+  //─────────────────
+  AdapterHTTP(MmpContext& argCtx):
+    AdapterBase<WebServer&>(argCtx)
+  {
 //--------------------------
 //➡ブリッジ
-//--------------------------
 #if (MODE == MODE_BRIDGE)
     //┬
     //○メッセージ表示
     Log::prtln(" [OK] HTTP");
     //┴
-//--------------------------
 //➡ブリッジ以外
-//--------------------------
 #else
     //┬
     //○サービス資源を生成
@@ -441,39 +444,34 @@ public:
     snprintf(msg, sizeof(msg), " [OK] HTTP / PORT.%d", MY_PORT);
     Log::prtln(String(msg));
     //┴
-#endif /* ブリッジ，ブリッジ以外 */
+#endif /* ➡ブリッジ ➡ブリッジ以外 */
 //--------------------------
   } /* constractor AdapterHTTP() */
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // ポーリング用ハンドラ
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void handle() override {
 //--------------------------
 //➡ブリッジ
-//--------------------------
-    //┬
-    //○┐【前処理】
-      //○(処理なし)
-      //┴
-    //│
-    //○┐【主処理】
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
 #if (MODE == MODE_BRIDGE)
-      //●スタートアップ(スレーブ用)を実施
-      bool retGo = modeBridge::SLAVE(ADP_ID, [this](){this->trans();});
-//--------------------------
+    //●スタートアップ(スレーブ用)を実施
+    bool retGo = modeBridge::SLAVE(ADP_ID, [this](){this->trans();});
 //➡ブリッジ以外
-//--------------------------
 #else
-      //●ルーティングを指示（その後も同期処理）
-      MY_NET->handleClient();
-#endif /* ブリッジ，ブリッジ以外 */
+    //●ルーティングを指示（その後も同期処理）
+    MY_NET->handleClient();
+#endif /* ➡ブリッジ｜➡ブリッジ以外 */
 //--------------------------
-      //┴
-    //│
-    //○┐【後処理】
-      //○(処理なし)
-    //┴┴
+    //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* handle() */
 
 }; /* class AdapterHTTP */

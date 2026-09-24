@@ -27,8 +27,8 @@ private:
   //─────────────────
   // 一般情報
   //─────────────────
-    const int ADP_ID = ADP_ID_UART;
-    int getAID() const override { return ADP_ID; } // 基底クラスに連携
+  const int ADP_ID = ADP_ID_UART;
+  int getAID() const override { return ADP_ID; } // 基底クラスに連携
 
 //========================================================
 //§各種ヘルパ
@@ -60,7 +60,11 @@ private:
   // タスク関数
   //─────────────────
   void ON_RECIVE() override final {
-    //┬
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
     //◎┐スロットを走査
     for (int ID = 0; ID < SLOTs; ID++) {
       //│＼（最後のスロットに達した場合）
@@ -74,6 +78,9 @@ private:
       //┴
     } /* for */
     //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* ON_RECIVE() */
 
 //========================================================
@@ -90,23 +97,22 @@ private:
   // 前処理(ブリッジ／マスタ)
   //─────────────────
   bool handle_SetupBridge() override final {
-    //┬
-    //○┐【前処理】
-      //○(処理なし)
-      //┴
-    //│
-    //○┐【主処理】
-      //●スタートアップ(マスタ用)を実施
-      bool retGo = modeBridge::MASTER(
-        TBL[ctx.bridge.slotID].CONN,           // 退避済スロット
-        [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
-      );
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却：正常終了(進行判定)
-      return retGo;
+  //┬
+  //○┐【前処理】
     //┴
+  //│
+  //○┐【主処理】
+    //●スタートアップ(マスタ用)を実施
+    bool retGo = modeBridge::MASTER(
+      TBL[ctx.bridge.slotID].CONN,           // 退避済スロット
+      [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
+    );
+    //┴
+  //│
+  //○┐【後処理】
+    //▼返却：正常終了(進行判定)
+    return retGo;
+  //┴
   } /* handle_SetupBridge() */
 #endif /* ➡ブリッジ */
 //############################
@@ -119,45 +125,44 @@ public:
   // コンストラクタ：多重継承＋仮想継承
   //─────────────────
   AdapterUART(MmpContext& argCtx): 
-    AdapterBase(argCtx), 
+    AdapterBase<Stream*>(argCtx), 
     AdapterQueueBase<Stream*>(argCtx), 
     AdapterSlotBase<Stream*>(argCtx) 
   {
-    //┬
-    //○┐【前処理】
-      //○（処理なし）
-      //┴
-    //│
-    //○┐【主処理】
-      //●接続管理TBLを作成
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
+    //●接続管理TBLを作成
 //--------------------------
 //➡サブ
 #if (MODE == MODE_SUB)
-      SLOTs = 2;
-      TBL = new T_SLOT[SLOTs];
-      SLOT_SET(0, &Serial);
-      SLOT_SET(1, &Serial2);
-      String msg = " [OK] UART USB(CDC)+Serial#2";
+    SLOTs = 2;
+    TBL = new T_SLOT[SLOTs];
+    SLOT_SET(0, &Serial);
+    SLOT_SET(1, &Serial2);
+    String msg = " [OK] UART USB(CDC)+Serial#2";
 //--------------------------
 // ➡サブ以外
 #else
-      SLOTs = 3;
-      TBL = new T_SLOT[SLOTs];
-      SLOT_SET(0, &Serial);
-      SLOT_SET(1, &Serial1);
-      SLOT_SET(2, &Serial2);
-      String msg = " [OK] UART / USB(CDC) + Serial#1,2";
+    SLOTs = 3;
+    TBL = new T_SLOT[SLOTs];
+    SLOT_SET(0, &Serial);
+    SLOT_SET(1, &Serial1);
+    SLOT_SET(2, &Serial2);
+    String msg = " [OK] UART / USB(CDC) + Serial#1,2";
 #endif /* サブ,サブ以外 */
 //--------------------------
-      //│
-      //●受信タスクを起動
-      RUN_TASK(ADP_ID);
-      //┴
     //│
-    //○┐【後処理】
-      //○メッセージ表示
-      Log::prtln(msg);
-    //┴┴
+    //●受信タスクを起動
+    RUN_TASK(ADP_ID);
+    //┴
+  //│
+  //○┐【後処理】
+    //○メッセージ表示
+    Log::prtln(msg);
+  //┴┴
   } /* constractor AdapterUART() */
 
 }; /* class AdapterUART */

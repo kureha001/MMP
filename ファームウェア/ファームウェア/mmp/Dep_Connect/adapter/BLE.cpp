@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：BLE(非同期キュー型)
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
@@ -29,13 +29,13 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_BLE;
-    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  const int ADP_ID = ADP_ID_BLE;
+  int getAID() const override {return ADP_ID;} // 基底クラスに連携
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    static AdapterBLE* MY_INSTANS; // 静的コールバックからのルーティング用
+  static AdapterBLE* MY_INSTANS; // 静的コールバックからのルーティング用
 
 //========================================================
 //§各種ヘルパ
@@ -51,10 +51,9 @@ private:
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(uint8_t argConn) override {
-//############################
-//# ブリッジは[trans()]で処理
-//############################
+  void SEND_CONN(uint8_t argConn) override final {
+//--------------------------
+//➡ブリッジ以外
 #if (MODE != MODE_BRIDGE)
     //┬
     //○クライアントにレスポンス
@@ -66,8 +65,8 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-#endif
-//############################
+#endif /* ➡ブリッジ以外 */
+//--------------------------
   } /* SEND_CONN() */
 
 //========================================================
@@ -76,6 +75,8 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：サーバー受信用
   //━━━━━━━━━━━━━━━━━
+//--------------------------
+//➡ブリッジ以外
 #if (MODE != MODE_BRIDGE)
   class ServerCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
@@ -95,12 +96,15 @@ private:
       MY_INSTANS->pushQueue(0, rxValue, 0);
     } /* onWrite() */
   }; /* class ServerCallbacks */
-#endif
+#endif /* ➡ブリッジ以外 */
+//--------------------------
 
-#if (MODE == MODE_BRIDGE)
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント受信用
   //━━━━━━━━━━━━━━━━━
+//##########################
+//➡ブリッジ
+#if (MODE == MODE_BRIDGE)
   static void ON_RECIVE_NOTIFY(
     BLERemoteCharacteristic* pBLERemoteCharacteristic,
     uint8_t*  pData,
@@ -122,15 +126,15 @@ private:
     MY_INSTANS->pushQueue(0, String((char*)pData, length), 0);
     //┴
   } /* ON_RECIVE_NOTIFY() */
-#endif
+#endif /* ➡ブリッジ以外 */
+//##########################
 
 //========================================================
 //§ハンドル前処理
 //========================================================
 
 //############################
-//# 転送機能はブリッジのみ
-//############################
+//リッジのみ
 #if (MODE == MODE_BRIDGE)
 //========================================================
 //§転送処理
@@ -158,8 +162,8 @@ private:
     devBLE::BLE_CLI_RX->writeValue(ctx.bridge.Frame.c_str(), ctx.bridge.Frame.length());
     //┴
   };
-#endif
-//############################
+#endif /* ➡ブリッジ */
+//##########################
 
 //========================================================
 //§公開機能
@@ -168,37 +172,44 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterBLE(MmpContext& argCtx) : AdapterBase(argCtx), AdapterQueueBase<uint8_t>(argCtx) {
-    //┬
-    //○┐【前処理】
-      //○インスタンスを登録
-      MY_INSTANS = this;
-      //┴
-    //│
+  AdapterBLE(MmpContext& argCtx):
+    AdapterBase<uint8_t>(argCtx),
+    AdapterQueueBase<uint8_t>(argCtx)
+  {
+  //┬
+  //○┐【前処理】
+    //○インスタンスを登録
+    MY_INSTANS = this;
+    //┴
+  //│
+//--------------------------
+//➡ブリッジ
 #if (MODE == MODE_BRIDGE)
-    //○┐【主処理】
-      //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
-      if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
-        devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
-      //┴
-    //│
-    //○┐後処理
-      //○メッセージ表示
-      Log::prtln(" [OK] BLE");
-    //┴┴
+  //○┐【主処理】
+    //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
+    if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
+      devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
+    //┴
+  //│
+  //○┐後処理
+    //○メッセージ表示
+    Log::prtln(" [OK] BLE");
+  //┴┴
+//➡ブリッジ以外
 #else
-    //○┐【主処理】
-      //○受信コールバックを登録
-      if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
-      //┴
-    //│
-    //○┐後処理
-      //○メッセージ表示
-      char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
-      Log::prtln(String(msg));
-    //┴┴
-#endif
+  //○┐【主処理】
+    //○受信コールバックを登録
+    if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
+    //┴
+  //│
+  //○┐後処理
+    //○メッセージ表示
+    char msg[128];
+    snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
+    Log::prtln(String(msg));
+  //┴┴
+#endif /* ➡ブリッジ｜➡ブリッジ以外 */
+//--------------------------
   } /* constractor AdapterBLE() */
 
 }; /* class AdapterBLE */

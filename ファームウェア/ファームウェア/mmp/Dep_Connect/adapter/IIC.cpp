@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：IIC(非同期キュー型)
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
@@ -26,16 +26,16 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 一般情報
   //━━━━━━━━━━━━━━━━━
-    const int ADP_ID = ADP_ID_IIC;
-    int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  const int ADP_ID = ADP_ID_IIC;
+  int getAID() const override {return ADP_ID;} // 基底クラスに連携
     
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-    const int DATA_LENGTH = 80; // データ長制限
-    static const uint8_t IIC_ADDR_MIN = 0xA0;
-    static const uint8_t IIC_ADDR_MAX = 0xA4;
-    String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
+  const int DATA_LENGTH = 80; // データ長制限
+  static const uint8_t IIC_ADDR_MIN = 0xA0;
+  static const uint8_t IIC_ADDR_MAX = 0xA4;
+  String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
 
 //========================================================
 //§返信処理
@@ -43,7 +43,7 @@ private:
   //━━━━━━━━━━━━━━━━━
   // クライアントにレスポンス
   //━━━━━━━━━━━━━━━━━
-  void SEND_CONN(uint8_t argConn) override {
+  void SEND_CONN(uint8_t argConn) override final {
     //┬
     //○レスポンス内容を返送バッファにセット
     //  ※ここではレスポンスしないでスレッド処理に回す
@@ -123,7 +123,10 @@ public:
   //━━━━━━━━━━━━━━━━━
   // コンストラクタ
   //━━━━━━━━━━━━━━━━━
-  AdapterIIC(MmpContext& argCtx) : AdapterBase(argCtx), AdapterQueueBase<uint8_t>(argCtx) {
+  AdapterIIC(MmpContext& argCtx):
+    AdapterBase<uint8_t>(argCtx),
+    AdapterQueueBase<uint8_t>(argCtx)
+  {
     //┬
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(

@@ -2,28 +2,29 @@
 //========================================================
 // 接続部門／担当：IIC
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/25)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス：非同期キュー型
+// クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AdapterIIC:
-public AdapterQueueBase<uint8_t> // 接続識別子：uint8_t
+public AdapterQueueBase<uint8_t>, // 接続識別子：uint8_t
+public AdapterSlotBase<uint8_t>   // 接続識別子：uint8_t
 {
 private:
 //========================================================
 //§基本情報
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // 一般情報
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   const int ADP_ID = ADP_ID_IIC;
   int getAID() const override {return ADP_ID;}
     
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // サービス関連情報
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   const int            DATA_LENGTH  = 80; // データ長制限
   static const uint8_t IIC_ADDR_MIN = 0xA0;
   static const uint8_t IIC_ADDR_MAX = 0xA4;
@@ -49,89 +50,73 @@ private:
 //========================================================
 //§受信処理
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // コールバック：クライアント用
-  //━━━━━━━━━━━━━━━━━
-  void ON_RECIVE(){
-    //┬
+  //─────────────────
+  // タスク関数
+  //─────────────────
+  void ON_RECIVE() override final {
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐【主処理】
     //◎┐スレーブ（IICアドレス）を走査
-    for (uint8_t ID = IIC_ADDR_MIN; ID <= IIC_ADDR_MAX; ID++) {
+    for (uint8_t pConn = IIC_ADDR_MIN; pConn <= IIC_ADDR_MAX; pConn++) {
       //│＼（最後のアドレスに達した場合）
       //│ ▽完了：走査を終了
       //│
-      //○【前処理】
-      String retFrame = "";
-      int    nowID    = ID - IIC_ADDR_MIN;
-      String msg      = CONN_TX[nowID] == "" ? "####!" : CONN_TX[nowID];
-      CONN_TX[nowID]  = "";
+      //○┐【前処理（走査単位）】
+        //送受信バッファを初期化
+        String qFrame = "";
+        int    ID     = pConn - IIC_ADDR_MIN;
+        String resMSG = (CONN_TX[ID] == "") ? RCD::OK : CONN_TX[ID];
+        CONN_TX[ID]   = "";
+        //┴
       //│
-      //○レスポンスをスレーブへ返信
-      Wire.beginTransmission(ID);
-      Wire.write((const uint8_t*)msg.c_str(),msg.length());
-      Wire.endTransmission(false);
+      //○┐受信データを取得
+        //○スレーブへレスポンス
+        Wire.beginTransmission(pConn);
+        Wire.write((const uint8_t*)resMSG.c_str(),resMSG.length());
+        Wire.endTransmission(false);
+        //│
+        //○スレーブから受信データを取得
+        Wire.requestFrom(pConn, DATA_LENGTH);
+        while (Wire.available()) qFrame += (char)Wire.read();
+        //┴
       //│
-      //○リクエストをスレーブから取得
-      Wire.requestFrom(ID, DATA_LENGTH); // 指定サイズ分取得する
-      while (Wire.available()) retFrame += (char)Wire.read();
+      //○┐キュー情報を取得
+        //○フレームを取得
+        int idx = qFrame.indexOf('!')         ;if (idx < 0      ) continue;
+        qFrame  = qFrame.substring(0, idx + 1);if (qFrame == "!") continue;
+        //│＼（書式あやまりの場合）
+        //│ ▽次へ：スキップ
+        //┴
       //│
-      //○末尾の余分をカット
-      int idx = retFrame.indexOf('!');
-      if (idx < 0) continue;
-      retFrame = retFrame.substring(0, idx + 1);
-      if (retFrame == "!") continue;
-      //│
-      //○キューに登録（基底クラスの pushQueue を呼出し）
-      pushQueue((uint8_t)ID, retFrame, 0);
+      //●キューを登録
+      pushQueue(pConn, qFrame, 0);
       //┴
     } /* END-for */
     //┴
   } /* ON_RECIVE() */
-
-  //━━━━━━━━━━━━━━━━━
-  // スレッド処理の定義
-  //━━━━━━━━━━━━━━━━━
-  TaskHandle_t TaskHandle = NULL; // タスク・ハンドル
-  static void StreamQueue(void *pvParameters) {
-    AdapterIIC* self = static_cast<AdapterIIC*>(pvParameters);
-    for (;;) {
-      if (self) self->ON_RECIVE();        // 疑似コールバック関数
-      vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
-    }
-  } /* StreamQueue() */
-
-//========================================================
-//§ハンドル前処理
-//========================================================
-
-//========================================================
-//§転送処理
-//========================================================
 
 //========================================================
 //§公開機能
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ：非同期キュー型
+  // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterIIC(MmpContext& argCtx):
-  AdapterBase<uint8_t>(argCtx),     // 接続識別子：uint8_t
-  AdapterQueueBase<uint8_t>(argCtx) // 接続識別子：uint8_t
+  AdapterBase<uint8_t>(argCtx),      // 接続識別子：uint8_t
+  AdapterQueueBase<uint8_t>(argCtx), // 接続識別子：uint8_t
+  AdapterSlotBase<uint8_t>(argCtx)   // 接続識別子：uint8_t
   {
   //┬
   //○┐【前処理】
     //┴
   //│
   //○┐主処理
-    //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
-    xTaskCreate(
-      StreamQueue           , // 実行するタスク関数
-      String(ADP_ID).c_str(), // タスク名（デバッグ用）
-      4096                  , // スタックサイズ（バイト単位）
-      this                  , // パラメータ
-      2                     , // 優先度
-      &TaskHandle             // タスクハンドル
-    );
+    //●受信タスクを登録
+    RUN_TASK(ADP_ID); // 並列処理で登録
     //┴
   //│
   //○┐【後処理】

@@ -57,12 +57,10 @@
   void initialize(){
     //┬
     //●通信部門に始業指示
-    DepNetwork::INIT();
-    //│
     //●コマンド部門に始業指示
-    DepCommand::INIT();
-    //│
     //●接続部門に始業指示
+    DepNetwork::INIT();
+    DepCommand::INIT();
     DepConnect::INIT();
     //┴
   } /* initialize() */
@@ -101,9 +99,8 @@
 void setup(){
   //┬
   //●資源を初期化
-  initialize();
-  //│
   //●オープニングを表示
+  initialize();
   opening();
   //┴
 } /* setup() */

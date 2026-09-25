@@ -521,16 +521,22 @@ namespace devWiFi {
 // 担務（公開機能）
 //========================================================
   //━━━━━━━━━━━━━━━━━
+  // 基本情報
+  //━━━━━━━━━━━━━━━━━
+  bool ENABLED = false; // 有効判定：有効：true、無効：false
+
+  //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START(){
-    //┬
+  //○┐【後処理】
     //○開始表示
     Log::prtln(" [Wi-Fi]");
     bool isOK = false;
-    //│
+    //┴
+  //│
+  //○┐【主処理】
     //●P1.設定ファイル読込
-    // 【前提条件】無条件
     Log::prtln("   1.設定ファイルの読込");
     isOK = P1_ReadConfig();
     //│
@@ -553,24 +559,28 @@ namespace devWiFi {
     } /* END-if */
     //│
     //●P3.緊急モードで起動
-    // 【前提条件】設定ファイルの内容での起動に失敗
     if (!isOK) {
         Log::prtln("   3.緊急モードで起動します");
         isOK = P3_MODE_ALTERNATIVE();
     } /* END-if */
     //│
+  //│
+  //○┐【後処理】
     //○終了表示
     Log::prtln("");
-    //┴
+    //│
+    //○有効性セット
+    ENABLED = isOK;
+  //┴┴
   } /* START() */
 
   //━━━━━━━━━━━━━━━━━
   // 有効性確認
   //━━━━━━━━━━━━━━━━━
-  bool ENABLED(bool argLog){
+  bool isConnect(bool argLog){
     bool ret = (WiFi.status() == WL_CONNECTED);
     if (ret == false && argLog) Log::prtln("[ERROR] WiFiが未接続です。");
     return ret;
-  } /* ENABLED() */
+  } /* isConnect() */
 
 } /* namespace devWiFi */

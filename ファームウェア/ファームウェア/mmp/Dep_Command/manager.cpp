@@ -11,27 +11,24 @@
   //□Arduinoシステム
   #include <vector> // 登録コンテナが使用
 //┴
-
 //┬
 //□┐コマンド部門
   //□業務設計：抽象基底クラス
   #define  DAT_LENGTH 20      // トークン最大長（未定義時のフォールバック）
-  #include "module/_api.h"    // ModuleBase
+  #include "template/api.h"   // ModuleBase
   //│
   //□担当：機能モジュール
   #include "module/system.h"  // システム管理
-#if MODE == MODE_MAIN
   #include "module/analog.h"  // アナログ入力
   #include "module/digital.h" // デジタル入出力
   #include "module/pwm.h"     // PWM出力
   #include "module/IIC.h"     // IIC通信
   #include "module/MP3.h"     // MP3プレイヤー
-#endif
 //┴┴
 
-//########################################################
-//# 部門長の役務（詳細）
-//########################################################
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 部門管理詳細
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 namespace DepCommand {
 //========================================================
 // 非公開機能
@@ -74,7 +71,7 @@ namespace DepCommand {
     MODULE.push_back(new ModuleMP3    (ctx, "MP3"    , "MP3 Player"          ));
 #endif
     //│
-    //◎┐担当の点呼
+    //◎┐担当を点呼
     Log::prt(" Add In ->");
     for (auto* mod : MODULE){
       //│＼（全機能モジュールを走査し終えた場合）
@@ -161,9 +158,7 @@ namespace DepCommand {
             return;
         } /* END-if */
           //└┐（その他）
-            //┴
-        //┴
-      //┴
+      //┴┴　┴
       } /* END-for */
     //│
     //○エラーメッセージを返却

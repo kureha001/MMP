@@ -84,7 +84,7 @@ namespace RCD{
 namespace LIMIT{
   const int TIME_READ    = 2000;
   const int TIME_CONNECT = 10000;
-  const int READ_LEN        = 80;
+  const int READ_LEN     = 80;
 } /* namespace READ_LIMIT */
 
 //========================================================

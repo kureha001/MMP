@@ -21,15 +21,15 @@ private:
 //========================================================
 //§基本情報
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // 一般情報
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   const int  ADP_ID = ADP_ID_UDP;
   int getAID() const override {return ADP_ID;}
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // サービス関連情報
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   WiFiUDP MY_NET        ; // クライアント・サーバ両用(実体)
   int     MY_PORT = 8083; // ポート番号
 
@@ -168,31 +168,31 @@ private:
     //┴
   //│
   //○┐【主処理】
-    //○┐キュー情報を取得
-      //●接続情報を取得（IPアドレス＋ポート番号）
+    //○┐受信データを取得
+      //●接続情報を用意（IPアドレス＋ポート番号）
       IPAddress qIP   = MY_NET.remoteIP();
       uint16_t  qPort = MY_NET.remotePort();
-      String    qCONN = getConn(qIP, qPort);
       //│
-      //○┐フレームを取得
-        //●受信データを取得（ストリーム型）
-        char getDat[LIMIT::READ_LEN];
-        int  getLen = MY_NET.read(getDat, sizeof(getDat) - 1);
-        if (getLen < 1) return;
-        //│＼（データ内容が[空]の場合）
-        //│ ▼終了：早期リターン
-        //│
-        //○受信データを整形し、受信フレームにセット
-        getDat[getLen] = '\0';
-        String qFrame = String(getDat);
-        //┴
+      //●受信データを読取
+      char getDat[LIMIT::READ_LEN];
+      int  getLen = MY_NET.read(getDat, sizeof(getDat) - 1);
+      if (getLen < 1) return;
+      //│＼（データ内容が[空]の場合）
+      //│ ▼終了：早期リターン
       //│
-      //●割当スロットIDを取得
-      int qSID = SLOT_ASSIGN(qCONN);
+      //○末尾処理
+      getDat[getLen] = '\0';
+      //┴
+    //│
+    //○┐キュー情報を用意
+      //●接続識別子を求める
+      //●スロットIDを求める
+      String qCONN  = getConn(qIP, qPort);
+      int    qSID   = SLOT_ASSIGN(qCONN);
       //┴
     //│
     //●キューを登録
-    pushQueue(qCONN, qFrame, qSID);
+    pushQueue(qCONN, String(getDat), qSID);
     //┴
   //│
   //○┐【後処理】
@@ -233,6 +233,13 @@ private:
 //========================================================
 //§ハンドル前処理
 //========================================================
+  //─────────────────
+  // 前処理(一般)
+  //─────────────────
+  bool handle_Setup() override final {
+    //●WiFi接続状況を確認
+    return !devWiFi::isConnect(true);
+  } /* handle_Setup() */
 
 //========================================================
 //§公開機能
@@ -242,14 +249,14 @@ public:
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterUDP(MmpContext& argCtx) :
-    AdapterBase<String>(argCtx),      // 接続識別子：String
-    AdapterQueueBase<String>(argCtx), // 接続識別子：String
-    AdapterSlotBase<String>(argCtx)   // 接続識別子：String
+  AdapterBase<String>(argCtx),      // 接続識別子：String
+  AdapterQueueBase<String>(argCtx), // 接続識別子：String
+  AdapterSlotBase<String>(argCtx)   // 接続識別子：String
   {
   //┬
   //○┐【前処理】
     //●WiFi接続状況を確認
-    if (!devWiFi::ENABLED(true)) return;
+    if (!devWiFi::isConnect(true)) return;
     //┴
   //│
 //--------------------------

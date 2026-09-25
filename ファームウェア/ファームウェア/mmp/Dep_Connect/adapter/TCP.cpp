@@ -19,7 +19,7 @@ private:
   //─────────────────
   // 一般情報
   //─────────────────
-  const int  ADP_ID = ADP_ID_TCP;
+  const int ADP_ID = ADP_ID_TCP;
   int getAID() const override {return ADP_ID;}
   
   //─────────────────
@@ -191,7 +191,7 @@ private:
         //│
         //●TCP接続状況を確認
         if (!ENA_CLIENT(TBL[qSID].CONN, false)){SLOT_INI(TBL[qSID]); continue;}
-        //│＼（[切断]の場合）
+        //│＼（接続が切れている場合）
         //│ ●スロットを初期化する
         //│ ▽次へ：次のスロットを走査
         //│
@@ -199,8 +199,8 @@ private:
         TBL[qSID].timeStamp = millis();
         //┴
       //│
-      //○┐キュー情報を取得
-        //●フレームを取得（ストリーム型）
+      //○┐キュー情報を用意
+        //●フレームを求める
         String qFrame = adpFnStream::GET_FRAME(TBL[qSID].CONN);
         if (qFrame == "") continue;
         //│＼（受信データがない場合）
@@ -237,7 +237,6 @@ private:
     //◇┐クライアントを起動
     if (!ENA_CLIENT(MY_NET, false)) {
       //├┐（未接続の場合）
-        //│
         //○クライアントを起動（成功するまでの待ち時間を指定）
         MY_NET.setTimeout(LIMIT::TIME_CONNECT);
         if (!MY_NET.connect(transIP.c_str(), MY_PORT)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
@@ -268,6 +267,13 @@ private:
 //========================================================
 //§ハンドル前処理
 //========================================================
+  //─────────────────
+  // 前処理(一般)
+  //─────────────────
+  bool handle_Setup() override final {
+    //●WiFi接続状況を確認
+    return !devWiFi::isConnect(true);
+  } /* handle_Setup() */
 
 //========================================================
 //§公開機能
@@ -284,7 +290,7 @@ public:
   //┬
   //○┐【前処理】
     //●WiFi接続状況を確認
-    if (!devWiFi::ENABLED(true)) return;
+    if (!devWiFi::isConnect(true)) return;
     //┴
   //│
 //--------------------------

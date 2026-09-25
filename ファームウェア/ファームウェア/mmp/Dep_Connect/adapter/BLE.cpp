@@ -15,31 +15,23 @@ private:
 //========================================================
 //§基本情報
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // 一般情報
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   const int ADP_ID = ADP_ID_BLE;
   int getAID() const override {return ADP_ID;}
 
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // サービス関連情報
-  //━━━━━━━━━━━━━━━━━
-  static AdapterBLE* MY_INSTANS; // 静的コールバックからのルーティング用
-
-//========================================================
-//§各種ヘルパ
-//========================================================
-
-//========================================================
-//§接続管理
-//========================================================
+  //─────────────────
+  static AdapterBLE* MY_TASK; // タスク識別(インスタンス)
 
 //========================================================
 //§返信処理
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   // クライアントにレスポンス
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
   void SEND_CONN(uint8_t argConn) override final {
 //--------------------------
 //➡ブリッジ以外
@@ -61,66 +53,73 @@ private:
 //========================================================
 //§受信処理
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // コールバック：サーバー受信用
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // タスク関数：データ受信（Rx）
+  //─────────────────
 //--------------------------
 //➡ブリッジ以外
 #if (MODE != MODE_BRIDGE)
   class ServerCallbacks : public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) override {
-      //┬
-      //○インスタンスを確認
-      if (!MY_INSTANS) return;
-      //│＼（通信デバイスが起動していない場合）
-      //│ ▼終了：早期リターン
-      //│
-      //○未取り込みデータを受信
-      String rxValue = pCharacteristic->getValue();
-      if (rxValue.length() <= 0) return;
-      //│＼（空の場合）
-      //│ ▼終了：早期リターン
-      //│
-      //●受信データをキューに追加
-      MY_INSTANS->pushQueue(0, rxValue, 0);
-    } /* onWrite() */
+  void onWrite(BLECharacteristic *pCharacteristic) override {
+    //┬
+    //○インスタンスを確認
+    if (!MY_TASK) return;
+    //│＼（当該インスタンスではない場合）
+    //│ ▼終了：早期リターン
+    //│
+    //○未取り込みデータを受信
+    String rxValue = pCharacteristic->getValue();
+    if (rxValue.length() <= 0) return;
+    //│＼（空の場合）
+    //│ ▼終了：早期リターン
+    //│
+    //●受信データをキューに追加
+    MY_TASK->pushQueue(0, rxValue, 0);
+  } /* onWrite() */
   }; /* class ServerCallbacks */
 #endif /* ➡ブリッジ以外 */
 //--------------------------
 
-  //━━━━━━━━━━━━━━━━━
-  // コールバック：クライアント受信用
-  //━━━━━━━━━━━━━━━━━
+  //─────────────────
+  // タスク関数：通知受信（Tx）
+  //─────────────────
 //##########################
 //➡ブリッジ
 #if (MODE == MODE_BRIDGE)
   static void ON_RECIVE_NOTIFY(
     BLERemoteCharacteristic* pBLERemoteCharacteristic,
-    uint8_t*  pData,
-    size_t    length,
-    bool      isNotify
+    uint8_t* argDATA,
+    size_t   argLEN,
+    bool     argIsNotify
   ) {
-    //┬
+  //┬
+  //○┐【前処理】
     //○インスタンスを確認
-    if (!MY_INSTANS) return;
-    //│＼（通信デバイスが起動していない場合）
+    if (!MY_TASK) return;
+    //│＼（当該インスタンスではない場合）
     //│ ▼終了：早期リターン
     //│
-    //○未取り込みデータを受信
-    if (pData == nullptr || length < 1) return;
+    //○受信データを確認
+    if (argDATA == nullptr || argLEN < 1) return;
     //│＼（空の場合）
     //│ ▼終了：早期リターン
+    //┴
+  //│
+  //○┐【主処理】
+    //○┐キュー情報を取得
+      //○フレームを取得
+      String qFrame = String((const char*)argDATA, argLEN);
+      //┴
     //│
     //●受信データをキューに追加
-    MY_INSTANS->pushQueue(0, String((char*)pData, length), 0);
+    MY_TASK->pushQueue(0, qFrame, 0);
     //┴
+  //│
+  //○┐【後処理】
+  //┴┴
   } /* ON_RECIVE_NOTIFY() */
 #endif /* ➡ブリッジ以外 */
 //##########################
-
-//========================================================
-//§ハンドル前処理
-//========================================================
 
 //========================================================
 //§転送処理
@@ -165,36 +164,54 @@ public:
   AdapterBase<uint8_t>(argCtx),     // 接続識別子：uint8_t
   AdapterQueueBase<uint8_t>(argCtx) // 接続識別子：uint8_t
   {
-  //┬
-  //○┐【前処理】
-    //○インスタンスを登録
-    MY_INSTANS = this;
-    //┴
-  //│
 //--------------------------
 //➡ブリッジ
 #if (MODE == MODE_BRIDGE)
+  //┬
+  //○┐【前処理】
+    //○接続状況を確認
+    if (devBLE::BLE_CLI_TX == nullptr || !devBLE::BLE_CLI_TX->canNotify()) {
+    //│＼（切断の場合）
+        //○メッセージ表示
+        //▼終了：早期リターン
+        Log::prtln(" [NG] BLE");
+        return;
+    } /* if */
+    //┴
+  //│
   //○┐【主処理】
-    //○devBLE::START() で作成済みの通知受信用キャラクタリスティックへコールバック登録
-    if (devBLE::BLE_CLI_TX != nullptr && devBLE::BLE_CLI_TX->canNotify())
-      devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
+    //○コールバック登録（通知受信）
+    MY_TASK = this;
+    devBLE::BLE_CLI_TX->registerForNotify(ON_RECIVE_NOTIFY);
     //┴
   //│
   //○┐後処理
     //○メッセージ表示
-    Log::prtln(" [OK] BLE");
+    Log::prtln(" [OK] BLE(Tx)");
   //┴┴
 //➡ブリッジ以外
 #else
-  //○┐【主処理】
-    //○受信コールバックを登録
-    if (devBLE::BLE_RX != nullptr) devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
+  //┬
+  //○┐【前処理】
+    //○接続状況を確認
+    if (devBLE::BLE_RX == nullptr) {
+    //│＼（切断の場合）
+        //○メッセージ表示
+        //▼終了：早期リターン
+        Log::prtln(" [NG] BLE(Rx)");
+        return;
+    } /* if */
     //┴
+  //│
+  //○┐【主処理】
+  //○コールバックを登録（データ受信）
+    MY_TASK = this;
+    devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
   //│
   //○┐後処理
     //○メッセージ表示
     char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] BLE / NAME.%s", devBLE::MY_NAME);
+    snprintf(msg, sizeof(msg), " [OK] BLE(Rx) / NAME.%s", devBLE::MY_NAME);
     Log::prtln(String(msg));
   //┴┴
 #endif /* ➡ブリッジ｜➡ブリッジ以外 */
@@ -206,4 +223,4 @@ public:
 //========================================================
 //§インスタンス管理
 //========================================================
-AdapterBLE* AdapterBLE::MY_INSTANS = nullptr;
+AdapterBLE* AdapterBLE::MY_TASK = nullptr;

@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/WEB_Socket.cpp
 //========================================================
-// 接続部門／担当：WEB Socket(非同期キュー型)
+// 接続部門／担当：WEB Socket
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
@@ -11,15 +11,12 @@
   #include <WebSocketsClient.h> // ブリッジモード
 //┴┴
 
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
-//┴┴
-
-//########################################################
-class AdapterWEB_Socket : public AdapterQueueBase<uint8_t> {
-//########################################################
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterWEB_Socket:
+public AdapterQueueBase<uint8_t> // 接続識別子：uint8_t
+{
 private:
 //========================================================
 //§基本情報
@@ -28,8 +25,7 @@ private:
   // 一般情報
   //━━━━━━━━━━━━━━━━━
   const int ADP_ID = ADP_ID_WSOC;
-  int getAID() const override {return ADP_ID;} // 基底クラスに連携
-
+  int getAID() const override {return ADP_ID;}
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
@@ -225,12 +221,12 @@ private:
 //§公開機能
 //========================================================
 public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterWEB_Socket(MmpContext& argCtx):
-    AdapterBase<uint8_t>(argCtx),
-    AdapterQueueBase<uint8_t>(argCtx)
+  AdapterBase<uint8_t>(argCtx),     // 接続識別子：uint8_t
+  AdapterQueueBase<uint8_t>(argCtx) // 接続識別子：uint8_t
   {
   //┬
   //○┐【前処理】
@@ -272,7 +268,7 @@ public:
 
 }; /* class AdapterWEB_Socket */
 
-//━━━━━━━━━━━━━━━━━
-// インスタンス管理用
-//━━━━━━━━━━━━━━━━━
+//========================================================
+//§インスタンス管理
+//========================================================
 AdapterWEB_Socket* AdapterWEB_Socket::MY_TASK = nullptr;

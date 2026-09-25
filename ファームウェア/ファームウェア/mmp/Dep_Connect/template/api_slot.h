@@ -1,15 +1,12 @@
-// filename : Dep_Connect/template/_api2.h
+// filename : Dep_Connect/template/api_slot.h
 //========================================================
 // 接続部門／業務設計：抽象基底クラス（接続スロット型）
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
-#ifndef CONN_ADP_API2_H
-#define CONN_ADP_API2_H
+#ifndef CONN_ADP_API_SLOT_H
+#define CONN_ADP_API_SLOT_H
 #pragma once
-//┬
-//□┐インクルード
-//┴┴
 
 //########################################################
 template <typename T>

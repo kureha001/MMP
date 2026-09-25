@@ -1,28 +1,16 @@
 // filename : Dep_Connect/adapter/TCP.cpp
 //========================================================
-// 接続部門／担当：TCP(非同期キュー＋スロット型)
+// 接続部門／担当：TCP
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
-//┬
-//□┐インクルード
-  //□Arduinoシステム
-  #include <WiFi.h> // ユーザ受付資源
-  #include <queue>
-  #include <mutex>
-//┴┴
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
-//┴┴
 
-//########################################################
-// クラス：多重継承＋仮想継承
-//########################################################
-class AdapterTCP:
-  public AdapterQueueBase<WiFiClient>,
-  public AdapterSlotBase<WiFiClient>
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型＋スロット型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterTCP:
+public AdapterQueueBase<WiFiClient>, // 接続識別子：WiFiClient
+public AdapterSlotBase<WiFiClient>   // 接続識別子：WiFiClient
 {
 private:
 //========================================================
@@ -32,8 +20,8 @@ private:
   // 一般情報
   //─────────────────
   const int  ADP_ID = ADP_ID_TCP;
-  int getAID() const override {return ADP_ID;} // 基底クラスに連携
-
+  int getAID() const override {return ADP_ID;}
+  
   //─────────────────
   // サービス関連情報
   //─────────────────
@@ -285,13 +273,13 @@ private:
 //§公開機能
 //========================================================
 public:
-  //─────────────────
-  // コンストラクタ：多重継承＋仮想継承
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型＋スロット型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterTCP(MmpContext& argCtx):
-    AdapterBase<WiFiClient>(argCtx), 
-    AdapterQueueBase<WiFiClient>(argCtx), 
-    AdapterSlotBase<WiFiClient>(argCtx)
+  AdapterBase<WiFiClient>(argCtx),      // 接続識別子：WiFiClient
+  AdapterQueueBase<WiFiClient>(argCtx), // 接続識別子：WiFiClient
+  AdapterSlotBase<WiFiClient>(argCtx)   // 接続識別子：WiFiClient
   {
   //┬
   //○┐【前処理】

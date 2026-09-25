@@ -1,24 +1,16 @@
 // filename : Dep_Connect/adapter/IIC.cpp
 //========================================================
-// 接続部門／担当：IIC(非同期キュー型)
+// 接続部門／担当：IIC
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
-//┬
-//□┐インクルード
-  //□Arduinoシステム
-  #include <Wire.h>
-//┴┴
 
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
-//┴┴
-
-//########################################################
-class AdapterIIC : public AdapterQueueBase<uint8_t> {
-//########################################################
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterIIC:
+public AdapterQueueBase<uint8_t> // 接続識別子：uint8_t
+{
 private:
 //========================================================
 //§基本情報
@@ -27,12 +19,12 @@ private:
   // 一般情報
   //━━━━━━━━━━━━━━━━━
   const int ADP_ID = ADP_ID_IIC;
-  int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  int getAID() const override {return ADP_ID;}
     
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
   //━━━━━━━━━━━━━━━━━
-  const int DATA_LENGTH = 80; // データ長制限
+  const int            DATA_LENGTH  = 80; // データ長制限
   static const uint8_t IIC_ADDR_MIN = 0xA0;
   static const uint8_t IIC_ADDR_MAX = 0xA4;
   String CONN_TX[IIC_ADDR_MAX - IIC_ADDR_MIN + 1]; // 返送バッファ
@@ -60,7 +52,6 @@ private:
   //━━━━━━━━━━━━━━━━━
   // コールバック：クライアント用
   //━━━━━━━━━━━━━━━━━
-  //static void ON_RECIVE(){
   void ON_RECIVE(){
     //┬
     //◎┐スレーブ（IICアドレス）を走査
@@ -120,14 +111,18 @@ private:
 //§公開機能
 //========================================================
 public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterIIC(MmpContext& argCtx):
-    AdapterBase<uint8_t>(argCtx),
-    AdapterQueueBase<uint8_t>(argCtx)
+  AdapterBase<uint8_t>(argCtx),     // 接続識別子：uint8_t
+  AdapterQueueBase<uint8_t>(argCtx) // 接続識別子：uint8_t
   {
-    //┬
+  //┬
+  //○┐【前処理】
+    //┴
+  //│
+  //○┐主処理
     //○受信タスクをFreeRTOSの別スレッドとして起動（自動コア割当）
     xTaskCreate(
       StreamQueue           , // 実行するタスク関数
@@ -137,12 +132,14 @@ public:
       2                     , // 優先度
       &TaskHandle             // タスクハンドル
     );
-    //│
-    //○メッセージ表示
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] IIC / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
-    Log::prtln(String(msg));
     //┴
+  //│
+  //○┐【後処理】
+    //○メッセージ表示
+      char msg[128];
+      snprintf(msg, sizeof(msg), " [OK] IIC / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
+      Log::prtln(String(msg));
+  //┴┴
   } /* constractor AdapterIIC() */
 
 }; /* class AdapterIIC */

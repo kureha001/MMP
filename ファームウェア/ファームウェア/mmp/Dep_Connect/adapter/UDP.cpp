@@ -1,29 +1,21 @@
 // filename : Dep_Connect/adapter/UDP.cpp
 //========================================================
-// 接続部門／担当：UDP(非同期キュー＋スロット型)
+// 接続部門／担当：UDP
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
   //□Arduinoシステム
-  #include <WiFi.h>
   #include <WiFiUdp.h>
-  #include <queue>
-  #include <mutex>
-//┴┴
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
 //┴┴
 
-//########################################################
-// クラス：多重継承＋仮想継承
-//########################################################
-class AdapterUDP:
-  public AdapterQueueBase<String>,
-  public AdapterSlotBase<String>
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型＋スロット型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterUDP:
+public AdapterQueueBase<String>, // 接続識別子：String
+public AdapterSlotBase<String>   // 接続識別子：String
 {
 private:
 //========================================================
@@ -246,13 +238,13 @@ private:
 //§公開機能
 //========================================================
 public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ：多重継承＋仮想継承
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型＋スロット型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterUDP(MmpContext& argCtx) :
-    AdapterBase<String>(argCtx), 
-    AdapterQueueBase<String>(argCtx), 
-    AdapterSlotBase<String>(argCtx)
+    AdapterBase<String>(argCtx),      // 接続識別子：String
+    AdapterQueueBase<String>(argCtx), // 接続識別子：String
+    AdapterSlotBase<String>(argCtx)   // 接続識別子：String
   {
   //┬
   //○┐【前処理】

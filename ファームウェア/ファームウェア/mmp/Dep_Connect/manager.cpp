@@ -15,16 +15,16 @@
 //┬
 //□┐接続部門
   //□共通課：共通関数・共通定義
-  #include "common/__index.h"
+  #include "common/_index.h"
   //│
   //□処理手順：モード別処理
-  #include "mode/__index.h"
+  #include "mode/_index.h"
   //│
   //□業務設計：抽象基底クラス
-  #include "template/__index.h"
+  #include "template/_index.h"
   //│
   //□担当：通信アダプタ
-  #include "adapter/__index.h" 
+  #include "adapter/_index.h" 
 //┴┴
 
 //########################################################

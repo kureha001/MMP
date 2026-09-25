@@ -1,24 +1,16 @@
 // filename : Dep_Connect/adapter/UART.cpp
 //========================================================
-// 接続部門／担当：UART(非同期キュー＋スロット型)
+// 接続部門／担当：UART
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
-//┬
-//□┐インクルード
-//┴┴
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
-//┴┴
 
-//########################################################
-// クラス：多重継承＋仮想継承
-//########################################################
-class AdapterUART :
-  public AdapterQueueBase<Stream*>,
-  public AdapterSlotBase<Stream*>
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型＋スロット型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterUART :
+public AdapterQueueBase<Stream*>, // 接続識別子：Stream*
+public AdapterSlotBase<Stream*>   // 接続識別子：Stream*
 {
 private:
 //========================================================
@@ -28,7 +20,7 @@ private:
   // 一般情報
   //─────────────────
   const int ADP_ID = ADP_ID_UART;
-  int getAID() const override { return ADP_ID; } // 基底クラスに連携
+  int getAID() const override { return ADP_ID; }
 
 //========================================================
 //§各種ヘルパ
@@ -121,13 +113,13 @@ private:
 //§公開機能
 //========================================================
 public:
-  //─────────────────
-  // コンストラクタ：多重継承＋仮想継承
-  //─────────────────
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型＋スロット型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterUART(MmpContext& argCtx): 
-    AdapterBase<Stream*>(argCtx), 
-    AdapterQueueBase<Stream*>(argCtx), 
-    AdapterSlotBase<Stream*>(argCtx) 
+  AdapterBase<Stream*>(argCtx),      // 接続識別子：Stream*
+  AdapterQueueBase<Stream*>(argCtx), // 接続識別子：Stream*
+  AdapterSlotBase<Stream*>(argCtx)   // 接続識別子：Stream*
   {
   //┬
   //○┐【前処理】

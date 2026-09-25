@@ -1,11 +1,11 @@
-// filename : Dep_Connect/template/_api1.h
+// filename : Dep_Connect/template/api_queue.h
 //========================================================
 // 接続部門／業務設計：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
-#ifndef CONN_ADP_API1_H
-#define CONN_ADP_API1_H
+#ifndef CONN_ADP_API_QUEUE_H
+#define CONN_ADP_API_QUEUE_H
 #pragma once
 
 //========================================================

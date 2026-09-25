@@ -1,25 +1,21 @@
 // filename : Dep_Connect/adapter/ESP_NOW.cpp
 //========================================================
-// 接続部門／担当：ESP-NOW(非同期キュー型)
+// 接続部門／担当：ESP-NOW
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/24)
 //========================================================
 //┬
 //□┐インクルード
   //□Arduinoシステム
-  #include <WiFi.h>
   #include <esp_now.h>
 //┴┴
 
-//┬
-//□┐接続部門
-  //□担当：通信アダプタ
-  #include "__index.h"
-//┴┴
-
-//########################################################
-class AdapterESPNOW : public AdapterQueueBase<String> {
-//########################################################
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：非同期キュー型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class  AdapterESPNOW:
+public AdapterQueueBase<String> // 接続識別子：String
+{
 private:
 //========================================================
 //§基本情報
@@ -28,7 +24,7 @@ private:
   // 一般情報
   //━━━━━━━━━━━━━━━━━
   const int ADP_ID = ADP_ID_ESPN;
-  int getAID() const override {return ADP_ID;} // 基底クラスに連携
+  int getAID() const override {return ADP_ID;}
 
   //━━━━━━━━━━━━━━━━━
   // サービス関連情報
@@ -192,12 +188,12 @@ private:
 //§公開機能
 //========================================================
 public:
-  //━━━━━━━━━━━━━━━━━
-  // コンストラクタ
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ：非同期キュー型
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AdapterESPNOW(MmpContext& argCtx):
-    AdapterBase<String>(argCtx),
-    AdapterQueueBase<String>(argCtx)
+  AdapterBase<String>(argCtx),     // 接続識別子：String
+  AdapterQueueBase<String>(argCtx) // 接続識別子：String
   {
   //┬
   //○┐【前処理】
@@ -225,7 +221,7 @@ public:
 
 }; /* class AdapterESPNOW */
 
-//━━━━━━━━━━━━━━━━━
-//インスタンス管理用
-//━━━━━━━━━━━━━━━━━
+//========================================================
+//§インスタンス管理
+//========================================================
 AdapterESPNOW* AdapterESPNOW::MY_TASK = nullptr;

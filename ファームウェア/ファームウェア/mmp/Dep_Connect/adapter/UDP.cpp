@@ -131,11 +131,11 @@ private:
     int packetSize = MY_NET.parsePacket();
     if (packetSize < 1) return;
     //│＼（パケット内容が[空]の場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //┴
   //│
   //○┐【主処理】
-    //○┐受信データを取得する
+    //○┐フレーム求める
       //●接続情報を用意する
       IPAddress qIP   = MY_NET.remoteIP()  ; // IPアドレス
       uint16_t  qPort = MY_NET.remotePort(); // ポート番号
@@ -145,7 +145,7 @@ private:
       int  getLen = MY_NET.read(pFrame, sizeof(pFrame) - 1);
       if (getLen < 1) return;
       //│＼（データ内容が[空]の場合）
-      //│ ▼終了：早期リターン
+      //│ ▼終了：早期リターンする
       //│
       //○受信データを末尾処理する
       pFrame[getLen] = '\0';
@@ -175,7 +175,7 @@ private:
   //───────────────────────────
   // リクエストを転送する
   //───────────────────────────
-  void trans() override final {
+  void TRANS() override final {
   //┬
   //○┐【前処理】
     //○転送先の情報を用意する
@@ -191,7 +191,7 @@ private:
   //│
   //○┐【後処理】
   //┴┴
-  } /* trans() */
+  } /* TRANS() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -201,10 +201,10 @@ private:
   //───────────────────────────
   // ハンドル実行の前処理を実施する
   //───────────────────────────
-  bool handle_Setup() override final {
+  bool SETUP_NORMAL() override final {
     //●WiFiの接続状況を確認する
     return !devWiFi::isConnect(true);
-  } /* handle_Setup() */
+  } /* SETUP_NORMAL() */
 
 //========================================================
 //§公開機能

@@ -65,13 +65,13 @@ private:
     //○インスタンスを確認
     if (!MY_TASK) return;
     //│＼（当該インスタンスではない場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○未取り込みデータを受信
     String rxValue = pCharacteristic->getValue();
     if (rxValue.length() <= 0) return;
     //│＼（空の場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //●受信データをキューに追加
     MY_TASK->pushQueue(0, rxValue, 0);
@@ -97,12 +97,12 @@ private:
     //○インスタンスを確認
     if (!MY_TASK) return;
     //│＼（当該インスタンスではない場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○受信データを確認
     if (argDATA == nullptr || argLEN < 1) return;
     //│＼（空の場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //┴
   //│
   //○┐【主処理】
@@ -130,26 +130,26 @@ private:
   //━━━━━━━━━━━━━━━━━
   // 転送実施
   //━━━━━━━━━━━━━━━━━
-  void trans() override final {
+  void TRANS() override final {
     //┬
     //○クライアント資源の状態を確認
     if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
     {ctx.bridge.MSG = RCD::Trn1Err; return;}
     //│＼（状態が[未接続]の場合）
     //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○通信口（RX）の状態を確認
     if (devBLE::BLE_CLI_RX == nullptr)
     {ctx.bridge.MSG = RCD::Trn2Err; return;}
     //│＼（状態が[未接続]の場合）
     //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○退避したフレームでリクエスト(非同期でデータ受信)
     devBLE::BLE_CLI_RX->writeValue(ctx.bridge.Frame.c_str(), ctx.bridge.Frame.length());
     //┴
-  };
+  } /* TRANS() */
 #endif /* ➡ブリッジ */
 //##########################
 
@@ -173,7 +173,7 @@ public:
     if (devBLE::BLE_CLI_TX == nullptr || !devBLE::BLE_CLI_TX->canNotify()) {
     //│＼（切断の場合）
         //○メッセージ表示
-        //▼終了：早期リターン
+        //▼終了：早期リターンする
         Log::prtln(" [NG] BLE");
         return;
     } /* if */
@@ -197,7 +197,7 @@ public:
     if (devBLE::BLE_RX == nullptr) {
     //│＼（切断の場合）
         //○メッセージ表示
-        //▼終了：早期リターン
+        //▼終了：早期リターンする
         Log::prtln(" [NG] BLE(Rx)");
         return;
     } /* if */

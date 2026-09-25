@@ -90,7 +90,7 @@ protected:
 //############################
 //➡ブリッジ
 #if (MODE == MODE_BRIDGE)
-  bool handle_SetupBridge() override {
+  bool SETUP_BRIDGE() override {
     //┬
     //○┐【前処理】
       //○(処理なし)
@@ -98,14 +98,14 @@ protected:
     //│
     //○┐【主処理】
       //●スタートアップ(スレーブ用)を実施
-      bool retGo = modeBridge::SLAVE(getAID(), [this](){this->trans();});
+      bool retGo = modeBridge::SLAVE(getAID(), [this](){this->TRANS();});
       //┴
     //│
     //○┐【後処理】
       //▼返却：正常終了(進行判定)
       return retGo;
     //┴
-  } /* handle_SetupBridge() */
+  } /* SETUP_BRIDGE() */
 #endif /* ブリッジ */
 //############################
 
@@ -119,7 +119,7 @@ protected:
     //┬
     //○┐【前処理】
       //●一般用
-      if (this->handle_Setup()) return;
+      if (this->SETUP_NORMAL()) return;
       //│＼（異常の場合）
       //│ ▼終了：早期リターン
 //-----------------------------------------
@@ -127,7 +127,7 @@ protected:
 #if (MODE == MODE_BRIDGE)
       //│
       //●ブリッジ用
-      if (handle_SetupBridge()) return;
+      if (SETUP_BRIDGE()) return;
 #endif /* ブリッジ */
 //-----------------------------------------
       //┴

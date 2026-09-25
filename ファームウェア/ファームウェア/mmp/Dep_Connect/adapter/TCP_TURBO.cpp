@@ -165,7 +165,7 @@ private:
   //─────────────────
   // 転送実施
   //─────────────────
-  void trans() override final {
+  void TRANS() override final {
     //┬
     //◇┐クライアントを起動
     if (!MY_NET.connected()) {
@@ -177,7 +177,7 @@ private:
         if (!MY_NET.connect(ip.c_str(), port)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○完了MSGにエラーCDをセット
-        //│ ▼終了：早期リターン
+        //│ ▼終了：早期リターンする
         //┴
       //└┐（その他）
         //┴
@@ -191,12 +191,12 @@ private:
     if (ctx.strFrame == "") ctx.bridge.MSG == RCD::Trn2Err;
     //│＼（接続に失敗した場合）
     //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○終了MSGに[フレーム内容]をセット
     ctx.bridge.MSG = ctx.strFrame;
     //┴
-  } /* trans() */
+  } /* TRANS() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -206,7 +206,7 @@ private:
   //─────────────────
   // 前処理(一般)
   //─────────────────
-  bool handle_Setup() override final {
+  bool SETUP_NORMAL() override final {
     //┬
     //●接続管理スロットを動的アタッチ
     bool Result = SLOT_ATTACH();
@@ -214,31 +214,31 @@ private:
     //●WiFi接続状況を確認
     return !devWiFi::isConnect(true);
     //┴
-  } /* handle_Setup() */
+  } /* SETUP_NORMAL() */
 
 //############################
 //➡ブリッジ
   //─────────────────
   // 前処理(ブリッジ／スレーブ)
   //─────────────────
-  bool handle_SetupBridge() override final {
+  bool SETUP_BRIDGE() override final {
     //┬
     //●進行判定を取得
     bool retGo = modeBridge::TRANS_BEGIN(ADP_ID);
     //│＼（[依頼中]ではない場合）
-    //│ ▼終了：早期リターン（進行OK/NG)
+    //│ ▼終了：早期リターンする（進行OK/NG)
     //│
     //○処理対象を確認
     if (ADP_ID != ctx.bridge.adpID || ctx.bridge.Stat != BSTAT::REQ)
     return retGo;
     //│＼（[スレーブ以外]または[依頼中以外]場合）
-    //│ ▼終了：早期リターン（進行判定)
+    //│ ▼終了：早期リターンする（進行判定)
     //│
     //○進行状況を[処理中]にセット
     ctx.bridge.Stat = BSTAT::BUSY;
     //│
     //●転送を実施
-    trans();
+    TRANS();
     //│
     //●転送処理（終了）...進行状況を[処理済]に遷移
     TmodeBridge::TRANS_END()
@@ -246,7 +246,7 @@ private:
     //▼返却：正常終了(進行判定)
     return retGo;
     //┴
-  } /* handle_SetupBridge() */
+  } /* SETUP_BRIDGE() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -302,9 +302,9 @@ public:
   //┬
   //○┐【前処理】
     //●ハンドル前処理(一般)
-    if (handle_Setup()) return;
+    if (SETUP_NORMAL()) return;
     //│＼（異常の場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //┴
   //│
   //○┐主処理
@@ -319,7 +319,7 @@ public:
         if (!TBL[ID].CONN.connected()) {
         //│＼（切断の場合）
             //○スロットを初期化する
-            //▽次へ：次のスロットを走査
+            //▽次へ：次のスロットの走査へ進む
             SLOT_INI(TBL[ID]);
             continue;
         } /* if */
@@ -327,14 +327,14 @@ public:
         //○使用状況を確認
         if (!TBL[ID].used) continue;
         //│＼（未使用のスロットの場合）
-        //│ ▽次へ：次のスロットを走査
+        //│ ▽次へ：次のスロットの走査へ進む
         //┴
       //│
       //●レスポンスを取得
       String retFrame = adpFnStream::GET_FRAME(TBL[ID].CONN);
       if (retFrame == "") continue;
       //│＼（受信データがない場合）
-      //│ ▽次へ：次のスロットを走査
+      //│ ▽次へ：次のスロットの走査へ進む
       //│
       //●コンテキストを初期化
       adpFnBase::SETUP_CTX(ADP_ID, retFrame);
@@ -367,7 +367,7 @@ public:
           //●転送を実施
           //●転送処理（終了）...進捗状況を[処理済]に遷移
           ctx.bridge.Stat = BSTAT::BUSY;
-          trans();
+          TRANS();
           modeBridge::TRANS_END();
           //┴
         //└┐（その他）
@@ -379,7 +379,7 @@ public:
         //├┐（[処理中] の場合）
           //○レスポンスMSGに[完了MSG内容]をセット
           //○進行状況を[処理済]にセット
-          //▼終了：早期リターン ※1件ずつ処理
+          //▼終了：早期リターンする ※1件ずつ処理
           ctx.resMSG      = ctx.bridge.MSG;
           ctx.bridge.Stat = BSTAT::DONE;
           return;

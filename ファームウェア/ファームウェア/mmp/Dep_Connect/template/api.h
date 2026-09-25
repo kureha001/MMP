@@ -50,13 +50,13 @@ public:
   //========================================================
   //§転送処理　※未登録はエラーCDをセット
   //========================================================
-  virtual void trans() {ctx.bridge.MSG = RCD::Trn0Err;};
+  virtual void TRANS() {ctx.bridge.MSG = RCD::Trn0Err;};
 
   //========================================================
   //§ハンドル前処理
   //========================================================
-  virtual bool handle_Setup()       {return false;} // 一般用
-  virtual bool handle_SetupBridge() {return false;} // ブリッジ用
+  virtual bool SETUP_NORMAL() {return false;} // 一般用
+  virtual bool SETUP_BRIDGE() {return false;} // ブリッジ用
 
   //========================================================
   //§公開機能

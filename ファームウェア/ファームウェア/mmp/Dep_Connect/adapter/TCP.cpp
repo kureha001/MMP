@@ -115,7 +115,7 @@ private:
       WiFiClient newConn = MY_NET->available();
       if (!newConn) return;
       //│＼（未管理のTCP接続がない場合）
-      //│ ▼終了：早期リターン
+      //│ ▼終了：早期リターンする
       //│
       //●空きスロットを探す
       int       ID = SLOT_GET_FREE();
@@ -187,13 +187,13 @@ private:
         //○使用状況を確認
         if (!TBL[qSID].used) continue;
         //│＼（[未使用]の場合）
-        //│ ▽次へ：次のスロットを走査
+        //│ ▽次へ：次のスロットの走査へ進む
         //│
         //●TCP接続状況を確認
         if (!ENA_CLIENT(TBL[qSID].CONN, false)){SLOT_INI(TBL[qSID]); continue;}
         //│＼（接続が切れている場合）
         //│ ●スロットを初期化する
-        //│ ▽次へ：次のスロットを走査
+        //│ ▽次へ：次のスロットの走査へ進む
         //│
         //○タイムスタンプを更新
         TBL[qSID].timeStamp = millis();
@@ -204,7 +204,7 @@ private:
         String qFrame = adpFnStream::GET_FRAME(TBL[qSID].CONN);
         if (qFrame == "") continue;
         //│＼（受信データがない場合）
-        //│ ▽次へ：次のスロットを走査
+        //│ ▽次へ：次のスロットの走査へ進む
         //┴
       //│
       //●キューを登録
@@ -226,7 +226,7 @@ private:
   //─────────────────
   // 転送実施
   //─────────────────
-  void trans() override final {
+  void TRANS() override final {
   //┬
   //○┐【前処理】
     //○宛先情報を取得
@@ -242,7 +242,7 @@ private:
         if (!MY_NET.connect(transIP.c_str(), MY_PORT)) {ctx.bridge.MSG = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○完了MSGにエラーCDをセット
-        //│ ▼終了：早期リターン
+        //│ ▼終了：早期リターンする
         //│
         //○スロットを初期化
         SLOT_INI(TBL[0]);
@@ -260,7 +260,7 @@ private:
   //│
   //○┐【後処理】
   //┴┴
-  } /* trans() */
+  } /* TRANS() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -270,10 +270,10 @@ private:
   //─────────────────
   // 前処理(一般)
   //─────────────────
-  bool handle_Setup() override final {
+  bool SETUP_NORMAL() override final {
     //●WiFi接続状況を確認
     return !devWiFi::isConnect(true);
-  } /* handle_Setup() */
+  } /* SETUP_NORMAL() */
 
 //========================================================
 //§公開機能

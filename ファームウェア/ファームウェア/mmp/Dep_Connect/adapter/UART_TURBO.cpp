@@ -52,7 +52,7 @@ private:
   //─────────────────
   // 前処理(ブリッジ／マスタ)
   //─────────────────
-  bool handle_SetupBridge() override final {
+  bool SETUP_BRIDGE() override final {
   //┬
   //○┐【前処理】
     //┴
@@ -69,7 +69,7 @@ private:
     //▼返却：正常終了(進行判定)
     return retGo;
   //┴
-  } /* handle_SetupBridge() */
+  } /* SETUP_BRIDGE() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -96,9 +96,9 @@ public:
   //┬
   //○┐【前処理】
     //●ブリッジ用
-    if (handle_SetupBridge()) return;
+    if (SETUP_BRIDGE()) return;
     //│＼（進行NGの場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //┴
   //│
   //○┐【主処理】
@@ -106,7 +106,7 @@ public:
     String retFrame = adpFnStream::GET_FRAME(*(CONN));
     if (retFrame == "") return;
     //│＼（受信データがない場合）
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //●コンテキストを初期化
     adpFnBase::SETUP_CTX(ADP_ID, retFrame);
@@ -133,10 +133,10 @@ public:
     if (ctx.resMSG != "") {SEND_CONN(CONN); return;}
     //│＼（[内部コマンド応答済][エラーあり]の場合）
     //│ ○クライアントにレスポンス
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○進捗状況を[依頼中]にセット
-    //▼終了：早期リターン ※1件ずつ処理
+    //▼終了：早期リターンする ※1件ずつ処理
     ctx.bridge.Stat = BSTAT::REQ;
     return;
 #endif /* ➡マスタ｜➡サブ｜➡ブリッジ */

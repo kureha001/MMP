@@ -25,7 +25,6 @@ private:
   // 一般情報
   //─────────────────
   const int ADP_ID  = ADP_ID_HTTP;
-  bool      IS_JSON = false;
 
   //─────────────────
   // サービス関連情報
@@ -313,21 +312,24 @@ private:
       if (server.method() == HTTP_OPTIONS){route204(server); return;}
       //│＼（HTTP層で完結している）
       //│ ●CORS事前確認へ応答
-      //│ ▼終了：早期リターン
+      //│ ▼終了：早期リターンする
       //│
-      //◇┐レスポンスのスタイルを確認
+      //○フレーム求める
       String strRX = MY_NET->uri();
+      //│
+      //◇┐レスポンスの形式を求める
+      bool isJSON = false;
       if (strRX.endsWith("@!")) {
-      //├┐（JSONレスポンス指定の場合）
-        //○JSONスタイルにセット
+      //├┐（JSON形式が指定されている場合）
+        //○JSON形式にセット
         //○フレーム末尾の"#"を削除する
-        IS_JSON  = true;
+        isJSON = true;
         strRX.remove(strRX.length() - 2);
         strRX += "!";
         //┴
-      } else IS_JSON = false;
+      } else isJSON = false;
       //└┐（その他）
-        //○標準スタイルにセット
+        //○標準形式にセット
         //┴
       //│
       //●コンテキストを初期化
@@ -339,7 +341,7 @@ private:
       //●ＭＭＰコマンドを実行
       //●実行結果をレスポンス
       modeMain::RUN();
-      IS_JSON ? SEND_CONN_JSON() : SEND_CONN(server);
+      isJSON ? SEND_CONN_JSON() : SEND_CONN(server);
   //➡サブ：TXTのみ
   #elif (MODE == MODE_SUB)
       //●ＭＭＰコマンドを実行
@@ -369,7 +371,7 @@ private:
   //─────────────────
   // 転送実施
   //─────────────────
-  void trans() override final {
+  void TRANS() override final {
   //┬
   //○┐【前処理】
     //○実行パラメータを用意
@@ -385,7 +387,7 @@ private:
     if (MY_NET.GET() <= 0) {ctx.strFrame = RCD::Trn1Err; return;}
     //│＼（実行に失敗した場合）
     //│ ○コンテクストにエラーCDをセット
-    //│ ▼終了：早期リターン
+    //│ ▼終了：早期リターンする
     //│
     //○レスポンスを取得
     String retFrame = MY_NET.getString();
@@ -400,7 +402,7 @@ private:
   //│
   //○┐【後処理】
   //┴┴
-  };
+  } /* TRANS() */
 #endif /* ➡ブリッジ */
 //############################
 
@@ -465,7 +467,7 @@ public:
   //○┐【主処理】
 #if (MODE == MODE_BRIDGE)
     //●スタートアップ(スレーブ用)を実施
-    bool retGo = modeBridge::SLAVE(ADP_ID, [this](){this->trans();});
+    bool retGo = modeBridge::SLAVE(ADP_ID, [this](){this->TRANS();});
 //➡ブリッジ以外
 #else
     //●ルーティングを指示（その後も同期処理）

@@ -55,11 +55,11 @@ private:
       //│ ▼完了：走査を終える
       //│
       //○┐キュー登録に必要な情報を用意する
-        //●受信データを求める
+        //●フレーム求める
         String qFrame = adpFnStream::GET_FRAME(*(TBL[qSID].CONN));
         if (qFrame != "") continue;
         //│＼（受信データがない場合）
-        //│ ▽次へ：次のスロットを走査
+        //│ ▽次へ：次のスロットの走査へ進む
         //┴
       //│
       //●キューを登録する
@@ -85,7 +85,7 @@ private:
   // true ：進行NG
   // false：進行OK
   //───────────────────────────
-  bool handle_SetupBridge() override final {
+  bool SETUP_BRIDGE() override final {
   //┬
   //○┐【前処理】
     //┴
@@ -102,7 +102,7 @@ private:
     //▼返却：進行判定
     return retGo;
   //┴
-  } /* handle_SetupBridge() */
+  } /* SETUP_BRIDGE() */
 #endif /* ➡ブリッジ */
 //############################
 

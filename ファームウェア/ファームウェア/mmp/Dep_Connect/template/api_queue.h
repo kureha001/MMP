@@ -15,79 +15,96 @@ namespace modeMain   { void RUN(); }
 namespace modeSub    { void RUN(); }
 namespace modeBridge { void RUN(); }
 
-//########################################################
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// クラス：基本型
+//━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
-class AdapterQueueBase :
-  virtual public AdapterBase<T>
-//########################################################
+class          AdapterQueueBase :
+virtual public AdapterBase<T>
 {
-public:
-  using AdapterBase<T>::AdapterBase;
-
 protected:
-  //━━━━━━━━━━━━━━━━━
-  // 純粋仮想関数（派生クラスで実装）
-  //━━━━━━━━━━━━━━━━━
+//========================================================
+//§基本情報
+//========================================================
+  //───────────────────────────
+  // 一般情報
+  //───────────────────────────
   virtual int  getAID() const = 0;
 
-  //━━━━━━━━━━━━━━━━━
-  // 非同期キュー処理
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // 基本情報
-    //─────────────────
-    struct QueueItem {
-      T      conn  ; // 接続識別子 (uint8_t, WiFiClient, String 等)
-      String frame ; // 受信データフレーム
-      int    slotID; // スロットID
-    };
-    std::queue<QueueItem> rxQueue;
-    std::mutex            queueMutex;
+//========================================================
+//§非同期キュー処理
+//========================================================
+  //───────────────────────────
+  // 基本情報
+  //───────────────────────────
+  struct QueueItem {
+    T      conn  ; // 接続識別子 (uint8_t, WiFiClient, String 等)
+    String frame ; // 受信データフレーム
+    int    slotID; // スロットID
+  };
+  std::queue<QueueItem> rxQueue;
+  std::mutex            queueMutex;
 
-    //─────────────────
-    // キューへの追加
-    //─────────────────
-    void pushQueue(
-      const T&      conn , // 接続識別
-      const String& frame, // フレーム
-      const int     SID    // スロットID ※対象外はダミー値をセット
-    ) {
-      String msg = "["+ String(getAID()) + "] push:" + frame;
-      Log::Outln(msg);
+  //───────────────────────────
+  // リクエストDSにキューを追加する
+  //───────────────────────────
+  void pushQueue(
+    const T&      conn , // 接続識別
+    const String& frame, // フレーム
+    const int     SID    // スロットID ※対象外はダミー値をセット
+  ) {
+    String msg = "["+ String(getAID()) + "] push:" + frame;
+    Log::Outln(msg);
 
-      if (frame.length() < 1) return;
+    if (frame.length() < 1) return;
+    std::lock_guard<std::mutex> lock(queueMutex);
+    rxQueue.push({conn, frame, SID});
+  } /* pushQueue() */
+
+  //───────────────────────────
+  // リクエストDSからのキューを取り出す
+  //───────────────────────────
+  bool popQueue(QueueItem& outItem) {
+    //┬
+    //○┐【前処理】
+      //┴
+    //│
+    //○┐【主処理】
       std::lock_guard<std::mutex> lock(queueMutex);
-      rxQueue.push({conn, frame, SID});
-    } /* pushQueue() */
-
-    //─────────────────
-    // キューからの取り出し
-    //─────────────────
-    bool popQueue(QueueItem& outItem) {
-      //┬
-      //○┐【前処理】
-        //┴
+      if (rxQueue.empty()) return false;
       //│
-      //○┐【主処理】
-        std::lock_guard<std::mutex> lock(queueMutex);
-        if (rxQueue.empty()) return false;
-        //│
-        outItem = rxQueue.front();
-        rxQueue.pop();
-        //┴
+      outItem = rxQueue.front();
+      rxQueue.pop();
+      //┴
+    //│
+    //○┐【後処理】
+      String msg = "[" + String(getAID()) + "] pop :" + outItem.frame;
+      Log::Outln(msg);
       //│
-      //○┐【後処理】
-        String msg = "[" + String(getAID()) + "] pop :" + outItem.frame;
-        Log::Outln(msg);
-        //│
-        return true;
-      //┴┴
-    } /* popQueue() */
+      return true;
+    //┴┴
+  } /* popQueue() */
 
-  //━━━━━━━━━━━━━━━━━
-  // 前処理(ブリッジ用)
-  //━━━━━━━━━━━━━━━━━
-//############################
+//========================================================
+//§返信処理
+//§受信処理
+//§転送処理
+//※通信アダプタで実装する
+//========================================================
+
+//========================================================
+//§ハンドル実行の前処理
+//========================================================
+  //───────────────────────────
+  // 一般用
+  //※通信アダプタで実装する
+  //───────────────────────────
+
+  //───────────────────────────
+  // ブリッジ用：スレーブ
+  //※マスタの通信アダプタで更に実装する
+  //───────────────────────────
+//-----------------------------------------
 //➡ブリッジ
 #if (MODE == MODE_BRIDGE)
   bool SETUP_BRIDGE() override {
@@ -97,8 +114,11 @@ protected:
       //┴
     //│
     //○┐【主処理】
-      //●スタートアップ(スレーブ用)を実施
-      bool retGo = modeBridge::SLAVE(getAID(), [this](){this->TRANS();});
+      //●前処理(スレーブ)を実施→進行判定を取得
+      bool retGo = modeBridge::SLAVE(
+        getAID(),                // 通信アダプタID
+        [this](){this->TRANS();} // 転送処理(関数をラムダ式で包む)
+      );
       //┴
     //│
     //○┐【後処理】
@@ -107,14 +127,21 @@ protected:
     //┴
   } /* SETUP_BRIDGE() */
 #endif /* ブリッジ */
-//############################
+//-----------------------------------------
 
 //========================================================
 //§公開機能
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+public:
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // コンストラクタ／デストラクタ：基本型
+  //※通信アダプタで実装する
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  using AdapterBase<T>::AdapterBase;
+
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   void handle() override final {
     //┬
     //○┐【前処理】
@@ -128,6 +155,8 @@ protected:
       //│
       //●ブリッジ用
       if (SETUP_BRIDGE()) return;
+      //│＼（異常の場合）
+      //│ ▼終了：早期リターン
 #endif /* ブリッジ */
 //-----------------------------------------
       //┴

@@ -49,7 +49,7 @@ protected:
   virtual void TRANS() {ctx.bridge.MSG = RCD::Trn0Err;};
 
 //========================================================
-//§ハンドル前処理
+//§ハンドルの事前処理と進行判定
 //========================================================
   virtual bool SETUP_NORMAL() {return false;} // 一般用
   virtual bool SETUP_BRIDGE() {return false;} // ブリッジ用

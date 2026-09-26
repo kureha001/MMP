@@ -181,7 +181,7 @@
         case BSTAT::BUSY: return true ; // 処理中➡×
         case BSTAT::DONE: break       ; // 処理済は後続処理へ
         default         : return true ; // 想定外➡×
-      } /* switch */
+      } //～switch
       //┴
     //│
     //○┐【主処理】
@@ -224,7 +224,7 @@
         case BSTAT::BUSY: return false; // 処理中➡○キュー応答
         case BSTAT::DONE: return true ; // 処理済➡×
         default         : return true ; // 想定外➡×
-      } /* switch */
+      } //～switch
       //┴
     //│
     //○┐【主処理】
@@ -246,7 +246,7 @@
           //┴
         //└┐（その他）
           //┴
-      } /* if */
+      } //～if
       //┴
     //│
     //○┐【後処理】

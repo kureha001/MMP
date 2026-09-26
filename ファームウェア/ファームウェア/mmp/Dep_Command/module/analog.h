@@ -120,7 +120,7 @@ public:
         for (int i = 0; i < 4; i++) {
           pinMode(g_ADDR_PINS[i], OUTPUT);
           digitalWrite(g_ADDR_PINS[i], (ch>>i) & 1);
-        } /* END-for */
+        } //～for
 
         delayMicroseconds(10); //時間調整(μs)
 
@@ -128,8 +128,8 @@ public:
         for (int dev = 0; dev < SLOT.SwitchCnt; dev++) {
           const int pin = g_DATA_PINS[dev];
           SLOT.Values[ch*4 + dev] = analogRead(pin);
-        } /* END-for */
-      } /* END-for */
+        } //～for
+      } //～for
 
       // ３．後処理：
       _ResOK();

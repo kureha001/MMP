@@ -8,7 +8,7 @@
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AdapterUART :
+class  AD_UART :
 public AdapterQueueBase<Stream*>, // 接続識別子：Stream*
 public AdapterSlotBase<Stream*>   // 接続識別子：Stream*
 {
@@ -29,12 +29,19 @@ private:
   // 接続元にMSGをレスポンスする
   //───────────────────────────
   void SEND_CONN(Stream* argConn) override final {
-    //┬
-    //○接続元宛にメッセージを送信する
-    //●ログを出力する
-    argConn->print(ctx.resMSG);
-    adpFnBase::SHOW_LOG();
+  //┬
+  //○┐【前処理】
     //┴
+  //│
+  //○┐【主処理】
+    //○接続元宛にメッセージを送信する
+    argConn->print(ctx.resMSG);
+    //┴
+  //│
+  //○┐【後処理】
+    //●ログを出力する
+    adpFnBase::SHOW_LOG();
+  //┴┴
   } /* SEND_CONN() */
 
 //========================================================
@@ -49,7 +56,7 @@ private:
     //┴
   //│
   //○┐【主処理】
-    //◎┐受信データのあるスロットは全てキュー登録する
+    //◎┐データ受信したスロットをキュー登録する
     for (int qSID = 0; qSID < SLOTs; qSID++) {
       //│＼（全スロットを走査し終えた場合）
       //│ ▼完了：走査を終える
@@ -65,7 +72,7 @@ private:
       //●キューを登録する
        pushQueue(TBL[qSID].CONN, qFrame, qSID);
       //┴
-    } /* for */
+    } //～for
     //┴
   //│
   //○┐【後処理】
@@ -75,6 +82,11 @@ private:
 //========================================================
 //§ハンドル実行の前処理
 //========================================================
+//──────────────────
+//➡ブリッジ
+//・転送処理はブリッジ固有の機能
+#if (MODE == MODE_BRIDGE)
+//------------------------------------
   //───────────────────────────
   // ブリッジ用：マスタ
   //------------------------------------------------------
@@ -82,16 +94,13 @@ private:
   // true ：進行NG
   // false：進行OK
   //───────────────────────────
-//-----------------------------------------
-//➡ブリッジ
-#if (MODE == MODE_BRIDGE)
   bool SETUP_BRIDGE() override final {
   //┬
   //○┐【前処理】
     //┴
   //│
   //○┐【主処理】
-    //●前処理(マスタ)を実施→進行判定を取得
+    //●前処理(マスタ)を実施する...進行判定を得る
     bool retGo = modeBridge::MASTER(
       TBL[ctx.bridge.slotID].CONN,           // 接続識別子
       [this](Stream* conn){SEND_CONN(conn);} // 返信処理(関数をラムダ式で包む)
@@ -103,8 +112,9 @@ private:
     return retGo;
   //┴
   } /* SETUP_BRIDGE() */
-#endif /* ➡ブリッジ */
-//-----------------------------------------
+//------------------------------------
+#endif //➡ブリッジ
+//──────────────────
 
 //========================================================
 //§公開機能
@@ -113,7 +123,7 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AdapterUART(MmpContext& argCtx): 
+  AD_UART(MmpContext& argCtx): 
   AdapterBase<Stream*>(argCtx),      // 接続識別子：Stream*
   AdapterQueueBase<Stream*>(argCtx), // 接続識別子：Stream*
   AdapterSlotBase<Stream*>(argCtx)   // 接続識別子：Stream*
@@ -123,35 +133,42 @@ public:
     //┴
   //│
   //○┐【主処理】
-//--------------------------
+//──────────────────
 //➡サブ
+//・利用するポートが異なる
+//・スロット数が異なる
 #if (MODE == MODE_SUB)
+//------------------------------------
     //○接続管理TBLを作成する
     SLOTs = 2;
     TBL = new T_SLOT[SLOTs];
     //│
     //●接続スロットを作成する
-    SLOT_SET(0, &Serial);
-    SLOT_SET(1, &Serial2);
+    SLOT_SET(0, &Serial ); // クライアント用(USB CDC)
+    SLOT_SET(1, &Serial2); // クライアント用(GPIO)
     //│
     //○起動ログ表示のMSGを用意する
     String msg = " [OK] UART USB(CDC)+Serial#2";
-//--------------------------
-// ➡サブ以外
+//──────────────────
+//➡サブ以外
+//・利用するポートが異なる
+//・スロット数が異なる
 #else
+//------------------------------------
     //○接続管理TBLを作成する
     SLOTs = 3;
     TBL = new T_SLOT[SLOTs];
     //│
     //●接続スロットを作成する
-    SLOT_SET(0, &Serial);
-    SLOT_SET(1, &Serial1);
-    SLOT_SET(2, &Serial2);
+    SLOT_SET(0, &Serial ); // クライアント用(USB CDC)
+    SLOT_SET(1, &Serial1); // メイン：サブ連携用｜ブリッジ：クライアント用(GPIO)
+    SLOT_SET(2, &Serial2); // クライアント用(GPIO)
     //│
     //○起動ログ表示のMSGを用意する
     String msg = " [OK] UART / USB(CDC) + Serial#1,2";
-#endif /* サブ,サブ以外 */
-//--------------------------
+//------------------------------------
+#endif //➡サブ｜➡サブ以外
+//──────────────────
     //│
     //●データ受信のタスクを開始する
     RUN_TASK(ADP_ID);
@@ -161,6 +178,6 @@ public:
     //○起動ログを表示する
     Log::prtln(msg);
   //┴┴
-  } /* constractor AdapterUART() */
+  } /* constractor AD_UART() */
 
-}; /* class AdapterUART */
+}; /* class AD_UART */

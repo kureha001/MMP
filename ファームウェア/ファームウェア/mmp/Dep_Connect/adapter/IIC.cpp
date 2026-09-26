@@ -8,7 +8,7 @@
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AdapterIIC:
+class  AD_IIC:
 public AdapterQueueBase<uint8_t>, // 接続識別子：uint8_t
 public AdapterSlotBase<uint8_t>   // 接続識別子：uint8_t
 {
@@ -94,7 +94,7 @@ private:
       //●キューを登録
       pushQueue(pConn, qFrame, 0);
       //┴
-    } /* END-for */
+    } //～for
     //┴
   } /* ON_RECIVE() */
 
@@ -105,7 +105,7 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AdapterIIC(MmpContext& argCtx):
+  AD_IIC(MmpContext& argCtx):
   AdapterBase<uint8_t>(argCtx),      // 接続識別子：uint8_t
   AdapterQueueBase<uint8_t>(argCtx), // 接続識別子：uint8_t
   AdapterSlotBase<uint8_t>(argCtx)   // 接続識別子：uint8_t
@@ -125,6 +125,6 @@ public:
       snprintf(msg, sizeof(msg), " [OK] IIC / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
       Log::prtln(String(msg));
   //┴┴
-  } /* constractor AdapterIIC() */
+  } /* constractor AD_IIC() */
 
-}; /* class AdapterIIC */
+}; /* class AD_IIC */

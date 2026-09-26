@@ -9,78 +9,15 @@
 //========================================================
 //§担当名簿
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // 100:UART
-  //━━━━━━━━━━━━━━━━━
 #if TURBO
   #include "UART_TURBO.cpp"
 #else
   #include "UART.cpp"
 #endif
-  namespace adpUART{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 200:UDP
-  //━━━━━━━━━━━━━━━━━
   #include "UDP.cpp"
-  namespace adpTCP{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 201:TCP RAW
-  //━━━━━━━━━━━━━━━━━
   #include "TCP.cpp"
-  namespace adpTCP{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 210:WEB Socket
-  //━━━━━━━━━━━━━━━━━
   #include "WEB_Socket.cpp"
-  namespace adpWSOC{     
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 211:WEB API
-  //━━━━━━━━━━━━━━━━━
   #include "HTTP.cpp"
-  namespace adpHTTP{     
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 220:ESP NOW
-  //━━━━━━━━━━━━━━━━━
   #include "ESP_NOW.cpp"
-  namespace adpESPN{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 300:BLE
-  //━━━━━━━━━━━━━━━━━
   #include "BLE.cpp"
-  namespace adpBLE{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }
-
-  //━━━━━━━━━━━━━━━━━
-  // 900:IIC
-  //━━━━━━━━━━━━━━━━━
   #include "IIC.cpp"
-  namespace adpI2C{
-    void START()  ; // サービス開始の指示
-    void HANDLE() ; // ポーリングのハンドル
-  }

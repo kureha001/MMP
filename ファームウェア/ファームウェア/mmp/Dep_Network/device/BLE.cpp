@@ -190,7 +190,7 @@ namespace devBLE {
         Log::prtln("");
         ENABLED = false;
         return;
-    } /* END-if */
+    } //～if
     //│
     //○MMP用BLEサービスを生成
     BLEService *pService = MY_SRV->createService(UUID_SERVICE);
@@ -200,7 +200,7 @@ namespace devBLE {
         Log::prtln("");
         ENABLED = false;
         return;
-    } /* END-if */
+    } //～if
     //│
     //○受信用Characteristicを生成
     // MMP側からBLEへデータを書き込むための受信口を作成する。
@@ -236,7 +236,7 @@ namespace devBLE {
           Log::prtln("");
           ENABLED = false;
           return;
-      } /* END-if */
+      } //～if
       //│
       //○AdvertisingにMMP用サービスを登録
       // クライアントがこのBLEサービスを発見できるようにする。
@@ -272,9 +272,6 @@ namespace devBLE {
   //━━━━━━━━━━━━━━━━━
   // デバイス名の更新＆永続化（公開機能）
   //━━━━━━━━━━━━━━━━━
-//━━━━━━━━━━━━━━━━━
-  // デバイス名の更新＆永続化（公開機能）
-  //━━━━━━━━━━━━━━━━━
   bool UPDATE(const char* newName) {
     if (!newName || strlen(newName) == 0) return false;
 
@@ -300,15 +297,19 @@ namespace devBLE {
     MY_NAME = String(newName);
 
     // ４．モードに応じた適用処理
-#if (MODE != MODE_BRIDGE)
-    //○メイン・サブ：自アドバタイズ名を即時更新
+//--------------------------
+//➡ブリッジ
+#if (MODE == MODE_BRIDGE)
+    //○再起動
+    ESP.restart();
+//➡ブリッジ以外
+#else
+    //○自アドバタイズ名を即時更新
     BLEDevice::stopAdvertising();
     BLEDevice::init(MY_NAME.c_str());
     BLEDevice::startAdvertising();
-#else
-    //○ブリッジ：再起動
-    ESP.restart();
-#endif
+#endif //➡ブリッジ｜➡ブリッジ以外
+//--------------------------
 
     return true;
   } /* UPDATE_NAME() */

@@ -73,7 +73,7 @@ namespace adpFnAuth{
         int len = strlen(AUTH_GROUPS[grpID])   ; // データセット長
         tmpAID += AUTH_GROUPS[grpID][random(len)]; // ランダムな１文字を後方マージ
         //┴
-      } /* END-for */
+      } //～for
       //│
       //◎┐文字位置をシャッフル
       for (int nowID = 0; nowID < tmpAID.length(); nowID++){
@@ -113,7 +113,7 @@ namespace adpFnAuth{
         //│＼（使用中でタイムアウトしている場合）
         //│ ▼返却：当該スロットID
         //┴
-      } /* END-for */
+      } //～for
       //│
       //▼返却：空きスロットがない
       return -1;
@@ -145,9 +145,9 @@ namespace adpFnAuth{
             //▼返却：既データあり
             auTBL[extID].lastActive = millis();
             return extID;
-        } /* END-if  */
+        } //～if
         //┴
-      } /* END-for */
+      } //～for
       //│
       //▼返却：既データなし
       return -1;
@@ -189,7 +189,7 @@ namespace adpFnAuth{
               if (GET_EXIST_AID(newCD) < 0) break;
               // ＼（存在しない場合）
                 //▽中断：作成した認証CDを採用
-            } /* END-while */
+            } //～while
             //│
             //○コンテクストを更新
             ctx.resMSG = newCD + "!"; // レスポンス
@@ -205,9 +205,9 @@ namespace adpFnAuth{
             return false;
           //└┐（その他）
             //┴
-        } /* END-if */
+        } //～if
         //┴
-      } /* END-for */
+      } //～for
       //│
       //▼返却：失敗
       return true;
@@ -223,11 +223,13 @@ namespace adpFnAuth{
       while (str.length() > 0) {
         char c = str.charAt(0);
         if (c=='/') str.remove(0, 1); else break;
-      } /* END-if */
+      } //～while
+
       while (str.length() > 0) {
         char c = str.charAt(str.length() - 1);
         if (c=='/') str.remove(str.length()-1); else break;
-      } /* END-if */
+      } //～while
+
     } /* FORMAT_TOK() */
 
     //─────────────────
@@ -276,7 +278,7 @@ namespace adpFnAuth{
           //┴
         //└┐
           //┴
-      } /* END-if */
+      } //～if
       //│
       //●切り出した文字列を整形
       FORMAT_TOK(retStr); // 参照渡しなので内容は上書き
@@ -304,12 +306,11 @@ namespace adpFnAuth{
       } else {
         //└┐
           //○コマンドパスにフレーム全体(認証コード無し)をセット
+          //○コマンドパスを大文字に置換
           ctx.cmdPath = tmpFrame;
+          ctx.cmdPath.toUpperCase();
           //┴
-      //│
-      //○コマンドパスを大文字に置換
-      ctx.cmdPath.toUpperCase();
-      } /* END-if */
+      } //～if
       //┴
     } /* SET_ACD_CPATH() */
 
@@ -350,7 +351,7 @@ namespace adpFnAuth{
         //│
         //▼返却：認証開始コマンド(要レスポンス)
         return true;
-    } /* END-if */
+    } //～if
     //│
     //○ユーザ認証対象を確認
     if (ctx.authCD == ""){ctx.accID = 0; return false;}

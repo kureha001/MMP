@@ -80,7 +80,7 @@ namespace DepCommand {
       //●機能モジュール名を表示
       Log::prt(String(" [") + String(mod->getModName()) + String("]"));
       //┴
-    } /* END-for */
+    } //～for
     //│
     //○始業のあいさつ（終了）
     Log::prt("\n\n");
@@ -129,7 +129,7 @@ namespace DepCommand {
         //│
         //○次のトークンを取得
         tok = strtok(nullptr, ":");
-      } /* while */
+      } //～while
         //┴
       //│
       //○エラーメッセージを返却
@@ -156,10 +156,10 @@ namespace DepCommand {
             //│
             //▼実行結果をリターン
             return;
-        } /* END-if */
+        } //～if
           //└┐（その他）
       //┴┴　┴
-      } /* END-for */
+      } //～for
     //│
     //○エラーメッセージを返却
     ctx.resMSG = RCD::NotMod;

@@ -51,16 +51,18 @@
   //━━━━━━━━━━━━━━━━━
   void FORMAT_URI(String &str){
     str.toUpperCase();
+
     while (str.length() > 0) {
       char c = str.charAt(0);
       if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
       {str.remove(0, 1);} else {break;}
-    } /* END-if */
+    } //～while
+
     while (str.length() > 0) {
       char c = str.charAt(str.length() - 1);
       if (c=='/'||c==' '||c=='\t'||c=='\r'||c=='\n'||c=='\0')
       {str.remove(str.length()-1);} else {break;}
-    } /* END-if */
+    } //～while
   } /* FORMAT_URI() */
 
   //━━━━━━━━━━━━━━━━━

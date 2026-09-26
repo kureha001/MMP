@@ -61,12 +61,12 @@
           ctx.resMSG = RCD::TimOut;
           Log::Outln("(3/3) Error:Response timeout from MMP(MAIN).");
           return;
-      } /* END-if */
+      } //～if
       //│
       //○受信データを受信バッファに加える
       if (Serial1.available()) strRX += (char)Serial1.read();
       //┴
-    } /* END-while */
+    } //～while
     //│
     //○レスポンスMSGに[MMP本体からのレスポンス]を反映
     Log::Outln("(3/3) Success.");

@@ -33,9 +33,9 @@
   //━━━━━━━━━━━━━━━━━
   #include "WiFi.cpp"
   namespace devWiFi{
-    extern bool ENABLED ; // 有効性
-    bool isConnect(bool argLog); // 有効性確認
-    void START()             ; // デバイス開始の指示
+    extern bool ENABLED           ; // 有効性
+    bool ENABLED_CONN(bool argLog); // 有効性確認
+    void START()                  ; // デバイス開始の指示
   }
 
   //━━━━━━━━━━━━━━━━━

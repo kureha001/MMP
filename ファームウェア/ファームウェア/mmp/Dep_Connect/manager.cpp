@@ -63,47 +63,47 @@ namespace DepConnect{
         //├┐（通信部門で[WiFi準備]が完了している場合）
           //○UDP担当
           #if ADP_UDP
-          ADAPTER.push_back(new AdapterUDP(ctx));
+          ADAPTER.push_back(new AD_UDP(ctx));
           #endif
           //│
           //○TCP担当
           #if ADP_TCP
-          ADAPTER.push_back(new AdapterTCP(ctx));
+          ADAPTER.push_back(new AD_TCP(ctx));
           #endif
           //│
           //○WebSocket担当
           #if ADP_WSOC
-          ADAPTER.push_back(new AdapterWEB_Socket(ctx));
+          ADAPTER.push_back(new AD_WEBS(ctx));
           #endif
           //│
           //○HTTP担当
           #if ADP_HTTP
-          ADAPTER.push_back(new AdapterHTTP(ctx));
+          ADAPTER.push_back(new AD_HTTP(ctx));
           #endif
           //│
           //○ESP-NOW担当
           #if ADP_ESPN
-          ADAPTER.push_back(new AdapterESPNOW(ctx));
+          ADAPTER.push_back(new AD_ESPN(ctx));
           #endif
           //┴
         //┴
-      } /* END-if */
+      } //～if
       //│
       //○┐個別係
         //│
         //○UART担当(ブリッジは必須)
         #if ADP_UART || MODE == MODE_BRIDGE
-        if (devUART::ENABLED) ADAPTER.push_back(new AdapterUART(ctx));
+        if (devUART::ENABLED) ADAPTER.push_back(new AD_UART(ctx));
         #endif
         //│
         //○BLE担当
         #if ADP_BLE
-        if (devBLE::ENABLED) ADAPTER.push_back(new AdapterBLE(ctx));
+        if (devBLE::ENABLED) ADAPTER.push_back(new AD_BLE(ctx));
         #endif
         //│
         //○┐IIC担当
         #if ADP_IIC //※メインモードは使用不可
-        if (devIIC::ENABLED) ADAPTER.push_back(new AdapterIIC(ctx));
+        if (devIIC::ENABLED) ADAPTER.push_back(new AD_IIC(ctx));
         #endif
         //┴
     //│
@@ -126,7 +126,7 @@ namespace DepConnect{
       if (adp) adp->handle();
       //┴
     //┴
-    } /* END-for */
+    } //～for
   } /* WORK() */
 
 } /* namespace DepConnect */

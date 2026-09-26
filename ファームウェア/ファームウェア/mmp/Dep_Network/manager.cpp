@@ -76,7 +76,7 @@ namespace DepNetwork{
       const auto& dev = DB[devID];
       dev.pStart();
       //┴
-    } /* END-for */
+    } //～for
     //┴
   } /* INIT() */
 

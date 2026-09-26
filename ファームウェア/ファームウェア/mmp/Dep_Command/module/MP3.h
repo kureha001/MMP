@@ -52,7 +52,7 @@ public:
       char msg[128];
       snprintf(msg, sizeof(msg), "　 [%s] Device #%d", (ENABLE[ID] ? "OK" : "NG"), ID);
       Log::prtln(String(msg));
-    } /* END-for */
+    } //～for
     //│
     //○終了
     Log::prtln("");

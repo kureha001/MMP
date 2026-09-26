@@ -208,7 +208,6 @@ namespace devWiFi {
     return true;
   } /* READ_JSON() */
 
-
 //========================================================
 // IPアドレス編集のパーツ
 //========================================================
@@ -233,7 +232,7 @@ namespace devWiFi {
       return IPAddress(argIP[0], argIP[1], argIP[2], oct4);
       //└┐（その他）
         //┴
-    } /* END-if */
+    } //～if
     //│
     //▼返却：エラー時は[0.0.0.0]
     return IPAddress();
@@ -265,7 +264,7 @@ namespace devWiFi {
         return IPAddress(IP_AP[0], IP_AP[1], IP_AP[2],oct4);
       //└┐（その他）
         //┴
-    } /* END-if */
+    } //～if
     //│
     //▼返却:エラー時は[0.0.0.0]
     return IP_AP;
@@ -329,7 +328,7 @@ namespace devWiFi {
           //▼返却:接続に失敗
           Log::prtln(" [NG] DHCP");
           return false;
-      } /* END-if */
+      } //～if
       //┴
     //│
     //○┐本接続の準備
@@ -349,7 +348,7 @@ namespace devWiFi {
           Log::prtln(" [OK] useing DHCP-IP(1)]");
           RUN_INFO(pSSID, pName, WiFi.localIP().toString());
           return true;
-      } /* END-if */
+      } //～if
       //│
       //○静的IPを取得(DHCP発行のIPアドレスの第4オクテットを変更)
       IPAddress newIP = GET_IP_STA(dhcpIP, oct4);
@@ -361,7 +360,7 @@ namespace devWiFi {
           Log::prtln(" [OK] useing DHCP-IP(2)");
           RUN_INFO(pSSID, pName, WiFi.localIP().toString());
           return true;
-      } /* END-if */
+      } //～if
       //│
       //○サブネットは固定 /24
       // GW は DHCP 優先・無ければ x.y.z.1、DNS 未取得なら GW
@@ -387,7 +386,7 @@ namespace devWiFi {
           //▼返却:接続に成功
           Log::prtln(" [NG] STA-IP");
           return false;
-      } /* END-if */
+      } //～if
       //┴
     //│
     //○接続情報を表示
@@ -422,7 +421,7 @@ namespace devWiFi {
         //▼返却:起動に失敗
         Log::prtln("     [NG] softAP");
         return false;
-    } /* END-if*/
+    } //～if
     //│
     //○接続情報を表示
     RUN_INFO(pSSID, pName, WiFi.softAPIP().toString());
@@ -471,7 +470,7 @@ namespace devWiFi {
       String pPass  = DB.candList[i].pass.c_str();
       isRun = RUN_STA(pLabel, pSSID, pPass);
       //┴
-    } /* END-for */
+    } //～for
     //│
     //▼RETRUN:成功でリターン
     return isRun;
@@ -556,13 +555,13 @@ namespace devWiFi {
           isOK = P22_MODE_AP();
         }
         //┴
-    } /* END-if */
+    } //～if
     //│
     //●P3.緊急モードで起動
     if (!isOK) {
         Log::prtln("   3.緊急モードで起動します");
         isOK = P3_MODE_ALTERNATIVE();
-    } /* END-if */
+    } //～if
     //│
   //│
   //○┐【後処理】
@@ -577,10 +576,10 @@ namespace devWiFi {
   //━━━━━━━━━━━━━━━━━
   // 有効性確認
   //━━━━━━━━━━━━━━━━━
-  bool isConnect(bool argLog){
+  bool ENABLED_CONN(bool argLog){
     bool ret = (WiFi.status() == WL_CONNECTED);
     if (ret == false && argLog) Log::prtln("[ERROR] WiFiが未接続です。");
     return ret;
-  } /* isConnect() */
+  } /* ENABLED_CONN() */
 
 } /* namespace devWiFi */

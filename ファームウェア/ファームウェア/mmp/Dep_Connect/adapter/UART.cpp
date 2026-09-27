@@ -6,7 +6,7 @@
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス：非同期キュー型＋スロット型
+// クラス【非同期キュー型＋スロット型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_UART: // 接続識別子：Stream*
 public AD_API_Queue<Stream*>,
@@ -112,10 +112,10 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ：非同期キュー型＋スロット型
+  // コンストラクタ【非同期キュー型＋スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UART(MmpContext& argCtx): // 接続識別子：Stream*
-  AD_API_Base(          argCtx, AID::UART),
+  AD_UART(MmpContext& argCtx) : // 接続識別子：Stream*
+  AD_API(               argCtx, AID::UART),
   AD_API_Queue<Stream*>(argCtx, AID::UART),
   AD_API_Slot< Stream*>(argCtx, AID::UART)
   {

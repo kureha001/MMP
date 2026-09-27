@@ -12,10 +12,10 @@
 //┴┴
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス：基本型
+// クラス【基本型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_HTTP: // 接続識別子：WebServer&
-public AD_API_Base
+class  AD_HTTP :
+public AD_API
 {
 private:
 //========================================================
@@ -450,10 +450,10 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ：基本型
+  // コンストラクタ【基本型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_HTTP(MmpContext& argCtx): // 接続識別子：WebServer&
-  AD_API_Base(argCtx, AID::HTTP) 
+  AD_HTTP(MmpContext& argCtx) :
+  AD_API(argCtx, AID::HTTP) 
   {
   //┬
   //○┐【前処理】

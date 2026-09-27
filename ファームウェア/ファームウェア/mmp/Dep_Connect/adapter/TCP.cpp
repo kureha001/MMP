@@ -6,9 +6,9 @@
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス：非同期キュー型＋スロット型
+// クラス【非同期キュー型＋スロット型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_TCP: // 接続識別子：WiFiClient
+class  AD_TCP : // 接続識別子：WiFiClient
 public AD_API_Queue<WiFiClient>,
 public AD_API_Slot< WiFiClient>
 {
@@ -298,10 +298,10 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ：非同期キュー型＋スロット型
+  // コンストラクタ【非同期キュー型＋スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_TCP(MmpContext& argCtx): // 接続識別子：WiFiClient
-  AD_API_Base(             argCtx, AID::TCP),
+  AD_TCP(MmpContext& argCtx) : // 接続識別子：WiFiClient
+  AD_API(                  argCtx, AID::TCP),
   AD_API_Queue<WiFiClient>(argCtx, AID::TCP),
   AD_API_Slot< WiFiClient>(argCtx, AID::TCP)
   {

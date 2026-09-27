@@ -4,8 +4,6 @@
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
-#ifndef CONN_API_QUEUE_H
-#define CONN_API_QUEUE_H
 #pragma once
 
 //========================================================
@@ -20,7 +18,7 @@ namespace modeBridge { void RUN(); }
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
 class          AD_API_Queue:
-virtual public AD_API_Base
+virtual public AD_API
 {
 protected:
 //========================================================
@@ -142,7 +140,7 @@ public:
   // ※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_API_Queue(MmpContext& context, int aid):
-  AD_API_Base(context, aid)
+  AD_API(context, aid)
   {}
 
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -262,4 +260,3 @@ public:
   } /* handle() */
 
 }; /* class AD_API_Queue */
-#endif

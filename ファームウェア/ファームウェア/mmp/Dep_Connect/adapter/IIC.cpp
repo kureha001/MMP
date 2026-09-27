@@ -6,9 +6,9 @@
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス：非同期キュー型＋スロット型
+// クラス【非同期キュー型＋スロット型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_IIC: // 接続識別子：uint8_t
+class  AD_IIC : // 接続識別子：uint8_t
 public AD_API_Queue<uint8_t>, 
 public AD_API_Slot< uint8_t>
 {
@@ -94,10 +94,10 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ：非同期キュー型＋スロット型
+  // コンストラクタ【非同期キュー型＋スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_IIC(MmpContext& argCtx): // 接続識別子：uint8_t
-  AD_API_Base(          argCtx, AID::IIC),
+  AD_IIC(MmpContext& argCtx) : // 接続識別子：uint8_t
+  AD_API(               argCtx, AID::IIC),
   AD_API_Queue<uint8_t>(argCtx, AID::IIC),
   AD_API_Slot< uint8_t>(argCtx, AID::IIC)
   {

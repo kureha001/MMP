@@ -52,13 +52,11 @@
     const String sysVer  = "V132!"  ; // バージョン
     //│
     //■基本情報
-    T_BASE       base;
-    //│
     //■転送情報
-    T_TRANS      trans;
-    //│
     //■ユーザ認証情報
-    T_ACCESS     access;
+    T_BASE   base;
+    T_TRANS  trans;
+    T_ACCESS access;
   //┴┴
   };
 

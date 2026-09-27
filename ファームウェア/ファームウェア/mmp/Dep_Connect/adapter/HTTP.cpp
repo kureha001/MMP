@@ -468,23 +468,24 @@ private:
 #if (MODE == MODE_BRIDGE)
 //------------------------------------
   //───────────────────────────
-  // ブリッジ用：マスタ
+  // ブリッジ用：スレーブ
+  //※マスタの通信アダプタは更に実装する
   //------------------------------------------------------
   //【戻り値】進行判定
   // true ：進行NG
   // false：進行OK
   //───────────────────────────
-  bool SETUP_BRIDGE() override final {
-/*
+  bool SETUP_BRIDGE() override {
   //┬
   //○┐【前処理】
+    //○(処理なし)
     //┴
   //│
   //○┐【主処理】
-    //●スタートアップ(マスタ用)を実施
-    bool retGo = modeBridge::MASTER_HTTP(
-      CONN,                                       // 単一スロット
-      [this](HTTPClient conn){SEND_CONN(MY_NET);} // ラムダ式で包む
+    //●前処理(スレーブ)を実施...進行判定を得る
+    bool retGo = modeBridge::SLAVE(
+      getAID(),          // 通信アダプタID
+      [this](){TRANS();} // 転送処理(関数をラムダ式で包む)
     );
     //┴
   //│
@@ -492,8 +493,6 @@ private:
     //▼返却：正常終了(進行判定)
     return retGo;
   //┴
-*/
-    return false;
   } /* SETUP_BRIDGE() */
 //------------------------------------
 #endif //➡ブリッジ

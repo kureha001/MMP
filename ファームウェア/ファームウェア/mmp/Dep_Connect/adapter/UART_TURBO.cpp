@@ -64,10 +64,10 @@ private:
     //┴
   //│
   //○┐【主処理】
-    //●スタートアップ(マスタ用)を実施
+    //●前処理(マスタ)を実施...進行判定を得る
     bool retGo = modeBridge::MASTER(
       CONN,                                  // 単一スロット
-      [this](Stream* conn){SEND_CONN(conn);} // ラムダ式で包む
+      [this](Stream* conn){SEND_CONN(conn);} // 返信処理(関数をラムダ式で包む)
     );
     //┴
   //│

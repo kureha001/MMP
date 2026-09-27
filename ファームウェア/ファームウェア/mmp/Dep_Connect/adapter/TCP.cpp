@@ -2,29 +2,20 @@
 //========================================================
 // 接続部門／担当：TCP
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_TCP:
-public AdapterQueueBase<WiFiClient>, // 接続識別子：WiFiClient
-public AdapterSlotBase<WiFiClient>   // 接続識別子：WiFiClient
+class  AD_TCP: // 接続識別子：WiFiClient
+public AD_API_Queue<WiFiClient>,
+public AD_API_Slot< WiFiClient>
 {
 private:
 //========================================================
 //§基本情報
 //========================================================
-  //───────────────────────────
-  // 通信アダプタID
-  //───────────────────────────
-  const int ADP_ID = ADP_ID_TCP;
-  int getAID() const override {return ADP_ID;}
-  
-  //───────────────────────────
-  // サービス関連情報
-  //───────────────────────────
   int         MY_PORT = 8081   ; // ポート番号
 //──────────────────
 //➡ブリッジ
@@ -270,7 +261,7 @@ private:
         SLOT_INI(TBL[0]);
         //│
         //●受信タスクを登録
-        RUN_TASK(ADP_ID); // 並列処理で登録
+        RUN_TASK(MY_AID); // 並列処理で登録
         //┴
       //└┐（その他）
         //┴
@@ -309,10 +300,10 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_TCP(MmpContext& argCtx):
-  AdapterBase<WiFiClient>(argCtx),      // 接続識別子：WiFiClient
-  AdapterQueueBase<WiFiClient>(argCtx), // 接続識別子：WiFiClient
-  AdapterSlotBase<WiFiClient>(argCtx)   // 接続識別子：WiFiClient
+  AD_TCP(MmpContext& argCtx): // 接続識別子：WiFiClient
+  AD_API_Base< WiFiClient>(argCtx, AID_TCP),
+  AD_API_Queue<WiFiClient>(argCtx, AID_TCP),
+  AD_API_Slot< WiFiClient>(argCtx, AID_TCP)
   {
   //┬
   //○┐【前処理】
@@ -354,7 +345,7 @@ public:
     MY_NET->begin();
     //│
     //●受信タスク（並列処理）を登録
-    RUN_TASK(ADP_ID);
+    RUN_TASK(MY_AID);
     //┴
   //│
   //○┐【後処理】

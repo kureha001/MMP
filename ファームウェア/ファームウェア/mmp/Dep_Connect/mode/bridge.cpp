@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／処理手順：ブリッジモード編
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 //┬
 //□┐インクルード
@@ -93,13 +93,13 @@
       bool isOn = false;
       int  ID   = -1;
       if      (DAT[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラーにする
-      else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = ADP_ID_UDP ;}
-      else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = ADP_ID_TCP ;}
-      else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = ADP_ID_WSOC;}
-      else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = ADP_ID_HTTP;}
-      else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = ADP_ID_ESPN;}
-      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = ADP_ID_BLE ;}
-      else if (DAT[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = ADP_ID_IIC ;}
+      else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = AID_UDP ;}
+      else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = AID_TCP ;}
+      else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = AID_WSOC;}
+      else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = AID_HTTP;}
+      else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = AID_ESPN;}
+      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = AID_BLE ;}
+      else if (DAT[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = AID_IIC ;}
       //│
       //○転送先を変更
       if (isOn) ctx.bridge.adpID = ID;

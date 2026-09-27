@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務設計：抽象基底クラス（非同期キュー型）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #ifndef CONN_ADP_API_QUEUE_H
 #define CONN_ADP_API_QUEUE_H
@@ -19,18 +19,10 @@ namespace modeBridge { void RUN(); }
 // クラス：基本型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
-class          AdapterQueueBase :
-virtual public AdapterBase<T>
+class          AD_API_Queue:
+virtual public AD_API_Base<T>
 {
 protected:
-//========================================================
-//§基本情報
-//========================================================
-  //───────────────────────────
-  // 一般情報
-  //───────────────────────────
-  virtual int  getAID() const = 0;
-
 //========================================================
 //§非同期キュー処理
 //========================================================
@@ -53,7 +45,7 @@ protected:
     const String& frame, // フレーム
     const int     SID    // スロットID ※対象外はダミー値をセット
   ) {
-    String msg = "["+ String(getAID()) + "] push:" + frame;
+    String msg = "["+ String(this->MY_AID) + "] push:" + frame;
     Log::Outln(msg);
 
     if (frame.length() < 1) return;
@@ -78,7 +70,7 @@ protected:
       //┴
     //│
     //○┐【後処理】
-      String msg = "[" + String(getAID()) + "] pop :" + outItem.frame;
+      String msg = "[" + String(this->MY_AID) + "] pop :" + outItem.frame;
       Log::Outln(msg);
       //│
       return true;
@@ -122,7 +114,7 @@ protected:
     //○┐【主処理】
       //●前処理(スレーブ)を実施...進行判定を得る
       bool retGo = modeBridge::SLAVE(
-        getAID(),                // 通信アダプタID
+        this->MY_AID,                // 通信アダプタID
         [this](){this->TRANS();} // 転送処理(関数をラムダ式で包む)
       );
       //┴
@@ -141,10 +133,12 @@ protected:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ／デストラクタ：基本型
-  //※通信アダプタで実装する
+  // コンストラクタ
+  // ※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  using AdapterBase<T>::AdapterBase;
+  AD_API_Queue(MmpContext& context, int aid):
+  AD_API_Base<T>(context, aid)
+  {}
 
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
@@ -179,7 +173,7 @@ public:
         //│ ▼完了：ルーティングを終了
         //│
         //●コンテキストを初期化
-        adpFnBase::SETUP_CTX(getAID(), popDat.frame);
+        adpFnBase::SETUP_CTX(this->MY_AID, popDat.frame);
         //│
   //──────────────────
   //➡ブリッジ以外
@@ -236,7 +230,7 @@ public:
             ctx.bridge.Stat  = BSTAT::REQ;
             return;
 
-        } else if (ctx.bridge.Stat == BSTAT::BUSY && getAID() == ctx.bridge.adpID) {
+        } else if (ctx.bridge.Stat == BSTAT::BUSY && this->MY_AID == ctx.bridge.adpID) {
           //├┐（[処理中]かつ[スレーブ] の場合）
             //○レスポンスMSGに[フレーム内容]をセット
             //○進行状況を[処理済]に遷移
@@ -262,5 +256,5 @@ public:
     //┴┴
   } /* handle() */
 
-}; /* class AdapterQueueBase */
+}; /* class AD_API_Queue */
 #endif

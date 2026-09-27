@@ -2,26 +2,17 @@
 //========================================================
 // 接続部門／担当：UART
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_UART :
-public AdapterQueueBase<Stream*>, // 接続識別子：Stream*
-public AdapterSlotBase<Stream*>   // 接続識別子：Stream*
+class  AD_UART: // 接続識別子：Stream*
+public AD_API_Queue<Stream*>,
+public AD_API_Slot< Stream*>
 {
 private:
-//========================================================
-//§基本情報
-//========================================================
-  //───────────────────────────
-  // 通信アダプタID
-  //───────────────────────────
-  const int ADP_ID = ADP_ID_UART;              // 内部用
-  int getAID() const override {return ADP_ID;} // 基底クラス用
-
 //========================================================
 //§返信処理
 //========================================================
@@ -123,10 +114,10 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UART(MmpContext& argCtx): 
-  AdapterBase<Stream*>(argCtx),      // 接続識別子：Stream*
-  AdapterQueueBase<Stream*>(argCtx), // 接続識別子：Stream*
-  AdapterSlotBase<Stream*>(argCtx)   // 接続識別子：Stream*
+  AD_UART(MmpContext& argCtx): // 接続識別子：Stream*
+  AD_API_Base< Stream*>(argCtx, AID_UART),
+  AD_API_Queue<Stream*>(argCtx, AID_UART),
+  AD_API_Slot< Stream*>(argCtx, AID_UART)
   {
   //┬
   //○┐【前処理】
@@ -171,7 +162,7 @@ public:
 //──────────────────
     //│
     //●データ受信のタスクを開始する
-    RUN_TASK(ADP_ID);
+    RUN_TASK(MY_AID);
     //┴
   //│
   //○┐【後処理】

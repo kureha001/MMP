@@ -2,29 +2,20 @@
 //========================================================
 // 接続部門／担当：IIC
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/25)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_IIC:
-public AdapterQueueBase<uint8_t>, // 接続識別子：uint8_t
-public AdapterSlotBase<uint8_t>   // 接続識別子：uint8_t
+class  AD_IIC: // 接続識別子：uint8_t
+public AD_API_Queue<uint8_t>, 
+public AD_API_Slot< uint8_t>
 {
 private:
 //========================================================
 //§基本情報
 //========================================================
-  //───────────────────────────
-  // 通信アダプタID
-  //───────────────────────────
-  const int ADP_ID = ADP_ID_IIC;
-  int getAID() const override {return ADP_ID;}
-    
-  //───────────────────────────
-  // サービス関連情報
-  //───────────────────────────
   const int            DATA_LENGTH  = 80; // データ長制限
   static const uint8_t IIC_ADDR_MIN = 0xA0;
   static const uint8_t IIC_ADDR_MAX = 0xA4;
@@ -105,10 +96,10 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_IIC(MmpContext& argCtx):
-  AdapterBase<uint8_t>(argCtx),      // 接続識別子：uint8_t
-  AdapterQueueBase<uint8_t>(argCtx), // 接続識別子：uint8_t
-  AdapterSlotBase<uint8_t>(argCtx)   // 接続識別子：uint8_t
+  AD_IIC(MmpContext& argCtx): // 接続識別子：uint8_t
+  AD_API_Base< uint8_t>(argCtx, AID_IIC),
+  AD_API_Queue<uint8_t>(argCtx, AID_IIC),
+  AD_API_Slot< uint8_t>(argCtx, AID_IIC)
   {
   //┬
   //○┐【前処理】
@@ -116,7 +107,7 @@ public:
   //│
   //○┐主処理
     //●受信タスクを登録
-    RUN_TASK(ADP_ID); // 並列処理で登録
+    RUN_TASK(MY_AID); // 並列処理で登録
     //┴
   //│
   //○┐【後処理】

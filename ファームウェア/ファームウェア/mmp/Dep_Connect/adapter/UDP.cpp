@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：UDP
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 //┬
 //□┐インクルード
@@ -13,23 +13,14 @@
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：非同期キュー型＋スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_UDP:
-public AdapterQueueBase<String>, // 接続識別子：String
-public AdapterSlotBase<String>   // 接続識別子：String
+class  AD_UDP: // 接続識別子：String
+public AD_API_Queue<String>,
+public AD_API_Slot< String>
 {
 private:
 //========================================================
 //§基本情報
 //========================================================
-  //───────────────────────────
-  // 通信アダプタID
-  //───────────────────────────
-  const int ADP_ID = ADP_ID_UDP;               // 内部用
-  int getAID() const override {return ADP_ID;} // 基底クラス用
-
-  //───────────────────────────
-  // サービス関連情報
-  //───────────────────────────
   WiFiUDP MY_NET        ; // クライアント・サーバ両用(実体)
   int     MY_PORT = 8083; // ポート番号
 
@@ -225,10 +216,10 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UDP(MmpContext& argCtx) :
-  AdapterBase<String>(argCtx),      // 接続識別子：String
-  AdapterQueueBase<String>(argCtx), // 接続識別子：String
-  AdapterSlotBase<String>(argCtx)   // 接続識別子：String
+  AD_UDP(MmpContext& argCtx): // 接続識別子：String
+  AD_API_Base< String>(argCtx, AID_UDP),
+  AD_API_Queue<String>(argCtx, AID_UDP),
+  AD_API_Slot< String>(argCtx, AID_UDP)
   {
   //┬
   //○┐【前処理】
@@ -270,7 +261,7 @@ public:
     MY_NET.begin(MY_PORT);
     //│
     //●データ受信のタスクを開始する
-    RUN_TASK(ADP_ID);
+    RUN_TASK(MY_AID);
     //┴
   //│
   //○┐【後処理】

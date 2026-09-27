@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／業務設計：抽象基底クラス（接続スロット型）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/24)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #ifndef CONN_ADP_API_SLOT_H
 #define CONN_ADP_API_SLOT_H
@@ -12,8 +12,8 @@
 // クラス：基本型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
-class          AdapterSlotBase :
-virtual public AdapterBase<T>
+class          AD_API_Slot:
+virtual public AD_API_Base<T>
 {
 protected:
 //========================================================
@@ -165,7 +165,7 @@ protected:
   // 並列処理を定義（FreeRTOS用）
   //───────────────────────────
   static void StreamQueue(void *pvParameters) {
-    auto* self = static_cast<AdapterSlotBase<T>*>(pvParameters);
+    auto* self = static_cast<AD_API_Slot<T>*>(pvParameters);
     for (;;) {
       if (self) self->ON_RECIVE();        // タスク関数
       vTaskDelay(1 / portTICK_PERIOD_MS); // 短いウェイト
@@ -203,15 +203,17 @@ protected:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ／デストラクタ：基本型
+  // コンストラクタ
   //※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  using AdapterBase<T>::AdapterBase;
+  AD_API_Slot(MmpContext& context, int aid):
+  AD_API_Base<T>(context, aid)
+  {}
 
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ポーリング用ハンドラ
   //※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-}; /* class AdapterSlotBase */
+}; /* class AD_API_Slot */
 #endif

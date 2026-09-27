@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／共通課：担当名簿
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/22)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #ifndef CONN_COMMON_H
 #define CONN_COMMON_H
@@ -14,14 +14,14 @@
 //┬
 //□┐情報
   //□経路ID
-  inline constexpr int ADP_ID_UART = 100;
-  inline constexpr int ADP_ID_UDP  = 200;  
-  inline constexpr int ADP_ID_TCP  = 201;
-  inline constexpr int ADP_ID_WSOC = 210;
-  inline constexpr int ADP_ID_HTTP = 211;
-  inline constexpr int ADP_ID_ESPN = 220;
-  inline constexpr int ADP_ID_BLE  = 300;
-  inline constexpr int ADP_ID_IIC  = 900;
+  inline constexpr int AID_UART = 100;
+  inline constexpr int AID_UDP  = 200;  
+  inline constexpr int AID_TCP  = 201;
+  inline constexpr int AID_WSOC = 210;
+  inline constexpr int AID_HTTP = 211;
+  inline constexpr int AID_ESPN = 220;
+  inline constexpr int AID_BLE  = 300;
+  inline constexpr int AID_IIC  = 900;
   //│
   //□ブリッジの進捗状況
   namespace BSTAT {

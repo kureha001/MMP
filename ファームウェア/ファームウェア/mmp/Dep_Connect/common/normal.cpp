@@ -21,18 +21,18 @@
     char msg[128];
     Log::prtln(String("\n============== MMP LOG ==============="));
 
-    Log::prtln("Frame [" + String(ctx.strFrame) + "]");
+    Log::prtln("Frame [" + String(ctx.base.Frame) + "]");
 
     snprintf(
       msg, sizeof(msg),
       "AID[%d] SID[%d] TID[%d](Stat[%d])",
-      ctx.adpID, ctx.bridge.slotID, ctx.bridge.adpID, ctx.bridge.Stat
+      ctx.base.AID, ctx.trans.SID, ctx.trans.AID, ctx.trans.Stat
     ); Log::prtln(String(msg));
 
     snprintf(
       msg, sizeof(msg),
       "TDat[%s][%s][%s]",
-      String(ctx.bridge.Dat1), String(ctx.bridge.Dat2), String(ctx.bridge.Dat3)
+      String(ctx.trans.Dat1), String(ctx.trans.Dat2), String(ctx.trans.Dat3)
     ); Log::prtln(String(msg));
 
     snprintf(
@@ -41,7 +41,7 @@
       String(ctx.access.CD), ctx.access.ID, ctx.access.IDS
     ); Log::prtln(String(msg));
 
-    Log::prtln("Path[" + String(ctx.cmdPath) + "] = MSG[" + String(ctx.resMSG ) + "]");
+    Log::prtln("Path[" + String(ctx.base.Cmd) + "] = MSG[" + String(ctx.base.Msg ) + "]");
 
     Log::prtln(String("======================================"));
   } /* SHOW_LOG() */
@@ -69,14 +69,14 @@
   // コンテキストを初期化
   //━━━━━━━━━━━━━━━━━
   void SETUP_CTX(int argAID, String argFrame) {
-    ctx.adpID    = argAID; // アダプタID
-    ctx.strFrame = argFrame; // フレーム
-    if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
-    if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-    ctx.resMSG    = ""  ; // レスポンスMSG
-    ctx.cmdPath   = ""  ; // コマンドパス
-    ctx.access.CD = ""  ; // 認証コード
-    ctx.access.ID = -1  ; // アクセスID
+    ctx.base.AID   = argAID; // アダプタID
+    ctx.base.Frame = argFrame; // フレーム
+    if (!ctx.base.Frame.endsWith ("!")) ctx.base.Frame += "!";
+    if (ctx.base.Frame.startsWith("/")) ctx.base.Frame.remove(0, 1);
+    ctx.base.Msg   = ""  ; // レスポンスMSG
+    ctx.base.Cmd   = ""  ; // コマンドパス
+    ctx.access.CD  = ""  ; // 認証コード
+    ctx.access.ID  = -1  ; // アクセスID
   } /* FORMAT_URI() */
 
   //─────────────────
@@ -101,8 +101,8 @@
     //│
     //○┐【主処理】
       //●コマンドを実行
-      ctx.cmdPath = argFrame; // コマンドパスをセット
-      DepCommand::RunCommand()      ; // 実行結果は[ctx.resMSG]にセットされる
+      ctx.base.Cmd = argFrame; // コマンドパスをセット
+      DepCommand::RunCommand()      ; // 実行結果は[ctx.base.Msg]にセットされる
       //┴
     //│
     //○┐【後処理】

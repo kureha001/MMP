@@ -9,7 +9,7 @@
 // クラス：基本型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_UART: // 接続識別子：Stream*
-public AD_API_Base<Stream*>
+public AD_API_Base
 {
 private:
 //========================================================
@@ -30,7 +30,7 @@ private:
     //┬
     //○クライアントにレスポンス
     //●ログ出力
-    argConn->print(ctx.resMSG);
+    argConn->print(ctx.base.Msg);
     adpFnBase::SHOW_LOG();
     //┴
   } /* SEND_CONN() */
@@ -80,7 +80,7 @@ public:
   // コンストラクタ：基本型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_UART(MmpContext& argCtx): // 接続識別子：Stream*
-  AD_API_Base<Stream*>(argCtx, AID_UART)
+  AD_API_Base(argCtx, AID::UART)
   {
     //┬
     //○メッセージ表示
@@ -150,7 +150,7 @@ public:
 //------------------------------------
     //●ブリッジ処理を実行
     modeBridge::RUN(0, retFrame);
-    if (ctx.resMSG != "") {SEND_CONN(CONN); return;}
+    if (ctx.base.Msg != "") {SEND_CONN(CONN); return;}
     //│＼（[内部コマンド応答済][エラーあり]の場合）
     //│ ○クライアントにレスポンス
     //│ ▼終了：早期リターンする
@@ -158,7 +158,7 @@ public:
     //○進捗状況を[依頼中]にセット
     //▼終了：早期リターンする ※1件ずつ処理
     Log::Outln("1.待機中→依頼中");
-    ctx.bridge.Stat = BSTAT::REQ;
+    ctx.trans.Stat = BSTAT::REQ;
     return;
 //------------------------------------
 #endif //➡マスタ｜➡サブ｜➡ブリッジ

@@ -4,8 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
-#ifndef CONN_ADP_API_SLOT_H
-#define CONN_ADP_API_SLOT_H
+#ifndef CONN_API_SLOT_H
+#define CONN_API_SLOT_H
 #pragma once
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -13,7 +13,7 @@
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
 class          AD_API_Slot:
-virtual public AD_API_Base<T>
+virtual public AD_API_Base
 {
 protected:
 //========================================================
@@ -151,6 +151,7 @@ protected:
 //§返信処理
 //※通信アダプタで実装する
 //========================================================
+  virtual void SEND_CONN(T argConn) = 0;
 
 //========================================================
 //§受信処理
@@ -207,7 +208,7 @@ public:
   //※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_API_Slot(MmpContext& context, int aid):
-  AD_API_Base<T>(context, aid)
+  AD_API_Base(context, aid)
   {}
 
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -101,7 +101,7 @@ private:
     //│
     //○接続元宛にメッセージを送信する
     MY_NET.beginPacket(sendIP, sendPort);
-    MY_NET.write((const uint8_t*)ctx.resMSG.c_str(), ctx.resMSG.length());
+    MY_NET.write((const uint8_t*)ctx.base.Msg.c_str(), ctx.base.Msg.length());
     MY_NET.endPacket();
     //┴
   //│
@@ -177,13 +177,13 @@ private:
   //┬
   //○┐【前処理】
     //○転送先の情報を用意する
-    String transIP = ctx.bridge.Dat1;
+    String transIP = ctx.trans.Dat1;
     //┴
   //│
   //○┐【主処理】
     //○リクエストを転送する
     MY_NET.beginPacket(transIP.c_str(), MY_PORT);
-    MY_NET.write((const uint8_t*)ctx.bridge.Frame.c_str(), ctx.bridge.Frame.length());
+    MY_NET.write((const uint8_t*)ctx.trans.Frame.c_str(), ctx.trans.Frame.length());
     MY_NET.endPacket();
     //┴
   //│
@@ -217,9 +217,9 @@ public:
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_UDP(MmpContext& argCtx): // 接続識別子：String
-  AD_API_Base< String>(argCtx, AID_UDP),
-  AD_API_Queue<String>(argCtx, AID_UDP),
-  AD_API_Slot< String>(argCtx, AID_UDP)
+  AD_API_Base(         argCtx, AID::UDP),
+  AD_API_Queue<String>(argCtx, AID::UDP),
+  AD_API_Slot< String>(argCtx, AID::UDP)
   {
   //┬
   //○┐【前処理】

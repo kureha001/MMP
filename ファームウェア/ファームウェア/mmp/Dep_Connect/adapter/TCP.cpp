@@ -162,7 +162,7 @@ private:
   //│
   //○┐【主処理】
     //○クライアントにレスポンス
-    argConn.print(ctx.resMSG);
+    argConn.print(ctx.base.Msg);
     //┴
   //│
   //○┐【後処理】
@@ -242,7 +242,7 @@ private:
   //┬
   //○┐【前処理】
     //○宛先情報を取得
-    String transIP = ctx.bridge.Dat1;
+    String transIP = ctx.trans.Dat1;
     //┴
   //│
   //○┐【主処理】
@@ -252,7 +252,7 @@ private:
         //○クライアントを起動（成功するまでの待ち時間を指定）
         MY_NET.setTimeout(LIMIT::TIME_CONNECT);
         if (!MY_NET.connect(transIP.c_str(), MY_PORT))
-        {ctx.bridge.MSG = RCD::Trn1Err; return;}
+        {ctx.trans.Msg = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○完了MSGにエラーCDをセット
         //│ ▼終了：早期リターンする
@@ -268,7 +268,7 @@ private:
     } //～if 
     //│
     //○退避したフレームでリクエスト(非同期でデータ受信)
-    MY_NET.print(ctx.bridge.Frame);
+    MY_NET.print(ctx.trans.Frame);
     //┴
   //│
   //○┐【後処理】
@@ -301,9 +301,9 @@ public:
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_TCP(MmpContext& argCtx): // 接続識別子：WiFiClient
-  AD_API_Base< WiFiClient>(argCtx, AID_TCP),
-  AD_API_Queue<WiFiClient>(argCtx, AID_TCP),
-  AD_API_Slot< WiFiClient>(argCtx, AID_TCP)
+  AD_API_Base(             argCtx, AID::TCP),
+  AD_API_Queue<WiFiClient>(argCtx, AID::TCP),
+  AD_API_Slot< WiFiClient>(argCtx, AID::TCP)
   {
   //┬
   //○┐【前処理】

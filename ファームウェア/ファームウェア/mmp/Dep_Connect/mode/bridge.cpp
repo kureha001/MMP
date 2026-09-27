@@ -37,7 +37,7 @@
     //┬
     //●Sysコマンドを実行
     //▼終了：処理結果
-    return adpFnBase::SysCmd(ctx.bridge.Frame);
+    return adpFnBase::SysCmd(ctx.trans.Frame);
     //┴
   } /* Run_SysCmd() */
 
@@ -48,7 +48,7 @@
     //┬
     //○┐【前処理】
       //○フレームを補正
-      String strCMD = ctx.bridge.Frame;
+      String strCMD = ctx.trans.Frame;
       strCMD.replace("!", "");
       //┴
     //│
@@ -93,16 +93,16 @@
       bool isOn = false;
       int  ID   = -1;
       if      (DAT[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラーにする
-      else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = AID_UDP ;}
-      else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = AID_TCP ;}
-      else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = AID_WSOC;}
-      else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = AID_HTTP;}
-      else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = AID_ESPN;}
-      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = AID_BLE ;}
-      else if (DAT[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = AID_IIC ;}
+      else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = AID::UDP ;}
+      else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = AID::TCP ;}
+      else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = AID::WSOC;}
+      else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = AID::HTTP;}
+      else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = AID::ESPN;}
+      else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = AID::BLE ;}
+      else if (DAT[0] == "BRIDGE/IIC" ) {isOn = true; if (ADP_IIC ) ID = AID::IIC ;}
       //│
       //○転送先を変更
-      if (isOn) ctx.bridge.adpID = ID;
+      if (isOn) ctx.trans.AID = ID;
       //┴
     //│
     //○┐【後処理】
@@ -122,9 +122,9 @@
     //┬
     //○┐【前処理】
       //○コンテクスト(ブリッジ用)を初期化
-      ctx.bridge.slotID = argSID  ; //スロットIDを退避
-      ctx.bridge.Frame  = argFrame; //フレームを退避
-      ctx.bridge.MSG    = ""      ; //完了MSGをクリア
+      ctx.trans.SID   = argSID  ; //スロットIDを退避
+      ctx.trans.Frame = argFrame; //フレームを退避
+      ctx.trans.Msg   = ""      ; //完了MSGをクリア
       //┴
     //│
     //○┐【主処理】
@@ -140,7 +140,7 @@
       //│
       //○┐現状を評価
         //○転送先を確認
-        if (ctx.bridge.adpID < 0) {ctx.resMSG = RCD::Trn1Err; return;}
+        if (ctx.trans.AID < 0) {ctx.base.Msg = RCD::Trn1Err; return;}
         //│＼（[未設定]の場合）
         //│ ○レスポンスMSGにエラーCDをセット
         //│ ▼終了：早期リターン
@@ -152,14 +152,14 @@
         //┴
       //│
       //○転送先パラメータをセット
-      ctx.bridge.Dat1 = DAT[1];
-      ctx.bridge.Dat2 = DAT[2];
-      ctx.bridge.Dat3 = DAT[3];
+      ctx.trans.Dat1 = DAT[1];
+      ctx.trans.Dat2 = DAT[2];
+      ctx.trans.Dat3 = DAT[3];
       //┴
     //│
     //○┐【後処理】
       //○レスポンスMSGに[正常終了]をセット
-      ctx.resMSG = RCD::OK;
+      ctx.base.Msg = RCD::OK;
     //┴┴
   } /* RUN() */
 
@@ -175,7 +175,7 @@
     //┬
     //○┐【前処理】
       //●マスタとして進行判定
-      switch (ctx.bridge.Stat) {
+      switch (ctx.trans.Stat) {
         case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
         case BSTAT::REQ : return true ; // 依頼済➡×
         case BSTAT::BUSY: return true ; // 処理中➡×
@@ -190,7 +190,7 @@
       //│
       //○進行状況を[待機中]に遷移
       Log::Outln("4.処理済→待機中");
-      ctx.bridge.Stat = BSTAT::IDLE;
+      ctx.trans.Stat = BSTAT::IDLE;
       //┴
     //│
     //○┐【後処理】
@@ -213,12 +213,12 @@
     //┬
     //○┐【前処理】
       //○スレーブを確認
-      if (argAID != ctx.bridge.adpID) return true;
+      if (argAID != ctx.trans.AID) return true;
       //│＼（スレーブではない場合）
       //│ ▼終了：早期リターン（進行NG)
       //│
       //○進捗状況による進行判定
-      switch (ctx.bridge.Stat) {
+      switch (ctx.trans.Stat) {
         case BSTAT::IDLE: return true ; // 待機中➡×
         case BSTAT::REQ : break       ; // 依頼済は後続処理へ
         case BSTAT::BUSY: return false; // 処理中➡○キュー応答
@@ -230,19 +230,19 @@
     //○┐【主処理】
       //○進行状況を[処理中]に遷移
       Log::Outln("2.依頼済→処理中");
-      ctx.bridge.Stat = BSTAT::BUSY;
+      ctx.trans.Stat = BSTAT::BUSY;
       //│
       //●転送を実施
       argTrans();
       //│
-      //◇┐即時応答に対応
-      if (ctx.bridge.MSG != "") {
-        //├┐（完了MSGが[内容あり]の場合）
+      //◇┐即時応答の通信アダプタに対応
+      if (ctx.trans.Msg != "") {
+        //├┐（完了MSGがある場合）
           //○マスタが処理できるようレスポンスMSGへ反映
           //○進行状況を[処理済]にセット
           Log::Outln("3.処理中→処理済(即時)");
-          ctx.resMSG      = ctx.bridge.MSG;
-          ctx.bridge.Stat = BSTAT::DONE;
+          ctx.base.Msg   = ctx.trans.Msg;
+          ctx.trans.Stat = BSTAT::DONE;
           //┴
         //└┐（その他）
           //┴

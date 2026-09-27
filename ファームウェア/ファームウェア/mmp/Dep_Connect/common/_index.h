@@ -13,17 +13,19 @@
 //========================================================
 //┬
 //□┐情報
-  //□経路ID
-  inline constexpr int AID_UART = 100;
-  inline constexpr int AID_UDP  = 200;  
-  inline constexpr int AID_TCP  = 201;
-  inline constexpr int AID_WSOC = 210;
-  inline constexpr int AID_HTTP = 211;
-  inline constexpr int AID_ESPN = 220;
-  inline constexpr int AID_BLE  = 300;
-  inline constexpr int AID_IIC  = 900;
+  //□通信アダプタID
+  namespace AID {
+    inline constexpr int UART = 100;
+    inline constexpr int UDP  = 200;  
+    inline constexpr int TCP  = 201;
+    inline constexpr int WSOC = 210;
+    inline constexpr int HTTP = 211;
+    inline constexpr int ESPN = 220;
+    inline constexpr int BLE  = 300;
+    inline constexpr int IIC  = 900;
+  }
   //│
-  //□ブリッジの進捗状況
+  //□ブリッジモードの進捗状況ID
   namespace BSTAT {
     inline constexpr int IDLE = 0; // 待機中
     inline constexpr int REQ  = 1; // 依頼中（マスタ→スレーブ）

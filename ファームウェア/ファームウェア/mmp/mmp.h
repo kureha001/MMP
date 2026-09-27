@@ -1,8 +1,8 @@
 // filename : mmp.h
 //========================================================
-// システム共通
+// 全体共通
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #ifndef MMP_H
 #define MMP_H
@@ -11,40 +11,57 @@
 //========================================================
 //§コンテクスト
 //========================================================
-  struct T_ACCESS {
-    String    CD  = ""; // 認証コード
-    int       ID  = -1; // アクセスID(MMP全体で一意)
-    const int IDS = 30; // アクセスIDの総数(ユーザ認証スロット数)
-  };
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 構造体定義
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //┬
+  //■┐構造体定義
+    //■基本情報
+    struct T_BASE {
+      int    AID   = -1; // 経路アダプタID
+      String Frame = ""; // フレーム(リクエスト内容)
+      String Cmd   = ""; // コマンドパス
+      String Msg   = ""; // レスポンスMSG
+    };
+    //│
+    //■転送情報
+    struct T_TRANS {
+      int    Stat  =  0; // 進行状況
+      int    AID   = -1; // 通信アダプタID
+      int    SID   =  0; // 接続元のスロットID
+      String Dat1  = ""; // 個別情報１
+      String Dat2  = ""; // 個別情報２
+      String Dat3  = ""; // 個別情報３
+      String Frame = ""; // フレーム(リクエスト内容)
+      String Msg   = ""; // レスポンスMSG
+    };
+    //│
+    //■ユーザ認証情報
+    struct T_ACCESS {
+      String    CD  = ""; // 認証コード
+      int       ID  = -1; // アクセスID(MMP全体で一意)
+      const int IDS = 30; // アクセスIDの総数(ユーザ認証スロット数)
+    };
+  //┴┴
 
-  struct T_BRIDGE {
-    int    slotID =  0; // リクエスト元のスロットID
-    int    adpID  = -1; // 転送先のアダプタID
-    int    Stat   =  0; // 進行状況
-    String Dat1   = ""; // 転送先の個別情報１
-    String Dat2   = ""; // 転送先の個別情報２
-    String Dat3   = ""; // 転送先の個別情報３
-    String Frame  = ""; // フレーム(リクエスト内容)
-    String MSG    = ""; // レスポンス情報
-  };
-
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 構造体定義（本体）
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //┬
+  //■┐コンテクスト（本体）
   struct MmpContext {
-    //┬
     //■システム情報
     const String sysVer  = "V132!"  ; // バージョン
     //│
-    //■リクエスト情報
-    int          adpID    = -1; // 経路アダプタID
-    String       strFrame = ""; // フレーム(リクエスト内容)
-    String       cmdPath  = ""; // コマンドパス
-    String       resMSG   = ""; // レスポンスMSG
+    //■基本情報
+    T_BASE       base;
     //│
     //■転送情報
-    T_BRIDGE     bridge;
+    T_TRANS      trans;
     //│
-    //■ユーザメモリ情報（特定の機能モジュールで使用）
+    //■ユーザ認証情報
     T_ACCESS     access;
-    //┴
+  //┴┴
   };
 #endif // MMP_H
 
@@ -94,8 +111,8 @@ namespace LIMIT{
 //========================================================
 namespace Log{
   bool ENABLE   = false; // ログ出力有効性
-  void prtln(String argMSG) {Serial0.println(argMSG);}
-  void prt  (String argMSG) {Serial0.print  (argMSG);}
+  void prtln(String argMSG) {Serial0.println (argMSG);}
+  void prt  (String argMSG) {Serial0.print   (argMSG);}
   void Outln(String argMSG) {if(ENABLE) prtln(argMSG);}
   void Out  (String argMSG) {if(ENABLE) prt  (argMSG);}
 } /* namespace Log */

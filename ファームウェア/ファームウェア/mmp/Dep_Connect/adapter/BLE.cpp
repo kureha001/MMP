@@ -32,7 +32,7 @@ private:
     //┬
     //○クライアントにレスポンス
     if (devBLE::BLE_TX != nullptr && devBLE::ENABLED) {
-      devBLE::BLE_TX->setValue(ctx.resMSG.c_str());
+      devBLE::BLE_TX->setValue(ctx.base.Msg.c_str());
       devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）
     }
     //│
@@ -136,20 +136,20 @@ private:
     //┬
     //○クライアント資源の状態を確認
     if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
-    {ctx.bridge.MSG = RCD::Trn1Err; return;}
+    {ctx.trans.Msg = RCD::Trn1Err; return;}
     //│＼（状態が[未接続]の場合）
     //│ ○完了MSGにエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○通信口（RX）の状態を確認
     if (devBLE::BLE_CLI_RX == nullptr)
-    {ctx.bridge.MSG = RCD::Trn2Err; return;}
+    {ctx.trans.Msg = RCD::Trn2Err; return;}
     //│＼（状態が[未接続]の場合）
     //│ ○完了MSGにエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○退避したフレームでリクエスト(非同期でデータ受信)
-    devBLE::BLE_CLI_RX->writeValue(ctx.bridge.Frame.c_str(), ctx.bridge.Frame.length());
+    devBLE::BLE_CLI_RX->writeValue(ctx.trans.Frame.c_str(), ctx.trans.Frame.length());
     //┴
   } /* TRANS() */
 //------------------------------------
@@ -164,8 +164,8 @@ public:
   // コンストラクタ：非同期キュー型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_BLE(MmpContext& argCtx): // 接続識別子：uint8_t
-  AD_API_Base< uint8_t>(argCtx, AID_BLE), 
-  AD_API_Queue<uint8_t>(argCtx, AID_BLE) 
+  AD_API_Base(          argCtx, AID::BLE), 
+  AD_API_Queue<uint8_t>(argCtx, AID::BLE) 
   {
 //──────────────────
 //➡ブリッジ

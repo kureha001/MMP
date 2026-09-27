@@ -12,7 +12,7 @@
 // - WebSockets        by Markus Sattler
 // - EspSoftwareSerial by Peter Lerup, Dirk Kaar
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/23)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #pragma once
 //┬
@@ -30,10 +30,10 @@
   //□システム構築
   #include "mmpMake.h"
   //│
-  //□システム共通
+  //□全体共通
   #include "mmp.h"
   //│
-  //□コンテクスト
+  //■コンテクスト（実体）
   MmpContext ctx;
 //│┴
 //│
@@ -87,7 +87,7 @@
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
-      ctx.cmdPath = "MP3/PLAY:1:1!";
+      ctx.base.Cmd = "MP3/PLAY:1:1!";
       DepCommand::RunCommand();
     }
     //┴

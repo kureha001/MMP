@@ -192,7 +192,7 @@ namespace adpFnAuth{
             } //～while
             //│
             //○コンテクストを更新
-            ctx.resMSG    = newCD + "!"; // レスポンス
+            ctx.base.Msg  = newCD + "!"; // レスポンス
             ctx.access.CD = newCD      ; // 認証CD
             ctx.access.ID = freeID     ; // アクセスID
             //│
@@ -293,7 +293,7 @@ namespace adpFnAuth{
     void SET_ACD_CPATH() {
       //┬
       //◇┐認証CDを取得
-      String tmpFrame = ctx.strFrame;
+      String tmpFrame = ctx.base.Frame;
       if (tmpFrame.startsWith("@")) {
         //├┐（認証コードの開始文字がある場合）
           //○先頭の'@'を削除
@@ -301,14 +301,14 @@ namespace adpFnAuth{
           //●第２トークン以降を[コマンドパス]にセット
           tmpFrame.remove(0, 1);
           ctx.access.CD = GET_TOK1(tmpFrame);
-          ctx.cmdPath   = GET_TOK2(tmpFrame);
+          ctx.base.Cmd   = GET_TOK2(tmpFrame);
           //┴
       } else {
         //└┐
           //○コマンドパスにフレーム全体(認証コード無し)をセット
           //○コマンドパスを大文字に置換
-          ctx.cmdPath = tmpFrame;
-          ctx.cmdPath.toUpperCase();
+          ctx.base.Cmd = tmpFrame;
+          ctx.base.Cmd.toUpperCase();
           //┴
       } //～if
       //┴
@@ -341,10 +341,10 @@ namespace adpFnAuth{
     SET_ACD_CPATH();
     //│
     //◇┐認証開始要求に応答
-    if (ctx.cmdPath == SP_CMD_START) {
+    if (ctx.base.Cmd == SP_CMD_START) {
       //├┐（「認証CD発行コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()){ctx.resMSG = RCD::AuthErr1;}
+        if(NEW_USER()){ctx.base.Msg = RCD::AuthErr1;}
         //│＼（失敗した場合）
         //│ ○レスポンスにエラーIDをセット
         //│ ┴
@@ -361,7 +361,7 @@ namespace adpFnAuth{
     //│
     //●ユーザ認証を実施
     ctx.access.ID = GET_EXIST_AID(ctx.access.CD);
-    if (ctx.access.ID < 0){ctx.resMSG = RCD::AuthErr2; return true;}
+    if (ctx.access.ID < 0){ctx.base.Msg = RCD::AuthErr2; return true;}
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│

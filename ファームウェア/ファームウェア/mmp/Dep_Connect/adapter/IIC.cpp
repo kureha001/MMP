@@ -31,7 +31,7 @@ private:
     //┬
     //○レスポンス内容を返送バッファにセット
     //  ※ここではレスポンスしないでスレッド処理に回す
-    CONN_TX[argConn - IIC_ADDR_MIN] = ctx.resMSG;
+    CONN_TX[argConn - IIC_ADDR_MIN] = ctx.base.Msg;
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -97,9 +97,9 @@ public:
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_IIC(MmpContext& argCtx): // 接続識別子：uint8_t
-  AD_API_Base< uint8_t>(argCtx, AID_IIC),
-  AD_API_Queue<uint8_t>(argCtx, AID_IIC),
-  AD_API_Slot< uint8_t>(argCtx, AID_IIC)
+  AD_API_Base(          argCtx, AID::IIC),
+  AD_API_Queue<uint8_t>(argCtx, AID::IIC),
+  AD_API_Slot< uint8_t>(argCtx, AID::IIC)
   {
   //┬
   //○┐【前処理】

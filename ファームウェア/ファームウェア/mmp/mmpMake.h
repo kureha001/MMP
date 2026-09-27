@@ -2,7 +2,7 @@
 //========================================================
 // システム構築
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/22)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -34,7 +34,7 @@
 // コンパイルオプション
 //========================================================
   //①動作モード
-  #define MODE MODE_MAIN
+  #define MODE MODE_BRIDGE
 
   //②UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
@@ -47,8 +47,8 @@
   //③モード別プリセット
   //(1)メイン用
   #if   (MODE == MODE_MAIN)
-    #define ADP_UDP  true
     #define ADP_UART true 
+    #define ADP_UDP  true
     #define ADP_TCP  true
     #define ADP_WSOC true
     #define ADP_HTTP true
@@ -56,8 +56,8 @@
     #define ADP_BLE  true
   //(2)サブ用
   #elif (MODE == MODE_SUB)
-    #define ADP_UDP  true
     #define ADP_UART true 
+    #define ADP_UDP  true
     #define ADP_TCP  true
     #define ADP_WSOC true
     #define ADP_HTTP true

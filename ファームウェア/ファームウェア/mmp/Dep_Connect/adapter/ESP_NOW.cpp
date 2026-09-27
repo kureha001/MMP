@@ -96,7 +96,7 @@ private:
     //●クライアントにレスポンス    
     //●ログ出力
     uint8_t macBuf[6]; stringToMac(argConn, macBuf);
-    sendRaw(macBuf, ctx.resMSG);
+    sendRaw(macBuf, ctx.base.Msg);
     adpFnBase::SHOW_LOG();
     //┴
 //------------------------------------
@@ -155,12 +155,12 @@ private:
   //○┐【前処理】
     //●宛先情報を取得
     uint8_t macBuf[6] = {0};
-    rawStringToMac(ctx.bridge.Dat1, macBuf);
+    rawStringToMac(ctx.trans.Dat1, macBuf);
     //┴
   //│
   //○┐【主処理】
     //○退避したフレームでリクエスト(コールバックでデータ受信)
-    sendRaw(macBuf, ctx.bridge.Frame);
+    sendRaw(macBuf, ctx.trans.Frame);
     //┴
   //│
   //○┐【後処理】
@@ -178,8 +178,8 @@ public:
   // コンストラクタ：非同期キュー型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_ESPN(MmpContext& argCtx): // 接続識別子：String
-  AD_API_Base< String>(argCtx, AID_ESPN),
-  AD_API_Queue<String>(argCtx, AID_ESPN)
+  AD_API_Base(         argCtx, AID::ESPN),
+  AD_API_Queue<String>(argCtx, AID::ESPN)
   {
   //┬
   //○┐【前処理】

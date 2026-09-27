@@ -26,7 +26,7 @@ private:
   //│
   //○┐【主処理】
     //○接続元宛にメッセージを送信する
-    argConn->print(ctx.resMSG);
+    argConn->print(ctx.base.Msg);
     //┴
   //│
   //○┐【後処理】
@@ -93,7 +93,7 @@ private:
   //○┐【主処理】
     //●前処理(マスタ)を実施する...進行判定を得る
     bool retGo = modeBridge::MASTER(
-      TBL[ctx.bridge.slotID].CONN,           // 接続識別子
+      TBL[ctx.trans.SID].CONN,               // 接続識別子
       [this](Stream* conn){SEND_CONN(conn);} // 返信処理(関数をラムダ式で包む)
     );
     //┴
@@ -115,9 +115,9 @@ public:
   // コンストラクタ：非同期キュー型＋スロット型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_UART(MmpContext& argCtx): // 接続識別子：Stream*
-  AD_API_Base< Stream*>(argCtx, AID_UART),
-  AD_API_Queue<Stream*>(argCtx, AID_UART),
-  AD_API_Slot< Stream*>(argCtx, AID_UART)
+  AD_API_Base(          argCtx, AID::UART),
+  AD_API_Queue<Stream*>(argCtx, AID::UART),
+  AD_API_Slot< Stream*>(argCtx, AID::UART)
   {
   //┬
   //○┐【前処理】

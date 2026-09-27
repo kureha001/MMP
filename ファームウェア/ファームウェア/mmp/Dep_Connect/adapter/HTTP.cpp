@@ -15,7 +15,7 @@
 // クラス：基本型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_HTTP: // 接続識別子：WebServer&
-public AD_API_Base<WebServer&>
+public AD_API_Base
 {
 private:
 //========================================================
@@ -34,18 +34,10 @@ private:
 #else
 //------------------------------------
   WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
-//------------------------------------
-#endif //➡ブリッジ｜➡ブリッジ以外
-//──────────────────
 
 //========================================================
 //§返信処理
 //========================================================
-//──────────────────
-//１.ブリッジ以外
-//・サーバとして機能
-#if (MODE != MODE_BRIDGE)
-//------------------------------------
   //─────────────────
   // CORS許可用HTTPヘッダ追加
   //----------------------------------
@@ -54,20 +46,13 @@ private:
   //─────────────────
   inline void ADD_CROSS(WebServer& argSrv) {
     //┬
-    //○アクセス元Webページの制限
-    //  → 制限なし
+    //○アクセス元Webページ　 ：制限なし
+    //○HTTPメソッド　　　　　：データ取得・事前確認
+    //○HTTPリクエストヘッダ　：データ形式・JavaScript(Ajax)向け識別・認証情報
+    //○CORS確認結果の記憶時間：600秒=10分
     argSrv.sendHeader("Access-Control-Allow-Origin", "*");
-    //│
-    //○有効なHTTPメソッドを指定
-    //  → データ取得・事前確認
     argSrv.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-    //│
-    //○許可するHTTPリクエストヘッダーを指定
-    //  → データ形式・JavaScript(Ajax)向け識別・認証情報
     argSrv.sendHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, Authorization");
-    //│
-    //○CORS確認結果をブラウザが記憶する時間を指定
-    //  ← 600秒=10分
     argSrv.sendHeader("Access-Control-Max-Age", "600");
     //┴
   } /* ADD_CROSS() */
@@ -86,190 +71,177 @@ private:
     //┴
   } /* SEND_JSON() */
 
-//──────────────────
-//２.メイン
-//・JSONとして機能
-#if (MODE == MODE_MAIN)
-//------------------------------------
-  //─────────────────
-  // コマンド管理の戻り値が数値型であるか判定
-  //─────────────────
-  static bool SEND_IS_VALUE(const String& argBody){
-    if (argBody.length() != 4) return false;
-    int start = (argBody[0]=='-') ? 1 : 0;
-    for (int i=start; i<4; ++i){
-      if (!isDigit((unsigned char)argBody[i])) return false;
-    } // for
-    return true;
-  } /* SEND_IS_VALUE() */
+  //──────────────────
+  //➡メイン
+  //・JSONレスポンスに対応
+  #if (MODE == MODE_MAIN)
+  //------------------------------------
+  //───────────────────────────
+  // JSON関連
+  //───────────────────────────
+    //─────────────────
+    // コマンド管理の戻り値が数値型であるか判定
+    //─────────────────
+    static bool SEND_IS_VALUE(const String& argBody){
+      if (argBody.length() != 4) return false;
+      int start = (argBody[0]=='-') ? 1 : 0;
+      for (int i=start; i<4; ++i){
+        if (!isDigit((unsigned char)argBody[i])) return false;
+      } // for
+      return true;
+    } /* SEND_IS_VALUE() */
 
-  //─────────────────
-  // コマンド管理の戻り値が文字列型であるか判定
-  //─────────────────
-  static bool SEND_IS_STRING(const String& argBody){
-    if (argBody.startsWith("#")) return false;
-    if (argBody.startsWith("!")) return false;
-    return true;
-  } /* SEND_IS_STRING() */
+    //─────────────────
+    // コマンド管理の戻り値が文字列型であるか判定
+    //─────────────────
+    static bool SEND_IS_STRING(const String& argBody){
+      if (argBody.startsWith("#")) return false;
+      if (argBody.startsWith("!")) return false;
+      return true;
+    } /* SEND_IS_STRING() */
 
-  //─────────────────
-  // コマンド管理の戻り値を数値に変換
-  //─────────────────
-  static int SEND_CONV_VALUE(const String& argBody){
-    bool neg = (argBody[0]=='-');
-    int v = 0;
-    for (int i = neg ? 1 : 0; i < 4; ++i) v = v*10 + (argBody[i]-'0');
-    return neg ? -v : v;
-  } /* SEND_CONV_VALUE() */
+    //─────────────────
+    // コマンド管理の戻り値を数値に変換
+    //─────────────────
+    static int SEND_CONV_VALUE(const String& argBody){
+      bool neg = (argBody[0]=='-');
+      int v = 0;
+      for (int i = neg ? 1 : 0; i < 4; ++i) v = v*10 + (argBody[i]-'0');
+      return neg ? -v : v;
+    } /* SEND_CONV_VALUE() */
 
-  //─────────────────
-  // メッセージIDに該当するメッセージを取得
-  //─────────────────
-  static const char* SEND_MSG(const String& argID){
+    //─────────────────
+    // メッセージIDに該当するメッセージを取得
+    //─────────────────
+    static const char* SEND_MSG(const String& argID){
 
-    // 共通のコード
-    if (argID == RCD::OK    ) return "OK:戻り値無し"            ;
-    if (argID == RCD::NotMod) return "NG:機能モジュールが無い"  ;
-    if (argID == RCD::NotCmd) return "NG:コマンド名が不正"      ;
-    if (argID == RCD::ChkErr) return "NG:引数チェックで違反"    ;
-    if (argID == RCD::IniErr) return "NG:データが未初期化"      ;
-    if (argID == RCD::DevErr) return "NG:使用不可のデバイス"    ;
-    if (argID == RCD::FilErr) return "NG:ファイル操作が異常終了";
-    if (argID == RCD::NoDErr) return "NG:データ項目名が不正"    ;
-    if (argID == RCD::ValErr) return "NG:数値が基底範囲外"      ;
+      // 共通のコード
+      if (argID == RCD::OK    ) return "OK:戻り値無し"            ;
+      if (argID == RCD::NotMod) return "NG:機能モジュールが無い"  ;
+      if (argID == RCD::NotCmd) return "NG:コマンド名が不正"      ;
+      if (argID == RCD::ChkErr) return "NG:引数チェックで違反"    ;
+      if (argID == RCD::IniErr) return "NG:データが未初期化"      ;
+      if (argID == RCD::DevErr) return "NG:使用不可のデバイス"    ;
+      if (argID == RCD::FilErr) return "NG:ファイル操作が異常終了";
+      if (argID == RCD::NoDErr) return "NG:データ項目名が不正"    ;
+      if (argID == RCD::ValErr) return "NG:数値が基底範囲外"      ;
 
-    if (argID == RCD::AuthErr1) return "NG:認証管理の開始に失敗";
-    if (argID == RCD::AuthErr2) return "NG:認証に失敗"          ;
+      if (argID == RCD::AuthErr1) return "NG:認証管理の開始に失敗";
+      if (argID == RCD::AuthErr2) return "NG:認証に失敗"          ;
 
-    // アダプタ独自のコード
-    if (argID == RCD::OK_Auth) return "OK:ユーザ認証に成功"     ;
-    if (argID == RCD::OK_VAL ) return "OK:数値"                 ;
-    if (argID == RCD::OK_STR ) return "OK:文字列"               ;
- 
-    return "NG:その他のエラー";
-  } /* SEND_MSG() */
+      // アダプタ独自のコード
+      if (argID == RCD::OK_Auth) return "OK:ユーザ認証に成功"     ;
+      if (argID == RCD::OK_VAL ) return "OK:数値"                 ;
+      if (argID == RCD::OK_STR ) return "OK:文字列"               ;
+  
+      return "NG:その他のエラー";
+    } /* SEND_MSG() */
 
-  //─────────────────
-  // クライアントに送信(JSON形式)
-  //─────────────────
-  struct JSON_DATA{
-    bool    Res = false; // MMPの処理結果      {OK:true | NG:false}
-    String  Msg = ""   ; // エラーMSG          {正常の場合は空}
-    int     Val = -1000; // 戻値が数値の場合   {-999～9999、対象外は-1000 }
-    String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
-  }; /* JSON_DATA */
-  //─────────────────
-  void SEND_CONN_JSON(){
-    //┬
-    //○【前処理】
-    JSON_DATA jsDat ;
-    String    js    ;
-    String    msgID = ctx.resMSG;
-    //│
-    //◇┐JSON内容編集
-    if (ctx.cmdPath == SP_CMD_START){
-      //├┐（認証コード発行の場合）
-        //○MSGIDを独自IDに書き換え
-        //○取得値を文字列型にセット
-        //○処理結果をセット
-        msgID     = RCD::OK_Auth; // 認証開始
-        jsDat.Str = ctx.resMSG  ; // 取得値(文字列)
-        jsDat.Res = true        ; // 正常
-        //┴
+    //─────────────────
+    // クライアントに送信(JSON形式)
+    //─────────────────
+    struct JSON_DATA{
+      bool    Res = false; // MMPの処理結果      {OK:true | NG:false}
+      String  Msg = ""   ; // エラーMSG          {正常の場合は空}
+      int     Val = -1000; // 戻値が数値の場合   {-999～9999、対象外は-1000 }
+      String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
+    }; /* JSON_DATA */
+    //─────────────────
+    void SEND_CONN_JSON(){
+      //┬
+      //○【前処理】
+      JSON_DATA jsDat ;
+      String    js    ;
+      String    msgID = ctx.base.Msg;
+      //│
+      //◇┐JSON内容編集
+      if (ctx.base.Cmd == SP_CMD_START){
+        //├┐（認証コード発行の場合）
+          //○MSGIDを独自IDに書き換え
+          //○取得値を文字列型にセット
+          //○処理結果をセット
+          msgID     = RCD::OK_Auth; // 認証開始
+          jsDat.Str = ctx.base.Msg; // 取得値(文字列)
+          jsDat.Res = true        ; // 正常
+          //┴
 
-    } else if (msgID == RCD::OK) {
-      //├┐（正常系：戻り値なし の場合）
-        //○処理結果を正常にセット
-        jsDat.Res = true ; // 正常
-        //┴
+      } else if (msgID == RCD::OK) {
+        //├┐（正常系：戻り値なし の場合）
+          //○処理結果を正常にセット
+          jsDat.Res = true ; // 正常
+          //┴
 
-    } else {
-      //└┐（その他）
-        //◇┐データ型に応じて編集
-        String body = msgID.substring(0, msgID.length()-1);
-        if (SEND_IS_VALUE(body)) {
-          //├┐（戻り値が数値型の場合）
-            //○MSGIDを独自IDに書き換え
-            //○処理結果をセット
-            //●取得値を数値型にセット
-            msgID = RCD::OK_VAL              ; // 数値型
-            jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
-            jsDat.Res = true                 ; // 正常
-            //┴
+      } else {
+        //└┐（その他）
+          //◇┐データ型に応じて編集
+          String body = msgID.substring(0, msgID.length()-1);
+          if (SEND_IS_VALUE(body)) {
+            //├┐（戻り値が数値型の場合）
+              //○MSGIDを独自IDに書き換え
+              //○処理結果をセット
+              //●取得値を数値型にセット
+              msgID = RCD::OK_VAL              ; // 数値型
+              jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
+              jsDat.Res = true                 ; // 正常
+              //┴
 
-        } else if (SEND_IS_STRING(msgID)) {
-          //├┐（戻り値が文字列型の場合）
-            //○MSGIDを独自IDに書き換え
-            //○処理結果をセット
-            //●取得値を数値型にセット
-            msgID = RCD::OK_STR              ; // 文字列型
-            jsDat.Str = ctx.resMSG           ; // 取得値(文字列)
-            jsDat.Res = true                 ; // 正常
-            //┴
+          } else if (SEND_IS_STRING(msgID)) {
+            //├┐（戻り値が文字列型の場合）
+              //○MSGIDを独自IDに書き換え
+              //○処理結果をセット
+              //●取得値を数値型にセット
+              msgID = RCD::OK_STR              ; // 文字列型
+              jsDat.Str = ctx.base.Msg         ; // 取得値(文字列)
+              jsDat.Res = true                 ; // 正常
+              //┴
 
-        } else {
-          //└┐（その他）
-            //○処理結果をセット
-            jsDat.Res = false                 ; // 異常
-            //┴
-        } //～if 
-        //┴
-    } //～if 
-    //│
-    //○メッセージを取得
-    jsDat.Msg = SEND_MSG(msgID);
-    //│
-    //○JSON形式に編集
-    js.reserve(160) ; // 予備確保
-    js += F("{\"ok\":true"   )                                      ; // 処理結果：HTTP通信の成功
-    js += F(",\"source\":\"" ); js += ctx.resMSG.c_str(); js += '"' ; // MMPの戻り値
-    js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false"); // 処理結果：MMPコマンドの成功
-    js += F(",\"message\":\""); js += jsDat.Msg; js += '"'          ; // メッセージ
-    js += F(",\"value\":"    ); js += String(jsDat.Val)             ; // 戻値（数値）
-    js += F(",\"string\":\"" ); js += jsDat.Str                     ; // 戻値（文字列）
-    js += "\"}"               ;
-    //│
-    //○通信経路にJSON形式でレスポンス
-    SEND_JSON(js);
-    //┴
-  } /* SEND_CONN_JSON() */
-//------------------------------------
-#endif //➡２.メイン：JSONとして機能
-//──────────────────
+          } else {
+            //└┐（その他）
+              //○処理結果をセット
+              jsDat.Res = false                 ; // 異常
+              //┴
+          } //～if 
+          //┴
+      } //～if 
+      //│
+      //○メッセージを取得
+      jsDat.Msg = SEND_MSG(msgID);
+      //│
+      //○JSON形式に編集
+      js.reserve(160) ; // 予備確保
+      js += F("{\"ok\":true"   )                                        ; // 処理結果：HTTP通信の成功
+      js += F(",\"source\":\"" ); js += ctx.base.Msg.c_str(); js += '"' ; // MMPの戻り値
+      js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false")  ; // 処理結果：MMPコマンドの成功
+      js += F(",\"message\":\""); js += jsDat.Msg; js += '"'            ; // メッセージ
+      js += F(",\"value\":"    ); js += String(jsDat.Val)               ; // 戻値（数値）
+      js += F(",\"string\":\"" ); js += jsDat.Str                       ; // 戻値（文字列）
+      js += "\"}"               ;
+      //│
+      //○通信経路にJSON形式でレスポンス
+      SEND_JSON(js);
+      //┴
+    } /* SEND_CONN_JSON() */
+  //------------------------------------
+  #endif //➡メイン
+  //──────────────────
 
   //───────────────────────────
   // 接続元にMSGをレスポンスする
   //───────────────────────────
-  void SEND_CONN(WebServer& argConn) override final {
-  //──────────────────
-  //➡ブリッジ以外
-  //・ブリッジはレスポンスではなく転送
-  #if (MODE != MODE_BRIDGE)
-  //------------------------------------
+  void SEND_CONN() {
     //┬
     //○テキストをレスポンス
-    ADD_CROSS(argConn);
-    argConn.send(200, "text/plain; charset=utf-8", ctx.resMSG);
+    ADD_CROSS(*MY_NET);
+    MY_NET->send(200, "text/plain; charset=utf-8", ctx.base.Msg);
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-  //------------------------------------
-  #endif //➡ブリッジ以外
-  //──────────────────
   } /* SEND_CONN() */
-//------------------------------------
-#endif //➡１.ブリッジ以外：サーバとして機能
-//──────────────────
 
 //========================================================
 //§受信処理
 //========================================================
-//──────────────────
-//１.ブリッジ以外
-//・サーバとして機能
-#if (MODE != MODE_BRIDGE)
-//------------------------------------
   //─────────────────
   // CORS事前確認
   //----------------------------------
@@ -353,7 +325,7 @@ private:
       //●ＭＭＰコマンドを実行
       //●実行結果をレスポンス
       modeMain::RUN();
-      isJSON ? SEND_CONN_JSON() : SEND_CONN(server);
+      isJSON ? SEND_CONN_JSON() : SEND_CONN();
   //──────────────────
   //➡サブ
   //・モード別の主処理
@@ -363,33 +335,16 @@ private:
       //●ＭＭＰコマンドを実行
       //●実行結果をレスポンス
       modeSub::RUN();
-      SEND_CONN(server);
-  //──────────────────
-  //➡ブリッジ
-  //・モード別の主処理
-  #elif (MODE == MODE_BRIDGE)
+      SEND_CONN();
   //------------------------------------
-      //●ブリッジ処理を実行
-      modeBridge::RUN(0, retFrame);
-      if (ctx.resMSG != "") {SEND_CONN(server); return;}
-      //│＼（[内部コマンド応答済][エラーあり]の場合）
-      //│ ○クライアントにレスポンス
-      //│ ▼終了：早期リターンする
-      //│
-      //○進捗状況を[依頼中]にセット
-      //▼終了：早期リターンする ※1件ずつ処理
-      Log::Outln("1.待機中→依頼中");
-      ctx.bridge.Stat = BSTAT::REQ;
-      return;
-  //------------------------------------
-  #endif //➡メイン｜➡メイン以外
+  #endif //➡メイン｜➡サブ
   //──────────────────
       //┴
     }); /* this{}/onNotFound() */
     //┴
   }/* registRoutes() */
 //------------------------------------
-#endif //➡１.ブリッジ以外：サーバとして機能
+#endif //➡ブリッジ｜➡ブリッジ以外
 //──────────────────
 
 //========================================================
@@ -407,16 +362,16 @@ private:
   //┬
   //○┐【前処理】
     //○実行パラメータを用意
-    String ip     = ctx.bridge.Dat1;
-    String port   = ctx.bridge.Dat2;
-    String cmd    = ctx.strFrame;
+    String ip     = ctx.trans.Dat1;
+    String port   = ctx.trans.Dat2;
+    String cmd    = ctx.base.Frame;
     String strURL = String("http://") + ip + ":" + port + "/" + cmd;
     //┴
   //│
   //○┐【主処理】
     //○クライアント起動＋リクエスト転送
     MY_NET.begin(strURL);
-    if (MY_NET.GET() <= 0) {ctx.strFrame = RCD::Trn1Err; return;}
+    if (MY_NET.GET() <= 0) {ctx.base.Msg = RCD::Trn1Err; return;}
     //│＼（実行に失敗した場合）
     //│ ○コンテクストにエラーCDをセット
     //│ ▼終了：早期リターンする
@@ -428,8 +383,8 @@ private:
     MY_NET.end();
     //│
     //○レスポンスをコンテクストに反映
-    ctx.strFrame = (retFrame == "" ? RCD::Trn2Err : retFrame);
-    ctx.resMSG   = ctx.strFrame;
+    ctx.base.Frame = (retFrame == "" ? RCD::Trn2Err : retFrame);
+    ctx.base.Msg   = ctx.base.Frame;
     //┴
   //│
   //○┐【後処理】
@@ -476,7 +431,7 @@ private:
   //○┐【主処理】
     //●前処理(スレーブ)を実施...進行判定を得る
     bool retGo = modeBridge::SLAVE(
-      MY_AID,             // 通信アダプタID
+      MY_AID,            // 通信アダプタID
       [this](){TRANS();} // 転送処理(関数をラムダ式で包む)
     );
     //┴
@@ -498,7 +453,7 @@ public:
   // コンストラクタ：基本型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_HTTP(MmpContext& argCtx): // 接続識別子：WebServer&
-  AD_API_Base<WebServer&>(argCtx, AID_HTTP) 
+  AD_API_Base(argCtx, AID::HTTP) 
   {
   //┬
   //○┐【前処理】
@@ -551,6 +506,8 @@ public:
   //○┐【前処理】
     //●WiFiの接続状況を確認する
     if (!devWiFi::ENABLED_CONN(true)) return;
+    //│＼（異常の場合）
+    //│ ▼終了：早期リターン
 //──────────────────
 //➡ブリッジ
 //・転送処理はブリッジ固有の機能
@@ -559,8 +516,8 @@ public:
     //│
     //●ブリッジ用
     if (SETUP_BRIDGE()) return;
-      //│＼（異常の場合）
-      //│ ▼終了：早期リターン
+    //│＼（異常の場合）
+    //│ ▼終了：早期リターン
 //------------------------------------
 #endif //➡ブリッジ
 //──────────────────
@@ -578,7 +535,6 @@ public:
 //➡ブリッジ以外
 //・リスナーに処理を移譲
 #else
-//------------------------------------
     //●ルーティングを指示（その後も同期処理）
     MY_NET->handleClient();
 //------------------------------------

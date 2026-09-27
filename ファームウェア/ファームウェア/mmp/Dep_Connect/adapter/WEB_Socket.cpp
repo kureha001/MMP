@@ -55,7 +55,7 @@ private:
 //・クライアントの接続状態で判定
 #if (MODE == MODE_BRIDGE)
 //------------------------------------
-    bool ret = webSocket.isConnected();
+    bool ret = MY_NET.isConnected();
     if (!ret && argLog) Log::prtln("[ERROR] WEB Socketが未接続です。");
     return ret;
 //──────────────────
@@ -93,7 +93,7 @@ private:
   //│
   //○┐【主処理】
     //○接続元にMSGをレスポンスする
-    MY_NET->sendTXT(argConn, ctx.resMSG.c_str());
+    MY_NET->sendTXT(argConn, ctx.base.Msg.c_str());
     //┴
   //│
   //○┐【後処理】
@@ -187,7 +187,7 @@ private:
   //┬
   //○┐【前処理】
     //○宛先情報を用意する
-    String transIP = ctx.bridge.Dat1;
+    String transIP = ctx.trans.Dat1;
     //┴
   //│
   //○┐【主処理】
@@ -208,7 +208,7 @@ private:
           //┴
         //│
         //○サービス状態を確認する
-        if (!MY_NET.isConnected()) {ctx.bridge.MSG = RCD::Trn1Err; return;}
+        if (!MY_NET.isConnected()) {ctx.trans.Msg = RCD::Trn1Err; return;}
         //│＼（接続に失敗した場合）
         //│ ○完了MSGにエラーCDをセット
         //│ ▼終了：早期リターンする
@@ -218,7 +218,7 @@ private:
     } //～if 
     //│
     //○リクエストを転送する
-    MY_NET.sendTXT(ctx.bridge.Frame);
+    MY_NET.sendTXT(ctx.trans.Frame);
     //┴
   //│
   //○┐【後処理】
@@ -249,9 +249,21 @@ private:
   //│
   //○┐【主処理】
     //○WebSocketの処理を進める（イベント発火）
-    //※クライアントは未接続でも loop() を回し続けて接続状態の変化を検知
-    //※接続の有無に関わらず、後続へ進める（false）
+//──────────────────
+//➡ブリッジ
+//・クライアントは実体
+#if (MODE == MODE_BRIDGE)
+//------------------------------------
+    MY_NET.loop();
+//──────────────────
+//➡ブリッジ以外
+//・サーバは参照（ポインタ）
+#else
+//------------------------------------
     MY_NET->loop();
+//------------------------------------
+#endif //➡ブリッジ｜➡ブリッジ以外
+//──────────────────
     //┴
   //│
   //○┐【後処理】
@@ -268,8 +280,8 @@ public:
   // コンストラクタ：非同期キュー型
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_WEBS(MmpContext& argCtx): // 接続識別子：uint8_t
-  AD_API_Base< uint8_t>(argCtx, AID_WSOC),
-  AD_API_Queue<uint8_t>(argCtx, AID_WSOC)
+  AD_API_Base(          argCtx, AID::WSOC),
+  AD_API_Queue<uint8_t>(argCtx, AID::WSOC)
   {
   //┬
   //○┐【前処理】

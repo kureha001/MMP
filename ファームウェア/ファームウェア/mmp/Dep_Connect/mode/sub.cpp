@@ -24,7 +24,7 @@
     //┬
     //●Sysコマンドを実行
     //▼終了：処理結果
-    return adpFnBase::SysCmd(ctx.strFrame);
+    return adpFnBase::SysCmd(ctx.base.Frame);
     //┴
   }
 
@@ -43,7 +43,7 @@
     //│
     //○リクエストをMMPメインへ転送
     Log::Outln("(1/3) Requested to MMP(MAIN).");
-    Serial1.print(ctx.strFrame);
+    Serial1.print(ctx.base.Frame);
     //│
     //◎┐受信待ちデータの取り込み
     Log::Outln("(2/3) Reading from MMP(MAIN).");
@@ -58,7 +58,7 @@
       //│＼（タイムアウトした場合）
           //○レスポンスMSGにエラーCDを反映
           //▼終了：早期リターン
-          ctx.resMSG = RCD::TimOut;
+          ctx.base.Msg = RCD::TimOut;
           Log::Outln("(3/3) Error:Response timeout from MMP(MAIN).");
           return;
       } //～if
@@ -70,7 +70,7 @@
     //│
     //○レスポンスMSGに[MMP本体からのレスポンス]を反映
     Log::Outln("(3/3) Success.");
-    ctx.resMSG = strRX;
+    ctx.base.Msg = strRX;
     //┴
   } /* RUN() */
 } /* namespace modeSub */

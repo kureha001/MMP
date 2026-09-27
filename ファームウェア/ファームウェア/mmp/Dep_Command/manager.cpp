@@ -2,9 +2,7 @@
 //========================================================
 // コマンド部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/19)
-// ・MP3はDFPlayerMini以外を廃止 
-// ・UARTポートの見直し 
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 //┬
 //□┐インクルード(機能モジュール群)
@@ -19,11 +17,18 @@
   //│
   //□担当：機能モジュール
   #include "module/system.h"  // システム管理
+//──────────────────
+//➡メイン
+#if MODE == MODE_MAIN
+//------------------------------------
   #include "module/analog.h"  // アナログ入力
   #include "module/digital.h" // デジタル入出力
   #include "module/pwm.h"     // PWM出力
   #include "module/IIC.h"     // IIC通信
   #include "module/MP3.h"     // MP3プレイヤー
+//------------------------------------
+#endif //➡メイン
+//──────────────────
 //┴┴
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -63,13 +68,18 @@ namespace DepCommand {
     //│
     //○担当を招集
     MODULE.push_back(new ModuleSystem (ctx, "SYS"    , "System Management"   ));
+//──────────────────
+//➡メイン
 #if MODE == MODE_MAIN
+//------------------------------------
     MODULE.push_back(new ModuleAnalog (ctx, "ANALOG" , "Analog Input"        ));
     MODULE.push_back(new ModuleDigital(ctx, "DIGITAL", "Digital Input/Output"));
     MODULE.push_back(new ModulePwm    (ctx, "PWM"    , "PWM Output"          ));
     MODULE.push_back(new ModuleIIC    (ctx, "IIC"    , "IIC Read/Write"      ));
     MODULE.push_back(new ModuleMP3    (ctx, "MP3"    , "MP3 Player"          ));
-#endif
+//------------------------------------
+#endif //➡メイン
+//──────────────────
     //│
     //◎┐担当を点呼
     Log::prt(" Add In ->");
@@ -97,9 +107,9 @@ namespace DepCommand {
     char pPath[ REQUEST_LENGTH ];
     {
       //◇超過分を削除
-      size_t pLen = ctx.cmdPath.length();
+      size_t pLen = ctx.base.Cmd.length();
       if (pLen >= sizeof(pPath)) pLen = sizeof(pPath) - 1;
-      memcpy(pPath, ctx.cmdPath.c_str(), pLen);
+      memcpy(pPath, ctx.base.Cmd.c_str(), pLen);
       pPath[pLen] = '\0';
       //│
       //◇末尾'!'を除去
@@ -133,7 +143,7 @@ namespace DepCommand {
         //┴
       //│
       //○エラーメッセージを返却
-      if (regCount == 0){ctx.resMSG = RCD::NotCmd; return;}
+      if (regCount == 0){ctx.base.Msg = RCD::NotCmd; return;}
         // ＼（登録数がゼロの場合）
           //▼エラーメッセージを返却
       //┴
@@ -141,7 +151,7 @@ namespace DepCommand {
     //│
     //③┐機能モジュール機能を実行
       //○レスポンスを初期化
-      ctx.resMSG = "";
+      ctx.base.Msg = "";
       //│
       //◎┐モジュールを走査
       for (auto* m : MODULE){
@@ -162,7 +172,7 @@ namespace DepCommand {
       } //～for
     //│
     //○エラーメッセージを返却
-    ctx.resMSG = RCD::NotMod;
+    ctx.base.Msg = RCD::NotMod;
     //┴
   } /* RunCommand() */
 

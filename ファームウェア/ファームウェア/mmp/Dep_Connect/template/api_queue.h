@@ -4,8 +4,8 @@
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
-#ifndef CONN_ADP_API_QUEUE_H
-#define CONN_ADP_API_QUEUE_H
+#ifndef CONN_API_QUEUE_H
+#define CONN_API_QUEUE_H
 #pragma once
 
 //========================================================
@@ -20,7 +20,7 @@ namespace modeBridge { void RUN(); }
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
 class          AD_API_Queue:
-virtual public AD_API_Base<T>
+virtual public AD_API_Base
 {
 protected:
 //========================================================
@@ -30,9 +30,9 @@ protected:
   // 基本情報
   //───────────────────────────
   struct QueueItem {
-    T      conn  ; // 接続識別子 (uint8_t, WiFiClient, String 等)
-    String frame ; // 受信データフレーム
-    int    slotID; // スロットID
+    T      conn ; // 接続識別子 (uint8_t, WiFiClient, String 等)
+    String frame; // 受信データフレーム
+    int    QID  ; // キューのスロットID
   };
   std::queue<QueueItem> rxQueue;
   std::mutex            queueMutex;
@@ -79,6 +79,11 @@ protected:
 
 //========================================================
 //§返信処理
+//※通信アダプタで実装する
+//========================================================
+  virtual void SEND_CONN(T argConn) = 0;
+
+//========================================================
 //§受信処理
 //§転送処理
 //※通信アダプタで実装する
@@ -137,7 +142,7 @@ public:
   // ※通信アダプタで実装する
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_API_Queue(MmpContext& context, int aid):
-  AD_API_Base<T>(context, aid)
+  AD_API_Base(context, aid)
   {}
 
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -181,7 +186,7 @@ public:
   #if (MODE != MODE_BRIDGE)
   //-----------------------------------------
         //○フレームの状態を確認
-        if (ctx.strFrame.startsWith("#")) {this->SEND_CONN(popDat.conn); continue;}
+        if (ctx.base.Frame.startsWith("#")) {this->SEND_CONN(popDat.conn); continue;}
         //│＼（フレームが[エラーCD]の場合）
         //│ ●ブリッジ元にレスポンス
         //│ ▽次へ：次のキューを走査
@@ -214,12 +219,12 @@ public:
   //・モード別の主処理
   #elif (MODE == MODE_BRIDGE)
   //------------------------------------
-        //◇┐[待機中→依頼中]に遷移
-        if (ctx.bridge.Stat == BSTAT::IDLE && ctx.adpID == ADP_ID_UART) {
+        //◇┐ブリッジ種別(マスタ／スレーブ)別の処理に進行する。
+        if (ctx.trans.Stat == BSTAT::IDLE && ctx.base.AID == AID::UART) {
           //├┐（[待機中]かつ[マスタ]の場合）
             //●ブリッジ処理を実行
-            modeBridge::RUN(popDat.slotID, popDat.frame);
-            if (ctx.resMSG != "") {this->SEND_CONN(popDat.conn); return;}
+            modeBridge::RUN(popDat.QID, popDat.frame);
+            if (ctx.base.Msg != "") {this->SEND_CONN(popDat.conn); return;}
             //│＼（[内部コマンド応答済][エラーあり]の場合）
             //│ ○クライアントにレスポンス
             //│ ▼終了：早期リターン
@@ -227,17 +232,17 @@ public:
             //○進捗状況を[依頼中]に遷移
             //▼終了：早期リターン ※1件ずつ処理
             Log::Outln("1.待機中→依頼中");
-            ctx.bridge.Stat  = BSTAT::REQ;
+            ctx.trans.Stat  = BSTAT::REQ;
             return;
 
-        } else if (ctx.bridge.Stat == BSTAT::BUSY && this->MY_AID == ctx.bridge.adpID) {
+        } else if (ctx.trans.Stat == BSTAT::BUSY && this->MY_AID == ctx.trans.AID) {
           //├┐（[処理中]かつ[スレーブ] の場合）
             //○レスポンスMSGに[フレーム内容]をセット
             //○進行状況を[処理済]に遷移
             //▼終了：早期リターン ※1件ずつ処理
             Log::Outln("3.処理中→処理済(キュー)");
-            ctx.resMSG      = ctx.strFrame;
-            ctx.bridge.Stat = BSTAT::DONE;
+            ctx.base.Msg   = ctx.base.Frame;
+            ctx.trans.Stat = BSTAT::DONE;
             return;
           //└┐（その他）
             //○なにもしない（キューは空振りになる）

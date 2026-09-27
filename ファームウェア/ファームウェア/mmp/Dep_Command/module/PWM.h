@@ -101,7 +101,7 @@ public:
     g_CH_IDs  = count * 16 - 1;  // チャンネルID
 
     // ユーザ別データのメモリ確保
-    const int datCount = ctx.accIDS;              // ユーザ数
+    const int datCount = ctx.access.IDS;              // ユーザ数
     void* p = calloc(datCount, sizeof(UserData)); // 全要素 0 で確保
     if (!p) {
       Log::prtln(String("　 [NG] メモリ不足です"));
@@ -148,8 +148,8 @@ public:
     //━━━━━━━━━━━━━━━━━
     // ユーザデータのスロットを特定
     //━━━━━━━━━━━━━━━━━
-    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(); return;}
-    UserData& SLOT = g_USR_DAT[ctx.accID];
+    if (!g_USR_DAT || ctx.access.ID < 0 || ctx.access.ID >= ctx.access.IDS){_ResIniErr(); return;}
+    UserData& SLOT = g_USR_DAT[ctx.access.ID];
 
     // ───────────────────────────────
     // 機能 : モジュールの接続確認

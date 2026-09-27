@@ -38,7 +38,7 @@
     snprintf(
       msg, sizeof(msg),
       "ACD[%s] : AccID[%d]/[%d]",
-      String(ctx.authCD), ctx.accID, ctx.accIDS
+      String(ctx.access.CD), ctx.access.ID, ctx.access.IDS
     ); Log::prtln(String(msg));
 
     Log::prtln("Path[" + String(ctx.cmdPath) + "] = MSG[" + String(ctx.resMSG ) + "]");
@@ -73,10 +73,10 @@
     ctx.strFrame = argFrame; // フレーム
     if (!ctx.strFrame.endsWith ("!")) ctx.strFrame += "!";
     if (ctx.strFrame.startsWith("/")) ctx.strFrame.remove(0, 1);
-    ctx.resMSG  = ""  ; // レスポンスMSG
-    ctx.cmdPath = ""  ; // コマンドパス
-    ctx.authCD  = ""  ; // 認証コード
-    ctx.accID   = -1  ; // アクセスID
+    ctx.resMSG    = ""  ; // レスポンスMSG
+    ctx.cmdPath   = ""  ; // コマンドパス
+    ctx.access.CD = ""  ; // 認証コード
+    ctx.access.ID = -1  ; // アクセスID
   } /* FORMAT_URI() */
 
   //─────────────────

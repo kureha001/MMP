@@ -40,7 +40,7 @@ public:
     Log::prtln(" [ANALOG：HC4067]");
 
     // ユーザ別データのメモリ確保
-    void* p = calloc(ctx.accIDS, sizeof(UserData)); // 全要素0で初期化して確保
+    void* p = calloc(ctx.access.IDS, sizeof(UserData)); // 全要素0で初期化して確保
     if (!p) {
       Log::prtln(String("　 [NG] メモリ不足です"));
       return;
@@ -48,7 +48,7 @@ public:
     g_USR_DAT = static_cast<UserData*>(p);
 
     // 既定設定
-    for (int i = 0; i < ctx.accIDS; ++i) {
+    for (int i = 0; i < ctx.access.IDS; ++i) {
       g_USR_DAT[i].SwitchCnt = 4; // 使用範囲(スイッチ数;デバイス数)
       g_USR_DAT[i].PlayerCnt = 1; // 使用範囲(プレイヤ数;チャンネル数)
     }
@@ -71,8 +71,8 @@ public:
     //━━━━━━━━━━━━━━━━━
     // ユーザデータのスロットを特定
     //━━━━━━━━━━━━━━━━━
-    if (!g_USR_DAT || ctx.accID < 0 || ctx.accID >= ctx.accIDS){_ResIniErr(); return;}
-    UserData& SLOT = g_USR_DAT[ctx.accID];
+    if (!g_USR_DAT || ctx.access.ID < 0 || ctx.access.ID >= ctx.access.IDS){_ResIniErr(); return;}
+    UserData& SLOT = g_USR_DAT[ctx.access.ID];
 
     // ───────────────────────────────
     // 機能 : セットアップ

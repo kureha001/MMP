@@ -103,7 +103,7 @@ namespace adpFnAuth{
     int AUTH_GET_ID_OLD() {
       //┬
       //◎┐先頭から走査
-      for (int oldID = 0; oldID < ctx.accIDS; oldID++) {
+      for (int oldID = 0; oldID < ctx.access.IDS; oldID++) {
         //│＼（スロットの上限に達した場合）
         //│ ▽完了：走査終了
         //│
@@ -134,7 +134,7 @@ namespace adpFnAuth{
     int GET_EXIST_AID(String argACD){
       //┬
       //◎┐認証情報全体を照合
-      for (int extID = 0; extID < ctx.accIDS; extID++){
+      for (int extID = 0; extID < ctx.access.IDS; extID++){
         //│＼（スロットの上限に達した場合）
         //│ ▽完了：走査終了
         //│
@@ -167,12 +167,12 @@ namespace adpFnAuth{
     bool NEW_USER(){
       //┬
       //○前処理
-      String retCD = "" ; // 戻り値を[失敗]で初期化
-      String newCD = "" ; // 新しい認証CD
-      ctx.accID    = -1 ; // アクセスIDをクリア
+      String retCD  = "" ; // 戻り値を[失敗]で初期化
+      String newCD  = "" ; // 新しい認証CD
+      ctx.access.ID = -1 ; // アクセスIDをクリア
       //│
       //◎┐新たな認証情報を登録
-      for (int freeID = 0; freeID < ctx.accIDS; freeID++){
+      for (int freeID = 0; freeID < ctx.access.IDS; freeID++){
         //│＼（スロットの上限に達した場合）
         //│ ▽完了：走査終了
         //│
@@ -192,9 +192,9 @@ namespace adpFnAuth{
             } //～while
             //│
             //○コンテクストを更新
-            ctx.resMSG = newCD + "!"; // レスポンス
-            ctx.authCD = newCD      ; // 認証CD
-            ctx.accID  = freeID     ; // アクセスID
+            ctx.resMSG    = newCD + "!"; // レスポンス
+            ctx.access.CD = newCD      ; // 認証CD
+            ctx.access.ID = freeID     ; // アクセスID
             //│
             //○空きスロットに登録
             auTBL[freeID].authCD     = newCD;
@@ -300,8 +300,8 @@ namespace adpFnAuth{
           //●第１トークンを[認証CD]にセット
           //●第２トークン以降を[コマンドパス]にセット
           tmpFrame.remove(0, 1);
-          ctx.authCD  = GET_TOK1(tmpFrame);
-          ctx.cmdPath = GET_TOK2(tmpFrame);
+          ctx.access.CD = GET_TOK1(tmpFrame);
+          ctx.cmdPath   = GET_TOK2(tmpFrame);
           //┴
       } else {
         //└┐
@@ -323,7 +323,7 @@ namespace adpFnAuth{
   // アダプタ初期化の直前で実行
   //─────────────────
   void INIT_TBL() {
-    auTBL = new AU_SLOT_TYPE[ctx.accIDS];
+    auTBL = new AU_SLOT_TYPE[ctx.access.IDS];
   } /* INIT_TBL() */
 
   //─────────────────
@@ -354,14 +354,14 @@ namespace adpFnAuth{
     } //～if
     //│
     //○ユーザ認証対象を確認
-    if (ctx.authCD == ""){ctx.accID = 0; return false;}
+    if (ctx.access.CD == ""){ctx.access.ID = 0; return false;}
     //│＼（認証が不要の場合）
     //│ ○ユーザIDを共用IDにセット
     //│ ▼返却：認証が不要
     //│
     //●ユーザ認証を実施
-    ctx.accID = GET_EXIST_AID(ctx.authCD);
-    if (ctx.accID < 0){ctx.resMSG = RCD::AuthErr2; return true;}
+    ctx.access.ID = GET_EXIST_AID(ctx.access.CD);
+    if (ctx.access.ID < 0){ctx.resMSG = RCD::AuthErr2; return true;}
     //│＼（認証に失敗した場合）
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│

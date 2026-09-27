@@ -11,6 +11,12 @@
 //========================================================
 //§コンテクスト
 //========================================================
+  struct T_ACCESS {
+    String    CD  = ""; // 認証コード
+    int       ID  = -1; // アクセスID(MMP全体で一意)
+    const int IDS = 30; // アクセスIDの総数(ユーザ認証スロット数)
+  };
+
   struct T_BRIDGE {
     int    slotID =  0; // リクエスト元のスロットID
     int    adpID  = -1; // 転送先のアダプタID
@@ -31,17 +37,13 @@
     int          adpID    = -1; // 経路アダプタID
     String       strFrame = ""; // フレーム(リクエスト内容)
     String       cmdPath  = ""; // コマンドパス
-    String       authCD   = ""; // 認証コード
+    String       resMSG   = ""; // レスポンスMSG
     //│
     //■転送情報
     T_BRIDGE     bridge;
     //│
     //■ユーザメモリ情報（特定の機能モジュールで使用）
-    int          accID    = -1; // アクセスID(MMP全体で一意)
-    const int    accIDS   = 30; // アクセスIDの総数(ユーザ認証スロット数)
-    //│
-    //■レスポンス情報（クライアントへの返却メッセージ）
-    String       resMSG  = "" ;
+    T_ACCESS     access;
     //┴
   };
 #endif // MMP_H

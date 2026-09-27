@@ -5,12 +5,9 @@
 // Ver 1.3.2 (2026/09/15)
 //========================================================
 //┬
-//■┐インクルード
-//┴┴
-//┬
 //□┐通信部門
-  //□デバイス課
-  #include "device/__index.h"
+  //□担当：通信デバイス
+  #include "device/_index.h"
 //┴┴
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -26,9 +23,9 @@ namespace DepNetwork{
   //┬
   //□座席を用意
   struct T_RECORD {
-    const char* name     ; // デバイス名
-      bool* pEnabled   ; // 有効フラグへのポインタ
-      void  (*pStart)(); // 開始関数ポインタ
+    const char* name       ; // デバイス名
+    bool*       pEnabled   ; // 有効フラグへのポインタ
+    void        (*pStart)(); // 開始関数ポインタ
   }; /* struct */
   //┴
   //┬

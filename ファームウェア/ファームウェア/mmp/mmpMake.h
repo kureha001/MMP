@@ -4,8 +4,6 @@
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
-#ifndef CONFIG_H
-#define CONFIG_H
 #pragma once
 
 //========================================================
@@ -34,7 +32,7 @@
 // コンパイルオプション
 //========================================================
   //①動作モード
-  #define MODE MODE_BRIDGE
+  #define MODE MODE_MAIN
 
   //②UART高速モード
   // USB(CDC）の単一スロット＆パケット処理
@@ -54,7 +52,7 @@
     #define ADP_HTTP true
     #define ADP_ESPN true
     #define ADP_BLE  true
-    #define ADP_IIC  true // Wire1を使用|WireはPWMに仕様
+    #define ADP_IIC  false // Wire1を使用|WireはPWMに仕様
   //(2)サブ用
   #elif (MODE == MODE_SUB)
     #define ADP_UART true 
@@ -64,7 +62,7 @@
     #define ADP_HTTP true
     #define ADP_ESPN true
     #define ADP_BLE  true
-    #define ADP_IIC  true // Wire1を使用|Wireは空き
+    #define ADP_IIC  false // Wire1を使用|Wireは空き
   //(3)ブリッジ用
   #elif (MODE == MODE_BRIDGE)
     #define ADP_UDP  true
@@ -74,5 +72,3 @@
     #define ADP_ESPN true
     #define ADP_BLE  true
   #endif
-
-#endif // CONFIG_H

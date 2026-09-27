@@ -4,8 +4,6 @@
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
-#ifndef CONN_COMMON_H
-#define CONN_COMMON_H
 #pragma once
 
 //========================================================
@@ -65,5 +63,3 @@
   namespace adpFnStream{
     String GET_FRAME(Stream& argConn);
   }
-
-#endif // CONN_COMMON_H

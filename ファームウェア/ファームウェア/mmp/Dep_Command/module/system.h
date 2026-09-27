@@ -106,32 +106,6 @@ public:
       return;
     }
 
-    // ───────────────
-    // UPDATE/IIC : IICピン設定の更新＆保存
-    // ───────────────
-    if (strcmp(Cmd, "UPDATE/IIC") == 0){
-
-      // １．前処理：
-        // 1.1.書式チェック
-      if (dat_cnt != 3) { _ResChkErr(); return; } // Cmd, SDA, SCL の3要素
-
-      // 1.2.単項目チェック
-      int sda, scl;
-      if (!_Str2Int(dat[1], sda, 0, 49)){_ResChkErr(); return;}
-      if (!_Str2Int(dat[2], scl, 0, 49)){_ResChkErr(); return;}
-
-      // 1.3.相関チェック
-      if(sda == scl){_ResChkErr(); return;}
-
-      // ２．IICを再起動
-      bool res = devIIC::UPDATE(sda, scl);
-
-      // ３．後処理：
-      if (res) _ResOK();
-      else     _ResChkErr();
-      return;
-    }
-
 #if ADP_BLE
     // ───────────────
     // UPDATE/BLE : BLEデバイス名の更新＆保存

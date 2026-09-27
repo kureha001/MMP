@@ -8,8 +8,6 @@
 //■┐インクルード
   //■Arduinoシステム
   #include <Wire.h>
-  #include <LittleFS.h>
-  #include <ArduinoJson.h>
 //┴┴
 
 //########################################################
@@ -17,56 +15,12 @@
 //########################################################
 namespace devIIC {
 //========================================================
-// 共通資源
+// 基本情報
 //========================================================
-  constexpr const char* FILE_PATH = "/device.json";
-
   int CH0_SDA = 15;
   int CH0_SCL = 16;
-  int CH1_SDA = -1;
-  int CH1_SCL = -1;
-
-//========================================================
-// JSON操作ヘルパ
-//========================================================
-  //━━━━━━━━━━━━━━━━━
-  // 設定ファイルの読み込み（起動ガード付き）
-  //━━━━━━━━━━━━━━━━━
-  static bool READ_JSON() {
-    if (!LittleFS.begin(true)) {
-      Log::prtln("   [NG] LittleFS のマウントに失敗しました");
-      return false;
-    }
-
-    if (!LittleFS.exists(FILE_PATH)) {
-      Log::prtln("   [NG] device.json が存在しません (起動停止)");
-      return false;
-    }
-
-    File f = LittleFS.open(FILE_PATH, "r");
-    if (!f) {
-      Log::prtln("   [NG] device.json のオープンに失敗しました");
-      return false;
-    }
-
-    StaticJsonDocument<256> doc;
-    DeserializationError err = deserializeJson(doc, f);
-    f.close();
-
-    if (err) {
-      Log::prtln("   [NG] device.json のパースに失敗しました");
-      return false;
-    }
-
-    CH1_SDA = doc["iic"]["sda"] | -1;
-    CH1_SCL = doc["iic"]["scl"] | -1;
-    if (CH1_SDA < 0 || CH1_SCL < 0) {
-      Log::prtln("   [NG] 不正な SDA/SCL ピン設定です");
-      return false;
-    }
-
-    return true;
-  }
+  int CH1_SDA = 47;
+  int CH1_SCL = 48;
 
 //========================================================
 // 担務（公開機能）
@@ -82,9 +36,6 @@ namespace devIIC {
   void START() {
     //○メッセージ表示を開始
     Log::prtln(" [I2C]");
-    //│
-    //○起動ガード：device.json の読み込み
-    if (!READ_JSON()) {ENABLED = false; return;}
     //│
     //○メッセージを初期化
     char msg[128];
@@ -110,39 +61,4 @@ namespace devIIC {
     ENABLED = true;
   } /* START() */
 
-  //━━━━━━━━━━━━━━━━━
-  // ピン設定の更新と即時再起動（公開関数）
-  //━━━━━━━━━━━━━━━━━
-  bool UPDATE(int sda, int scl) {
-    if (sda < 0 || scl < 0) return false;
-
-    // 1. device.json の読み込み
-    if (!LittleFS.exists(FILE_PATH)) return false;
-    File fRead = LittleFS.open(FILE_PATH, "r");
-    if (!fRead) return false;
-
-    StaticJsonDocument<256> doc;
-    DeserializationError err = deserializeJson(doc, fRead);
-    fRead.close();
-    if (err) return false;
-
-    // 2. iic ノードのピン情報を更新して保存
-    doc["iic"]["sda"] = sda;
-    doc["iic"]["scl"] = scl;
-
-    File fWrite = LittleFS.open(FILE_PATH, "w");
-    if (!fWrite) return false;
-    serializeJson(doc, fWrite);
-    fWrite.close();
-
-    // 3. 内部変数を更新
-    CH1_SDA = sda;
-    CH1_SCL = scl;
-
-    // 4. Wire（I2C）バスの再構成
-    Wire1.end();
-    Wire1.begin(CH1_SDA, CH1_SCL);
-
-    return true;
-  }
 } /* namespace devIIC */

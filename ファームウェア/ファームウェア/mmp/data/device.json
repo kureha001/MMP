@@ -1,7 +1,3 @@
 {
-  "dev_name": "MMP-BLE-MAIN",
-  "iic": {
-    "sda": 47,
-    "scl": 48
-  }
+  "dev_name": "MMP-BLE-MAIN"
 }

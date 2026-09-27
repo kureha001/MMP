@@ -102,7 +102,7 @@ namespace DepConnect{
         #endif
         //│
         //○┐IIC担当
-        #if ADP_IIC //※メインモードは使用不可
+        #if ADP_IIC
         if (devIIC::ENABLED) ADAPTER.push_back(new AD_IIC(ctx));
         #endif
         //┴

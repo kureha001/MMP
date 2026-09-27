@@ -2,7 +2,7 @@
 //========================================================
 // 通信部門／デバイス課：IIC
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.4.0 (2026/09/27)
 //========================================================
 //┬
 //■┐インクルード
@@ -21,8 +21,10 @@ namespace devIIC {
 //========================================================
   constexpr const char* FILE_PATH = "/device.json";
 
-  int SDA_PIN = -1;
-  int SCL_PIN = -1;
+  int CH0_SDA = 15;
+  int CH0_SCL = 16;
+  int CH1_SDA = -1;
+  int CH1_SCL = -1;
 
 //========================================================
 // JSON操作ヘルパ
@@ -56,10 +58,9 @@ namespace devIIC {
       return false;
     }
 
-    SDA_PIN = doc["iic"]["sda"] | -1;
-    SCL_PIN = doc["iic"]["scl"] | -1;
-
-    if (SDA_PIN < 0 || SCL_PIN < 0) {
+    CH1_SDA = doc["iic"]["sda"] | -1;
+    CH1_SCL = doc["iic"]["scl"] | -1;
+    if (CH1_SDA < 0 || CH1_SCL < 0) {
       Log::prtln("   [NG] 不正な SDA/SCL ピン設定です");
       return false;
     }
@@ -79,23 +80,32 @@ namespace devIIC {
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
   void START() {
+    //○メッセージ表示を開始
     Log::prtln(" [I2C]");
-
+    //│
     //○起動ガード：device.json の読み込み
-    if (!READ_JSON()) {
-      ENABLED = false;
-      return;
-    }
-
-    //○IICバスの初期化
-    Wire.begin(SDA_PIN, SCL_PIN);
-
-    //○メッセージ表示
+    if (!READ_JSON()) {ENABLED = false; return;}
+    //│
+    //○メッセージを初期化
     char msg[128];
-    snprintf(msg, sizeof(msg), "   [OK] IIC -> SDA[%d], SCL[%d]\n", SDA_PIN, SCL_PIN);
-    Log::prt (String(msg));
+    String msg0 = "";
+    String msg1 = "";
+    //│
+    //○IICの初期化(チャンネル０：機能モジュール用)
+    Wire.begin(CH0_SDA, CH0_SCL);
+    snprintf(msg, sizeof(msg), "   [OK] IIC #0 -> SDA:%d SCL:%d", CH0_SDA, CH0_SCL);
+    msg0 = msg;
+    //│
+    //○IICの初期化(チャンネル１：クライアント用)
+    Wire1.begin(CH1_SDA, CH1_SCL);
+    snprintf(msg, sizeof(msg), "   [OK] IIC #1 -> SDA:%d SCL:%d", CH1_SDA, CH1_SCL);
+    msg1 = msg;
+    //│
+    //○メッセージ表示
+    Log::prtln(msg0);
+    Log::prtln(msg1);
     Log::prtln("");
-
+    //│
     //○有効性セット
     ENABLED = true;
   } /* START() */
@@ -126,12 +136,12 @@ namespace devIIC {
     fWrite.close();
 
     // 3. 内部変数を更新
-    SDA_PIN = sda;
-    SCL_PIN = scl;
+    CH1_SDA = sda;
+    CH1_SCL = scl;
 
     // 4. Wire（I2C）バスの再構成
-    Wire.end();
-    Wire.begin(SDA_PIN, SCL_PIN);
+    Wire1.end();
+    Wire1.begin(CH1_SDA, CH1_SCL);
 
     return true;
   }

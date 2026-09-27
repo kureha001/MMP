@@ -65,13 +65,13 @@ private:
       //│
       //○┐受信データを取得
         //○スレーブへレスポンス
-        Wire.beginTransmission(pConn);
-        Wire.write((const uint8_t*)resMSG.c_str(),resMSG.length());
-        Wire.endTransmission(false);
+        Wire1.beginTransmission(pConn);
+        Wire1.write((const uint8_t*)resMSG.c_str(),resMSG.length());
+        Wire1.endTransmission(false);
         //│
         //○スレーブから受信データを取得
-        Wire.requestFrom(pConn, DATA_LENGTH);
-        while (Wire.available()) qFrame += (char)Wire.read();
+        Wire1.requestFrom(pConn, DATA_LENGTH);
+        while (Wire1.available()) qFrame += (char)Wire1.read();
         //┴
       //│
       //○┐キュー情報を取得
@@ -113,7 +113,7 @@ public:
   //○┐【後処理】
     //○メッセージ表示
       char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] IIC / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
+      snprintf(msg, sizeof(msg), " [OK] IIC #1 / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
       Log::prtln(String(msg));
   //┴┴
   } /* constractor AD_IIC() */

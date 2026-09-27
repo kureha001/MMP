@@ -21,7 +21,7 @@
     #define ADP_HTTP false
     #define ADP_ESPN false
     #define ADP_BLE  false
-    #define ADP_IIC  false //※メイン・ブリッジは不可
+    #define ADP_IIC  false // ブリッジでは使用禁止
 
   //─────────────────
   // 動作モード
@@ -54,6 +54,7 @@
     #define ADP_HTTP true
     #define ADP_ESPN true
     #define ADP_BLE  true
+    #define ADP_IIC  true // Wire1を使用|WireはPWMに仕様
   //(2)サブ用
   #elif (MODE == MODE_SUB)
     #define ADP_UART true 
@@ -63,7 +64,7 @@
     #define ADP_HTTP true
     #define ADP_ESPN true
     #define ADP_BLE  true
-    #define ADP_IIC  true
+    #define ADP_IIC  true // Wire1を使用|Wireは空き
   //(3)ブリッジ用
   #elif (MODE == MODE_BRIDGE)
     #define ADP_UDP  true

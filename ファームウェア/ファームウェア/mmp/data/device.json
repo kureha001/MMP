@@ -1,7 +1,7 @@
 {
-  "dev_name": "MMP-TURBO",
+  "dev_name": "MMP-BLE-MAIN",
   "iic": {
-    "sda": 16,
-    "scl": 15
+    "sda": 47,
+    "scl": 48
   }
 }

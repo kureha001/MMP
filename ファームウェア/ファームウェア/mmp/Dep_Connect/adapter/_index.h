@@ -13,7 +13,7 @@
   // UART
   //───────────────────────────
   #if TURBO
-    #include "UART_TURBO.cpp"
+    #include "UARTT/UARTT.cpp"
   #else
     #include "UART/UART.cpp"
   #endif
@@ -50,9 +50,9 @@
   //───────────────────────────
   // BLE
   //───────────────────────────
-  #include "BLE.cpp"
+  #include "BLE/BLE.cpp"
 
   //───────────────────────────
   // IIC
   //───────────────────────────
-  #include "IIC.cpp"
+  #include "IIC/IIC.cpp"

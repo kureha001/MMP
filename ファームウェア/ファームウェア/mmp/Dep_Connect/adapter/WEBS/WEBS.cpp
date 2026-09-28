@@ -60,7 +60,7 @@ private:
   ){
   //┬
   //○┐【前処理】
-    //○インスタンスを確認する
+    //○受信内容を確認する
     if (
       !MY_TASK               ||
       argTYPE != WStype_TEXT ||

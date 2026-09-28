@@ -40,20 +40,20 @@
   //━━━━━━━━━━━━━━━━━
   #include "normal.cpp"
   namespace adpFnBase{
-    void FORMAT_URI(String &str);  // [adpFnStream]で利用
-    void RUN(int argAdpID, String argFrame);
-    void SHOW_LOG();
-    void SETUP_CTX(int argAID, String argFrame);
+    void SHOW_LOG();              // 通信アダプタの[SEND_CONN]で利用
+    void FORMAT_URI(String &str); // [adpFnStream]で利用
+    bool SysCmd(String argFrame); // [modeSub][modeBridge]で利用
+    void SETUP_CTX(int argAID, String argFrame); // APIやアダプタのハンドルで利用
   }
 
   //━━━━━━━━━━━━━━━━━
   // 専門処理：ユーザ認証
   //━━━━━━━━━━━━━━━━━
-  static const String SP_CMD_START = "_START_!"; // [modeMain][adpWAPI]で利用
+  static const String SP_CMD_START = "_START_!"; // [modeMain][AD_HTTP]で利用
   #include "sp_auth.cpp" 
   namespace adpFnAuth{
-    void INIT_TBL(); // [DepConnection]で利用
-    bool CHECK()   ; // [adpFnBase]で利用
+    void INIT_TBL(); // 初期化：[DepConnect]で利用
+    bool CHECK()   ; // 認証を実施・認証開始コマンド応答：[modeMain]で利用
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -61,5 +61,5 @@
   //━━━━━━━━━━━━━━━━━
   #include "sp_stream.cpp"
   namespace adpFnStream{
-    String GET_FRAME(Stream& argConn);
+    String GET_FRAME(Stream& argConn); // UART,TCPアダプタの受信処理やハンドルで利用
   }

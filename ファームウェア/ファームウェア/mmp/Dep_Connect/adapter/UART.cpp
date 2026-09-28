@@ -19,7 +19,7 @@ private:
   //───────────────────────────
   // 接続元にMSGをレスポンスする
   //───────────────────────────
-  void SEND_CONN(Stream* argConn) override final {
+  void SEND_CONN(Stream* argConn) {
   //┬
   //○┐【前処理】
     //┴

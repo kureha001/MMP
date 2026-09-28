@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：ESP-NOW
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/09/28)
 //========================================================
 //┬
 //□┐インクルード
@@ -23,46 +23,34 @@ private:
   static AD_ESPN* MY_TASK; // タスク識別(インスタンス)
 
 //========================================================
-//§各種ヘルパ
+//§リクエスト終了
 //========================================================
-  //━━━━━━━━━━━━━━━━━
-  // MACアドレス編集部品
-  //━━━━━━━━━━━━━━━━━
-    //─────────────────
-    // uint8_t[6] -> String (例: "AA:BB:CC:DD:EE:FF")
-    //─────────────────
-    static String macToString(const uint8_t* mac) {
-      char buf[18];
-      snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
-              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-      return String(buf);
-    } /* macToString() */
-
-    //─────────────────
-    // String -> uint8_t[6] デコード関数 (コロン区切り用)
-    //─────────────────
-    static void stringToMac(const String& macStr, uint8_t* mac) {
-      sscanf(macStr.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-            &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-    } /* stringToMac() */
-
-    //─────────────────
-    // Raw String -> uint8_t[6] デコード関数 (12桁連続ヘキサ用)
-    // 例: "50787D185150" -> 0x50, 0x78, 0x7D, 0x18, 0x51, 0x50
-    //─────────────────
-    static void rawStringToMac(const String& rawMacStr, uint8_t* mac) {
-      if (rawMacStr.length() < 12) return;
-      sscanf(rawMacStr.c_str(), "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
-            &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-    } /* rawStringToMac() */
-
-  //━━━━━━━━━━━━━━━━━
-  // 汎用送信処理
-  //━━━━━━━━━━━━━━━━━
-  void sendRaw(
-    const uint8_t* macBuf,  // 送信先MACアドレス
-    const String&  msg      // 送信データ
+  //─────────────────
+  // ヘルパ：MACアドレス宛に送信
+  //─────────────────
+void SendToMac(
+    const String&  argMac,  // MACアドレス
+    const String&  argMsg   // 送信データ
   ) {
+  //┬
+  //○┐【前処理】
+    //○┐宛先情報を用意する
+      //○書式を求める ← 動作モード
+      String strFormat =
+        (MODE == MODE_BRIDGE) ?              // 動作モード
+          "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx" : // 単純連結
+          "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"  ; // コロン区切
+      //│
+      //○MACアドレスを求める ← 書式・引数
+      uint8_t macBuf[6];
+      sscanf(
+        argMac.c_str()   , // 引数：MACアドレス
+        strFormat.c_str(), // 書式
+        &macBuf[0],&macBuf[1],&macBuf[2],&macBuf[3],&macBuf[4],&macBuf[5]
+      );
+    //┴┴
+  //│
+  //○┐【主処理】
     //○返信相手がピアに未登録なら自動追加 
     if (!esp_now_is_peer_exist(macBuf)) {
       esp_now_peer_info_t peerInfo = {};
@@ -73,42 +61,52 @@ private:
     }
     //○返信相手がピアに未登録なら自動追加 
     esp_now_send(
-      macBuf                     , // 送信先MACアドレス
-      (const uint8_t*)msg.c_str(), // 送信データ
-      msg.length()                 // 送信データ長
+      macBuf,                         // 用意した宛先情報
+      (const uint8_t*)argMsg.c_str(), // 引数：送信データ
+      argMsg.length()                 // 引数：送信データ長
     );
-  } /* sendRaw() */
+  //│
+  //○┐【後処理】
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
+  //┴┴
+  } /* SendToMac() */
 
-//========================================================
-//§返信処理
-//========================================================
+//──────────────────
+//➡ブリッジ
+//・転送受付で完了
+#if (MODE == MODE_BRIDGE)
+//------------------------------------
+  //───────────────────────────
+  // 転送依頼を受け付ける
+  //───────────────────────────
+  void TRANS() override final {
+    //●MACアドレス宛に送信
+    SendToMac(ctx.trans.Dat1, ctx.trans.Frame);
+  } /* TRANS() */
+//──────────────────
+//➡ブリッジ以外
+//・接続元へのレスポンスで完了
+#else
+//------------------------------------
   //───────────────────────────
   // 接続元にMSGをレスポンスする
   //───────────────────────────
   void SEND_CONN(String argConn) override final {
-//──────────────────
-//➡ブリッジ以外
-//・ブリッジはレスポンスではなく転送
-#if (MODE != MODE_BRIDGE)
-//------------------------------------
     //┬
-    //●MACアドレス文字列をデコード
-    //●クライアントにレスポンス    
-    //●ログ出力
-    uint8_t macBuf[6]; stringToMac(argConn, macBuf);
-    sendRaw(macBuf, ctx.base.Msg);
-    adpFnBase::SHOW_LOG();
+    //●MACアドレス宛に送信
+    SendToMac(argConn, ctx.base.Msg);
     //┴
-//------------------------------------
-#endif //➡ブリッジ以外
-//──────────────────
   } /* SEND_CONN() */
+//------------------------------------
+#endif //➡ブリッジ｜➡ブリッジ以外
+//──────────────────
 
 //========================================================
 //§受信処理
 //========================================================
   //───────────────────────────
-  // 並列処理の内容を定義
+  // 並列処理を定義
   //───────────────────────────
   static void ON_RECIVE(
     const esp_now_recv_info_t *argINFO, // 各種情報
@@ -121,13 +119,24 @@ private:
     if (!MY_TASK) return;
     //│＼（当該インスタンスではない場合）
     //│ ▼終了：早期リターンする
-    //┴
+    //│
+    //○宛先情報を用意する ← 引数：各種情報
+    char macBuf[18];
+    snprintf(
+      macBuf,
+      sizeof(macBuf),
+      "%02X:%02X:%02X:%02X:%02X:%02X",
+      argINFO->src_addr[0], argINFO->src_addr[1],
+      argINFO->src_addr[2], argINFO->src_addr[3],
+      argINFO->src_addr[4], argINFO->src_addr[5]
+    );
+    //┴┴
   //│
   //○┐【主処理】
-    //○┐キュー情報を取得
-      //●接続識別子を取得
-      //○フレームを取得
-      String qConn  = macToString(argINFO->src_addr);
+    //○┐キュー情報を用意する
+      //○接続識別子を求める ← 用意した宛先情報
+      //○フレームを求める　 ← 引数：受信データ・受信データ長
+      String qConn  = String(macBuf);
       String qFrame = String((const char*)argDATA, argLEN);
       //┴
     //│
@@ -138,37 +147,6 @@ private:
   //○┐【後処理】
   //┴┴
   } /* ON_RECIVE() */
-
-//========================================================
-//§転送処理
-//========================================================
-//──────────────────
-//➡ブリッジ
-//・転送処理はブリッジ固有の機能
-#if (MODE == MODE_BRIDGE)
-//------------------------------------
-  //───────────────────────────
-  // リクエストを転送する
-  //───────────────────────────
-  void TRANS() override final {
-  //┬
-  //○┐【前処理】
-    //●宛先情報を取得
-    uint8_t macBuf[6] = {0};
-    rawStringToMac(ctx.trans.Dat1, macBuf);
-    //┴
-  //│
-  //○┐【主処理】
-    //○退避したフレームでリクエスト(コールバックでデータ受信)
-    sendRaw(macBuf, ctx.trans.Frame);
-    //┴
-  //│
-  //○┐【後処理】
-  //┴┴
-  } /* TRANS() */
-//------------------------------------
-#endif //➡ブリッジ
-//──────────────────
 
 //========================================================
 //§公開機能

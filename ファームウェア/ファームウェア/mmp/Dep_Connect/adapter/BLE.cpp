@@ -18,72 +18,44 @@ private:
   static AD_BLE* MY_TASK; // タスク識別(インスタンス)
 
 //========================================================
-//§返信処理
-//========================================================
-  //───────────────────────────
-  // 接続元にMSGをレスポンスする
-  //───────────────────────────
-  void SEND_CONN(uint8_t argConn) override final {
-//──────────────────
-//➡ブリッジ以外
-//・ブリッジはレスポンスではなく転送
-#if (MODE != MODE_BRIDGE)
-//------------------------------------
-    //┬
-    //○クライアントにレスポンス
-    if (devBLE::BLE_TX != nullptr && devBLE::ENABLED) {
-      devBLE::BLE_TX->setValue(ctx.base.Msg.c_str());
-      devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）
-    }
-    //│
-    //●ログ出力
-    adpFnBase::SHOW_LOG();
-    //┴
-//------------------------------------
-#endif //➡ブリッジ以外
-//──────────────────
-  } /* SEND_CONN() */
-
-//========================================================
+//§リクエスト終了
 //§受信処理
 //========================================================
 //──────────────────
-//➡ブリッジ以外
-//・サーバ側は基底クラスをoverride
-#if (MODE != MODE_BRIDGE)
-//------------------------------------
-  //───────────────────────────
-  // 並列処理の内容を定義：Rx
-  //───────────────────────────
-  class ServerCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *pCharacteristic) override {
-    //┬
-    //○インスタンスを確認
-    if (!MY_TASK) return;
-    //│＼（当該インスタンスではない場合）
-    //│ ▼終了：早期リターンする
-    //│
-    //○未取り込みデータを受信
-    String rxValue = pCharacteristic->getValue();
-    if (rxValue.length() <= 0) return;
-    //│＼（空の場合）
-    //│ ▼終了：早期リターンする
-    //│
-    //●受信データをキューに追加
-    MY_TASK->pushQueue(0, rxValue, 0);
-  } /* onWrite() */
-  }; /* class ServerCallbacks */
-//------------------------------------
-#endif //➡ブリッジ以外
-//──────────────────
-
-//──────────────────
 //➡ブリッジ
-//・クライアント側は独自関数で実装
+//・転送受付で完了
+//・クライアントは独自関数で受信
 #if (MODE == MODE_BRIDGE)
 //------------------------------------
   //───────────────────────────
-  // 並列処理の内容を定義：Tx
+  // 転送依頼を受け付ける
+  //───────────────────────────
+  void TRANS() override final {
+  //┬
+  //○┐【前処理】
+    //○クライアント資源の状態を確認
+    if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
+    {ctx.trans.Msg = RCD::Trn1Err; return;}
+    //│＼（状態が[未接続]の場合）
+    //│ ○完了MSGにエラーCDをセット
+    //│ ▼終了：早期リターンする
+    //│
+    //○通信口（RX）の状態を確認
+    if (devBLE::BLE_CLI_RX == nullptr)
+    {ctx.trans.Msg = RCD::Trn2Err; return;}
+    //│＼（状態が[未接続]の場合）
+    //│ ○完了MSGにエラーCDをセット
+    //│ ▼終了：早期リターンする
+    //┴
+  //│
+  //○┐【主処理】
+    //○退避したフレームでリクエスト(非同期でデータ受信)
+    devBLE::BLE_CLI_RX->writeValue(ctx.trans.Frame.c_str(), ctx.trans.Frame.length());
+    //┴
+  } /* TRANS() */
+
+  //───────────────────────────
+  // 並列処理を定義：Tx用
   //───────────────────────────
   static void ON_RECIVE(
     BLERemoteCharacteristic* pBLERemoteCharacteristic,
@@ -117,43 +89,53 @@ private:
   //○┐【後処理】
   //┴┴
   } /* ON_RECIVE() */
-//------------------------------------
-#endif //➡ブリッジ以外
-//──────────────────
 
-//========================================================
-//§転送処理
-//========================================================
 //──────────────────
-//➡ブリッジ
-//・転送処理はブリッジ固有の機能
-#if (MODE == MODE_BRIDGE)
+//➡ブリッジ以外
+//・接続元へのレスポンスで完了
+//・サーバは規定クラスのoverrideで受信
+#else
 //------------------------------------
   //───────────────────────────
-  // リクエストを転送する
+  // 接続元にMSGをレスポンスする
   //───────────────────────────
-  void TRANS() override final {
+  void SEND_CONN(uint8_t argConn) override final {
     //┬
-    //○クライアント資源の状態を確認
-    if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
-    {ctx.trans.Msg = RCD::Trn1Err; return;}
-    //│＼（状態が[未接続]の場合）
-    //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターンする
+    //○クライアントにレスポンス
+    if (devBLE::BLE_TX != nullptr && devBLE::ENABLED) {
+      devBLE::BLE_TX->setValue(ctx.base.Msg.c_str());
+      devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）
+    }
     //│
-    //○通信口（RX）の状態を確認
-    if (devBLE::BLE_CLI_RX == nullptr)
-    {ctx.trans.Msg = RCD::Trn2Err; return;}
-    //│＼（状態が[未接続]の場合）
-    //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターンする
-    //│
-    //○退避したフレームでリクエスト(非同期でデータ受信)
-    devBLE::BLE_CLI_RX->writeValue(ctx.trans.Frame.c_str(), ctx.trans.Frame.length());
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
     //┴
-  } /* TRANS() */
+  } /* SEND_CONN() */
+
+  //───────────────────────────
+  // 並列処理を定義：Rx用
+  //───────────────────────────
+  class ServerCallbacks :
+  public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) override {
+      //┬
+      //○インスタンスを確認
+      if (!MY_TASK) return;
+      //│＼（当該インスタンスではない場合）
+      //│ ▼終了：早期リターンする
+      //│
+      //○未取り込みデータを受信
+      String rxValue = pCharacteristic->getValue();
+      if (rxValue.length() <= 0) return;
+      //│＼（空の場合）
+      //│ ▼終了：早期リターンする
+      //│
+      //●受信データをキューに追加
+      MY_TASK->pushQueue(0, rxValue, 0);
+    } /* onWrite() */
+  }; /* class ServerCallbacks */
 //------------------------------------
-#endif //➡ブリッジ
+#endif //➡ブリッジ｜➡ブリッジ以外
 //──────────────────
 
 //========================================================

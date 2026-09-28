@@ -14,10 +14,17 @@
 #else
   #include "UART.cpp"
 #endif
+
   #include "UDP.cpp"
   #include "TCP.cpp"
   #include "WEB_Socket.cpp"
+
+#if (MODE == MODE_BRIDGE)
+  #include "HTTP_BRIDGE.cpp"
+#else
   #include "HTTP.cpp"
+#endif
+
   #include "ESP_NOW.cpp"
   #include "BLE.cpp"
   #include "IIC.cpp"

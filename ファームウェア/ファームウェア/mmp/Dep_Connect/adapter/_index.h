@@ -1,30 +1,58 @@
-// filename : Dep_Connect/adapter/__index.h
+// filename : Dep_Connect/adapter/_index.h
 //========================================================
 // 接続部門／業務課／担当：担当名簿
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/21)
+// Ver 1.4.0 (2026/09/28)
 //========================================================
 #pragma once
 
 //========================================================
 //§担当名簿
 //========================================================
-#if TURBO
-  #include "UART_TURBO.cpp"
-#else
-  #include "UART.cpp"
-#endif
+  //───────────────────────────
+  // UART
+  //───────────────────────────
+  #if TURBO
+    #include "UART_TURBO.cpp"
+  #else
+    #include "UART/UART.cpp"
+  #endif
 
-  #include "UDP.cpp"
-  #include "TCP.cpp"
-  #include "WEB_Socket.cpp"
+  //───────────────────────────
+  // UDP
+  //───────────────────────────
+  #include "UDP/UDP.cpp"
 
-#if (MODE == MODE_BRIDGE)
-  #include "HTTP_BRIDGE.cpp"
-#else
-  #include "HTTP.cpp"
-#endif
+  //───────────────────────────
+  // TCP
+  //───────────────────────────
+  #include "TCP/TCP.cpp"
 
-  #include "ESP_NOW.cpp"
+  //───────────────────────────
+  // WEB Socket
+  //───────────────────────────
+  #include "WEBS/WEBS.cpp"
+
+  //───────────────────────────
+  // HTTP
+  //───────────────────────────
+  #if (MODE == MODE_BRIDGE)
+    #include "HTTP/HTTP_Bridge.cpp"
+  #else
+    #include "HTTP/HTTP.cpp"
+  #endif
+
+  //───────────────────────────
+  // ESP NOW
+  //───────────────────────────
+  #include "ESPN/ESPN.cpp"
+
+  //───────────────────────────
+  // BLE
+  //───────────────────────────
   #include "BLE.cpp"
+
+  //───────────────────────────
+  // IIC
+  //───────────────────────────
   #include "IIC.cpp"

@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：BLE
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/09/28)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -18,7 +18,7 @@ private:
   static AD_BLE* MY_TASK; // タスク識別(インスタンス)
 
 //========================================================
-//§リクエスト終了
+//§最終処理
 //§受信処理
 //========================================================
 //──────────────────
@@ -28,30 +28,32 @@ private:
 #if (MODE == MODE_BRIDGE)
 //------------------------------------
   //───────────────────────────
-  // 転送依頼を受け付ける
+  // 転送依頼を処理する
   //───────────────────────────
   void TRANS() override final {
   //┬
   //○┐【前処理】
-    //○クライアント資源の状態を確認
-    if (!devBLE::ENABLED || devBLE::MY_CLI == nullptr || !devBLE::MY_CLI->isConnected())
+    //○クライアント・通信口(RX)の接続状態を確認
+    if (
+      !devBLE::ENABLED               ||
+       devBLE::MY_CLI     == nullptr || !devBLE::MY_CLI->isConnected() ||
+       devBLE::BLE_CLI_RX == nullptr
+    )
     {ctx.trans.Msg = RCD::Trn1Err; return;}
-    //│＼（状態が[未接続]の場合）
-    //│ ○完了MSGにエラーCDをセット
-    //│ ▼終了：早期リターンする
-    //│
-    //○通信口（RX）の状態を確認
-    if (devBLE::BLE_CLI_RX == nullptr)
-    {ctx.trans.Msg = RCD::Trn2Err; return;}
     //│＼（状態が[未接続]の場合）
     //│ ○完了MSGにエラーCDをセット
     //│ ▼終了：早期リターンする
     //┴
   //│
   //○┐【主処理】
-    //○退避したフレームでリクエスト(非同期でデータ受信)
+    //○この通信アダプタにリクエストを送信する
     devBLE::BLE_CLI_RX->writeValue(ctx.trans.Frame.c_str(), ctx.trans.Frame.length());
     //┴
+  //│
+  //○┐【後処理】
+    //●ログ出力
+    adpFnBase::SHOW_LOG();
+  //┴┴
   } /* TRANS() */
 
   //───────────────────────────
@@ -100,12 +102,18 @@ private:
   // 接続元にMSGをレスポンスする
   //───────────────────────────
   void SEND_CONN(uint8_t argConn) override final {
-    //┬
-    //○クライアントにレスポンス
-    if (devBLE::BLE_TX != nullptr && devBLE::ENABLED) {
-      devBLE::BLE_TX->setValue(ctx.base.Msg.c_str());
-      devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）
-    }
+  //┬
+  //○┐【前処理】
+    //○サーバ・通信口(TX)の接続状態を確認
+    if (!devBLE::ENABLED || devBLE::BLE_TX == nullptr) return
+    //│＼（状態が[未接続]の場合）
+    //│ ▼終了：早期リターンする
+    //┴
+  //│
+  //○┐【主処理】
+    //○接続元にレスポンスMSGを送信する
+    devBLE::BLE_TX->setValue(ctx.base.Msg.c_str());
+    devBLE::BLE_TX->notify(); // 接続クライアントへ通知（Notify）
     //│
     //●ログ出力
     adpFnBase::SHOW_LOG();
@@ -151,13 +159,17 @@ public:
   {
 //──────────────────
 //➡ブリッジ
-//・TX側を利用する
+//・コールバックの通信口はTXを利用する
 #if (MODE == MODE_BRIDGE)
 //------------------------------------
   //┬
   //○┐【前処理】
     //○接続状況を確認
-    if (devBLE::BLE_CLI_TX == nullptr || !devBLE::BLE_CLI_TX->canNotify()) {
+    if (
+      !devBLE::ENABLED               ||
+       devBLE::BLE_CLI_TX == nullptr ||
+      !devBLE::BLE_CLI_TX->canNotify()
+    ) {
     //│＼（切断の場合）
         //○メッセージ表示
         //▼終了：早期リターンする
@@ -178,13 +190,13 @@ public:
   //┴┴
 //──────────────────
 //➡ブリッジ以外
-//・RX側を利用する
+//・コールバックの通信口はRXを利用する
 #else
 //------------------------------------
   //┬
   //○┐【前処理】
     //○接続状況を確認
-    if (devBLE::BLE_RX == nullptr) {
+    if (!devBLE::ENABLED|| devBLE::BLE_RX == nullptr) {
     //│＼（切断の場合）
         //○メッセージ表示
         //▼終了：早期リターンする

@@ -1,8 +1,8 @@
-// filename : Dep_Connect/adapter/HTTP.cpp
+// filename : Dep_Connect/adapter/HTTP/HTTP.cpp
 //========================================================
-// 接続部門／担当：HTTP（メイン・サブ）
+// 接続部門／担当：HTTP（ベース：メイン・サブ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/09/28)
 //========================================================
 //┬
 //□┐インクルード
@@ -24,7 +24,7 @@ private:
   WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
 
 //========================================================
-//§返信処理
+//§最終処理
 //========================================================
   //─────────────────
   // CORS許可用HTTPヘッダ追加
@@ -50,13 +50,14 @@ private:
   //・JSONレスポンスに対応
   #if (MODE == MODE_MAIN)
   //------------------------------------
-  //───────────────────────────
-  // JSON関連
-  //───────────────────────────
-    //─────────────────
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // JSON形式でレスポンス
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //──────────────────────────
+    // 接続元にSON形式でレスポンスする
+    //──────────────────────────
     // JSON形式でレスポンス
-    //─────────────────
-    inline void SEND_JSON(const String& argJSON) {
+    inline void JSON_SEND(const String& argJSON) {
       //┬
       //○JSONをレスポンス
       ADD_CROSS(*MY_NET);
@@ -65,69 +66,70 @@ private:
       //●ログ出力
       adpFnBase::SHOW_LOG();
       //┴
-    } /* SEND_JSON() */
+    } /* JSON_SEND() */
 
-    //─────────────────
-    // コマンド管理の戻り値が数値型であるか判定
-    //─────────────────
-    static bool SEND_IS_VALUE(const String& argBody){
+    //──────────────────────────
+    // コマンド実行結果の型判定(数値型)
+    //──────────────────────────
+    static bool JSON_IS_VAL(const String& argBody){
       if (argBody.length() != 4) return false;
       int start = (argBody[0]=='-') ? 1 : 0;
       for (int i=start; i<4; ++i){
         if (!isDigit((unsigned char)argBody[i])) return false;
       } // for
       return true;
-    } /* SEND_IS_VALUE() */
+    } /* JSON_IS_VAL() */
 
-    //─────────────────
-    // コマンド管理の戻り値が文字列型であるか判定
-    //─────────────────
-    static bool SEND_IS_STRING(const String& argBody){
+    //──────────────────────────
+    // コマンド実行結果の型判定(文字列型)
+    //──────────────────────────
+    static bool JSON_IS_STR(const String& argBody){
       if (argBody.startsWith("#")) return false;
       if (argBody.startsWith("!")) return false;
       return true;
-    } /* SEND_IS_STRING() */
+    } /* JSON_IS_STR() */
 
-    //─────────────────
-    // コマンド管理の戻り値を数値に変換
-    //─────────────────
-    static int SEND_CONV_VALUE(const String& argBody){
+    //──────────────────────────
+    // コマンド実行結果を変換(数値)
+    //──────────────────────────
+    static int JSON_CONV_VAL(const String& argBody){
       bool neg = (argBody[0]=='-');
       int v = 0;
       for (int i = neg ? 1 : 0; i < 4; ++i) v = v*10 + (argBody[i]-'0');
       return neg ? -v : v;
-    } /* SEND_CONV_VALUE() */
+    } /* JSON_CONV_VAL() */
 
-    //─────────────────
-    // メッセージIDに該当するメッセージを取得
-    //─────────────────
-    static const char* SEND_MSG(const String& argID){
+    //──────────────────────────
+    // レスポンスMSGに該当する説明文を取得
+    //──────────────────────────
+    static const char* JSON_MSG(const String& argID){
 
       // 共通のコード
-      if (argID == RCD::OK    ) return "OK:戻り値無し"            ;
-      if (argID == RCD::NotMod) return "NG:機能モジュールが無い"  ;
-      if (argID == RCD::NotCmd) return "NG:コマンド名が不正"      ;
-      if (argID == RCD::ChkErr) return "NG:引数チェックで違反"    ;
-      if (argID == RCD::IniErr) return "NG:データが未初期化"      ;
-      if (argID == RCD::DevErr) return "NG:使用不可のデバイス"    ;
-      if (argID == RCD::FilErr) return "NG:ファイル操作が異常終了";
-      if (argID == RCD::NoDErr) return "NG:データ項目名が不正"    ;
-      if (argID == RCD::ValErr) return "NG:数値が基底範囲外"      ;
+      if (argID == RCD::OK      ) return "OK:戻り値無し"            ;
+      if (argID == RCD::NotMod  ) return "NG:機能モジュールが無い"  ;
+      if (argID == RCD::NotCmd  ) return "NG:コマンド名が不正"      ;
+      if (argID == RCD::ChkErr  ) return "NG:引数チェックで違反"    ;
+      if (argID == RCD::IniErr  ) return "NG:データが未初期化"      ;
+      if (argID == RCD::DevErr  ) return "NG:使用不可のデバイス"    ;
+      if (argID == RCD::FilErr  ) return "NG:ファイル操作が異常終了";
+      if (argID == RCD::NoDErr  ) return "NG:データ項目名が不正"    ;
+      if (argID == RCD::ValErr  ) return "NG:数値が基底範囲外"      ;
 
-      if (argID == RCD::AuthErr1) return "NG:認証管理の開始に失敗";
-      if (argID == RCD::AuthErr2) return "NG:認証に失敗"          ;
+      // ユーザ認証のコード
+      if (argID == RCD::AuthErr1) return "NG:認証管理の開始に失敗"  ;
+      if (argID == RCD::AuthErr2) return "NG:認証に失敗"            ;
 
       // アダプタ独自のコード
-      if (argID == RCD::OK_Auth) return "OK:ユーザ認証に成功"     ;
-      if (argID == RCD::OK_VAL ) return "OK:数値"                 ;
-      if (argID == RCD::OK_STR ) return "OK:文字列"               ;
+      if (argID == RCD::OK_Auth ) return "OK:ユーザ認証に成功"      ;
+      if (argID == RCD::OK_VAL  ) return "OK:数値"                  ;
+      if (argID == RCD::OK_STR  ) return "OK:文字列"                ;
   
       return "NG:その他のエラー";
-    } /* SEND_MSG() */
+    } /* JSON_MSG() */
 
-    //─────────────────
-    // クライアントに送信(JSON形式)
-    //─────────────────
+    //──────────────────────────
+    // 接続元にMSGをJSON形式でレスポンスする
+    //──────────────────────────
     struct JSON_DATA{
       bool    Res = false; // MMPの処理結果      {OK:true | NG:false}
       String  Msg = ""   ; // エラーMSG          {正常の場合は空}
@@ -163,17 +165,17 @@ private:
         //└┐（その他）
           //◇┐データ型に応じて編集
           String body = msgID.substring(0, msgID.length()-1);
-          if (SEND_IS_VALUE(body)) {
+          if (JSON_IS_VAL(body)) {
             //├┐（戻り値が数値型の場合）
               //○MSGIDを独自IDに書き換え
               //○処理結果をセット
               //●取得値を数値型にセット
-              msgID = RCD::OK_VAL              ; // 数値型
-              jsDat.Val = SEND_CONV_VALUE(body); // 取得値(数値)
-              jsDat.Res = true                 ; // 正常
+              msgID = RCD::OK_VAL            ; // 数値型
+              jsDat.Val = JSON_CONV_VAL(body); // 取得値(数値)
+              jsDat.Res = true               ; // 正常
               //┴
 
-          } else if (SEND_IS_STRING(msgID)) {
+          } else if (JSON_IS_STR(msgID)) {
             //├┐（戻り値が文字列型の場合）
               //○MSGIDを独自IDに書き換え
               //○処理結果をセット
@@ -193,7 +195,7 @@ private:
       } //～if 
       //│
       //○メッセージを取得
-      jsDat.Msg = SEND_MSG(msgID);
+      jsDat.Msg = JSON_MSG(msgID);
       //│
       //○JSON形式に編集
       js.reserve(160) ; // 予備確保
@@ -206,7 +208,7 @@ private:
       js += "\"}"               ;
       //│
       //○通信経路にJSON形式でレスポンス
-      SEND_JSON(js);
+      JSON_SEND(js);
       //┴
     } /* SEND_CONN_JSON() */
   //------------------------------------
@@ -217,14 +219,25 @@ private:
   // 接続元にMSGをレスポンスする
   //───────────────────────────
   void SEND_CONN() {
-    //┬
-    //○テキストをレスポンス
+  //┬
+  //○┐【前処理】
+    //●WiFiの接続状況を確認する
+    if (!devWiFi::ENABLED_CONN(true)) return;
+    //│＼（機能していない場合）
+    //│ ▼終了：早期リターンする
+    //┴
+  //│
+  //○┐【主処理】
+    //○接続元にレスポンスMSGを送信する
     ADD_CROSS(*MY_NET);
     MY_NET->send(200, "text/plain; charset=utf-8", ctx.base.Msg);
-    //│
+    //┴
+  //│
+  //○┐【後処理】
     //●ログ出力
     adpFnBase::SHOW_LOG();
-    //┴
+    adpFnBase::SHOW_LOG();
+  //┴
   } /* SEND_CONN() */
 
 //========================================================
@@ -253,7 +266,7 @@ private:
   // ルート０：ホスト直下
   //─────────────────
   void routeRoot(WebServer& srv){
-    SEND_JSON(F("{"
+    JSON_SEND(F("{"
       "\"ok\":true,"
       "\"result\":true,"
       "\"error\":\"\","
@@ -333,21 +346,6 @@ private:
   }/* registRoutes() */
 
 //========================================================
-//§ハンドルの事前処理と進行判定
-//========================================================
-  //───────────────────────────
-  // 一般用
-  //------------------------------------------------------
-  //【戻り値】進行判定
-  // true ：進行NG
-  // false：進行OK
-  //───────────────────────────
-  bool SETUP_NORMAL() override final {
-    //●WiFiの接続状況を確認する
-    return !devWiFi::ENABLED_CONN(true);
-  } /* SETUP_NORMAL() */
-
-//========================================================
 //§公開機能
 //========================================================
 public:
@@ -360,7 +358,7 @@ public:
   //┬
   //○┐【前処理】
     //●前処理（一般用）を実行する...進行判定を得る
-    if (this->SETUP_NORMAL()) return;
+    if (SETUP_NORMAL()) return;
     //│＼（異常の場合）
     //│ ▼終了：早期リターンする
     //┴

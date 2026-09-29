@@ -52,7 +52,7 @@
     #define ADP_HTTP true
     #define ADP_ESPN true
     #define ADP_BLE  true
-    #define ADP_IIC  false // Wire1を使用|WireはPWMに仕様
+    #define ADP_IIC  false // Wire1を使用|WireはPWMで利用
   //(2)サブ用
   #elif (MODE == MODE_SUB)
     #define ADP_UART true 

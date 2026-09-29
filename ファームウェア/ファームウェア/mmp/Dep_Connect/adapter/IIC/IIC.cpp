@@ -88,7 +88,7 @@ public:
   // コンストラクタ【非同期キュー型＋接続スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_IIC(   MmpContext& argCtx) : // 接続識別子：uint8_t
-  AD_API(               argCtx, AID::IIC), // 基本型
+  AD_API<      uint8_t>(argCtx, AID::IIC), // 基本型
   AD_API_Queue<uint8_t>(argCtx, AID::IIC), // 非同期キュー型
   AD_API_Slot< uint8_t>(argCtx, AID::IIC)  // 接続スロット型
   {

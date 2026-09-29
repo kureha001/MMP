@@ -48,7 +48,7 @@ private:
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(String argConn_Dummy) override final {
+  void SEND_MSG(String argConn_Dummy) override final {
   //┬
   //○┐【前処理】
     //●WiFiの接続状況を確認する
@@ -68,7 +68,7 @@ private:
     //●ログ出力
     adpFnBase::SHOW_LOG();
   //┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */
 
 //========================================================
 //§受信処理
@@ -139,20 +139,20 @@ private:
   //・JSON／TXTの選択が可能
   #if (MODE == MODE_MAIN)
   //------------------------------------
-      //●ＭＭＰコマンドを実行
-      //●実行結果をレスポンス
+      //●ＭＭＰコマンドを実行する
+      //●接続元にレスポンスMSGを送信する
       modeMain::RUN();
-      isJSON ? SEND_CONN_JSON() : SEND_CONN("");
+      isJSON ? SEND_MSG_JSON() : SEND_MSG("");
   //──────────────────
   //➡サブ
   //・モード別の主処理
   //・TXTのみ
   #elif (MODE == MODE_SUB)
   //------------------------------------
-      //●ＭＭＰコマンドを実行
-      //●実行結果をレスポンス
+      //●ＭＭＰコマンドを実行する
+      //●接続元にレスポンスMSGを送信する
       modeSub::RUN();
-      SEND_CONN("");
+      SEND_MSG("");
   //------------------------------------
   #endif //➡メイン｜➡サブ
   //──────────────────

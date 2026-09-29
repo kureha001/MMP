@@ -11,7 +11,7 @@
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(uint8_t argConn) override final {
+  void SEND_MSG(uint8_t argConn) override final {
     //┬
     //○レスポンス内容を返送バッファにセット
     //  ※ここではレスポンスしないでスレッド処理に回す
@@ -20,4 +20,4 @@
     //●ログ出力
     adpFnBase::SHOW_LOG();
     //┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */

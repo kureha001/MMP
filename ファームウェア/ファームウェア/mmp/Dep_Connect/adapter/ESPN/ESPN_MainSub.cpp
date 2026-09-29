@@ -11,7 +11,7 @@
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(String argConn) override final {
+  void SEND_MSG(String argConn) override final {
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
@@ -31,4 +31,4 @@
   //│
   //○┐【後処理】
   //┴┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */

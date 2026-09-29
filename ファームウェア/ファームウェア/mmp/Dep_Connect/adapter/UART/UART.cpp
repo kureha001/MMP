@@ -18,16 +18,15 @@ private:
 //========================================================
   //───────────────────────────
   // 接続元にMSGをレスポンスする
-  // ※マスタではベース側に実装する。
   //───────────────────────────
-  void SEND_CONN(Stream* argConn) override final {
+  void SEND_MSG(Stream* argConn) override final {
     //┬
     //○接続元宛にメッセージを送信する
     //●ログを出力する
     argConn->print(ctx.base.Msg);
     adpFnBase::SHOW_LOG();
     //┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */
 
 //========================================================
 //§受信処理

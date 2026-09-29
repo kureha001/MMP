@@ -52,7 +52,7 @@
   //───────────────────────────
   // 開始処理：コンストラクタ
   //───────────────────────────
-  String CONSTRACT() {
+  String CONSTRACT() override final {
   //┬
   //○┐【前処理】
     //┴
@@ -81,7 +81,7 @@
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(WiFiClient argConn) override final {
+  void SEND_MSG(WiFiClient argConn) override final {
   //┬
   //○┐【前処理】
     //●接続元の接続状況を確認
@@ -99,4 +99,4 @@
     //●ログ出力
     adpFnBase::SHOW_LOG();
   //┴┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */

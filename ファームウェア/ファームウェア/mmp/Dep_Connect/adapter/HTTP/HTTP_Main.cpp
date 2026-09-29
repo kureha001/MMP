@@ -95,7 +95,7 @@
       String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
     }; /* JSON_DATA */
     //─────────────────
-    void SEND_CONN_JSON(){
+    void SEND_MSG_JSON(){
       //┬
       //○【前処理】
       JSON_DATA jsDat ;
@@ -168,4 +168,4 @@
       //○通信経路にJSON形式でレスポンス
       JSON_SEND(js);
       //┴
-    } /* SEND_CONN_JSON() */
+    } /* SEND_MSG_JSON() */

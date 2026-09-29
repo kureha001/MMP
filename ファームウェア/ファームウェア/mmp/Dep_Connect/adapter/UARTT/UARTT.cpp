@@ -26,14 +26,14 @@ private:
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(Stream* argConn) override final {
+  void SEND_MSG(Stream* argConn) override final {
     //┬
     //○クライアントにレスポンス
     //●ログ出力
     argConn->print(ctx.base.Msg);
     adpFnBase::SHOW_LOG();
     //┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */
 
 //========================================================
 //§ モード別実装のインクルード
@@ -93,7 +93,7 @@ public:
     //●コマンドを実行
     //●実行結果をレスポンス
     modeMain::RUN();
-    SEND_CONN(CONN);
+    SEND_MSG(CONN);
     //┴
 //──────────────────
 //➡サブ
@@ -103,7 +103,7 @@ public:
     //●コマンドを実行
     //●実行結果をレスポンス
     modeSub::RUN();
-    SEND_CONN(CONN);
+    SEND_MSG(CONN);
     //┴
 //──────────────────
 //➡ブリッジ
@@ -120,7 +120,7 @@ public:
         Log::Outln("1.待機中→依頼中");
         ctx.trans.Stat = BSTAT::REQ;
         //┴
-      } else SEND_CONN(CONN);
+      } else SEND_MSG(CONN);
       //└┐（その他）
         //●接続元にレスポンスMSGを送信する
         //┴

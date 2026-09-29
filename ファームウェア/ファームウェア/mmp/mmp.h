@@ -93,6 +93,10 @@ namespace RCD{
   const String OK_Auth = "_AUT!"; // OK:認証
   const String OK_VAL  = "_VAL!"; // OK:数値
   const String OK_STR  = "_STR!"; // OK:文字列
+
+  //システムエラーメッセージ
+  const String ERR_SYS = "[ERROR] システムエラー（未実装）です。";
+
 } /* namespace RCD */
 
 //========================================================

@@ -11,7 +11,7 @@
   //───────────────────────────
   // 開始処理：コンストラクタ
   //───────────────────────────
-  String CONSTRACT() {
+  String CONSTRACT() override final {
   //┬
   //○┐【前処理】
     //┴
@@ -51,8 +51,8 @@
   //○┐【主処理】
     //●前処理(マスタ)を実施する...進行判定を得る
     bool retGo = modeBridge::MASTER(
-      TBL[ctx.trans.SID].CONN,               // 接続識別子
-      [this](Stream* conn){SEND_CONN(conn);} // 返信処理(関数をラムダ式で包む)
+      TBL[ctx.trans.SID].CONN,              // 接続識別子
+      [this](Stream* conn){SEND_MSG(conn);} // 返信処理(関数をラムダ式で包む)
     );
     //┴
   //│

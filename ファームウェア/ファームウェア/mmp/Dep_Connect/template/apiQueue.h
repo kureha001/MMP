@@ -122,7 +122,7 @@ public:
   #if (MODE != MODE_BRIDGE)
   //-----------------------------------------
         //○フレームの状態を確認する
-        if (ctx.base.Frame.startsWith("#")) {this->SEND_CONN(popDat.conn); continue;}
+        if (ctx.base.Frame.startsWith("#")) {this->SEND_MSG(popDat.conn); continue;}
         //│＼（フレームが[エラーCD]の場合）
         //│ ●ブリッジ元にレスポンス
         //│ ▽次へ：次のキューを走査
@@ -137,7 +137,7 @@ public:
         //●コマンドを実行する
         //●接続元にレスポンスMSGを送信する
         modeMain::RUN();
-        this->SEND_CONN(popDat.conn);
+        this->SEND_MSG(popDat.conn);
         //┴
   //──────────────────
   //➡サブ
@@ -146,7 +146,7 @@ public:
         //●コマンドを実行する
         //●接続元にレスポンスMSGを送信する
         modeSub::RUN();
-        this->SEND_CONN(popDat.conn);
+        this->SEND_MSG(popDat.conn);
         //┴
   //──────────────────
   //➡ブリッジモード：マスタ(UART)
@@ -162,7 +162,7 @@ public:
             Log::Outln("1.待機中→依頼中");
             ctx.trans.Stat  = BSTAT::REQ;
             //┴
-          } else this->SEND_CONN(popDat.conn);
+          } else this->SEND_MSG(popDat.conn);
           //└┐（その他）
             //●接続元にレスポンスMSGを送信する
             //┴

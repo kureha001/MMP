@@ -53,19 +53,27 @@ protected:
 //§開始処理・終了処理
 //========================================================
   //───────────────────────────
+  // 開始処理：コンストラクタ
+  //───────────────────────────
+  virtual String CONSTRACT() {
+    Log::prtln(RCD::ERR_SYS); // システムエラーログ出力
+    return RCD::ERR_SYS;      // システムエラーMSGを返却
+  }; /* CONSTRACT() */
+
+  //───────────────────────────
   // 終了処理：スレーブのアダプタにリクエストを送信する
   //───────────────────────────
-  virtual void TRANS() {
-    Log::prtln("[ERROR] システムエラー（未実装）です。");
-    ctx.trans.Msg = RCD::Trn0Err;
-  }; /* TRANS() */
+  virtual void SEND_REQUEST() {
+    Log::prtln(RCD::ERR_SYS);     // システムエラーログ出力
+    ctx.trans.Msg = RCD::Trn0Err; // レスポンスMSGにエラーCDをセット
+  }; /* SEND_REQUEST() */
 
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  virtual void SEND_CONN(T argConn) {
-    Log::prtln("[ERROR] システムエラー（未実装）です。");
-  }; /* SEND_CONN() */
+  virtual void SEND_MSG(T argConn){
+    Log::prtln(RCD::ERR_SYS); // システムエラーログ出力
+  }; /* SEND_MSG() */
 
 //========================================================
 //§ハンドルの事前処理と進行判定
@@ -131,7 +139,7 @@ protected:
       //●前処理(スレーブ)を実施する...進行判定を得る
       bool retGo = modeBridge::SLAVE(
         this->MY_AID,            // 通信アダプタID
-        [this](){this->TRANS();} // 転送処理(関数をラムダ式で包む)
+        [this](){this->SEND_REQUEST();} // 転送処理(関数をラムダ式で包む)
       );
       //┴
     //│

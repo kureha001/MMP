@@ -11,7 +11,7 @@
   //───────────────────────────
   // 開始処理：コンストラクタ
   //───────────────────────────
-  String CONSTRACT() {
+  String CONSTRACT() override final {
   //┬
   //○┐【前処理】
     //┴
@@ -39,7 +39,7 @@
   //───────────────────────────
   // 終了処理：接続元にレスポンスMSGを送信する
   //───────────────────────────
-  void SEND_CONN(String argConn) override final {
+  void SEND_MSG(String argConn) override final {
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
@@ -64,4 +64,4 @@
     //●ログを出力する
     adpFnBase::SHOW_LOG();
   //┴┴
-  } /* SEND_CONN() */
+  } /* SEND_MSG() */

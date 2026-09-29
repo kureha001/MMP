@@ -83,8 +83,11 @@ namespace RCD{
 
   //ブリッジモード用
   const String Trn0Err = "#TR0!"; // ブリッジ対象外 
-  const String Trn1Err = "#TR1!"; // 
-  const String Trn2Err = "#TR2!"; // 
+  const String Trn1Err = "#TR1!"; // STEP1 
+  const String Trn2Err = "#TR2!"; // STEP2
+  const String Trn3Err = "#TR3!"; // STEP3
+  const String Trn4Err = "#TR4!"; // STEP4
+  const String Trn5Err = "#TR5!"; // STEP5
 
   //HTTPの疑似CD
   const String OK_Auth = "_AUT!"; // OK:認証

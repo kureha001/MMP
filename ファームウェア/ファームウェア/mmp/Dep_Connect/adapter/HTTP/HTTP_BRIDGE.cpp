@@ -13,8 +13,8 @@
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス【基本型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_HTTP :
-public AD_API
+class  AD_HTTP : // 接続識別子：なし
+public AD_API    // 基本型
 {
 private:
 //========================================================
@@ -77,8 +77,8 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【基本型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_HTTP(MmpContext& argCtx) :
-  AD_API(argCtx, AID::HTTP) 
+  AD_HTTP(MmpContext& argCtx) : // 接続識別子：なし
+  AD_API(             argCtx, AID::HTTP) // 基本型
   {
   //┬
   //○┐【前処理】

@@ -15,7 +15,8 @@
 // クラス【非同期キュー型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_WEBS : // 接続識別子：uint8_t
-public AD_API_Queue<uint8_t> {
+public AD_API_Queue<uint8_t> // 非同期キュー型
+{
 private:
 //========================================================
 //§基本情報
@@ -109,9 +110,9 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【非同期キュー型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_WEBS(MmpContext& argCtx) : // 接続識別子：uint8_t
-  AD_API(               argCtx, AID::WSOC),
-  AD_API_Queue<uint8_t>(argCtx, AID::WSOC)
+  AD_WEBS(MmpContext&   argCtx) : // 接続識別子：uint8_t
+  AD_API(               argCtx, AID::WSOC), // 基本型
+  AD_API_Queue<uint8_t>(argCtx, AID::WSOC)  // 非同期キュー型
   {
   //┬
   //○┐【前処理】

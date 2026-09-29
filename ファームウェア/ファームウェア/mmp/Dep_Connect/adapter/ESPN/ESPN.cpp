@@ -14,7 +14,7 @@
 // クラス【非同期キュー型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_ESPN : // 接続識別子：String
-public AD_API_Queue<String>
+public AD_API_Queue<String> // 非同期キュー型
 {
 private:
 //========================================================
@@ -134,9 +134,9 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【非同期キュー型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_ESPN(MmpContext& argCtx) : // 接続識別子：String
-  AD_API(              argCtx, AID::ESPN),
-  AD_API_Queue<String>(argCtx, AID::ESPN)
+  AD_ESPN( MmpContext& argCtx) : // 接続識別子：String
+  AD_API(              argCtx, AID::ESPN), // 基本型
+  AD_API_Queue<String>(argCtx, AID::ESPN)  // 非同期キュー型
   {
   //┬
   //○┐【前処理】

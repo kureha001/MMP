@@ -19,7 +19,7 @@
     #define ADP_HTTP false
     #define ADP_ESPN false
     #define ADP_BLE  false
-    #define ADP_IIC  false // ブリッジでは使用禁止
+    #define ADP_IIC  false // ブリッジ未対応
 
   //─────────────────
   // 動作モード

@@ -11,11 +11,11 @@
 //┴┴
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// クラス【非同期キュー型＋スロット型
+// クラス【非同期キュー型＋接続スロット型
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_UDP : // 接続識別子：String
-public AD_API_Queue<String>,
-public AD_API_Slot< String>
+public AD_API_Queue<String>, // 非同期キュー型
+public AD_API_Slot< String>  // 接続スロット型
 {
 private:
 //========================================================
@@ -137,12 +137,12 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ【非同期キュー型＋スロット型】
+  // コンストラクタ【非同期キュー型＋接続スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UDP(MmpContext& argCtx) : // 接続識別子：String
-  AD_API(              argCtx, AID::UDP),
-  AD_API_Queue<String>(argCtx, AID::UDP),
-  AD_API_Slot< String>(argCtx, AID::UDP)
+  AD_UDP(  MmpContext& argCtx) : // 接続識別子：String
+  AD_API(              argCtx, AID::UDP), // 基本型
+  AD_API_Queue<String>(argCtx, AID::UDP), // 非同期キュー型
+  AD_API_Slot< String>(argCtx, AID::UDP)  // 接続スロット型
   {
   //┬
   //○┐【前処理】

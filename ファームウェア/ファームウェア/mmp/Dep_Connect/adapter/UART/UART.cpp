@@ -9,8 +9,8 @@
 // クラス【非同期キュー型＋スロット型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_UART: // 接続識別子：Stream*
-public AD_API_Queue<Stream*>,
-public AD_API_Slot< Stream*>
+public AD_API_Queue<Stream*>, // 非同期キュー型
+public AD_API_Slot< Stream*>  // 接続スロット型
 {
 private:
 //========================================================
@@ -18,8 +18,9 @@ private:
 //========================================================
   //───────────────────────────
   // 接続元にMSGをレスポンスする
+  // ※マスタではベース側に実装する。
   //───────────────────────────
-  void SEND_CONN(Stream* argConn) {
+  void SEND_CONN(Stream* argConn) override final {
     //┬
     //○接続元宛にメッセージを送信する
     //●ログを出力する
@@ -79,10 +80,10 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【非同期キュー型＋スロット型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UART(MmpContext& argCtx) : // 接続識別子：Stream*
-  AD_API(               argCtx, AID::UART),
-  AD_API_Queue<Stream*>(argCtx, AID::UART),
-  AD_API_Slot< Stream*>(argCtx, AID::UART)
+  AD_UART(  MmpContext& argCtx) : // 接続識別子：Stream*
+  AD_API(               argCtx, AID::UART), // 基本型
+  AD_API_Queue<Stream*>(argCtx, AID::UART), // 非同期キュー型
+  AD_API_Slot< Stream*>(argCtx, AID::UART)  // 接続スロット型
   {
   //┬
   //○┐【前処理】

@@ -9,7 +9,7 @@
 // クラス【非同期キュー型】
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 class  AD_BLE : // 接続識別子：uint8_t
-public AD_API_Queue<uint8_t>
+public AD_API_Queue<uint8_t> // 非同期キュー型
 {
 private:
 //========================================================
@@ -33,9 +33,9 @@ public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【非同期キュー型】
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_BLE(MmpContext& argCtx) : // 接続識別子：uint8_t
-  AD_API(               argCtx, AID::BLE), 
-  AD_API_Queue<uint8_t>(argCtx, AID::BLE) 
+  AD_BLE(   MmpContext& argCtx) : // 接続識別子：uint8_t
+  AD_API(               argCtx, AID::BLE), // 基本型
+  AD_API_Queue<uint8_t>(argCtx, AID::BLE)  // 非同期キュー型
   {
     //┬
     //●モード別コンストラクタを実施する

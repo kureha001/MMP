@@ -115,11 +115,11 @@
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ブリッジモード実行
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  void RUN(int argSID){
+  void RUN(){
     //┬
     //○┐【前処理】
       //○コンテクスト(ブリッジ用)を初期化
-      ctx.trans.SID    = argSID        ; //スロットIDを退避
+      ctx.trans.SID    = ctx.base.SID  ; //スロットIDを退避
       ctx.trans.Frame  = ctx.base.Frame; //フレームを退避
       ctx.trans.Result = ""            ; //処理結果をクリア
       //┴

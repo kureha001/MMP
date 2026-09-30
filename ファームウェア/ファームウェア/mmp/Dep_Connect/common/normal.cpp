@@ -68,15 +68,20 @@
   //━━━━━━━━━━━━━━━━━
   // コンテキストを初期化
   //━━━━━━━━━━━━━━━━━
-  void SETUP_CTX(int argAID, String argFrame) {
-    ctx.base.AID   = argAID; // アダプタID
+  void SETUP_CTX(
+    int    argAID,
+    int    argSID,
+    String argFrame
+  ) {
+    ctx.base.AID   = argAID  ; // 通信アダプタID
+    ctx.base.SID   = argSID  ; // 接続スロットID
     ctx.base.Frame = argFrame; // フレーム
-    if (!ctx.base.Frame.endsWith ("!")) ctx.base.Frame += "!";
-    if (ctx.base.Frame.startsWith("/")) ctx.base.Frame.remove(0, 1);
-    ctx.base.Result = ""  ; // 処理結果
-    ctx.base.Cmd    = ""  ; // コマンドパス
-    ctx.access.CD   = ""  ; // 認証コード
-    ctx.access.ID   = -1  ; // アクセスID
+    if (!ctx.base.Frame.endsWith  ("!")) ctx.base.Frame += "!";
+    if ( ctx.base.Frame.startsWith("/")) ctx.base.Frame.remove(0, 1);
+    ctx.base.Result = ""     ; // 処理結果
+    ctx.base.Cmd    = ""     ; // コマンドパス
+    ctx.access.CD   = ""     ; // 認証コード
+    ctx.access.ID   = -1     ; // アクセスID
   } /* FORMAT_URI() */
 
   //─────────────────

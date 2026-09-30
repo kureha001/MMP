@@ -17,6 +17,7 @@
     //■基本情報
     struct T_BASE {
       int    AID    = -1; // 経路アダプタID
+      int    SID    = -1; // 接続元のスロットID
       String Frame  = ""; // フレーム(リクエスト内容)
       String Cmd    = ""; // コマンドパス
       String Result = ""; // 処理結果

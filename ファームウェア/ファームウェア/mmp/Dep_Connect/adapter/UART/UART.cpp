@@ -68,6 +68,7 @@ private:
 //========================================================
 #if (MODE == MODE_BRIDGE)
   #include "UART_Bridge.cpp"
+  #include "UART_Bridge_Base.cpp"
 #else
   #include "UART_MainSub.cpp"
 #endif

@@ -134,8 +134,12 @@ private:
             //┴
           } //～if
         //│
-        //●フレームに従いコンテキストを初期化する
-        adpFnBase::SETUP_CTX(MY_AID, retFrame);
+        //●コンテキストを更新する
+        adpFnBase::SETUP_CTX(
+          MY_AID,   // 通信アダプタID
+          0,        // 接続スロットID(ダミー値)
+          retFrame  // 求めたフレーム
+        );
         //│
         //●ハンドラの主処理を実施する
         HANDLE_CORE();

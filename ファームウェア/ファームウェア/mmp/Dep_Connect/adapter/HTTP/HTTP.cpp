@@ -1,8 +1,8 @@
-// filename : Dep_Connect/adapter/HTTP/HTTP_MainSub.cpp
+// filename : Dep_Connect/adapter/HTTP/HTTP.cpp
 //========================================================
-// 接続部門／担当：HTTP（メイン・サブ モード）
+// 接続部門／担当：HTTP（メイン／サブ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 //┬
 //□┐インクルード
@@ -22,6 +22,7 @@ private:
 //========================================================
   int        MY_PORT = 8080   ; // ポート番号
   WebServer* MY_NET  = nullptr; // WEBサーバ(ポインタ)
+  bool       IS_JSON = false  ;
 
 //========================================================
 //§最終処理
@@ -46,9 +47,9 @@ private:
   } /* ADD_CROSS() */
 
   //───────────────────────────
-  // 終了処理：接続元にレスポンスMSGを送信する
+  // 終了処理：接続元に処理結果を送信する
   //───────────────────────────
-  void SEND_MSG(String argConn_Dummy) override final {
+  void SEND_RESULT(String argConn_Dummy) override final {
   //┬
   //○┐【前処理】
     //●WiFiの接続状況を確認する
@@ -59,27 +60,27 @@ private:
   //│
   //○┐【主処理】
     //●CORS許可用HTTPヘッダ追加
-    //○接続元にレスポンスMSGを送信する
+    //○接続元に処理結果を送信する
     ADD_CROSS(*MY_NET);
-    MY_NET->send(200, "text/plain; charset=utf-8", ctx.base.Msg);
+    MY_NET->send(200, "text/plain; charset=utf-8", ctx.base.Result);
     //┴
   //│
   //○┐【後処理】
-    //●ログ出力
+    //●コンテクスト・ログを出力する
     adpFnBase::SHOW_LOG();
   //┴
-  } /* SEND_MSG() */
+  } /* SEND_RESULT() */
 
 //========================================================
 //§受信処理
 //========================================================
-  //─────────────────
+  //───────────────────────────
   // CORS事前確認
-  //----------------------------------
+  //------------------------------------------------------
   // ブラウザがアクセス前に送信するOPTIONS要求(プリフライト)へ応答
   // → CORS許可ヘッダを付加してブラウザへ許可情報を通知
   // → 本通信で返すデータはないためHTTPステータス204を返却
-  //─────────────────
+  //───────────────────────────
   inline void route204(WebServer& argSrv) {
     //┬
     //●CORS許可用HTTPヘッダ追加
@@ -92,72 +93,54 @@ private:
     //┴
   } /* route204() */
 
-  //─────────────────
+  //───────────────────────────
   // ルーティング登録
-  //─────────────────
+  //───────────────────────────
   void registRoutes(WebServer& server){
     //┬
-    //○┐ルート０：ホスト直下の登録
-      //●GETへの応答
-      //●CORS事前確認へ応答
-      server.on("/", HTTP_GET,     [&server, this](){route204(server);});
-      server.on("/", HTTP_OPTIONS, [&server, this](){route204(server); });
-      //┴
-    //│
-    //○┐ルート１：ＭＭＰコマンドの登録
+    //○ホスト直下の応答：GET
+    server.on("/", HTTP_GET,     [&server, this](){route204(server);});
+    //┴
+    //┬
+    //○ホスト直下の応答：CORS事前確認
+    server.on("/", HTTP_OPTIONS, [&server, this](){route204(server); });
+    //┴
+    //┬
+    //○┐ＭＭＰコマンドの応答
     server.onNotFound([&server, this](){
       //│
-      //○ＭＭＰ処理へ渡す要求であるかを確認
-      if (server.method() == HTTP_OPTIONS){route204(server); return;}
-      //│＼（HTTP層で完結している）
-      //│ ●CORS事前確認へ応答
-      //│ ▼終了：早期リターンする
-      //│
-      //○フレーム求める
-      String retFrame = MY_NET->uri();
-      //│
-      //◇┐レスポンス形式を求める
-      bool isJSON = false;
-      if (retFrame.endsWith("@!")) {
-      //├┐（JSON形式が指定されている場合）
-        //○JSON形式をセットする
-        //○フレーム末尾の"@"を削除する
-        isJSON = true;
-        retFrame.remove(retFrame.length() - 2);
-        retFrame += "!";
+      //○┐【前処理】
+        //○アクセス内容を確認
+        if (server.method() == HTTP_OPTIONS){route204(server); return;}
+        //│＼（HTTP層で完結している）
+        //│ ●CORS事前確認へ応答
+        //│ ▼終了：早期リターンする
         //┴
-      //└┐（その他）
-        //┴
-      } //～if
       //│
-      //●フレームに従いコンテキストを初期化する
-      adpFnBase::SETUP_CTX(MY_AID, retFrame);
-      //│
-  //──────────────────
-  //➡メイン
-  //・モード別の主処理
-  //・JSON／TXTの選択が可能
-  #if (MODE == MODE_MAIN)
-  //------------------------------------
-      //●ＭＭＰコマンドを実行する
-      //●接続元にレスポンスMSGを送信する
-      modeMain::RUN();
-      isJSON ? SEND_MSG_JSON() : SEND_MSG("");
-  //──────────────────
-  //➡サブ
-  //・モード別の主処理
-  //・TXTのみ
-  #elif (MODE == MODE_SUB)
-  //------------------------------------
-      //●ＭＭＰコマンドを実行する
-      //●接続元にレスポンスMSGを送信する
-      modeSub::RUN();
-      SEND_MSG("");
-  //------------------------------------
-  #endif //➡メイン｜➡サブ
-  //──────────────────
-      //┴
-    }); /* this{}/onNotFound() */
+      //○┐【主処理】
+        //○┐フレームを求める
+        String retFrame = MY_NET->uri();
+          //│
+          //◇┐標準形式に整形する
+          if (retFrame.endsWith("@!")) {
+          //├┐（JSON形式が指定されている場合）
+            //○JSON形式をセットする
+            //○フレーム末尾の"@"を削除する
+            IS_JSON = true;
+            retFrame.remove(retFrame.length() - 2);
+            retFrame += "!";
+            //┴
+          //└┐（その他）
+            //┴
+          } //～if
+        //│
+        //●フレームに従いコンテキストを初期化する
+        adpFnBase::SETUP_CTX(MY_AID, retFrame);
+        //│
+        //●ハンドラの主処理を実施する
+        HANDLE_CORE();
+      //┴┴
+    }); /* onNotFound */
     //┴
   }/* registRoutes() */
 
@@ -166,6 +149,8 @@ private:
 //========================================================
 #if (MODE == MODE_MAIN)
   #include "HTTP_Main.cpp"
+#else
+  #include "HTTP_Sub.cpp"
 #endif
 
 //========================================================

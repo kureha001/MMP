@@ -1,8 +1,8 @@
 // filename : Dep_Connect/adapter/WEBS/WEBS_Bridge.cpp
 //========================================================
-// 接続部門／担当：WEB Socket（ブリッジモード）
+// 接続部門／担当：WEB Socket（ブリッジ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/28)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //========================================================
@@ -13,7 +13,7 @@
   //───────────────────────────
   String CONSTRACT() override final {
     //┬
-    //▼：返却：起動ログ表示のMSG
+    //▼返却：正常終了（起動ログMSG[OK]）
     return String(" [OK] WEB Socket");
     //┴
   } /* CONSTRACT() */
@@ -25,9 +25,10 @@
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
-    if (SETUP_NORMAL()) {ctx.trans.Msg = RCD::Trn1Err; return;}
+    if (SETUP_NORMAL())
+    {ctx.trans.Result = RCD::Trn1Err; return;}
     //│＼（問題がある場合）
-    //│ ○完了MSGにエラーCDをセット
+    //│ ○処理結果にエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○宛先情報を用意する
@@ -47,8 +48,10 @@
         //│
         //◎┐接続が完了するまで待つ
         unsigned long startTime = millis();
-        while(!MY_NET.isConnected() && ((millis() - startTime) < LIMIT::TIME_CONNECT))
-        {delay(200); MY_NET.loop();}
+        while(
+          !MY_NET.isConnected() &&
+          ((millis() - startTime) < LIMIT::TIME_CONNECT)
+        ) {delay(200); MY_NET.loop();}
           //│＼（[接続OK][タイムアウト]いずれかの場合）
           //│ ▽完了：リトライを終了する
           //│
@@ -56,9 +59,10 @@
           //┴
         //│
         //○接続状態を確認する
-        if (!MY_NET.isConnected()) {ctx.trans.Msg = RCD::Trn2Err; return;}
+        if (!MY_NET.isConnected())
+        {ctx.trans.Result = RCD::Trn2Err; return;}
         //│＼（状態が[未接続]の場合）
-        //│ ○完了MSGにエラーCDをセット
+        //│ ○処理結果にエラーCDをセット
         //│ ▼終了：早期リターンする
         //┴
       //└┐（その他）

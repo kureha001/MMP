@@ -1,4 +1,4 @@
-// filename : Dep_Command/mamager.cpp
+// filename : Dep_Command/manager.cpp
 //========================================================
 // コマンド部門：部門長
 //--------------------------------------------------------
@@ -143,15 +143,17 @@ namespace DepCommand {
         //┴
       //│
       //○エラーメッセージを返却
-      if (regCount == 0){ctx.base.Msg = RCD::NotCmd; return;}
+      if (regCount == 0)
+      {ctx.base.Result = RCD::NotCmd; return;}
         // ＼（登録数がゼロの場合）
-          //▼エラーメッセージを返却
+          //○処理結果にエラーCDをセットする
+          //▼終了：早期リターン
       //┴
     }   /* ② */
     //│
     //③┐機能モジュール機能を実行
-      //○レスポンスを初期化
-      ctx.base.Msg = "";
+      //○処理結果を初期化
+      ctx.base.Result = "";
       //│
       //◎┐モジュールを走査
       for (auto* m : MODULE){
@@ -171,8 +173,8 @@ namespace DepCommand {
       //┴┴　┴
       } //～for
     //│
-    //○エラーメッセージを返却
-    ctx.base.Msg = RCD::NotMod;
+    //○処理結果にエラーCDをセットする
+    ctx.base.Result = RCD::NotMod;
     //┴
   } /* RunCommand() */
 

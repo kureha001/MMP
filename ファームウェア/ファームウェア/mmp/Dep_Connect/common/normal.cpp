@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／共通課：一般処理係
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -25,7 +25,7 @@
 
     snprintf(
       msg, sizeof(msg),
-      "AID[%d] SID[%d] TID[%d](Stat[%d])",
+      "AID[%d] T:SID[%d] T:AID[%d](T:Stat[%d])",
       ctx.base.AID, ctx.trans.SID, ctx.trans.AID, ctx.trans.Stat
     ); Log::prtln(String(msg));
 
@@ -41,7 +41,7 @@
       String(ctx.access.CD), ctx.access.ID, ctx.access.IDS
     ); Log::prtln(String(msg));
 
-    Log::prtln("Path[" + String(ctx.base.Cmd) + "] = MSG[" + String(ctx.base.Msg ) + "]");
+    Log::prtln("Path[" + String(ctx.base.Cmd) + "] = MSG[" + String(ctx.base.Result ) + "]");
 
     Log::prtln(String("======================================"));
   } /* SHOW_LOG() */
@@ -73,10 +73,10 @@
     ctx.base.Frame = argFrame; // フレーム
     if (!ctx.base.Frame.endsWith ("!")) ctx.base.Frame += "!";
     if (ctx.base.Frame.startsWith("/")) ctx.base.Frame.remove(0, 1);
-    ctx.base.Msg   = ""  ; // レスポンスMSG
-    ctx.base.Cmd   = ""  ; // コマンドパス
-    ctx.access.CD  = ""  ; // 認証コード
-    ctx.access.ID  = -1  ; // アクセスID
+    ctx.base.Result = ""  ; // 処理結果
+    ctx.base.Cmd    = ""  ; // コマンドパス
+    ctx.access.CD   = ""  ; // 認証コード
+    ctx.access.ID   = -1  ; // アクセスID
   } /* FORMAT_URI() */
 
   //─────────────────
@@ -102,7 +102,7 @@
     //○┐【主処理】
       //●コマンドを実行
       ctx.base.Cmd = argFrame; // コマンドパスをセット
-      DepCommand::RunCommand()      ; // 実行結果は[ctx.base.Msg]にセットされる
+      DepCommand::RunCommand()      ; // 実行結果は[ctx.base.Result]にセットされる
       //┴
     //│
     //○┐【後処理】

@@ -1,8 +1,8 @@
 // filename : Dep_Connect/adapter/UDP/UDP_MainSub.cpp
 //========================================================
-// 接続部門／担当：UDP（メインモード・サブモード）
+// 接続部門／担当：UDP（メイン／サブ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //========================================================
@@ -29,7 +29,7 @@
     //┴
   //│
   //○┐【後処理】
-    //▼：返却：起動ログ表示のMSG
+    //▼返却：正常終了（起動ログMSG[OK]）
     char msg[100];
     snprintf(msg, sizeof(msg), " [OK] UDP        (PORT %d)", MY_PORT);
     return String(msg);
@@ -37,9 +37,9 @@
   } /* CONSTRACT() */
 
   //───────────────────────────
-  // 終了処理：接続元にレスポンスMSGを送信する
+  // 終了処理：接続元に処理結果を送信する
   //───────────────────────────
-  void SEND_MSG(String argConn) override final {
+  void SEND_RESULT(String argConn) override final {
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
@@ -54,14 +54,14 @@
     //┴
   //│
   //○┐【主処理】
-    //○接続元にレスポンスMSGを送信する
+    //○接続元に処理結果を送信する
     MY_NET.beginPacket(ip, port);
-    MY_NET.write((const uint8_t*)ctx.base.Msg.c_str(), ctx.base.Msg.length());
+    MY_NET.write((const uint8_t*)ctx.base.Result.c_str(), ctx.base.Result.length());
     MY_NET.endPacket();
     //┴
   //│
   //○┐【後処理】
-    //●ログを出力する
+    //●コンテクスト・ログを出力する
     adpFnBase::SHOW_LOG();
   //┴┴
-  } /* SEND_MSG() */
+  } /* SEND_RESULT() */

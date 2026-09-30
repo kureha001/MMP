@@ -12,14 +12,14 @@
   //─────────────────
   // 経路アダプタ
   //─────────────────
-    #define ADP_UART true
+    #define ADP_UART true  // ブリッジでは必須
     #define ADP_UDP  false
     #define ADP_TCP  false
     #define ADP_WSOC false
     #define ADP_HTTP false
     #define ADP_ESPN false
     #define ADP_BLE  false
-    #define ADP_IIC  false // ブリッジ未対応
+    #define ADP_IIC  false // 現在ブリッジ未対応
 
   //─────────────────
   // 動作モード
@@ -32,15 +32,15 @@
 // コンパイルオプション
 //========================================================
   //①動作モード
-  #define MODE MODE_MAIN
+  #define MODE MODE_BRIDGE
 
   //②UART高速モード
-  // USB(CDC）の単一スロット＆パケット処理
+  // USB(CDC)の単一スロット＆パケット処理
   // [Dep_Connect/adapter/_index_.h]にて分岐
   //・メ イ ン：サブ連携が不可
-  //・サ　　ブ：GPIO UARTの使用が不可(USB-CDC,メイン連携は可)
-  //・ブリッジ：GPIO UARTの使用が不可(USB-CDCは可)
-  #define TURBO false
+  //・サ　　ブ：GPIOのUARTは使用不可(USB-CDC,メイン連携は可)
+  //・ブリッジ：GPIOのUARTは使用不可(USB-CDCは可)
+  #define TURBO true
 
   //③モード別プリセット
   //(1)メイン用

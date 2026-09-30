@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／共通課：ユーザ認証係
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/14)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -192,7 +192,7 @@ namespace adpFnAuth{
             } //～while
             //│
             //○コンテクストを更新
-            ctx.base.Msg  = newCD + "!"; // レスポンス
+            ctx.base.Result  = newCD + "!"; // レスポンス
             ctx.access.CD = newCD      ; // 認証CD
             ctx.access.ID = freeID     ; // アクセスID
             //│
@@ -241,7 +241,7 @@ namespace adpFnAuth{
       //┬
       //◇┐URIから切り出す
       String retStr = ""   ; // リクエストURI
-      int    pos    = pURI.indexOf('/');
+      int    pos  = pURI.indexOf('/');
       if (pos >= 0) {
         //├┐（URIに"/"がある）
           //○URIから第１トークンを取得
@@ -284,7 +284,7 @@ namespace adpFnAuth{
       FORMAT_TOK(retStr); // 参照渡しなので内容は上書き
       //│
       //▼返却：整形済みトークン以降
-      return retStr    ;
+      return retStr;
     } /* GET_TOK2() */
 
     //━━━━━━━━━━━━━━━━━
@@ -301,7 +301,7 @@ namespace adpFnAuth{
           //●第２トークン以降を[コマンドパス]にセット
           tmpFrame.remove(0, 1);
           ctx.access.CD = GET_TOK1(tmpFrame);
-          ctx.base.Cmd   = GET_TOK2(tmpFrame);
+          ctx.base.Cmd  = GET_TOK2(tmpFrame);
           //┴
       } else {
         //└┐
@@ -344,9 +344,10 @@ namespace adpFnAuth{
     if (ctx.base.Cmd == SP_CMD_START) {
       //├┐（「認証CD発行コマンド」の場合）
         //●認証管理に加える
-        if(NEW_USER()){ctx.base.Msg = RCD::AuthErr1;}
+        if(NEW_USER())
+        {ctx.base.Result = RCD::AuthErr1;}
         //│＼（失敗した場合）
-        //│ ○レスポンスにエラーIDをセット
+        //│ ○処理結果にエラーCDをセット
         //│ ┴
         //│
         //▼返却：認証開始コマンド(要レスポンス)
@@ -354,15 +355,18 @@ namespace adpFnAuth{
     } //～if
     //│
     //○ユーザ認証対象を確認
-    if (ctx.access.CD == ""){ctx.access.ID = 0; return false;}
+    if (ctx.access.CD == "")
+    {ctx.access.ID = 0; return false;}
     //│＼（認証が不要の場合）
     //│ ○ユーザIDを共用IDにセット
     //│ ▼返却：認証が不要
     //│
     //●ユーザ認証を実施
     ctx.access.ID = GET_EXIST_AID(ctx.access.CD);
-    if (ctx.access.ID < 0){ctx.base.Msg = RCD::AuthErr2; return true;}
+    if (ctx.access.ID < 0)
+    {ctx.base.Result = RCD::AuthErr2; return true;}
     //│＼（認証に失敗した場合）
+    //│ ○処理結果にエラーCDをセット
     //│ ▼返却：[3]認証に失敗(要レスポンス)
     //│
     //▼返却：認証に成功

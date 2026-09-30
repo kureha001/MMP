@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：HTTP（メインモード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/28)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //========================================================
@@ -21,7 +21,7 @@
       ADD_CROSS(*MY_NET);
       MY_NET->send(200, "application/json; charset=utf-8", argJSON);
       //│
-      //●ログ出力
+    //●コンテクスト・ログを出力する
       adpFnBase::SHOW_LOG();
       //┴
     } /* JSON_SEND() */
@@ -58,7 +58,7 @@
     } /* JSON_CONV_VAL() */
 
     //──────────────────────────
-    // レスポンスMSGに該当する説明文を取得
+    // 処理結果に該当する説明文を取得
     //──────────────────────────
     static const char* JSON_MSG(const String& argID){
 
@@ -95,12 +95,12 @@
       String  Str = ""   ; // 戻値が文字列の場合 {４バイトの文字列、対象外は空}
     }; /* JSON_DATA */
     //─────────────────
-    void SEND_MSG_JSON(){
+    void SEND_RESULT_JSON(){
       //┬
       //○【前処理】
       JSON_DATA jsDat ;
       String    js    ;
-      String    msgID = ctx.base.Msg;
+      String    msgID = ctx.base.Result; // 処理結果
       //│
       //◇┐JSON内容編集
       if (ctx.base.Cmd == SP_CMD_START){
@@ -109,7 +109,7 @@
           //○取得値を文字列型にセット
           //○処理結果をセット
           msgID     = RCD::OK_Auth; // 認証開始
-          jsDat.Str = ctx.base.Msg; // 取得値(文字列)
+          jsDat.Str = ctx.base.Result; // 取得値(文字列)
           jsDat.Res = true        ; // 正常
           //┴
 
@@ -138,15 +138,15 @@
               //○MSGIDを独自IDに書き換え
               //○処理結果をセット
               //●取得値を数値型にセット
-              msgID = RCD::OK_STR              ; // 文字列型
-              jsDat.Str = ctx.base.Msg         ; // 取得値(文字列)
-              jsDat.Res = true                 ; // 正常
+              msgID = RCD::OK_STR            ; // 文字列型
+              jsDat.Str = ctx.base.Result    ; // 取得値(文字列)
+              jsDat.Res = true               ; // 正常
               //┴
 
           } else {
             //└┐（その他）
               //○処理結果をセット
-              jsDat.Res = false                 ; // 異常
+              jsDat.Res = false              ; // 異常
               //┴
           } //～if 
           //┴
@@ -157,15 +157,33 @@
       //│
       //○JSON形式に編集
       js.reserve(160) ; // 予備確保
-      js += F("{\"ok\":true"   )                                        ; // 処理結果：HTTP通信の成功
-      js += F(",\"source\":\"" ); js += ctx.base.Msg.c_str(); js += '"' ; // MMPの戻り値
-      js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false")  ; // 処理結果：MMPコマンドの成功
-      js += F(",\"message\":\""); js += jsDat.Msg; js += '"'            ; // メッセージ
-      js += F(",\"value\":"    ); js += String(jsDat.Val)               ; // 戻値（数値）
-      js += F(",\"string\":\"" ); js += jsDat.Str                       ; // 戻値（文字列）
+      js += F("{\"ok\":true"   )                                           ; // 処理結果：HTTP通信の成功
+      js += F(",\"source\":\"" ); js += ctx.base.Result.c_str(); js += '"' ; // MMPの戻り値
+      js += F(",\"result\":"   ); js += (jsDat.Res ? "true" : "false")     ; // 処理結果：MMPコマンドの成功
+      js += F(",\"message\":\""); js += jsDat.Msg; js += '"'               ; // メッセージ
+      js += F(",\"value\":"    ); js += String(jsDat.Val)                  ; // 戻値（数値）
+      js += F(",\"string\":\"" ); js += jsDat.Str                          ; // 戻値（文字列）
       js += "\"}"               ;
       //│
       //○通信経路にJSON形式でレスポンス
       JSON_SEND(js);
       //┴
-    } /* SEND_MSG_JSON() */
+    } /* SEND_RESULT_JSON() */
+
+//========================================================
+//§受信処理
+//========================================================
+  //───────────────────────────
+  // ルーティング登録
+  //───────────────────────────
+    //──────────────────────────
+    // ハンドラの主処理
+    //──────────────────────────
+    void HANDLE_CORE() {
+      //┬
+      //●ＭＭＰコマンドを実行する
+      //●接続元に処理結果を送信する
+      modeMain::RUN();
+      IS_JSON ? SEND_RESULT_JSON() : SEND_RESULT("");
+      //┴
+    } /* HANDLE()() */

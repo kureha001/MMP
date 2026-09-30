@@ -17,16 +17,16 @@ private:
 //§最終処理
 //========================================================
   //───────────────────────────
-  // 接続元にMSGをレスポンスする
+  // 終了処理：接続元に処理結果を送信する
   //───────────────────────────
-  void SEND_MSG(Stream* argConn) override final {
+  void SEND_RESULT(Stream* argConn) override final {
     //┬
-    //○接続元宛にメッセージを送信する
+    //○接続元に処理結果を送信する
     //●ログを出力する
-    argConn->print(ctx.base.Msg);
+    argConn->print(ctx.base.Result);
     adpFnBase::SHOW_LOG();
     //┴
-  } /* SEND_MSG() */
+  } /* SEND_RESULT() */
 
 //========================================================
 //§受信処理
@@ -97,7 +97,7 @@ public:
     //┴
   //│
   //○┐【後処理】
-    //●起動ログMSGを表示する
+    //●コンテクスト・ログを出力する
     Log::prtln(retMsg);
   //┴┴
   } /* constractor AD_UART() */

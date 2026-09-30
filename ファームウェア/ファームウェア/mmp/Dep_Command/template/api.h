@@ -2,7 +2,7 @@
 //========================================================
 // コマンド部門／作業標準：抽象基底クラス
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 #pragma once
 
@@ -71,21 +71,23 @@ public:
   // コンテクストへレスポンスをセット
   //─────────────────
     //─────────────────
-    // 基本レスポンス
+    // 基本レスポンス(処理結果)
     //─────────────────
-    inline void _ResOK    (){ctx.base.Msg = RCD::OK;    } // 正常終了
-    inline void _ResNotCmd(){ctx.base.Msg = RCD::NotCmd;} // コマンド名が不正
-    inline void _ResChkErr(){ctx.base.Msg = RCD::ChkErr;} // 引数チェックで不正
-    inline void _ResIniErr(){ctx.base.Msg = RCD::IniErr;} // データが未初期化
-    inline void _ResDevErr(){ctx.base.Msg = RCD::DevErr;} // 使用不可のデバイス
-    inline void _ResFilErr(){ctx.base.Msg = RCD::FilErr;} // ファイル操作が異常終了
-    inline void _ResNoDErr(){ctx.base.Msg = RCD::NoDErr;} // データ項目名が不正  
-    inline void _ResValErr(){ctx.base.Msg = RCD::ValErr;} // 数値変換エラー  
+    inline void _ResOK    (){ctx.base.Result = RCD::OK;    } // 正常終了
+    inline void _ResNotCmd(){ctx.base.Result = RCD::NotCmd;} // コマンド名が不正
+    inline void _ResChkErr(){ctx.base.Result = RCD::ChkErr;} // 引数チェックで不正
+    inline void _ResIniErr(){ctx.base.Result = RCD::IniErr;} // データが未初期化
+    inline void _ResDevErr(){ctx.base.Result = RCD::DevErr;} // 使用不可のデバイス
+    inline void _ResFilErr(){ctx.base.Result = RCD::FilErr;} // ファイル操作が異常終了
+    inline void _ResNoDErr(){ctx.base.Result = RCD::NoDErr;} // データ項目名が不正  
+    inline void _ResValErr(){ctx.base.Result = RCD::ValErr;} // 数値変換エラー  
+    inline void _ResStrErr(){ctx.base.Result = RCD::StrErr;} // 文字列変換エラー  
 
     //─────────────────
-    // 戻値用：十進数変換
-    //  - 末尾は '!' で埋める）
-    //  - v ∈ [-999, 9999] 以外はエラー
+    // 戻値用：十進数変換（5バイト文字列）
+    //  - 引数が -999～9999 以外はエラー
+    //  - 前方ゼロ(0)埋め
+    //  - 末尾に '!' を追加
     //─────────────────
     inline void _ResValue(int v) {
       if (v < -999 || v > 9999) { _ResValErr(); return; }
@@ -96,9 +98,20 @@ public:
       } else {
         snprintf(buf, sizeof(buf), "%04d!"  , v);
       } /* if */
-      ctx.base.Msg = String(buf);
+      ctx.base.Result = String(buf);
     } /* _ResValue() */
 
+    //─────────────────
+    // 戻値用：文字列変換（5バイト文字列）
+    //  - 引数が4バイト超はエラー
+    //  - 前方スペース埋め
+    //  - 末尾に '!' を追加
+    //─────────────────
+    inline void _ResString(String argStr) {
+      if (argStr.length() > 4) { _ResStrErr(); return; }
+      while (argStr.length() < 4) argStr = " " + argStr;
+      ctx.base.Result = argStr + "!";
+    } /* _ResString() */
 
   //─────────────────
   // 各種編集

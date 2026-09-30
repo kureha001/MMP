@@ -1,8 +1,8 @@
 // filename : Dep_Connect/adapter/HTTP/HTTP_Bridge.cpp
 //========================================================
-// 接続部門／担当：HTTP（ベース：ブリッジモード）
+// 接続部門／担当：HTTP（ベース：ブリッジ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 //┬
 //□┐インクルード
@@ -33,9 +33,9 @@ private:
   //○┐【前処理】
     //●WiFiの接続状況を確認する
     if (!devWiFi::ENABLED_CONN(true))
-    {ctx.trans.Msg = RCD::Trn1Err; return;}
+    {ctx.trans.Result = RCD::Trn1Err; return;}
     //│＼（状態が[未接続]の場合）
-    //│ ○完了MSGにエラーCDをセット
+    //│ ○処理結果にエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○宛先情報を用意する
@@ -48,9 +48,10 @@ private:
   //○┐【主処理】
     //○クライアントを起動し、この通信アダプタにリクエストを送信する
     MY_NET.begin(toURL);
-    if (MY_NET.GET() <= 0) {ctx.trans.Msg = RCD::Trn2Err; return;}
+    if (MY_NET.GET() <= 0)
+    {ctx.trans.Result = RCD::Trn2Err; return;}
     //│＼（実行に失敗した場合）
-    //│ ○レスポンスMSGにエラーCDをセット
+    //│ ○処理結果にエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○転送先からの受信データ(フレーム)を取得する
@@ -60,12 +61,12 @@ private:
     MY_NET.end();
     //│
     //○処理結果をコンテクストに反映 ← 受信データ(フレーム)
-    ctx.base.Frame = (retFrame == "") ? RCD::Trn3Err : retFrame;
-    ctx.base.Msg   = ctx.base.Frame;
+    ctx.base.Frame  = (retFrame == "") ? RCD::Trn3Err : retFrame;
+    ctx.base.Result = ctx.base.Frame;
     //┴
   //│
   //○┐【後処理】
-    //●ログ出力
+    //●コンテクスト・ログを出力する
     adpFnBase::SHOW_LOG();
   //┴┴
   } /* SEND_REQUEST() */
@@ -115,8 +116,11 @@ public:
     //┴
   //│
   //○┐【主処理】
-    //●スタートアップ(スレーブ用)を実施
-    bool retGo = modeBridge::SLAVE(MY_AID, [this](){this->SEND_REQUEST();});
+    //○処理結果に[フレーム内容]をセットする
+    //○進行状況を[処理済]に遷移する
+    Log::Outln("3.処理中→処理済(キュー)");
+    ctx.base.Result = ctx.base.Frame;
+    ctx.trans.Stat  = BSTAT::DONE;
     //┴
   //│
   //○┐【後処理】

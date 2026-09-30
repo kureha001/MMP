@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／担当：UART 高速型（ベース）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -24,22 +24,22 @@ private:
 //§最終処理
 //========================================================
   //───────────────────────────
-  // 終了処理：接続元にレスポンスMSGを送信する
+  // 終了処理：接続元に処理結果を送信する
   //───────────────────────────
-  void SEND_MSG(Stream* argConn) override final {
+  void SEND_RESULT(Stream* argConn) override final {
     //┬
-    //○クライアントにレスポンス
-    //●ログ出力
-    argConn->print(ctx.base.Msg);
+    //○接続元に処理結果を送信する
+    //●コンテクスト・ログを出力する
+    argConn->print(ctx.base.Result);
     adpFnBase::SHOW_LOG();
     //┴
-  } /* SEND_MSG() */
+  } /* SEND_RESULT() */
 
 //========================================================
 //§ モード別実装のインクルード
 //========================================================
 #if (MODE == MODE_BRIDGE)
-  #include "UART_Bridge.cpp"
+  #include "UARTT_Bridge.cpp"
 #endif
 
 //========================================================
@@ -53,7 +53,7 @@ public:
   AD_API<Stream*>(argCtx, AID::UART) // 基本型
   {
     //┬
-    //○メッセージ表示
+    //●起動ログMSGを表示する
     Log::prtln(" [OK] UART Hi-Speed / USB(CDC) only");
     //┴
   } /* constractor AD_UART() */
@@ -76,7 +76,7 @@ public:
     //┴
   //│
   //○┐【主処理】
-    //●ストリームを受信
+    //●フレームを求める
     String retFrame = adpFnStream::GET_FRAME(*(CONN));
     if (retFrame == "") return;
     //│＼（受信データがない場合）
@@ -93,7 +93,7 @@ public:
     //●コマンドを実行
     //●実行結果をレスポンス
     modeMain::RUN();
-    SEND_MSG(CONN);
+    SEND_RESULT(CONN);
     //┴
 //──────────────────
 //➡サブ
@@ -103,7 +103,7 @@ public:
     //●コマンドを実行
     //●実行結果をレスポンス
     modeSub::RUN();
-    SEND_MSG(CONN);
+    SEND_RESULT(CONN);
     //┴
 //──────────────────
 //➡ブリッジ
@@ -111,18 +111,18 @@ public:
 #elif (MODE == MODE_BRIDGE)
 //------------------------------------
     //●ブリッジ処理を実行
-    modeBridge::RUN(0, retFrame);
+    modeBridge::RUN(0);
     //│
     //◇┐進捗開始／即時応答 で分岐処理する
-    if (ctx.base.Msg == "") {
-      //├┐（即時応答ではない場合）
+    if (ctx.base.Result == "") {
+      //├┐（処理結果が[即時応答ではない]場合）
         //○進捗状況を[依頼中]に遷移する
         Log::Outln("1.待機中→依頼中");
         ctx.trans.Stat = BSTAT::REQ;
         //┴
-      } else SEND_MSG(CONN);
+      } else SEND_RESULT(CONN);
       //└┐（その他）
-        //●接続元にレスポンスMSGを送信する
+        //●接続元に処理結果を送信する
         //┴
     //│
     //▼終了：早期リターンする ※1件ずつ処理

@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/TCP/TCP_MainSub.cpp
 //========================================================
-// 接続部門／担当：TCP（メインモード・サブモード）
+// 接続部門／担当：TCP（メイン／サブ モード）
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/29)
 //========================================================
@@ -21,10 +21,10 @@
     //┴
   //│
   //○┐【主処理】
-    //◎┐新接続のスロットを作成
+    //◎┐新接続のスロットを作成する
     while (true) {
       //│
-      //○未管理のTCP接続を取得
+      //○未管理のTCP接続を取得する
       WiFiClient newConn = MY_NET->available();
       if (!newConn) return;
       //│＼（未管理のTCP接続がない場合）
@@ -37,7 +37,7 @@
       //│ ●古いスロットを走査
       //│ ┴
       //│
-      //●割当スロット内容をセット
+      //●割当スロット内容をセットする
       SLOT_INI_SET(ID, newConn);
       //┴
     } //～while
@@ -58,20 +58,20 @@
     //┴
   //│
   //○┐【主処理】
-    //○接続管理TBLを作成
+    //○接続管理TBLを作成する
     SLOTs = 10;
     TBL   = new T_SLOT[SLOTs];
     //│
-    //○サーバを起動
+    //○サーバを起動する
     MY_NET = new WiFiServer(MY_PORT);
     MY_NET->begin();
     //│
-    //●受信タスク（並列処理）を登録
+    //●受信タスク（並列処理）を登録する
     RUN_TASK(MY_AID);
     //┴
   //│
   //○┐【後処理】
-    //▼：返却：起動ログ表示のMSG
+    //▼返却：正常終了（起動ログMSG[OK]）
     char msg[100];
     snprintf(msg, sizeof(msg), " [OK] TCP RAW    (PORT %d)", MY_PORT);
     return String(msg);
@@ -79,9 +79,9 @@
   } /* CONSTRACT() */
 
   //───────────────────────────
-  // 終了処理：接続元にレスポンスMSGを送信する
+  // 終了処理：接続元に処理結果を送信する
   //───────────────────────────
-  void SEND_MSG(WiFiClient argConn) override final {
+  void SEND_RESULT(WiFiClient argConn) override final {
   //┬
   //○┐【前処理】
     //●接続元の接続状況を確認
@@ -91,12 +91,12 @@
     //┴
   //│
   //○┐【主処理】
-    //○接続元にレスポンスMSGを送信する
-    argConn.print(ctx.base.Msg);
+    //○接続元に処理結果を送信する
+    argConn.print(ctx.base.Result);
     //┴
   //│
   //○┐【後処理】
-    //●ログ出力
+    //●コンテクスト・ログを出力する
     adpFnBase::SHOW_LOG();
   //┴┴
-  } /* SEND_MSG() */
+  } /* SEND_RESULT() */

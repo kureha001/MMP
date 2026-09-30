@@ -1,8 +1,8 @@
 // filename : Dep_Connect/adapter/ESP/ESPN_Bridge.cpp
 //========================================================
-// 接続部門／担当：ESP-NOW（ブリッジモード）
+// 接続部門／担当：ESP-NOW（ブリッジ モード）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/28)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 
 //========================================================
@@ -15,19 +15,16 @@
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
-    if (SETUP_NORMAL()) {ctx.trans.Msg = RCD::Trn1Err; return;}
+    if (SETUP_NORMAL())
+    {ctx.trans.Result = RCD::Trn1Err; return;}
     //│＼（問題がある場合）
-    //│ ○完了MSGにエラーCDをセット
+    //│ ○処理結果にエラーCDをセット
     //│ ▼終了：早期リターンする
-    //│
-    //○転送先の情報を用意する
-    String toMac   = ctx.trans.Dat1;  // MACアドレス
-    String toFrame = ctx.trans.Frame; // フレーム
     //┴
   //│
   //○┐【主処理】
     //●この通信アダプタにリクエストを送信する
-    SendToMac(toMac, toFrame);
+    SendToMac(ctx.trans.Dat1, ctx.trans.Frame);
     //┴
   //│
   //○┐【後処理】

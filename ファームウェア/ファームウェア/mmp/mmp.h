@@ -2,7 +2,7 @@
 //========================================================
 // 全体共通
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/09/30)
 //========================================================
 #pragma once
 
@@ -16,22 +16,22 @@
   //■┐構造体定義
     //■基本情報
     struct T_BASE {
-      int    AID   = -1; // 経路アダプタID
-      String Frame = ""; // フレーム(リクエスト内容)
-      String Cmd   = ""; // コマンドパス
-      String Msg   = ""; // レスポンスMSG
+      int    AID    = -1; // 経路アダプタID
+      String Frame  = ""; // フレーム(リクエスト内容)
+      String Cmd    = ""; // コマンドパス
+      String Result = ""; // 処理結果
     };
     //│
     //■転送情報
     struct T_TRANS {
-      int    Stat  =  0; // 進行状況
-      int    AID   = -1; // 通信アダプタID
-      int    SID   =  0; // 接続元のスロットID
-      String Dat1  = ""; // 個別情報１
-      String Dat2  = ""; // 個別情報２
-      String Dat3  = ""; // 個別情報３
-      String Frame = ""; // フレーム(リクエスト内容)
-      String Msg   = ""; // レスポンスMSG
+      int    Stat   =  0; // 進行状況
+      int    AID    = -1; // 通信アダプタID
+      int    SID    =  0; // 接続元のスロットID
+      String Dat1   = ""; // 個別情報１
+      String Dat2   = ""; // 個別情報２
+      String Dat3   = ""; // 個別情報３
+      String Frame  = ""; // フレーム(リクエストの原資)
+      String Result = ""; // 処理結果
     };
     //│
     //■ユーザ認証情報
@@ -49,7 +49,7 @@
   //■┐コンテクスト（本体）
   struct MmpContext {
     //■システム情報
-    const String sysVer  = "V132!"  ; // バージョン
+    const String sysVer  = "V132"  ; // バージョン
     //│
     //■基本情報
     //■転送情報
@@ -75,7 +75,10 @@ namespace RCD{
   const String FilErr = "#FIL!"; // ファイル操作が異常終了
   const String NoDErr = "#NOD!"; // データ項目名が不正  
   const String ValErr = "#VAL!"; // 数値変換エラー  
-  const String TimOut = "#TIO!"; // 数値変換エラー  
+  const String StrErr = "#STR!"; // 文字列変換エラー  
+
+  //処理制限
+  const String TimOut = "#TIO!"; // タイムアウト
 
   //ユーザ認証用
   const String AuthErr1 = "#SS1!"; // 認証CD発行に失敗

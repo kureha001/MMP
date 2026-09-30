@@ -35,11 +35,12 @@
 
   //───────────────────────────
   // HTTP
+  // ※差分が大きい為、ブリッジ／非ブリッジでファイル分割
   //───────────────────────────
   #if (MODE == MODE_BRIDGE)
     #include "HTTP/HTTP_Bridge.cpp"
   #else
-    #include "HTTP/HTTP_MainSub.cpp"
+    #include "HTTP/HTTP.cpp"
   #endif
 
   //───────────────────────────

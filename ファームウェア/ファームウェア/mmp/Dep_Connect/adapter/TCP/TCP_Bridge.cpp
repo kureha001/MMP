@@ -1,6 +1,6 @@
 // filename : Dep_Connect/adapter/TCP/TCP_Bridge.cpp
 //========================================================
-// 接続部門／担当：TCP（ブリッジモード）
+// 接続部門／担当：TCP（ブリッジ モード）
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/28)
 //========================================================
@@ -34,13 +34,13 @@
     //┴
   //│
   //○┐【主処理】
-    //○接続管理TBLを作成
+    //○接続管理TBLを作成する
     SLOTs = 1;
     TBL   = new T_SLOT[SLOTs];
     //┴
   //│
   //○┐【後処理】
-    //▼：返却：起動ログ表示のMSG
+    //▼返却：正常終了（起動ログMSG[OK]）
     return String(" [OK] TCP");
   //┴
   } /* CONSTRACT() */
@@ -52,9 +52,10 @@
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
-    if (SETUP_NORMAL()) {ctx.trans.Msg = RCD::Trn1Err; return;}
+    if (SETUP_NORMAL())
+    {ctx.trans.Result = RCD::Trn1Err; return;}
     //│＼（問題がある場合）
-    //│ ○完了MSGにエラーCDをセット
+    //│ ○処理結果にエラーCDをセット
     //│ ▼終了：早期リターンする
     //│
     //○宛先情報を取得する
@@ -62,22 +63,22 @@
     //┴
   //│
   //○┐【主処理】
-    //◇┐クライアントを起動
+    //◇┐クライアントを起動する
     if (!ENABLED_CONN(MY_NET, false)) {
       //├┐（TCPが未接続の場合）
         //○クライアントを起動（成功するまでの待ち時間を指定）
         MY_NET.setTimeout(LIMIT::TIME_CONNECT);
         if (!MY_NET.connect(toIP.c_str(), MY_PORT))
-        {ctx.trans.Msg = RCD::Trn2Err; return;}
+        {ctx.trans.Result = RCD::Trn2Err; return;}
         //│＼（接続に失敗した場合）
-        //│ ○完了MSGにエラーCDをセット
+        //│ ○処理結果にエラーCDをセット
         //│ ▼終了：早期リターンする
         //│
         //○スロットを初期化
         SLOT_INI(TBL[0]);
         //│
-        //●受信タスクを登録
-        RUN_TASK(MY_AID); // 並列処理で登録
+        //●受信タスクを登録する
+        RUN_TASK(MY_AID);
         //┴
       //└┐（その他）
         //┴
@@ -88,7 +89,7 @@
     //┴
   //│
   //○┐【後処理】
-    //●ログ出力
+    //●コンテクスト・ログを出力する
     adpFnBase::SHOW_LOG();
   //┴┴
   } /* SEND_REQUEST() */

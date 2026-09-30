@@ -20,7 +20,7 @@ private:
 //──────────────────
 //➡ブリッジ
 //・クライアントを利用
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
 //------------------------------------
   WiFiClient  MY_NET           ; // クライアント(実体)
 //──────────────────
@@ -135,7 +135,7 @@ private:
 //========================================================
 //§モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "TCP_Bridge.cpp"
 #else
   #include "TCP_MainSub.cpp"

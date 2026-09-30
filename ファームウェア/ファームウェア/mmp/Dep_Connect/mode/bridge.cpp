@@ -119,7 +119,6 @@
     //┬
     //○┐【前処理】
       //○コンテクスト(ブリッジ用)を初期化
-      ctx.trans.SID    = ctx.base.SID  ; //スロットIDを退避
       ctx.trans.Frame  = ctx.base.Frame; //フレームを退避
       ctx.trans.Result = ""            ; //処理結果をクリア
       //┴
@@ -196,7 +195,9 @@
         ctx.trans.Stat = argBSTAT;
         //│
         //○処理結果にフレーム内容をセットする
+        if (argBSTAT == BSTAT::REQ ) ctx.trans.SID   = ctx.base.SID; 
         if (argBSTAT == BSTAT::DONE) ctx.base.Result = ctx.base.Frame;
+
         //┴
       //│
       //○┐【後処理】
@@ -228,7 +229,7 @@
         //┴
       //│
       //○┐【主処理】
-        //●クライアントにレスポンスト
+        //●接続元に処理結果を送信する
         argSendConn(argConn);
         //│
         //●進行状況を[待機中]に進捗する

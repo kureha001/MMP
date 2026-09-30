@@ -26,7 +26,7 @@ private:
 //──────────────────
 //➡ブリッジ
 //・クライアントを利用
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
 //------------------------------------
   WebSocketsClient  MY_NET           ; // クライアント(実体)
 //──────────────────
@@ -49,7 +49,7 @@ private:
 //──────────────────
 //➡ブリッジ以外
 //・引数に接続番号がある
-#if (MODE != MODE_BRIDGE)
+#if MODE != MODE_BRIDGE
 //------------------------------------
     uint8_t   argNUM , // 接続番号(接続識別子)
 //------------------------------------
@@ -76,7 +76,7 @@ private:
 //──────────────────
 //➡ブリッジ
 //・引数に接続番号(接続識別子)がない
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
 //------------------------------------
     MY_TASK->pushQueue(0, String((char*)argDATA), 0);
 //──────────────────
@@ -97,7 +97,7 @@ private:
 //========================================================
 //§モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "WEBS_Bridge.cpp"
 #else
   #include "WEBS_MainSub.cpp"

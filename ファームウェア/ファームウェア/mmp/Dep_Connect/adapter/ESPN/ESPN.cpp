@@ -121,7 +121,7 @@ void SendToMac(
 //========================================================
 //§モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "ESPN_Bridge.cpp"
 #else
   #include "ESPN_MainSub.cpp"

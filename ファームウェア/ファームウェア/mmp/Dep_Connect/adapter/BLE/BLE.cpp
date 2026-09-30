@@ -20,7 +20,7 @@ private:
 //========================================================
 //§モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "BLE_Bridge.cpp"
 #else
   #include "BLE_MainSub.cpp"

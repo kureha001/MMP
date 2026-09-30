@@ -66,7 +66,7 @@ private:
 //========================================================
 //§ モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "UART_Bridge.cpp"
   #include "UART_Bridge_Base.cpp"
 #else

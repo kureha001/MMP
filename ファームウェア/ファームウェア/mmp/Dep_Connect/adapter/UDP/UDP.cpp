@@ -126,7 +126,7 @@ private:
 //========================================================
 //§モード別実装のインクルード
 //========================================================
-#if (MODE == MODE_BRIDGE)
+#if MODE == MODE_BRIDGE
   #include "UDP_Bridge.cpp"
 #else
   #include "UDP_MainSub.cpp"

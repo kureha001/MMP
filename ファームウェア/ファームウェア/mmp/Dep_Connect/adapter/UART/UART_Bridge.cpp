@@ -51,8 +51,8 @@
   //○┐【主処理】
     //●マスタの前処理を実施する...進行判定を得る
     bool retGo = modeBridge::MASTER(
-      TBL[ctx.trans.SID].CONN,              // 接続識別子
-      [this](Stream* conn){SEND_RESULT(conn);} // 返信処理(関数をラムダ式で包む)
+      TBL[ctx.trans.SID].CONN,
+      [this](Stream* conn){this->SEND_RESULT(conn);} // ラムダ式で包む
     );
     //┴
   //│
@@ -62,3 +62,27 @@
   //┴
   } /* SETUP_BRIDGE() */
 
+  //───────────────────────────
+  // ブリッジ用(詳細)：マスタ
+  //------------------------------------------------------
+  //【引数】
+  //・キュー構造体
+  //───────────────────────────
+  void BRIDGE_PROCESS(Stream* argConn, int argQID) override {
+  //●ブリッジ処理を実行
+    modeBridge::RUN(argQID);
+  //│
+  //◇┐[処理結果]に応じて処理を分岐する    
+    if (ctx.base.Result == "") {
+    //├┐（処理結果が[即時応答ではない]の場合）
+      //●進行状況を[依頼中]に進捗する
+      modeBridge::MOVE_BSTAT(BSTAT::REQ, "");
+      //┴
+    } else {
+    //└┐（その他）
+      //●接続元に処理結果を送信する
+      this->SEND_RESULT(argConn);
+      //┴
+    } //～if
+
+  } /* BRIDGE_PROCESS() */

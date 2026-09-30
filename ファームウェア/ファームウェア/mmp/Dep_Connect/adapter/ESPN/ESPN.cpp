@@ -68,7 +68,7 @@ void SendToMac(
   //│
   //○┐【後処理】
     //●コンテクスト・ログを出力する
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
   //┴┴
   } /* SendToMac() */
 

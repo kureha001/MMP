@@ -32,6 +32,7 @@
     #include "bridge.cpp"
     namespace modeBridge{
       void RUN  (int argSID, String argFrame);
+      void MOVE_BSTAT(int argBSTAT, String argMSG);
       bool MASER(Stream* argConn, std::function<void(Stream*)> argSendConn);
       bool SLAVE(int     argAID , std::function<void()       > argTrans   );
     }

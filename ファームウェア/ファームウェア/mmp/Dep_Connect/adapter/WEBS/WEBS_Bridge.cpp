@@ -75,7 +75,7 @@
   //│
   //○┐【後処理】
     //●ログ出力
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
   //┴┴
   } /* SEND_REQUEST() */
 

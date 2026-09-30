@@ -22,7 +22,7 @@
       MY_NET->send(200, "application/json; charset=utf-8", argJSON);
       //│
     //●コンテクスト・ログを出力する
-      adpFnBase::SHOW_LOG();
+      adpFnBase::LOG_CTX();
       //┴
     } /* JSON_SEND() */
 

@@ -1,6 +1,6 @@
 // filename : Dep_Connect/mode/bridge.cpp
 //========================================================
-// 接続部門／処理手順：ブリッジモード
+// 接続部門／処理手順：ブリッジモード共通
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/30)
 //========================================================
@@ -112,9 +112,9 @@
 //========================================================
 //§公開機能
 //========================================================
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ブリッジモード実行
-  //━━━━━━━━━━━━━━━━━
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   void RUN(int argSID){
     //┬
     //○┐【前処理】
@@ -161,96 +161,136 @@
     //┴┴
   } /* RUN() */
 
-  //━━━━━━━━━━━━━━━━━
-  // 前処理（マスタ用）
-  //【引数】
-  // ・レスポンス関数（ポインタ）
-  //━━━━━━━━━━━━━━━━━
-  bool MASTER(
-    Stream*                      argConn,    // 実際に送信するストリーム
-    std::function<void(Stream*)> argSendConn // 送信処理の関数
-  ) {
-    //┬
-    //○┐【前処理】
-      //●マスタとして進行判定
-      switch (ctx.trans.Stat) {
-        case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
-        case BSTAT::REQ : return true ; // 依頼済➡×
-        case BSTAT::BUSY: return true ; // 処理中➡×
-        case BSTAT::DONE: break       ; // 処理済は後続処理へ
-        default         : return true ; // 想定外➡×
-      } //～switch
-      //┴
-    //│
-    //○┐【主処理】
-      //●クライアントにレスポンスト
-      argSendConn(argConn);
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 進行状況管理
+  //━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //──────────────────────────
+    // 進行状況を進捗
+    //----------------------------------------------------
+    //【引数】
+    // ・進捗状況ID
+    // ・ログメッセージのオプション
+    //──────────────────────────
+    void MOVE_BSTAT(
+      int argBSTAT, // 進捗状況ID
+      String argMSG // ログメッセージのオプション
+    ) {
+      //┬
+      //○┐【前処理】
+        //◇┐ログメッセージを用意する
+        String msg = "";
+        switch (argBSTAT) {
+        case BSTAT::IDLE: msg = "4.処理済→待機中"; break;
+        case BSTAT::REQ : msg = "1.待機中→依頼中"; break;
+        case BSTAT::BUSY: msg = "2.依頼済→処理中"; break;
+        case BSTAT::DONE: msg = "3.処理中→処理済"; break;
+        default : {Log::prtln("[ERROR] MOVE_BSTAT()"); return;}
+        } //～switch
+        //│
+        //○ログメッセージにオプションを追加する
+        if (argMSG != "") msg += "(" + argMSG + ")";
+        //┴
       //│
-      //○進行状況を[待機中]に遷移
-      Log::Outln("4.処理済→待機中");
-      ctx.trans.Stat = BSTAT::IDLE;
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却：正常終了(進行OK)
-      return false;
-    //┴┴
-  } /* MASTER() */
+      //○┐【主処理】
+        //○進行状況を更新する
+        ctx.trans.Stat = argBSTAT;
+        //│
+        //○処理結果にフレーム内容をセットする
+        if (argBSTAT == BSTAT::DONE) ctx.base.Result = ctx.base.Frame;
+        //┴
+      //│
+      //○┐【後処理】
+        //●ログを出力する
+        Log::Outln(msg);
+      //┴┴
+    } /* MOVE_BSTAT() */
 
-  //━━━━━━━━━━━━━━━━━
-  // 前処理（スレーブ用）
-  //----------------------------------
-  //【引数】
-  // ・アダプタID
-  // ・転送関数（ポインタ）
-  //━━━━━━━━━━━━━━━━━
-  bool SLAVE(
-    int                   argAID,  // アダプタID
-    std::function<void()> argTrans // 転送関数（ポインタ）
-  ) {
-    //┬
-    //○┐【前処理】
-      //○スレーブを確認
-      if (argAID != ctx.trans.AID) return true;
-      //│＼（スレーブではない場合）
-      //│ ▼終了：早期リターン（進行NG)
+    //──────────────────────────
+    // 前処理（マスタ用）
+    //----------------------------------------------------
+    //【引数】
+    // ・レスポンス関数（ポインタ）
+    //──────────────────────────
+    bool MASTER(
+      Stream*                      argConn,    // 実際に送信するストリーム
+      std::function<void(Stream*)> argSendConn // 送信処理の関数
+    ) {
+      //┬
+      //○┐【前処理】
+        //●マスタとして進行判定
+        switch (ctx.trans.Stat) {
+          case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
+          case BSTAT::REQ : return true ; // 依頼済➡×
+          case BSTAT::BUSY: return true ; // 処理中➡×
+          case BSTAT::DONE: break       ; // 処理済は後続処理へ
+          default         : return true ; // 想定外➡×
+        } //～switch
+        //┴
       //│
-      //○進捗状況による進行判定
-      switch (ctx.trans.Stat) {
-        case BSTAT::IDLE: return true ; // 待機中➡×
-        case BSTAT::REQ : break       ; // 依頼済は後続処理へ
-        case BSTAT::BUSY: return false; // 処理中➡○キュー応答
-        case BSTAT::DONE: return true ; // 処理済➡×
-        default         : return true ; // 想定外➡×
-      } //～switch
+      //○┐【主処理】
+        //●クライアントにレスポンスト
+        argSendConn(argConn);
+        //│
+        //●進行状況を[待機中]に進捗する
+        MOVE_BSTAT(BSTAT::IDLE, "");
+        //┴
+      //│
+      //○┐【後処理】
+        //▼返却：正常終了(進行OK)
+        return false;
+      //┴┴
+    } /* MASTER() */
+
+    //──────────────────────────
+    // 前処理（スレーブ用）
+    //----------------------------------------------------
+    //【引数】
+    // ・通信アダプタID
+    // ・転送関数（ポインタ）
+    //──────────────────────────
+    bool SLAVE(
+      int                   argAID,  // アダプタID
+      std::function<void()> argTrans // 転送関数（ポインタ）
+    ) {
+      //┬
+      //○┐【前処理】
+        //○スレーブを確認
+        if (argAID != ctx.trans.AID) return true;
+        //│＼（スレーブではない場合）
+        //│ ▼終了：早期リターン（進行NG)
+        //│
+        //○進捗状況による進行判定
+        switch (ctx.trans.Stat) {
+          case BSTAT::IDLE: return true ; // 待機中➡×
+          case BSTAT::REQ : break       ; // 依頼済は後続処理へ
+          case BSTAT::BUSY: return false; // 処理中➡○キュー応答
+          case BSTAT::DONE: return true ; // 処理済➡×
+          default         : return true ; // 想定外➡×
+        } //～switch
+        //┴
+      //│
+      //○┐【主処理】
+        //●進行状況を[処理中]に進捗する
+        MOVE_BSTAT(BSTAT::BUSY, "");
+        //│
+        //●転送を実施
+        argTrans();
+        //│
+        //◇┐即時応答の通信アダプタに対応
+        if (ctx.trans.Result != "") {
+          //├┐（処理結果がある場合）
+            //●進行状況を[処理済]に進捗する
+            MOVE_BSTAT(BSTAT::DONE, "即時応答");
+            //┴
+          //└┐（その他）
+            //┴
+        } //～if
+        //┴
+      //│
+      //○┐【後処理】
+        //▼返却：正常終了(進行NG)
+        return true;
       //┴
-    //│
-    //○┐【主処理】
-      //○進行状況を[処理中]に遷移
-      Log::Outln("2.依頼済→処理中");
-      ctx.trans.Stat = BSTAT::BUSY;
-      //│
-      //●転送を実施
-      argTrans();
-      //│
-      //◇┐即時応答の通信アダプタに対応
-      if (ctx.trans.Result != "") {
-        //├┐（処理結果がある場合）
-          //○マスタが処理できるよう処理結果へ反映
-          //○進行状況を[処理済]にセット
-          Log::Outln("3.処理中→処理済(即時)");
-          ctx.base.Result = ctx.trans.Result;
-          ctx.trans.Stat  = BSTAT::DONE;
-          //┴
-        //└┐（その他）
-          //┴
-      } //～if
-      //┴
-    //│
-    //○┐【後処理】
-      //▼返却：正常終了(進行NG)
-      return true;
-    //┴
-  } /* SLAVE() */
+    } /* SLAVE() */
 
 } /* namespace modeBridge */

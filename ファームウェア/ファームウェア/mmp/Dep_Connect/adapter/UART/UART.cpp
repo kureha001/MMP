@@ -22,9 +22,9 @@ private:
   void SEND_RESULT(Stream* argConn) override final {
     //┬
     //○接続元に処理結果を送信する
-    //●ログを出力する
+    //●コンテクスト・ログを出力する
     argConn->print(ctx.base.Result);
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
     //┴
   } /* SEND_RESULT() */
 

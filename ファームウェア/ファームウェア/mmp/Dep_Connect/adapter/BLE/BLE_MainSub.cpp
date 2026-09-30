@@ -55,7 +55,7 @@
     devBLE::BLE_TX->notify(); // 通知（Notify）
     //│
     //●コンテクスト・ログを出力する
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
     //┴
   } /* SEND_RESULT() */
 

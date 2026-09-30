@@ -32,7 +32,7 @@
 // コンパイルオプション
 //========================================================
   //①動作モード
-  #define MODE MODE_BRIDGE
+  #define MODE MODE_MAIN
 
   //②UART高速モード
   // USB(CDC)の単一スロット＆パケット処理
@@ -40,7 +40,7 @@
   //・メ イ ン：サブ連携が不可
   //・サ　　ブ：GPIOのUARTは使用不可(USB-CDC,メイン連携は可)
   //・ブリッジ：GPIOのUARTは使用不可(USB-CDCは可)
-  #define TURBO true
+  #define TURBO false
 
   //③モード別プリセット
   //(1)メイン用

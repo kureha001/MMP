@@ -15,7 +15,7 @@
   //━━━━━━━━━━━━━━━━━
   // デバッグログ表示
   //━━━━━━━━━━━━━━━━━
-  void SHOW_LOG(){
+  void LOG_CTX(){
 
     if (!Log::ENABLE) return;
     char msg[128];
@@ -44,7 +44,7 @@
     Log::prtln("Path[" + String(ctx.base.Cmd) + "] = MSG[" + String(ctx.base.Result ) + "]");
 
     Log::prtln(String("======================================"));
-  } /* SHOW_LOG() */
+  } /* LOG_CTX() */
 
   //━━━━━━━━━━━━━━━━━
   // 文字列整形部品（URI形式）

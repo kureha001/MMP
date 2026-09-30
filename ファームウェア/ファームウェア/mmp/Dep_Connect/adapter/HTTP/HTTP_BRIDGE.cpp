@@ -67,7 +67,7 @@ private:
   //│
   //○┐【後処理】
     //●コンテクスト・ログを出力する
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
   //┴┴
   } /* SEND_REQUEST() */
 
@@ -116,11 +116,8 @@ public:
     //┴
   //│
   //○┐【主処理】
-    //○処理結果に[フレーム内容]をセットする
-    //○進行状況を[処理済]に遷移する
-    Log::Outln("3.処理中→処理済(キュー)");
-    ctx.base.Result = ctx.base.Frame;
-    ctx.trans.Stat  = BSTAT::DONE;
+    //●進行状況を[処理済]に進捗する
+    modeBridge::MOVE_BSTAT(BSTAT::DONE, "ハンドル応答");
     //┴
   //│
   //○┐【後処理】

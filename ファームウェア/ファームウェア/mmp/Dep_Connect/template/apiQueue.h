@@ -85,6 +85,23 @@ protected:
     //┴
   } /* popQueue() */
 
+  //───────────────────────────
+  // ブリッジ用(詳細)：スレーブ
+  //------------------------------------------------------
+  //【引数】
+  //※デフォルトでは、スレーブ用に実装しておく。
+  //※マスタ(UART)で利用する引数を用意しておく。
+  //　UARTアダプタ側でオーバーライドする際に利用する。
+  //・接続識別子：テンプレートのT型
+  //・キューID：数値型
+  //───────────────────────────
+virtual void BRIDGE_PROCESS(T argConn, int argQID) {
+#if (MODE == MODE_BRIDGE)
+    if (this->MY_AID == ctx.trans.AID)
+    {modeBridge::MOVE_BSTAT(BSTAT::DONE, "非同期応答");}
+#endif
+  } /* BRIDGE_PROCESS() */
+
 //========================================================
 //§公開機能
 //========================================================
@@ -104,6 +121,9 @@ public:
       if (this->SETUP_BRIDGE()) return;
       //│＼（異常の場合）
       //│ ▼終了：早期リターン
+      //│
+      //○通信アダプタIDを控える
+      int tmpAID = this->MY_AID; 
       //┴
     //│
     //○┐【主処理】
@@ -114,46 +134,18 @@ public:
         //│ ▼完了：ルーティングを終了
         //│
         //●コンテキストを初期化する
-        adpFnBase::SETUP_CTX(this->MY_AID, popDat.frame);
+        adpFnBase::SETUP_CTX(tmpAID, popDat.frame);
         //│
   //──────────────────
   //➡ブリッジモード
+  //※SETUP_BRIDGE()でフィルタリングしているが、
+  //  マスタ・スレーブが混在する為、
+  //  改めて条件分岐させる必要がある。
   #if (MODE == MODE_BRIDGE)
   //------------------------------------
-        //◇┐[アダプタ種類]に応じて処理を分岐する
-        if (this->MY_AID == AID::UART) {
-          //├┐（[マスタ]の場合）
-            //●ブリッジ処理を実行
-            modeBridge::RUN(popDat.QID);
-            //│
-            //◇┐[処理結果]に応じて処理を分岐する
-            if (ctx.base.Result == "") {
-              //├┐（処理結果が[即時応答ではない]の場合）
-                //○進捗状況を[依頼中]に遷移する
-                Log::Outln("1.待機中→依頼中");
-                ctx.trans.Stat  = BSTAT::REQ;
-                //┴
-            } else this->SEND_RESULT(popDat.conn);
-              //└┐（その他）
-                //●接続元に処理結果を送信する
-                //┴
-            //│
-            //▼終了：早期リターンする ※1件ずつ処理
-            return;
-
-        //├┐（[スレーブ]の場合）
-        } else if (this->MY_AID == ctx.trans.AID) {
-          //○処理結果に[フレーム内容]をセットする
-          //○進行状況を[処理済]に遷移する
-          //▼終了：早期リターンする ※1件ずつ処理
-          Log::Outln("3.処理中→処理済(キュー)");
-          ctx.base.Result = ctx.base.Frame;
-          ctx.trans.Stat  = BSTAT::DONE;
-          return;
-        } //～if
-          //└┐（その他） ※空振りさせる
-            //┴
-      //┴
+        BRIDGE_PROCESS(popDat.conn, popDat.QID);
+        //▼終了：早期リターンする ※1件ずつ処理
+        return;
   //──────────────────
   //➡ブリッジ以外
   #else
@@ -177,10 +169,10 @@ public:
     //------------------------------------
         //●コマンドを実行する
         modeSub::RUN();
-        //┴
     //------------------------------------
     #endif //➡メイン｜➡サブ
     //──────────────────
+        //│
         //●接続元に処理結果を送信する
         this->SEND_RESULT(popDat.conn);
         //┴

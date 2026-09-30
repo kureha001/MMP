@@ -31,7 +31,7 @@ private:
     //○接続元に処理結果を送信する
     //●コンテクスト・ログを出力する
     argConn->print(ctx.base.Result);
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
     //┴
   } /* SEND_RESULT() */
 
@@ -116,9 +116,8 @@ public:
     //◇┐進捗開始／即時応答 で分岐処理する
     if (ctx.base.Result == "") {
       //├┐（処理結果が[即時応答ではない]場合）
-        //○進捗状況を[依頼中]に遷移する
-        Log::Outln("1.待機中→依頼中");
-        ctx.trans.Stat = BSTAT::REQ;
+        //●進行状況を[依頼中]に進捗する
+        modeBridge::MOVE_BSTAT(BSTAT::REQ, "");
         //┴
       } else SEND_RESULT(CONN);
       //└┐（その他）

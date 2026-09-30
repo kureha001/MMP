@@ -54,8 +54,8 @@
     //┴
   //│
   //○┐【後処理】
-    //●ログを出力する
-    adpFnBase::SHOW_LOG();
+    //●コンテクスト・ログを出力する
+    adpFnBase::LOG_CTX();
   //┴┴
   } /* SEND_RESULT() */
 

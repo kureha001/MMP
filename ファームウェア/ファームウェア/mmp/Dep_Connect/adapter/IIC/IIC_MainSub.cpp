@@ -18,6 +18,6 @@
     CONN_TX[argConn - IIC_ADDR_MIN] = ctx.base.Result;
     //│
     //●コンテクスト・ログを出力する
-    adpFnBase::SHOW_LOG();
+    adpFnBase::LOG_CTX();
     //┴
   } /* SEND_RESULT() */

@@ -300,15 +300,15 @@ namespace adpFnAuth{
           //●第１トークンを[認証CD]にセット
           //●第２トークン以降を[コマンドパス]にセット
           tmpFrame.remove(0, 1);
-          ctx.access.CD = GET_TOK1(tmpFrame);
-          ctx.base.Cmd  = GET_TOK2(tmpFrame);
+          ctx.access.CD    = GET_TOK1(tmpFrame);
+          ctx.base.CmdPath = GET_TOK2(tmpFrame);
           //┴
       } else {
         //└┐
           //○コマンドパスにフレーム全体(認証コード無し)をセット
           //○コマンドパスを大文字に置換
-          ctx.base.Cmd = tmpFrame;
-          ctx.base.Cmd.toUpperCase();
+          ctx.base.CmdPath = tmpFrame;
+          ctx.base.CmdPath.toUpperCase();
           //┴
       } //～if
       //┴
@@ -341,7 +341,7 @@ namespace adpFnAuth{
     SET_ACD_CPATH();
     //│
     //◇┐認証開始要求に応答
-    if (ctx.base.Cmd == SP_CMD_START) {
+    if (ctx.base.CmdPath == SP_CMD_START) {
       //├┐（「認証CD発行コマンド」の場合）
         //●認証管理に加える
         if(NEW_USER())

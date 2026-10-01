@@ -1,8 +1,8 @@
 // filename : Dev_Network/device/WiFi.cpp
 //========================================================
-// 通信部門／デバイス課：WiFi
+// 通信部門／担当：WiFi
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.4.0 (2026/10/01)
 //========================================================
 //┬
 //■┐インクルード
@@ -22,11 +22,11 @@ namespace devWiFi {
   //━━━━━━━━━━━━━━━━━
   // 設定ファイルの選定
   //━━━━━━━━━━━━━━━━━
-  #if   (MODE == MODE_MAIN  )
+  #if   MODE == MODE_MAIN
     String FILE_PATH = "/wifi_main.json"  ;
-  #elif (MODE == MODE_SUB   )
+  #elif MODE == MODE_SUB
     String FILE_PATH = "/wifi_sub.json"   ;
-  #elif (MODE == MODE_BRIDGE)
+  #elif MODE == MODE_BRIDGE
     String FILE_PATH = "/wifi_bridge.json";
   #else
     String FILE_PATH = "/wifi.json"  ;

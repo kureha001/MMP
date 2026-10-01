@@ -2,7 +2,7 @@
 //========================================================
 // 通信部門：部門長
 //--------------------------------------------------------
-// Ver 1.3.2 (2026/09/15)
+// Ver 1.4.0 (2026/10/01)
 //========================================================
 //┬
 //□┐通信部門
@@ -36,18 +36,18 @@ namespace DepNetwork{
     { "UART", &devUART::ENABLED, devUART::START },
     //│
     //□IIC担当 ※メインモードは(PWMモジュールが使用)
-    #if (MODE==MODE_MAIN) || ADP_IIC
+    #ifdef USE_IIC
     { "IIC", &devIIC::ENABLED, devIIC::START },
     #endif
     //│
     //□WiFi担当
-    #if ADP_TCP || ADP_WAPI || ADP_WSOC || ADP_ESPN
+    #ifdef USE_WiFi
     { "WiFi", &devWiFi::ENABLED, devWiFi::START },
      #endif
     //│
-    //□BLE担当
-    #if ADP_BLE
-    { "BLE" , &devBLE::ENABLED, devBLE::START },
+    //□Bluetooth担当
+    #ifdef USE_BLUETOOTH
+    { "BLE", &devBLE::ENABLED, devBLE::START },
     #endif
     //┴
   //┴

@@ -103,7 +103,7 @@
       String    msgID = ctx.base.Result; // 処理結果
       //│
       //◇┐JSON内容編集
-      if (ctx.base.Cmd == SP_CMD_START){
+      if (ctx.base.CmdPath == SP_CMD_START){
         //├┐（認証コード発行の場合）
           //○MSGIDを独自IDに書き換え
           //○取得値を文字列型にセット

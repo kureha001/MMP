@@ -2,7 +2,7 @@
 //========================================================
 // コマンド部門：部門長
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/10/01)
 //========================================================
 //┬
 //□┐インクルード(機能モジュール群)
@@ -107,9 +107,9 @@ namespace DepCommand {
     char pPath[ REQUEST_LENGTH ];
     {
       //◇超過分を削除
-      size_t pLen = ctx.base.Cmd.length();
+      size_t pLen = ctx.base.CmdPath.length();
       if (pLen >= sizeof(pPath)) pLen = sizeof(pPath) - 1;
-      memcpy(pPath, ctx.base.Cmd.c_str(), pLen);
+      memcpy(pPath, ctx.base.CmdPath.c_str(), pLen);
       pPath[pLen] = '\0';
       //│
       //◇末尾'!'を除去

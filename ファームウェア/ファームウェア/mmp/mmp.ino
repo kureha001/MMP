@@ -12,7 +12,7 @@
 // - WebSockets        by Markus Sattler
 // - EspSoftwareSerial by Peter Lerup, Dirk Kaar
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/29)
+// Ver 1.4.0 (2026/10/01)
 //========================================================
 #pragma once
 //┬
@@ -87,7 +87,7 @@
     //│
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
-      ctx.base.Cmd = "MP3/PLAY:1:1!";
+      ctx.base.CmdPath = "MP3/PLAY:1:1!";
       DepCommand::RunCommand();
     }
     //┴

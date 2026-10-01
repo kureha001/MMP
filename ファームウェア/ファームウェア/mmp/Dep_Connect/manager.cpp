@@ -51,13 +51,11 @@ namespace DepConnect{
     Log::prtln("<<経路アダプタの初期化>>");
     //│
     //○┐共通課を招集
-      //│
       //●ユーザ認証担当
       adpFnAuth::INIT_TBL();
       //┴
     //│
     //○┐業務課（経路アダプタ）を招集
-      //│
       //◇┐WiFi係
       if (devWiFi::ENABLED) {
         //├┐（通信部門で[WiFi準備]が完了している場合）

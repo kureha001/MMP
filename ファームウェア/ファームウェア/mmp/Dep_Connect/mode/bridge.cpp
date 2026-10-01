@@ -2,7 +2,7 @@
 //========================================================
 // 接続部門／処理手順：ブリッジモード共通
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/30)
+// Ver 1.4.0 (2026/10/01)
 //========================================================
 //┬
 //□┐インクルード
@@ -218,14 +218,16 @@
     ) {
       //┬
       //○┐【前処理】
-        //●マスタとして進行判定
+        //○進行判定を求める
         switch (ctx.trans.Stat) {
-          case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
-          case BSTAT::REQ : return true ; // 依頼済➡×
-          case BSTAT::BUSY: return true ; // 処理中➡×
-          case BSTAT::DONE: break       ; // 処理済は後続処理へ
-          default         : return true ; // 想定外➡×
+        case BSTAT::IDLE: return false; // 待機中➡○リクエスト受付
+        case BSTAT::REQ : return true ; // 依頼済➡×
+        case BSTAT::BUSY: return true ; // 処理中➡×
+        case BSTAT::DONE: break       ; // 処理済は後続処理へ
+        default         : return true ; // 想定外➡×
         } //～switch
+        //│＼（[処理済]以外の場合）
+        //│ ▼終了：早期リターン（求めた進行判定）
         //┴
       //│
       //○┐【主処理】
@@ -239,7 +241,7 @@
       //○┐【後処理】
         //▼返却：正常終了(進行OK)
         return false;
-      //┴┴
+      //┴
     } /* MASTER() */
 
     //──────────────────────────
@@ -250,32 +252,34 @@
     // ・転送関数（ポインタ）
     //──────────────────────────
     bool SLAVE(
-      int                   argAID,  // アダプタID
-      std::function<void()> argTrans // 転送関数（ポインタ）
+      int                   argAID,        // アダプタID
+      std::function<void()> argSendRequest // リクエスト送信関数（ポインタ）
     ) {
       //┬
       //○┐【前処理】
-        //○スレーブを確認
+        //○スレーブであるかを確認する
         if (argAID != ctx.trans.AID) return true;
-        //│＼（スレーブではない場合）
+        //│＼（スレーブの通信アダプタIDと異なる場合）
         //│ ▼終了：早期リターン（進行NG)
         //│
-        //○進捗状況による進行判定
+        //○進行判定を求める
         switch (ctx.trans.Stat) {
-          case BSTAT::IDLE: return true ; // 待機中➡×
-          case BSTAT::REQ : break       ; // 依頼済は後続処理へ
-          case BSTAT::BUSY: return false; // 処理中➡○キュー応答
-          case BSTAT::DONE: return true ; // 処理済➡×
-          default         : return true ; // 想定外➡×
+        case BSTAT::IDLE: return true ; // 待機中➡×
+        case BSTAT::REQ : break       ; // 依頼済は後続処理へ
+        case BSTAT::BUSY: return false; // 処理中➡○キュー応答
+        case BSTAT::DONE: return true ; // 処理済➡×
+        default         : return true ; // 想定外➡×
         } //～switch
+        //│＼（[依頼済]以外の場合）
+        //│ ▼終了：早期リターン（求めた進行判定）
         //┴
       //│
       //○┐【主処理】
         //●進行状況を[処理中]に進捗する
         MOVE_BSTAT(BSTAT::BUSY, "");
         //│
-        //●転送を実施
-        argTrans();
+        //●スレーブにリクエストを送信する
+        argSendRequest();
         //│
         //◇┐即時応答の通信アダプタに対応
         if (ctx.trans.Result != "") {

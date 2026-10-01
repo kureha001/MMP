@@ -41,7 +41,7 @@
       String(ctx.access.CD), ctx.access.ID, ctx.access.IDS
     ); Log::prtln(String(msg));
 
-    Log::prtln("Path[" + String(ctx.base.Cmd) + "] = MSG[" + String(ctx.base.Result ) + "]");
+    Log::prtln("Path[" + String(ctx.base.CmdPath) + "] = MSG[" + String(ctx.base.Result ) + "]");
 
     Log::prtln(String("======================================"));
   } /* LOG_CTX() */
@@ -78,10 +78,10 @@
     ctx.base.Frame = argFrame; // フレーム
     if (!ctx.base.Frame.endsWith  ("!")) ctx.base.Frame += "!";
     if ( ctx.base.Frame.startsWith("/")) ctx.base.Frame.remove(0, 1);
-    ctx.base.Result = ""     ; // 処理結果
-    ctx.base.Cmd    = ""     ; // コマンドパス
-    ctx.access.CD   = ""     ; // 認証コード
-    ctx.access.ID   = -1     ; // アクセスID
+    ctx.base.Result  = ""    ; // 処理結果
+    ctx.base.CmdPath = ""    ; // コマンドパス
+    ctx.access.CD    = ""    ; // 認証コード
+    ctx.access.ID    = -1    ; // アクセスID
   } /* FORMAT_URI() */
 
   //─────────────────
@@ -106,7 +106,7 @@
     //│
     //○┐【主処理】
       //●コマンドを実行
-      ctx.base.Cmd = argFrame; // コマンドパスをセット
+      ctx.base.CmdPath = argFrame; // コマンドパスをセット
       DepCommand::RunCommand()      ; // 実行結果は[ctx.base.Result]にセットされる
       //┴
     //│

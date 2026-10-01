@@ -96,7 +96,7 @@ public:
     //┬
     //○┐【前処理】
       //●進行判定を確認する（一般用）
-      if (this->SETUP_NORMAL()) return;
+      if (this->SETUP()) return;
       //│＼（進行不可の場合）
       //│ ▼終了：早期リターン
       //│

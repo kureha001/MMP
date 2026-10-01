@@ -65,7 +65,7 @@ public:
   //┬
   //○┐【前処理】
     //●ハンドル前処理(一般)
-    if (SETUP_NORMAL()) return;
+    if (SETUP()) return;
     //│＼（進行不可の場合）
     //│ ▼終了：早期リターンする
     //│

@@ -15,7 +15,7 @@
   #define MODE_MAIN    0 // 選択肢：メインモード
   #define MODE_SUB     1 // 選択肢：サブモード
   #define MODE_BRIDGE  2 // 選択肢：ブリッジモード
-  #define MODE MODE_MAIN // ★選択肢のいずれかをセットする
+  #define MODE MODE_BRIDGE // ★選択肢のいずれかをセットする
   //│
   //□【高速化】スイッチ
   // Stream型を単一スロット＋パケット単位で処理する。
@@ -26,7 +26,7 @@
   // ・ブリッジ：GPIOのUARTは使用不可(USB-CDCは可能)
   #define TURBO_ON  true  // 選択肢：利用する
   #define TURBO_OFF false // 選択肢：利用しない
-  #define TURBO TURBO_OFF // ★選択肢のいずれかをセットする
+  #define TURBO TURBO_ON // ★選択肢のいずれかをセットする
   //│
   //□【通信アダプタ】選択スイッチ
     //│・選択肢：利用する  (true  をセット)

@@ -52,13 +52,14 @@
   // 主処理（マスタ用）
   // ※基底クラスがスレーブ用で定義済なので再実装する
   //───────────────────────────
-  bool RUN_PROCESS(Stream* argConn) override final {
+  bool RUN_PROCESS(Stream*& argConn) override final {
   //┬
   //○┐【前処理】
     //┴
   //│
   //○┐【主処理】
-    //●ブリッジ処理を実行→ctx.trans.*に退避される
+    //●メインモードの主処理を実行する
+    //│※キュー内容はctx.trans.*に退避される
       modeBridge::RUN();
     //│
     //◇┐[処理結果]に応じて処理を分岐する    

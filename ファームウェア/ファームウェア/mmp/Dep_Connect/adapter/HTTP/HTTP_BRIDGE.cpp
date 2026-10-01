@@ -84,7 +84,7 @@ public:
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
-    if (SETUP_NORMAL()) return;
+    if (SETUP()) return;
     //│＼（問題がある場合）
     //│ ▼終了：早期リターンする
     //┴

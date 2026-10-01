@@ -38,7 +38,7 @@
   //┬
   //○┐【前処理】
     //●初期化の健全性を確認する
-    if (SETUP_NORMAL())
+    if (SETUP())
     {ctx.trans.Result = RCD::Trn1Err; return;}
     //│＼（問題がある場合）
     //│ ○処理結果にエラーCDをセット

@@ -15,7 +15,7 @@
   #define MODE_MAIN    0 // 選択肢：メインモード
   #define MODE_SUB     1 // 選択肢：サブモード
   #define MODE_BRIDGE  2 // 選択肢：ブリッジモード
-  #define MODE MODE_BRIDGE // ★選択肢のいずれかをセットする
+  #define MODE MODE_BRIDGE
   //│
   //□【高速化】スイッチ
   // Stream型を単一スロット＋パケット単位で処理する。
@@ -24,15 +24,14 @@
   // ・メ イ ン：サブ連携が不可
   // ・サ　　ブ：GPIOのUARTは使用不可(USB-CDC,メイン連携は可能)
   // ・ブリッジ：GPIOのUARTは使用不可(USB-CDCは可能)
-  #define TURBO_ON  true  // 選択肢：利用する
-  #define TURBO_OFF false // 選択肢：利用しない
-  #define TURBO TURBO_ON // ★選択肢のいずれかをセットする
+  // 選択肢：利用する(true  をセット)
+  // 選択肢：利用しない(false をセット)
+  #define TURBO true
   //│
-  //□【通信アダプタ】選択スイッチ
+  //□┐【通信アダプタ】選択スイッチ
     //│・選択肢：利用する  (true  をセット)
     //│・選択肢：利用しない(false をセット)
-    //│各モードの通信アダプタを設定(選択肢のいずれかをセット)する
-    //□★メインモード用
+    //□メインモード用
     #if   MODE == MODE_MAIN
       #define ADP_UART true // 未使用ではサブ連携が不可、UARTモジュールは動作可能
       #define ADP_UDP  true
@@ -42,7 +41,7 @@
       #define ADP_ESPN true
       #define ADP_BLE  true
       #define ADP_IIC  true // Wire1を利用|WireはPWMで利用
-    //□★サブモード用
+    //□サブモード用
     #elif MODE == MODE_SUB
       #define ADP_UART true // 未使用でもメイン連携が可能
       #define ADP_UDP  true
@@ -52,7 +51,7 @@
       #define ADP_ESPN true
       #define ADP_BLE  true
       #define ADP_IIC  false // Wire1を使用|Wireは空き
-    //□★ブリッジモード用
+    //□ブリッジモード用
     #elif MODE == MODE_BRIDGE
       #define ADP_UART true  //※強制的に有効化される
       #define ADP_UDP  true

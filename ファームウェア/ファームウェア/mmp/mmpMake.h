@@ -24,9 +24,9 @@
   // ・メ イ ン：サブ連携が不可
   // ・サ　　ブ：GPIOのUARTは使用不可(USB-CDC,メイン連携は可能)
   // ・ブリッジ：GPIOのUARTは使用不可(USB-CDCは可能)
-  // 選択肢：利用する(true  をセット)
+  // 選択肢：利用する  (true  をセット)
   // 選択肢：利用しない(false をセット)
-  #define TURBO true
+  #define TURBO false
   //│
   //□┐【通信アダプタ】選択スイッチ
     //│・選択肢：利用する  (true  をセット)

@@ -12,16 +12,16 @@
   //━━━━━━━━━━━━━━━━━
   // メインモード実行
   //━━━━━━━━━━━━━━━━━
-  void RUN(){
+  void HANDLE(){
     //┬
     //●ユーザ認証を実施
     if (adpFnAuth::CHECK()) return;
     //│＼（処理継続が不可の場合）
     //│ ▼終了：早期リターン
     //│
-    //●機能提供部門に後続処理を移譲
-    DepFunction::RunCommand();
+    //●製造部門に後続処理を移譲する
+    DepProduct::HANDLE();
     //┴
-  } /* RUN() */
+  } /* HANDLE() */
 
 } /* namespace modeMain */

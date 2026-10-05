@@ -38,13 +38,13 @@
 //│┴
 //│
 //□┐組織
-  //□通信設備 部門
+  //□通信設備部門
   #include "Dep_Network/manager.h"
   //│
-  //□機能提供 部門
-  #include "Dep_Function/manager.h"
+  //□製造部門
+  #include "Dep_Product/manager.h"
   //│
-  //□接続窓口 部門
+  //□接客部門
   #include "Dep_Contact/manager.h"
 //┴┴
 
@@ -57,11 +57,11 @@
   void initialize(){
     //┬
     //●通信設備部門に始業を指示する
-    //●機能提供部門に始業を指示する
+    //●製造部門に始業を指示する
     //●接客部門に始業を指示する
     DepNetwork::INIT();
-    DepFunction::INIT();
-    DepConnect::INIT();
+    DepProduct::INIT();
+    DepContact::INIT();
     //┴
   } /* initialize() */
 
@@ -85,10 +85,10 @@
     Log::prtln(String(msg));
     Log::prtln("-----------------------------");
     //│
-    //●ファンファーレを鳴らす
+    //●製造部門がファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
       ctx.base.CmdPath = "MP3/PLAY:1:1!";
-      DepFunction::RunCommand();
+      DepProduct::HANDLE();
     }
     //┴
   } /* opening() */
@@ -111,6 +111,6 @@ void setup(){
 void loop(){
   //┬
   //●接客部門に通常業務の遂行を指示する
-  DepConnect::HANDLE();
+  DepContact::HANDLE();
   //┴
 } /* loop() */

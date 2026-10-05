@@ -28,7 +28,7 @@
   //│
   //○┐【主処理】
     //●サブモードの主処理を実行する
-    modeSub::RUN();
+    modeSub::HANDLE();
     //│
     //●接続元に実行結果を送信する
     this->SEND_RESULT(argConn);

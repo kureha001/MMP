@@ -60,7 +60,7 @@
   //○┐【主処理】
     //●メインモードの主処理を実行する
     //│※キュー内容はctx.trans.*に退避される
-      modeBridge::RUN();
+      modeBridge::HANDLE();
     //│
     //◇┐[処理結果]に応じて処理を分岐する    
       if (ctx.base.Result == "") {

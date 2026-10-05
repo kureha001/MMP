@@ -1,6 +1,6 @@
 // filename : Dep_Contact/mode/__index.h
 //========================================================
-// 接客部門／窓口手順書（モード別処理）：目次
+// 接客部門／業務手順書（モード別処理）：目次
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
@@ -18,21 +18,21 @@
     // メインモード係
     //─────────────────
     #include "main.cpp"
-    namespace modeMain{void RUN();}
+    namespace modeMain{void HANDLE();}
 
     //─────────────────
     // サブモード係
     //─────────────────
     #include "sub.cpp"
-    namespace modeSub{void RUN();}
+    namespace modeSub{void HANDLE();}
 
     //─────────────────
     // ブリッジモード係
     //─────────────────
     #include "bridge.cpp"
     namespace modeBridge{
-      void RUN  (int argSID, String argFrame);
+      void HANDLE();
       void MOVE_BSTAT(int argBSTAT, String argMSG);
-      bool MASER(Stream* argConn, std::function<void(Stream*)> argSendConn);
-      bool SLAVE(int     argAID , std::function<void()       > argTrans   );
+      bool MASER(Stream* argConn, std::function<void(Stream*)> argSendResult );
+      bool SLAVE(int     argAID , std::function<void()       > argSendRequest);
     }

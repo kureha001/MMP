@@ -18,7 +18,7 @@
       //┬
       //●ＭＭＰコマンドを実行する
       //●接続元に処理結果を送信する
-      modeSub::RUN();
+      modeSub::HANDLE();
       SEND_RESULT("");
       //┴
     } /* HANDLE()() */

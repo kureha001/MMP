@@ -9,9 +9,9 @@
 //========================================================
 // モード処理係（前方宣言）
 //========================================================
-namespace modeMain   { void RUN(); }
-namespace modeSub    { void RUN(); }
-namespace modeBridge { void RUN(); }
+namespace modeMain   { void HANDLE(); }
+namespace modeSub    { void HANDLE(); }
+namespace modeBridge { void HANDLE(); }
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス：基本型

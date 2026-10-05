@@ -28,7 +28,7 @@
   //│
   //○┐【主処理】
     //●メインモードの主処理を実行する
-    modeMain::RUN();
+    modeMain::HANDLE();
     //│
     //●接続元に実行結果を送信する
     this->SEND_RESULT(argConn);

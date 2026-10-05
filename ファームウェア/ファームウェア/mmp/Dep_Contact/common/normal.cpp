@@ -105,9 +105,9 @@
       //┴
     //│
     //○┐【主処理】
-      //●コマンドを実行
+      //●製造部門に後続処理を移譲する
       ctx.base.CmdPath = argFrame; // コマンドパスをセット
-      DepFunction::RunCommand()  ; // 実行結果は[ctx.base.Result]にセットされる
+      DepProduct::HANDLE(); // 実行結果は[ctx.base.Result]にセットされる
       //┴
     //│
     //○┐【後処理】

@@ -1,6 +1,6 @@
 // filename : Dev_Network/device/_index.h
 //========================================================
-// 通信部門／担当：担当名簿
+// 通信設備部門／担当：担当名簿
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/27)
 //========================================================
@@ -15,7 +15,7 @@
   #include "UART.cpp"
   namespace devUART{
     extern bool ENABLED ; // 有効性
-    void START()        ; // デバイス開始の指示
+    void HANDLE()       ; // デバイス開始の指示
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -24,7 +24,7 @@
   #include "IIC.cpp"
   namespace devIIC{
     extern bool ENABLED ; // 有効性
-    void START()        ; // デバイス開始の指示
+    void HANDLE()       ; // デバイス開始の指示
     bool UPDATE(int sda, int scl); // ピンアサイン変更
   }
 
@@ -35,7 +35,7 @@
   namespace devWiFi{
     extern bool ENABLED           ; // 有効性
     bool ENABLED_CONN(bool argLog); // 有効性確認
-    void START()                  ; // デバイス開始の指示
+    void HANDLE()                 ; // デバイス開始の指示
   }
 
   //━━━━━━━━━━━━━━━━━
@@ -46,7 +46,7 @@
   #include "BLE.cpp"
   namespace devBLE{
     extern bool ENABLED             ; // 有効性
-    void START()                    ; // デバイス開始の指示
+    void HANDLE()                   ; // デバイス開始の指示
     bool UPDATE(const char* newName); // デバイス名変更 ※ブリッジは再起動
     //※BLE固有の実体ポインタ（前方宣言型を利用）
     extern BLEServer*         MY_SRV; // BLEサーバー

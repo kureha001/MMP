@@ -1,11 +1,11 @@
 // filename : Dev_Network/manager.cpp
 //========================================================
-// 通信部門：部門長
+// 通信設備部門：部門長
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/10/01)
 //========================================================
 //┬
-//□┐通信部門
+//□┐通信設備部門
   //□担当：通信デバイス
   #include "device/_index.h"
 //┴┴
@@ -23,9 +23,9 @@ namespace DepNetwork{
   //┬
   //□座席を用意
   struct T_RECORD {
-    const char* name       ; // デバイス名
-    bool*       pEnabled   ; // 有効フラグへのポインタ
-    void        (*pStart)(); // 開始関数ポインタ
+    const char* name        ; // デバイス名
+    bool*       pEnabled    ; // 有効フラグへのポインタ
+    void        (*pHandle)(); // ハンドル関数ポインタ
   }; /* struct */
   //┴
   //┬
@@ -33,21 +33,21 @@ namespace DepNetwork{
   static const T_RECORD DB[] = {
     //│
     //□UART担当 ※メインモード以外は強制
-    { "UART", &devUART::ENABLED, devUART::START },
+    { "UART", &devUART::ENABLED, devUART::HANDLE },
     //│
     //□IIC担当 ※メインモードは(PWMモジュールが使用)
     #ifdef USE_IIC
-    { "IIC", &devIIC::ENABLED, devIIC::START },
+    { "IIC", &devIIC::ENABLED, devIIC::HANDLE },
     #endif
     //│
     //□WiFi担当
     #ifdef USE_WiFi
-    { "WiFi", &devWiFi::ENABLED, devWiFi::START },
+    { "WiFi", &devWiFi::ENABLED, devWiFi::HANDLE },
      #endif
     //│
     //□Bluetooth担当
     #ifdef USE_BLUETOOTH
-    { "BLE", &devBLE::ENABLED, devBLE::START },
+    { "BLE", &devBLE::ENABLED, devBLE::HANDLE },
     #endif
     //┴
   //┴
@@ -71,7 +71,7 @@ namespace DepNetwork{
       //│
       //○この担当に指示
       const auto& dev = DB[devID];
-      dev.pStart();
+      dev.pHandle();
       //┴
     } //～for
     //┴

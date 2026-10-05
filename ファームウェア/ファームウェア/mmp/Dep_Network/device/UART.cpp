@@ -1,6 +1,6 @@
 // filename : Dev_Network/device/UART.cpp
 //========================================================
-// 通信部門／担当：UART
+// 通信設備部門／担当(通信デバイス)：UART
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/10/01)
 //========================================================
@@ -81,7 +81,7 @@ namespace devUART {
   //━━━━━━━━━━━━━━━━━
   // 初期化処理
   //━━━━━━━━━━━━━━━━━
-  void START(){
+  void HANDLE(){
     char msg[100];
     String msgUSB = "   [--] USB CDC"  ;
     String msg0   = "   [--] Serial #0";
@@ -163,5 +163,5 @@ namespace devUART {
     //│
     //○有効性セット
     ENABLED = true;
-  } /* START() */
+  } /* HANDLE() */
 } /* namespace devUART */

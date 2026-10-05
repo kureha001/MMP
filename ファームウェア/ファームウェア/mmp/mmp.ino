@@ -38,14 +38,14 @@
 //│┴
 //│
 //□┐組織
-  //□通信部門
+  //□通信設備 部門
   #include "Dep_Network/manager.h"
   //│
-  //□コマンド部門
-  #include "Dep_Command/manager.h"
+  //□機能提供 部門
+  #include "Dep_Function/manager.h"
   //│
-  //□接続部門
-  #include "Dep_Connect/manager.h"
+  //□接続窓口 部門
+  #include "Dep_Contact/manager.h"
 //┴┴
 
 //━━━━━━━━━━━━━━━━━
@@ -56,11 +56,11 @@
   //─────────────────
   void initialize(){
     //┬
-    //●通信部門に始業指示
-    //●コマンド部門に始業指示
-    //●接続部門に始業指示
+    //●通信設備部門に始業を指示する
+    //●機能提供部門に始業を指示する
+    //●接客部門に始業を指示する
     DepNetwork::INIT();
-    DepCommand::INIT();
+    DepFunction::INIT();
     DepConnect::INIT();
     //┴
   } /* initialize() */
@@ -70,13 +70,13 @@
   //─────────────────
   void opening(){
     //┬
-    //○動作モード名を取得
+    //○動作モード名を求める
     String strMode = "";
     if (MODE == MODE_MAIN  ) strMode = "MAIN"  ;
     if (MODE == MODE_SUB   ) strMode = "SUB"    ;
     if (MODE == MODE_BRIDGE) strMode = "BRIDGE";
     //│
-    //○開始メッセージを出力
+    //○開始メッセージを出力する
     Log::prtln("-----------------------------");
     char msg[128];
     snprintf(msg, sizeof(msg), " MMP %s [MODE: %s]", ctx.sysVer, strMode);
@@ -88,7 +88,7 @@
     //●ファンファーレを鳴らす
     if (MODE == MODE_MAIN) {
       ctx.base.CmdPath = "MP3/PLAY:1:1!";
-      DepCommand::RunCommand();
+      DepFunction::RunCommand();
     }
     //┴
   } /* opening() */
@@ -98,8 +98,8 @@
 //========================================================
 void setup(){
   //┬
-  //●資源を初期化
-  //●オープニングを表示
+  //●資源を初期化する
+  //●オープニングを表示する
   initialize();
   opening();
   //┴
@@ -110,7 +110,7 @@ void setup(){
 //========================================================
 void loop(){
   //┬
-  //●接続部門に通常活動を指示
-  DepConnect::WORK();
+  //●接客部門に通常業務の遂行を指示する
+  DepConnect::HANDLE();
   //┴
 } /* loop() */

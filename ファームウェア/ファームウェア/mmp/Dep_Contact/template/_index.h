@@ -12,3 +12,4 @@
   #include "api.h"      // 設計者：基本型
   #include "apiQueue.h" // 設計者：非同期キュー型
   #include "apiSlot.h"  // 設計者：接続スロット型
+  #include "apiSQ.h"    // 設計者：接続スロット型＋非同期キュー型

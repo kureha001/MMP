@@ -1,6 +1,6 @@
-// filename : Dep_Contact/template/apiSlot.h
+// filename : Dep_Contact/template/apiSQ.h
 //========================================================
-// 接客部門／操作手順書(抽象クラス)：接続スロット型
+// 接客部門／操作手順書(抽象クラス)：接続スロット型＋非同期キュー型
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/10/08)
 //========================================================
@@ -10,9 +10,9 @@
 // クラス：基本型を継承
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 template <typename T>
-class          AD_API_Slot:
-virtual public AD_API<T>
-{
+class  AD_API_SQ :
+public AD_API<T> {
+
 public:
   using AD_API<T>::AD_API;
 
@@ -27,8 +27,15 @@ protected:
   // 受信処理の並列タスク関数
   //───────────────────────────
   static void TASK_RECIVE(void *pvParameters) {
-    auto* self = static_cast<AD_API_Slot<T>*>(pvParameters);
+    auto* self = static_cast<AD_API_SQ<T>*>(pvParameters);
     LOOP_RECIVE(self);
   } /* TASK_RECIVE() */
-  
-}; /* class AD_API_Slot */
+
+
+//========================================================
+//§非同期キュー型
+//========================================================
+  // 非同期キューの機能を追加する
+  #include "apiAddQueue.h"
+
+}; /* class AD_API_SQ */

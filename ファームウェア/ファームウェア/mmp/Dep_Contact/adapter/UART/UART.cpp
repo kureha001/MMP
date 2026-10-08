@@ -2,16 +2,14 @@
 //========================================================
 // 接客部門／担当(通信アダプタ)：UART（ベース）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/05)
+// Ver 1.4.0 (2026/10/08)
 //========================================================
 
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // クラス【非同期キュー型＋スロット型】
+//（接続識別子：Stream*）
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-class  AD_UART: // 接続識別子：Stream*
-public AD_API_Queue<Stream*>, // 非同期キュー型
-public AD_API_Slot< Stream*>  // 接続スロット型
-{
+class AD_UART:public AD_API_SQ<Stream*>{
 private:
 //========================================================
 //§最終処理
@@ -76,12 +74,12 @@ private:
 // +----------+--------+--------+--------+-----------------+
 //========================================================
 #if   MODE == MODE_MAIN
-  #include "UART_MainBridge.cpp"  // CONSTRACT():USB+Serial1,2
+  #include "UART_MainBridge.cpp" // CONSTRACT():USB+Serial1,2
 #elif MODE == MODE_SUB
-  #include "UART_Sub.cpp"         // CONSTRACT():USB+Serial2
+  #include "UART_Sub.cpp"        // CONSTRACT():USB+Serial2
 #elif MODE == MODE_BRIDGE
-  #include "UART_MainBridge.cpp"  // CONSTRACT():USB+Serial1,2
-  #include "UART_Bridge.cpp"      // WORKFLOW(), RUN_PROCESS()
+  #include "UART_MainBridge.cpp" // CONSTRACT():USB+Serial1,2
+  #include "UART_Bridge.cpp"     // WORKFLOW(), RUN_PROCESS()
 #endif
 
 //========================================================
@@ -90,12 +88,10 @@ private:
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // コンストラクタ【非同期キュー型＋スロット型】
+  //（接続識別子：Stream*）
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AD_UART(  MmpContext& argCtx) : // 接続識別子：Stream*
-  AD_API<      Stream*>(argCtx, AID::UART), // 基本型
-  AD_API_Queue<Stream*>(argCtx, AID::UART), // 非同期キュー型
-  AD_API_Slot< Stream*>(argCtx, AID::UART)  // 接続スロット型
-  {
+  AD_UART(MmpContext& argCtx):
+  AD_API_SQ<Stream*>(argCtx, AID::UART){
   //┬
   //○┐【前処理】
     //┴

@@ -38,7 +38,7 @@
   //━━━━━━━━━━━━━━━━━
   // 一般処理係
   //━━━━━━━━━━━━━━━━━
-  #include "normal.cpp"
+  #include "base.cpp"
   namespace adpFnBase{
     void SHOW_LOG();              // 通信アダプタの[SEND_CONN]で利用
     void FORMAT_URI(String &str); // [adpFnStream]で利用

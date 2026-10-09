@@ -75,14 +75,17 @@ private:
 #if   MODE == MODE_MAIN
   // 関数：CONSTRACT()➡USB+Serial1,2
   #include "UART_MainBridge.cpp"
+
 #elif MODE == MODE_SUB
   // 関数：CONSTRACT()➡USB+Serial2
   #include "UART_Sub.cpp"
+
 #elif MODE == MODE_BRIDGE
   // 関数：CONSTRACT()➡USB+Serial1,2
-  #include "UART_MainBridge.cpp"
   // 関数：WORKFLOW(), RUN_PROCESS()
+  #include "UART_MainBridge.cpp"
   #include "UART_Bridge.cpp"
+
 #endif
 
 //========================================================

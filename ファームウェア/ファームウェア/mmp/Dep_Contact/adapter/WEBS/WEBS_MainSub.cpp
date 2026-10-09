@@ -1,6 +1,6 @@
 // filename : Dep_Contact/adapter/WEBS/WEBS_MainSub.cpp
 //========================================================
-// 接客部門／担当(通信アダプタ)：WEB Socket（メイン／サブ）
+// 接客部門／担当(通信アダプタ)：WebSocket(メイン/サブ)
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/30)
 //========================================================
@@ -31,7 +31,7 @@
   //○┐【後処理】
     //▼返却：正常終了（起動ログMSG[OK]）
     char msg[100];
-    snprintf(msg, sizeof(msg), " [OK] WEB Socket (PORT %d)", MY_PORT);
+    snprintf(msg, sizeof(msg), " [OK] WebSocket (PORT %d)", MY_PORT);
     return String(msg);
   //┴
   } /* CONSTRACT() */

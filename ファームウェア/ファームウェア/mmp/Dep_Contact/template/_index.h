@@ -13,3 +13,4 @@
   #include "apiQueue.h" // 非同期キュー型
   #include "apiSlot.h"  // 接続スロット型
   #include "apiSQ.h"    // 接続スロット型＋非同期キュー型
+  #include "apiTQ.h"    // タスク型

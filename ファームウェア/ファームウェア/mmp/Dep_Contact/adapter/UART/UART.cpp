@@ -1,9 +1,9 @@
 // filename : Dep_Contact/adapter/UART/UART.cpp
 //========================================================
-// 接客部門／担当(通信アダプタ)：UART（ベース）
+// 接客部門／担当(通信アダプタ)：UART(ベース)
 //--------------------------------------------------------
-//・アドオン機能： 非同期キュー型・接続スロット型
-//・接続識別子　： Stream*
+//・アドオン機能： スロット型＋キュー型
+//・接続識別子　： Stream* （UART接続の参照）
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/10/08)
 //========================================================
@@ -73,12 +73,16 @@ private:
 // +----------+--------+--------+--------+-----------------+
 //========================================================
 #if   MODE == MODE_MAIN
-  #include "UART_MainBridge.cpp" // CONSTRACT():USB+Serial1,2
+  // 関数：CONSTRACT()➡USB+Serial1,2
+  #include "UART_MainBridge.cpp"
 #elif MODE == MODE_SUB
-  #include "UART_Sub.cpp"        // CONSTRACT():USB+Serial2
+  // 関数：CONSTRACT()➡USB+Serial2
+  #include "UART_Sub.cpp"
 #elif MODE == MODE_BRIDGE
-  #include "UART_MainBridge.cpp" // CONSTRACT():USB+Serial1,2
-  #include "UART_Bridge.cpp"     // WORKFLOW(), RUN_PROCESS()
+  // 関数：CONSTRACT()➡USB+Serial1,2
+  #include "UART_MainBridge.cpp"
+  // 関数：WORKFLOW(), RUN_PROCESS()
+  #include "UART_Bridge.cpp"
 #endif
 
 //========================================================
@@ -86,7 +90,7 @@ private:
 //========================================================
 public:
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // コンストラクタ【非同期キュー型＋スロット型】
+  // コンストラクタ【キュー型＋スロット型】
   //（接続識別子：Stream*）
   //━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AD_UART(MmpContext& argCtx):

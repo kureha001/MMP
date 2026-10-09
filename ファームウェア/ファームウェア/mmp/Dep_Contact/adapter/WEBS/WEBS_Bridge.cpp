@@ -1,6 +1,6 @@
 // filename : Dep_Contact/adapter/WEBS/WEBS_Bridge.cpp
 //========================================================
-// 接客部門／担当(通信アダプタ)：WEB Socket（ブリッジ）
+// 接客部門／担当(通信アダプタ)：WebSocket(ブリッジ)
 //--------------------------------------------------------
 // Ver 1.4.0 (2026/09/30)
 //========================================================
@@ -14,7 +14,7 @@
   String CONSTRACT() override final {
     //┬
     //▼返却：正常終了（起動ログMSG[OK]）
-    return String(" [OK] WEB Socket");
+    return String(" [OK] WebSocket");
     //┴
   } /* CONSTRACT() */
 
@@ -94,7 +94,7 @@
   //○┐【前処理】
     //○WebSocetの接続状況を確認する
     if (!MY_NET.isConnected()) {
-      Log::prtln("[ERROR] WEB Socketが未接続です。");
+      Log::prtln("[ERROR] WebSocketが未接続です。");
       return true;
     } //～if
     //│＼（機能していない場合）

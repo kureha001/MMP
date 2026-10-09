@@ -2,12 +2,12 @@
 //========================================================
 // 接客部門／操作手順書(抽象クラス)：基本型
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/08)
+// Ver 1.4.0 (2026/10/09)
 //========================================================
 #pragma once
 
 // クラス：非テンプレート
-// ※テンプレートを意識せずにインスタンス化する
+// ※テンプレートを意識せずにインスタンス化するため
 class AD {
 //━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //【公開機能】
@@ -148,11 +148,17 @@ protected:
   //§インクルード（モード別）
   //========================================================
   #if   MODE == MODE_MAIN
-    #include "api/Main.h"
+    // 関数：RUN_PROCESS()
+    #include "mode/Main.h"
+
   #elif MODE == MODE_SUB
-    #include "api/Sub.h"
+    // 関数：RUN_PROCESS()
+    #include "mode/Sub.h"
+
   #elif MODE == MODE_BRIDGE
-    #include "api/Bridge.h"
+    // 関数：RUN_PROCESS(),SEND_REQUEST(),WORKFLOW()
+    #include "mode/Bridge.h"
+
   #endif
 
 }; /* class AD_API */

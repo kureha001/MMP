@@ -2,7 +2,7 @@
 //========================================================
 // 接客部門／生技部／モード別：ブリッジモード係
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/01)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 //┬
 //□┐インクルード
@@ -73,7 +73,7 @@
       if      (DAT[0] == "BRIDGE/UART") {isOn = true;} // マスタはエラーにする
       else if (DAT[0] == "BRIDGE/UDP" ) {isOn = true; if (ADP_UDP ) ID = AID::UDP ;}
       else if (DAT[0] == "BRIDGE/TCP" ) {isOn = true; if (ADP_TCP ) ID = AID::TCP ;}
-      else if (DAT[0] == "BRIDGE/WSOC") {isOn = true; if (ADP_WSOC) ID = AID::WSOC;}
+      else if (DAT[0] == "BRIDGE/WEBS") {isOn = true; if (ADP_WEBS) ID = AID::WEBS;}
       else if (DAT[0] == "BRIDGE/HTTP") {isOn = true; if (ADP_HTTP) ID = AID::HTTP;}
       else if (DAT[0] == "BRIDGE/ESPN") {isOn = true; if (ADP_ESPN) ID = AID::ESPN;}
       else if (DAT[0] == "BRIDGE/BLE" ) {isOn = true; if (ADP_BLE ) ID = AID::BLE ;}

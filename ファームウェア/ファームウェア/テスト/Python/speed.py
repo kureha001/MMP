@@ -9,29 +9,30 @@ from bleak import BleakScanner, BleakClient
 # ==========================================
 # 測定・パラメータ設定
 # ==========================================
-iterations   = 10
+iterations   = 1 #10
 MAX_CHANNELS = 3
 MAX_PINS     = 4   
 
 # ==========================================
 # ログ出力の設定
 # ==========================================
-LOG_PYTHON  = False  # Pyhon側のログ
+LOG_PYTHON  = True  # Pyhon側のログ
 LOG_MMP     = False  # MMP側のログ
 
 # ==========================================
 # 動作モード・通信パラメータ設定
 # ==========================================
-CONNECTION_MODE = 'COM'   # シリアル
-#CONNECTION_MODE = 'TCP'   # TCP
-#CONNECTION_MODE = 'WS'    # WebSocket
-#CONNECTION_MODE = 'HTTP'  # HTTP
-#CONNECTION_MODE = 'BLE'   # Bluetooth LE
+#CONNECTION_MODE = 'COM'   #○ シリアル
+#CONNECTION_MODE = 'TCP'   #○ TCP
+CONNECTION_MODE = 'WEBS'  #○ WebSocket
+#CONNECTION_MODE = 'HTTP'  #○ HTTP
+#CONNECTION_MODE = 'BLE'   #○ Bluetooth LE
 
 # COM（シリアル通信）設定
 BAUDRATE = 921600
 
 #=================================================================================================
+COM_PORT = ""
 #□メイン ※GPIO:921600bps
 #COM_PORT = 'COM50'    #USB CDC⇔□全部       = 1.809 ms (100%)  ◎
                        #   GPIO⇔□ 〃        = 2.338 ms (129%)  ○
@@ -49,7 +50,7 @@ BAUDRATE = 921600
   #　　　　　　　　　　　　　　　　　　　　┗□COM148:標準 = ※UART：不可(ブリッジを参照)
 #=================================================================================================
 #○ブリッジ
-COM_PORT = 'COM61'
+#COM_PORT = 'COM61'
   #<<全部／USB>>　　　　　　　　　　　　　 ┏□COM50 :全部 = 6.560 ms (100%) ×
   #　　　　　　　　　┏━━━━━━━━━━┻□COM49 :ESPN = 6.342 ms ( 96%) ×
   # USB⇔○全部━ESPN┫┏◇COM59:全部━GPIO┳□COM50 :全部 = 8.812 ms (134%) ×
@@ -91,13 +92,13 @@ COM_TRANS = ""
 #【ESP NOW】
 #□メイン
 #COM_TRANS = "BRIDGE/ESPN:50787D18448C!" # COM50:全部のせ
-COM_TRANS = "BRIDGE/ESPN:50787D17BE20!" # COM49:ESP-NOWのみ
+#COM_TRANS = "BRIDGE/ESPN:50787D17BE20!" # COM49:ESP-NOWのみ
 #◇サブ
 #COM_TRANS = "BRIDGE/ESPN:90DA72734DE4!" # COM59:全部のせ
 #COM_TRANS = "BRIDGE/ESPN:90DA72741AF0!" # COM45:ESP-NOWのみ
 #-------------------------------------------------------------------------------------------------
 #【TCP】
-#COM_TRANS = "BRIDGE/TCP:192.168.2.99:8081!"   #□メイン
+#COM_TRANS = "BRIDGE/TCP:192.168.2.99!"   #□メイン
 #COM_TRANS = "BRIDGE/TCP:192.168.2.147:8081!"  #◇サブ
 #【WEB Socket】
 #COM_TRANS = "BRIDGE/WSOC:192.168.2.99:8082!"  #□メイン
@@ -114,7 +115,7 @@ WS_PORT   = 8082
 HTTP_PORT = 8080
 
 # BLE 設定
-BLE_DEVICE_NAME  = 'MMP-ESP32S3'
+BLE_DEVICE_NAME  = 'MMP-BLE-MAIN'
 BLE_UART_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  # 書き込み用 (例: Nordic UART Service)
 BLE_UART_TX_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  # 受信/通知用
 
@@ -160,7 +161,7 @@ class DeviceConnection:
             self.conn.settimeout(self.timeout)
             self.conn.connect((self.tcp_ip, self.tcp_port))
 
-        elif self.mode == 'WS':
+        elif self.mode == 'WEBS':
             uri = f"ws://{self.tcp_ip}:{self.ws_port}"
             self.conn = await websockets.connect(uri)
 
@@ -216,7 +217,7 @@ class DeviceConnection:
             self.conn.flush()
         elif self.mode == 'TCP':
             self.conn.sendall(data_str.encode('utf-8'))
-        elif self.mode == 'WS':
+        elif self.mode == 'WEBS':
             await self.conn.send(data_str)
         elif self.mode == 'HTTP':
             self.last_http_cmd = data_str
@@ -237,7 +238,7 @@ class DeviceConnection:
                 chunks.append(chunk)
                 bytes_recd += len(chunk)
             return b''.join(chunks)
-        elif self.mode == 'WS':
+        elif self.mode == 'WEBS':
             res = await self.conn.recv()
             return res.encode('utf-8')[:num_bytes] if isinstance(res, str) else res[:num_bytes]
         elif self.mode == 'HTTP':
@@ -264,7 +265,7 @@ class DeviceConnection:
             finally:
                 self.conn.setblocking(True)
                 self.conn.settimeout(self.timeout)
-        elif self.mode == 'WS':
+        elif self.mode == 'WEBS':
             try:
                 while True:
                     await asyncio.wait_for(self.conn.recv(), timeout=0.001)
@@ -279,7 +280,7 @@ class DeviceConnection:
     async def close(self):
         """接続終了"""
         if self.conn:
-            if self.mode == 'WS':
+            if self.mode == 'WEBS':
                 await self.conn.close()
             elif self.mode == 'BLE':
                 await self.conn.stop_notify(BLE_UART_TX_UUID)

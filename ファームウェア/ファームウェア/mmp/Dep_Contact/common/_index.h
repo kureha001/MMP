@@ -2,7 +2,7 @@
 //========================================================
 // 接客部門／庶務課：資料・担当名簿
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/09/27)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 #pragma once
 
@@ -16,7 +16,7 @@
     inline constexpr int UART = 100;
     inline constexpr int UDP  = 200;  
     inline constexpr int TCP  = 201;
-    inline constexpr int WSOC = 210;
+    inline constexpr int WEBS = 210;
     inline constexpr int HTTP = 211;
     inline constexpr int ESPN = 220;
     inline constexpr int BLE  = 300;

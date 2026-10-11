@@ -5,7 +5,7 @@
 //・通信タイプ： 非同期受信
 //・接続識別子： String （MACアドレス）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/08)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 //┬
 //□┐インクルード
@@ -158,9 +158,8 @@ public:
   //│
   //○┐【後処理】
     //●起動ログMSGを表示する
-    char msg[128];
-    snprintf(msg, sizeof(msg), " [OK] ESP-NOW (MAC %s)", String(WiFi.macAddress()));
-    Log::prtln(String(msg));
+    String msg = " [OK] ESP-NOW (MAC " + String(WiFi.macAddress()) + ")";
+    Log::prtln(msg);
   //┴┴
   } /* constractor AD_ESPN() */
 

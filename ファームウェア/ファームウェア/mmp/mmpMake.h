@@ -33,20 +33,20 @@
     //│・選択肢：利用しない(false をセット)
     //□メインモード用
     #if   MODE == MODE_MAIN
-      #define ADP_UART true // 未使用：サブ連携が不可
+      #define ADP_UART true //○未使用：サブ連携が不可
       #define ADP_UDP  false
-      #define ADP_TCP  false
-      #define ADP_WSOC false
-      #define ADP_HTTP true
-      #define ADP_ESPN false
-      #define ADP_BLE  false
+      #define ADP_TCP  false //○
+      #define ADP_WEBS true //×起動で落ちる
+      #define ADP_HTTP false //○
+      #define ADP_ESPN false //○
+      #define ADP_BLE  false  //○
       #define ADP_IIC  false // Wire1を利用|WireはPWMで利用
     //□サブモード用
     #elif MODE == MODE_SUB
       #define ADP_UART true // 未使用でもメイン連携が可能
       #define ADP_UDP  true
       #define ADP_TCP  true
-      #define ADP_WSOC true
+      #define ADP_WEBS true
       #define ADP_HTTP true
       #define ADP_ESPN true
       #define ADP_BLE  true
@@ -56,7 +56,7 @@
       #define ADP_UART true  //※強制的に有効化される
       #define ADP_UDP  true
       #define ADP_TCP  true
-      #define ADP_WSOC true
+      #define ADP_WEBS true
       #define ADP_HTTP true
       #define ADP_ESPN true
       #define ADP_BLE  true
@@ -103,7 +103,7 @@
   //│
   //□WiFiデバイス
   //│※WiFiを基盤とする通信アダプタが有効な場合は必要
-  #if ADP_UDP || ADP_TCP || ADP_WSOC || ADP_HTTP || ADP_ESPN
+  #if ADP_UDP || ADP_TCP || ADP_WEBS || ADP_HTTP || ADP_ESPN
   #define USE_WiFi
   #endif
   //│  

@@ -5,7 +5,7 @@
 //・通信タイプ： 基本
 //・接続識別子： uint8_t （ダミー）
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/09)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 //┬
 //□┐インクルード
@@ -117,16 +117,17 @@ private:
       //│
       //○┐【主処理】
         //○┐フレームを求める
-        String retFrame = MY_NET->uri();
+        String pFrame = MY_NET->uri();
           //│
           //◇┐標準形式に整形する
-          if (retFrame.endsWith("@!")) {
+          IS_JSON = false;
+          if (pFrame.endsWith("@!")) {
           //├┐（JSON形式が指定されている場合）
             //○JSON形式をセットする
             //○フレーム末尾の"@"を削除する
             IS_JSON = true;
-            retFrame.remove(retFrame.length() - 2);
-            retFrame += "!";
+            pFrame.remove(pFrame.length() - 2);
+            pFrame += "!";
             //┴
           //└┐（その他）
             //┴
@@ -134,9 +135,9 @@ private:
         //│
         //●コンテキストを更新する
         adpFnBase::SETUP_CTX(
-          MY_AID,   // 通信アダプタID
-          0,        // 接続スロットID(ダミー値)
-          retFrame  // 求めたフレーム
+          MY_AID, // 通信アダプタID
+          0,      // 接続スロットID(ダミー値)
+          pFrame  // 求めたフレーム
         );
         //│
         //●ハンドラの主処理を実施する

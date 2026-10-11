@@ -50,7 +50,7 @@
   //■┐注文書（コンテクスト）
   struct MmpContext {
     //■システム情報
-    const String sysVer  = "V132"  ; // バージョン
+    const String sysVer  = "V140"  ; // バージョン
     //│
     //■基本情報
     //■転送情報
@@ -116,7 +116,7 @@ namespace LIMIT{
 //§ログ出力
 //========================================================
 namespace Log{
-  bool ENABLE = false; // ログ出力有効性
+  bool ENABLE = true; // ログ出力有効性
   void prtln(String argMSG) {Serial0.println (argMSG);}
   void prt  (String argMSG) {Serial0.print   (argMSG);}
   void Outln(String argMSG) {if(ENABLE) prtln(argMSG);}

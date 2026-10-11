@@ -2,7 +2,7 @@
 //========================================================
 // 接客部門／窓口設計／機能別：キュー
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/08)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 
 //========================================================
@@ -27,9 +27,6 @@
     const String& frame, // フレーム
     const int     SID    // スロットID ※対象外はダミー値をセット
   ) {
-    String msg = "["+ String(this->MY_AID) + "] push:" + frame;
-    Log::Outln(msg);
-
     if (frame.length() < 1) return;
     std::lock_guard<std::mutex> lock(queueMutex);
     rxQueue.push({conn, frame, SID});
@@ -57,10 +54,6 @@
       //┴
     //│
     //○┐【後処理】
-      //○ログ出力する
-      String msg = "[" + String(this->MY_AID) + "] pop :" + outItem.frame;
-      Log::Outln(msg);
-      //│
       //▼返却：正常終了 → キューあり
       return true;
     //┴

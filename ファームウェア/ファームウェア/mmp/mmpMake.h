@@ -34,13 +34,13 @@
     //□メインモード用
     #if   MODE == MODE_MAIN
       #define ADP_UART true // 未使用：サブ連携が不可
-      #define ADP_UDP  true
-      #define ADP_TCP  true
-      #define ADP_WSOC true
+      #define ADP_UDP  false
+      #define ADP_TCP  false
+      #define ADP_WSOC false
       #define ADP_HTTP true
-      #define ADP_ESPN true
-      #define ADP_BLE  true
-      #define ADP_IIC  true // Wire1を利用|WireはPWMで利用
+      #define ADP_ESPN false
+      #define ADP_BLE  false
+      #define ADP_IIC  false // Wire1を利用|WireはPWMで利用
     //□サブモード用
     #elif MODE == MODE_SUB
       #define ADP_UART true // 未使用でもメイン連携が可能

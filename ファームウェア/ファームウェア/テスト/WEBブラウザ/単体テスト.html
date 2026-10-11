@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>単体テスト (WebSocket / WebAPI 切替版)</title>
+<title>単体テスト (WebSocket / HTTP / BLE / Serial 切替版)</title>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.6;margin:24px}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
@@ -11,7 +11,6 @@
   input{width:18rem;max-width:100%}
   fieldset{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0}
   legend{font-weight:700}
-  /* 折りたたみ用のスタイル調整 */
   details{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:12px 0;background:#fff}
   summary{font-weight:700;cursor:pointer;padding:4px;outline:none}
   summary:hover{color:#2563eb}
@@ -19,7 +18,6 @@
   
   pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap}
   .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
-  small{color:#666}
   label.inline{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
   #connStatus { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
   .disconnected { background: #fee2e2; color: #991b1b; }
@@ -30,7 +28,7 @@
 <body>
 
 <header>
-  <strong>単体テスト (WebSocket / WebAPI 切替版) Ver1.3.0</strong>
+  <strong>単体テスト (WebSocket / HTTP / BLE / Serial 切替版) Ver1.4.0</strong>
   <span id="connStatus" class="disconnected">未接続</span>
 </header>
 <hr>
@@ -39,11 +37,14 @@
 <div class="row api-mode-bg">
   <label style="font-weight:bold;">通信モード:</label>
   <label class="inline"><input type="radio" name="commMode" value="ws" checked> WebSocket</label>
-  <label class="inline"><input type="radio" name="commMode" value="api"> WebAPI (HTTP)</label>
+  <label class="inline"><input type="radio" name="commMode" value="api"> HTTP (HTTP)</label>
+  <label class="inline"><input type="radio" name="commMode" value="ble"> BLE (Web Bluetooth)</label>
+  <label class="inline"><input type="radio" name="commMode" value="serial"> Serial (Web Serial)</label>
   <label class="inline" style="margin-left:12px;"><input type="checkbox" id="chkJson"> JSON形式</label>
 </div>
 
-<div class="row">
+<!-- WebSocket / HTTP用コントロール -->
+<div id="netControls" class="row">
   <label class="inline">ＩＰ:
     <input id="host" placeholder="例: 192.168.2.99">
   </label>
@@ -53,6 +54,33 @@
   <span id="wsControls">
     <button id="btnConnect">接続</button>
     <button id="btnDisconnect" disabled>切断</button>
+  </span>
+</div>
+
+<!-- BLE用コントロール -->
+<div id="bleControls" class="row" style="display:none;">
+  <label class="inline">BLEデバイス名:
+    <input id="bleName" value="MMP-BLE-MAIN" placeholder="例: MMP-BLE-MAIN">
+  </label>
+  <span>
+    <button id="btnBleConnect">BLE接続</button>
+    <button id="btnBleDisconnect" disabled>BLE切断</button>
+  </span>
+</div>
+
+<!-- Serial用コントロール -->
+<div id="serialControls" class="row" style="display:none;">
+  <label class="inline">ボーレート:
+    <select id="serialBaud">
+      <option value="9600">9600</option>
+      <option value="115200" selected>115200</option>
+      <option value="921600">921600</option>
+      <option value="3000000">3000000 (3Mbps)</option>
+    </select>
+  </label>
+  <span>
+    <button id="btnSerialConnect">シリアル接続</button>
+    <button id="btnSerialDisconnect" disabled>切断</button>
   </span>
 </div>
 
@@ -186,37 +214,52 @@
   const hostEl=$('#host'), portEl=$('#port');
   const preReq=$('#req'), preRaw=$('#raw'), preHdrs=$('#hdrs'), preJson=$('#json');
   const statusEl = $('#connStatus');
-  const wsControls = $('#wsControls');
+  const netControls = $('#netControls'), wsControls = $('#wsControls');
+  const bleControls = $('#bleControls'), serialControls = $('#serialControls');
   const apiLogsDiv = $('#apiLogs');
   const chkJsonEl = $('#chkJson');
 
   hostEl.value = location.hostname || '192.168.2.99';
   let ws = null;
+  let bleDevice = null, bleServer = null, bleRxChar = null, bleTxChar = null;
+  let serialPort = null, serialReader = null, serialWriter = null, keepReading = false;
+
+  const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+  const UART_RX_UUID      = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+  const UART_TX_UUID      = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
   function updateModeUI() {
     const mode = document.querySelector('input[name="commMode"]:checked').value;
+    netControls.style.display = 'none';
+    wsControls.style.display = 'none';
+    bleControls.style.display = 'none';
+    serialControls.style.display = 'none';
+    apiLogsDiv.style.display = 'none';
+    chkJsonEl.disabled = true;
+
     if (mode === 'ws') {
+      netControls.style.display = 'flex';
       wsControls.style.display = 'inline-block';
-      apiLogsDiv.style.display = 'none';
-      chkJsonEl.disabled = true;
-      const isConnected = (ws && ws.readyState === WebSocket.OPEN);
-      setConnectedState(isConnected);
-    } else {
-      wsControls.style.display = 'none';
-      // ★ WebAPIモード時かつJSON形式ONの場合のみ詳細ログ(apiLogs)を表示
+      setConnectedState(ws && ws.readyState === WebSocket.OPEN);
+    } else if (mode === 'api') {
+      netControls.style.display = 'flex';
       apiLogsDiv.style.display = chkJsonEl.checked ? 'block' : 'none';
       chkJsonEl.disabled = false;
-      statusEl.textContent = 'WebAPIモード';
+      statusEl.textContent = 'HTTPモード';
       statusEl.className = 'connected';
       setAllButtons(true);
+    } else if (mode === 'ble') {
+      bleControls.style.display = 'flex';
+      setConnectedState(bleServer && bleServer.connected);
+    } else if (mode === 'serial') {
+      serialControls.style.display = 'flex';
+      setConnectedState(serialPort && serialPort.readable);
     }
   }
 
   document.querySelectorAll('input[name="commMode"]').forEach(radio => {
     radio.onchange = updateModeUI;
   });
-
-  // ★ JSONチェックボックス変更時にも表示スタイルを更新
   chkJsonEl.onchange = updateModeUI;
 
   function setConnectedState(connected) {
@@ -224,12 +267,16 @@
     statusEl.className = connected ? 'connected' : 'disconnected';
     $('#btnConnect').disabled = connected;
     $('#btnDisconnect').disabled = !connected;
+    $('#btnBleConnect').disabled = connected;
+    $('#btnBleDisconnect').disabled = !connected;
+    $('#btnSerialConnect').disabled = connected;
+    $('#btnSerialDisconnect').disabled = !connected;
     setAllButtons(connected);
   }
 
   function setAllButtons(enabled) {
     document.querySelectorAll('details button, .row button').forEach(b => {
-      if(b.id !== 'btnConnect' && b.id !== 'btnDisconnect') {
+      if(!['btnConnect', 'btnDisconnect', 'btnBleConnect', 'btnBleDisconnect', 'btnSerialConnect', 'btnSerialDisconnect'].includes(b.id)) {
         b.disabled = !enabled;
       }
     });
@@ -239,6 +286,7 @@
     preReq.textContent = preRaw.textContent = preHdrs.textContent = preJson.textContent = ''; 
   }
 
+  // --- WebSocket ---
   $('#btnConnect').onclick = () => {
     const host = hostEl.value.trim();
     const port = portEl.value.trim() || '8082';
@@ -249,31 +297,110 @@
 
     try {
       ws = new WebSocket(wsUrl);
-      ws.onopen = () => {
-        preReq.textContent = `Connected to ${wsUrl}`;
-        setConnectedState(true);
-      };
-      ws.onmessage = (event) => {
-        const text = event.data;
-        preRaw.textContent = text.length ? text : '(空)';
-      };
-      ws.onerror = () => {
-        preRaw.textContent = 'WebSocketエラーが発生しました。';
-      };
-      ws.onclose = () => {
-        preReq.textContent += '\nDisconnected.';
+      ws.onopen = () => { preReq.textContent = `Connected to ${wsUrl}`; setConnectedState(true); };
+      ws.onmessage = (e) => { preRaw.textContent = e.data.length ? e.data : '(空)'; };
+      ws.onerror = () => { preRaw.textContent = 'WebSocketエラーが発生しました。'; };
+      ws.onclose = () => { preReq.textContent += '\nDisconnected.'; setConnectedState(false); ws = null; };
+    } catch(e) { preRaw.textContent = String(e?.message || e); }
+  };
+  $('#btnDisconnect').onclick = () => { if (ws) ws.close(); };
+
+  // --- Web Bluetooth ---
+  $('#btnBleConnect').onclick = async () => {
+    const targetName = $('#bleName').value.trim() || 'MMP-BLE-MAIN';
+    clearLogs();
+    preReq.textContent = `BLEスキャン中 (${targetName}) ...`;
+
+    try {
+      bleDevice = await navigator.bluetooth.requestDevice({
+        filters: [{ name: targetName }],
+        optionalServices: [UART_SERVICE_UUID]
+      });
+
+      bleDevice.addEventListener('gattserverdisconnected', () => {
+        preReq.textContent += '\nBLE切断されました。';
         setConnectedState(false);
-        ws = null;
-      };
+        bleServer = null;
+      });
+
+      preReq.textContent = `GATTサーバー接続中...`;
+      bleServer = await bleDevice.gatt.connect();
+
+      const service = await bleServer.getPrimaryService(UART_SERVICE_UUID);
+      bleRxChar = await service.getCharacteristic(UART_RX_UUID);
+      bleTxChar = await service.getCharacteristic(UART_TX_UUID);
+
+      await bleTxChar.startNotifications();
+      bleTxChar.addEventListener('characteristicvaluechanged', (e) => {
+        const text = new TextDecoder('utf-8').decode(e.target.value);
+        preRaw.textContent = text.length ? text : '(空)';
+      });
+
+      preReq.textContent = `BLE接続完了: ${bleDevice.name}`;
+      setConnectedState(true);
     } catch(e) {
-      preRaw.textContent = String(e?.message || e);
+      preRaw.textContent = `BLE接続エラー: ${e?.message || e}`;
+    }
+  };
+  $('#btnBleDisconnect').onclick = () => {
+    if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+    setConnectedState(false);
+  };
+
+  // --- Web Serial ---
+  $('#btnSerialConnect').onclick = async () => {
+    const baudRate = parseInt($('#serialBaud').value, 10) || 115200;
+    clearLogs();
+    preReq.textContent = `シリアルポート選択中 ...`;
+
+    try {
+      serialPort = await navigator.serial.requestPort();
+      await serialPort.open({ baudRate: baudRate });
+
+      preReq.textContent = `シリアル接続完了 (${baudRate} bps)`;
+      setConnectedState(true);
+
+      keepReading = true;
+      readSerialLoop();
+    } catch(e) {
+      preRaw.textContent = `シリアル接続エラー: ${e?.message || e}`;
     }
   };
 
-  $('#btnDisconnect').onclick = () => {
-    if (ws) ws.close();
+  async function readSerialLoop() {
+    const textDecoder = new TextDecoderStream();
+    const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+    serialReader = textDecoder.readable.getReader();
+
+    try {
+      while (keepReading) {
+        const { value, done } = await serialReader.read();
+        if (done) break;
+        if (value) {
+          preRaw.textContent = (preRaw.textContent + value).slice(-2000); // ログ蓄積
+        }
+      }
+    } catch (error) {
+      preRaw.textContent += `\n読込エラー: ${error}`;
+    } finally {
+      serialReader.releaseLock();
+    }
+  }
+
+  $('#btnSerialDisconnect').onclick = async () => {
+    keepReading = false;
+    if (serialReader) {
+      try { await serialReader.cancel(); } catch(e){}
+    }
+    if (serialPort) {
+      try { await serialPort.close(); } catch(e){}
+      serialPort = null;
+    }
+    setConnectedState(false);
+    preReq.textContent += '\nシリアル切断されました。';
   };
 
+  // --- コマンド実行コア ---
   function buildPath(path) {
     if (!path.startsWith('/')) path = '/' + path;
     const prefixInput = $('#cmd_prefix').value.trim();
@@ -289,68 +416,58 @@
     const finalPath = buildPath(path);
 
     if (mode === 'ws') {
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        alert('WebSocketが接続されていません。');
-        return;
-      }
-      let wsMsg = finalPath;
-      if (!wsMsg.endsWith('!')) wsMsg += '!';
+      if (!ws || ws.readyState !== WebSocket.OPEN) { alert('WebSocket未接続'); return; }
+      let msg = finalPath; if (!msg.endsWith('!')) msg += '!';
+      clearLogs(); preReq.textContent = msg; ws.send(msg);
+
+    } else if (mode === 'ble') {
+      if (!bleServer || !bleServer.connected || !bleRxChar) { alert('BLE未接続'); return; }
+      let msg = finalPath; if (!msg.endsWith('!')) msg += '!';
+      clearLogs(); preReq.textContent = msg;
+      await bleRxChar.writeValueWithoutResponse(new TextEncoder().encode(msg));
+
+    } else if (mode === 'serial') {
+      if (!serialPort || !serialPort.writable) { alert('シリアル未接続'); return; }
+      let msg = finalPath; if (!msg.endsWith('!')) msg += '!';
+      clearLogs(); preReq.textContent = msg;
       
-      clearLogs();
-      preReq.textContent = wsMsg;
-      ws.send(wsMsg);
+      const writer = serialPort.writable.getWriter();
+      await writer.write(new TextEncoder().encode(msg + '\n'));
+      writer.releaseLock();
 
     } else {
       const host = hostEl.value.trim();
       const port = (portEl.value || '8080').trim();
-      
       const suffix = chkJsonEl.checked ? '@!' : '!';
       const url = `http://${host}:${port}${finalPath}${suffix}`;
 
-      clearLogs();
-      preReq.textContent = `GET ${url}`;
-
+      clearLogs(); preReq.textContent = `GET ${url}`;
       try {
         const res = await fetch(url, { method:'GET', cache:'no-store', credentials:'omit' });
-        
-        // JSON形式がONの時のみ詳細表示エリアを有効化
         if (chkJsonEl.checked) {
           let hdr = `HTTP ${res.status} ${res.statusText}\n`;
           for (const [k,v] of res.headers.entries()) hdr += `${k}: ${v}\n`;
           preHdrs.textContent = hdr;
         }
-
         const text = await res.text();
         preRaw.textContent = text.length ? text : '(空)';
-
         if (chkJsonEl.checked) {
-          try {
-            preJson.textContent = JSON.stringify(JSON.parse(text), null, 2);
-          } catch {
-            preJson.textContent = '(JSONとして解釈できません)';
-          }
+          try { preJson.textContent = JSON.stringify(JSON.parse(text), null, 2); }
+          catch { preJson.textContent = '(JSON解釈不可)'; }
         }
       } catch(e) {
-        if (chkJsonEl.checked) {
-          preHdrs.textContent = 'リクエストに失敗しました。';
-          preJson.textContent = '(取得不可)';
-        }
-        preRaw.textContent = String(e?.message || e || 'UNKNOWN');
+        if (chkJsonEl.checked) { preHdrs.textContent = 'リクエスト失敗'; preJson.textContent = '(取得不可)'; }
+        preRaw.textContent = String(e?.message || e);
       }
     }
   }
 
   function encDat(a){
     let v;
-    if (a && typeof a === 'object' && 'value' in a) {
-      v = a.value;
-    } else if (typeof a === 'string' &&
-               (a.startsWith('#') || a.startsWith('.') || a.includes('[') || a.includes(' '))) {
-      const el = $(a);
-      v = el ? el.value : '';
-    } else {
-      v = a;
-    }
+    if (a && typeof a === 'object' && 'value' in a) v = a.value;
+    else if (typeof a === 'string' && (a.startsWith('#') || a.startsWith('.') || a.includes('[') || a.includes(' '))) {
+      const el = $(a); v = el ? el.value : '';
+    } else v = a;
     return encodeURIComponent(String(v ?? '').trim());
   }
 

@@ -9,24 +9,26 @@ from bleak import BleakScanner, BleakClient
 # ==========================================
 # 測定・パラメータ設定
 # ==========================================
-iterations   = 1 #10
+iterations   = 10
 MAX_CHANNELS = 3
 MAX_PINS     = 4   
 
 # ==========================================
 # ログ出力の設定
 # ==========================================
-LOG_PYTHON  = True  # Pyhon側のログ
+LOG_PYTHON  = False  # Pyhon側のログ
 LOG_MMP     = False  # MMP側のログ
 
 # ==========================================
 # 動作モード・通信パラメータ設定
 # ==========================================
-#CONNECTION_MODE = 'COM'   #○ シリアル
-#CONNECTION_MODE = 'TCP'   #○ TCP
-CONNECTION_MODE = 'WEBS'  #○ WebSocket
-#CONNECTION_MODE = 'HTTP'  #○ HTTP
-#CONNECTION_MODE = 'BLE'   #○ Bluetooth LE
+#                            単　独/ 全部のせ
+#CONNECTION_MODE = 'COM'   #       /   1.681
+#CONNECTION_MODE = 'UDP'   #  4.25 /  11.008
+#CONNECTION_MODE = 'TCP'   #       /  15.052
+#CONNECTION_MODE = 'WEBS'  #       /  35.649
+#CONNECTION_MODE = 'HTTP'  #       /  64.594
+#CONNECTION_MODE = 'BLE'   #       / 121.691
 
 # COM（シリアル通信）設定
 BAUDRATE = 921600
@@ -34,7 +36,7 @@ BAUDRATE = 921600
 #=================================================================================================
 COM_PORT = ""
 #□メイン ※GPIO:921600bps
-#COM_PORT = 'COM50'    #USB CDC⇔□全部       = 1.809 ms (100%)  ◎
+COM_PORT = 'COM50'    #USB CDC⇔□全部       = 1.809 ms (100%)  ◎
                        #   GPIO⇔□ 〃        = 2.338 ms (129%)  ○
 #COM_PORT = 'COM148'   #USB CDC⇔□UART(標準) = 1.082 ms ( 60%)  ◎
                        #   GPIO⇔□ 〃　　    = ？？？              ※ブリッジ：不可
@@ -110,8 +112,9 @@ COM_TRANS = ""
 
 # ネットワーク設定
 TCP_IP    = '192.168.2.99'
-TCP_PORT  = 8081
+UDP_PORT  = 8083
 WS_PORT   = 8082
+TCP_PORT  = 8081
 HTTP_PORT = 8080
 
 # BLE 設定
@@ -124,9 +127,9 @@ cmds_per_set = 1 + (MAX_CHANNELS * MAX_PINS)
 
 
 class DeviceConnection:
-    """COM / TCP / WebSocket / HTTP / BLE の差分を吸収する全機能抽象化クラス"""
+    """COM / TCP / UDP / WebSocket / HTTP / BLE の差分を吸収する全機能抽象化クラス"""
     def __init__(self, mode, com_port=None, baudrate=None, tcp_ip=None, 
-                 tcp_port=None, ws_port=None, http_port=None, 
+                 tcp_port=None, udp_port=None, ws_port=None, http_port=None, 
                  ble_name=None, timeout=2.0):
         self.mode = mode.upper()
         self.timeout = timeout
@@ -135,6 +138,7 @@ class DeviceConnection:
         self.baudrate = baudrate
         self.tcp_ip = tcp_ip
         self.tcp_port = tcp_port
+        self.udp_port = udp_port
         self.ws_port = ws_port
         self.http_port = http_port
         self.http_base_url = f"http://{self.tcp_ip}:{self.http_port}/"
@@ -155,6 +159,11 @@ class DeviceConnection:
             self.conn.rts      = False
             self.conn.open()
             await asyncio.sleep(2)  # 接続安定化待ち
+
+        elif self.mode == 'UDP':
+            # UDPソケットの作成（コネレス型のためconnectは不要だが宛先・タイムアウトを設定）
+            self.conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.conn.settimeout(self.timeout)
 
         elif self.mode == 'TCP':
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -215,12 +224,19 @@ class DeviceConnection:
         if self.mode == 'COM':
             self.conn.write(data_str.encode('utf-8'))
             self.conn.flush()
+
+        elif self.mode == 'UDP':
+            self.conn.sendto(data_str.encode('utf-8'), (self.tcp_ip, self.udp_port))
+
         elif self.mode == 'TCP':
             self.conn.sendall(data_str.encode('utf-8'))
+
         elif self.mode == 'WEBS':
             await self.conn.send(data_str)
+
         elif self.mode == 'HTTP':
             self.last_http_cmd = data_str
+
         elif self.mode == 'BLE':
             await self.conn.write_gatt_char(BLE_UART_RX_UUID, data_str.encode('utf-8'), response=False)
 
@@ -228,6 +244,12 @@ class DeviceConnection:
         """固定5バイト受領"""
         if self.mode == 'COM':
             return self.conn.read(num_bytes)
+
+        elif self.mode == 'UDP':
+            # UDPパケット受信（必要に応じてバッファサイズを指定）
+            data, addr = self.conn.recvfrom(1024)
+            return data[:num_bytes]
+
         elif self.mode == 'TCP':
             chunks = []
             bytes_recd = 0
@@ -238,12 +260,15 @@ class DeviceConnection:
                 chunks.append(chunk)
                 bytes_recd += len(chunk)
             return b''.join(chunks)
+
         elif self.mode == 'WEBS':
             res = await self.conn.recv()
             return res.encode('utf-8')[:num_bytes] if isinstance(res, str) else res[:num_bytes]
+
         elif self.mode == 'HTTP':
             res_bytes = await self._fetch_http(self.last_http_cmd)
             return res_bytes[:num_bytes]
+
         elif self.mode == 'BLE':
             received = bytearray()
             while len(received) < num_bytes:
@@ -255,6 +280,19 @@ class DeviceConnection:
         """受信バッファクリア"""
         if self.mode == 'COM':
             self.conn.reset_input_buffer()
+
+        elif self.mode == 'UDP':
+            # UDPの場合、キューに残っている古いパケットを非ブロックで空読みしてクリア
+            self.conn.setblocking(False)
+            try:
+                while True:
+                    self.conn.recvfrom(1024)
+            except (BlockingIOError, socket.error):
+                pass
+            finally:
+                self.conn.setblocking(True)
+                self.conn.settimeout(self.timeout)
+
         elif self.mode == 'TCP':
             self.conn.setblocking(False)
             try:
@@ -265,14 +303,17 @@ class DeviceConnection:
             finally:
                 self.conn.setblocking(True)
                 self.conn.settimeout(self.timeout)
+
         elif self.mode == 'WEBS':
             try:
                 while True:
                     await asyncio.wait_for(self.conn.recv(), timeout=0.001)
             except (asyncio.TimeoutError, Exception):
                 pass
+
         elif self.mode == 'HTTP':
             pass
+
         elif self.mode == 'BLE':
             while not self.ble_rx_queue.empty():
                 self.ble_rx_queue.get_nowait()
@@ -306,6 +347,7 @@ async def main():
             com_port=COM_PORT,
             baudrate=BAUDRATE,
             tcp_ip=TCP_IP,
+            udp_port=UDP_PORT,
             tcp_port=TCP_PORT,
             ws_port=WS_PORT,
             http_port=HTTP_PORT,

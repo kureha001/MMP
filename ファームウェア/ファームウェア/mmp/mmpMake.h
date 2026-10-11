@@ -2,7 +2,7 @@
 //========================================================
 // システム構築
 //--------------------------------------------------------
-// Ver 1.4.0 (2026/10/08)
+// Ver 1.4.0 (2026/10/11)
 //========================================================
 #pragma once
 
@@ -33,13 +33,13 @@
     //│・選択肢：利用しない(false をセット)
     //□メインモード用
     #if   MODE == MODE_MAIN
-      #define ADP_UART true //○未使用：サブ連携が不可
-      #define ADP_UDP  false
-      #define ADP_TCP  false //○
-      #define ADP_WEBS true //×起動で落ちる
-      #define ADP_HTTP false //○
-      #define ADP_ESPN false //○
-      #define ADP_BLE  false  //○
+      #define ADP_UART true //未使用：サブ連携が不可
+      #define ADP_UDP  true
+      #define ADP_TCP  true
+      #define ADP_WEBS true
+      #define ADP_HTTP true
+      #define ADP_ESPN true
+      #define ADP_BLE  true
       #define ADP_IIC  false // Wire1を利用|WireはPWMで利用
     //□サブモード用
     #elif MODE == MODE_SUB

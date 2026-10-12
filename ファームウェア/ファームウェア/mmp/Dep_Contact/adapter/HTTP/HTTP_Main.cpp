@@ -182,8 +182,9 @@
     void HANDLE_CORE() {
       //┬
       //●ＭＭＰコマンドを実行する
-      //●接続元に処理結果を送信する
       modeMain::HANDLE();
+      //│
+      //●接続元に処理結果を送信する
       IS_JSON ? SEND_RESULT_JSON() : SEND_RESULT(0);
       //┴
     } /* HANDLE()() */

@@ -74,7 +74,7 @@ void SendToMac(
 //§受信処理
 //========================================================
   //───────────────────────────
-  // 並列処理を定義
+  // 受信データの取込 ※結果はキューに登録
   //───────────────────────────
   static void ON_RECIVE(
     const esp_now_recv_info_t *argINFO, // 各種情報
@@ -158,7 +158,7 @@ public:
   //│
   //○┐【後処理】
     //●起動ログMSGを表示する
-    String msg = " [OK] ESP-NOW (MAC " + String(WiFi.macAddress()) + ")";
+    String msg = " [OK] ESP-NOW   (MAC. " + String(WiFi.macAddress()) + ")";
     Log::prtln(msg);
   //┴┴
   } /* constractor AD_ESPN() */

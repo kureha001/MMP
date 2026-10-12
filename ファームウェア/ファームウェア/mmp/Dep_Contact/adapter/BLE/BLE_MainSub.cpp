@@ -18,7 +18,7 @@
     if (
       !devBLE::ENABLED ||
       devBLE::BLE_RX == nullptr
-    ) return String(" [NG] BLE(Rx)");
+    ) return String(" [NG] BLE:Rx");
     //│＼（切断の場合）
     //│ ▼終了：早期リターンする（起動ログMSG[NG]）
     //┴
@@ -26,14 +26,12 @@
   //○┐【主処理】
     //○コールバック関数を登録する（データ受信）
     MY_TASK = this;
-    devBLE::BLE_RX->setCallbacks(new ServerCallbacks());
+    devBLE::BLE_RX->setCallbacks(new ON_RECIVE());
     //┴
   //│
   //○┐後処理
     //▼返却：正常終了（起動ログMSG[OK]）
-    char msg[100];
-    snprintf(msg, sizeof(msg), " [OK] BLE(Rx) / NAME.%s", devBLE::MY_NAME);
-    return String(msg);
+    return String(" [OK] BLE:Rx    (NAME." + String(devBLE::MY_NAME) + ")");
   //┴
   } /* CONSTRACT() */
 
@@ -63,9 +61,9 @@
 //§受信処理
 //========================================================
   //───────────────────────────
-  // 並列処理を定義：Rx用
+  // 受信データの取込：Rx用 ※結果はキューに登録
   //───────────────────────────
-  class ServerCallbacks :
+  class ON_RECIVE :
   public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) override {
       //┬
@@ -83,4 +81,4 @@
       //●受信データをキューに追加する
       MY_TASK->pushQueue(0, rxValue, 0);
     } /* onWrite() */
-  }; /* class ServerCallbacks */
+  }; /* class ON_RECIVE */

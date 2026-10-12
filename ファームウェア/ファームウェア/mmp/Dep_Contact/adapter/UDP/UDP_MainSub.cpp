@@ -26,9 +26,7 @@
   //│
   //○┐【後処理】
     //▼返却：正常終了（起動ログMSG[OK]）
-    char msg[100];
-    snprintf(msg, sizeof(msg), " [OK] UDP        (PORT %d)", MY_PORT);
-    return String(msg);
+    return String(" [OK] UDP       (PORT." + String(MY_PORT) + ")");
   //┴
   } /* CONSTRACT() */
 

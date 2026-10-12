@@ -22,7 +22,7 @@ private:
 //§受信処理
 //========================================================
   //───────────────────────────
-  // 並列処理の内容を定義
+  // 受信データの取込 ※結果はキューに登録
   //───────────────────────────
   void ON_RECIVE() override final {
   //┬
@@ -97,10 +97,9 @@ public:
     //┴
   //│
   //○┐【後処理】
-    //○メッセージ表示
-      char msg[128];
-      snprintf(msg, sizeof(msg), " [OK] IIC #1 / ADR.%d->%d", IIC_ADDR_MIN, IIC_ADDR_MAX);
-      Log::prtln(String(msg));
+    //●起動ログMSGを表示する
+    String msg = " [OK] IIC #1    (ADR. " + String(IIC_ADDR_MIN) + "->" + String(IIC_ADDR_MAX) + ")";
+    Log::prtln(msg);
   //┴┴
   } /* constractor AD_IIC() */
 

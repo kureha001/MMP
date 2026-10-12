@@ -29,7 +29,7 @@
   //│
   //○┐【後処理】
     //▼返却：正常終了（起動ログMSG[OK]）
-    return String(" [OK] UART / USB(CDC) + Serial#1,2");
+    return String(" [OK] UART      (USB-CDC + Serial#1,2");
   //┴
   } /* CONSTRACT() */
 

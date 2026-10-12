@@ -72,9 +72,7 @@
   //│
   //○┐【後処理】
     //▼返却：正常終了（起動ログMSG[OK]）
-    char msg[100];
-    snprintf(msg, sizeof(msg), " [OK] TCP RAW    (PORT %d)", MY_PORT);
-    return String(msg);
+    return String(" [OK] TCP       (PORT." + String(MY_PORT) + ")");
   //┴
   } /* CONSTRACT() */
 

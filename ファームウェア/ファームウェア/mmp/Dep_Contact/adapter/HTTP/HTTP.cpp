@@ -79,8 +79,9 @@ private:
   void ON_RECIVE() {
   //┬
   //○┐【前処理】
-    //○JSON形式フラグをOFFにする
-    IS_JSON = false;
+    //○関連データを初期化する
+    POP_FRAME = ""   ; // 取得フレーム
+    IS_JSON   = false; // JSON形式フラグ 
     //┴
   //│
   //○┐【主処理】
@@ -140,9 +141,6 @@ private:
     //○┐ＭＭＰコマンドの応答
     server.onNotFound([&server, this](){
       //○┐【前処理】
-        //○フレームをクリアする
-        POP_FRAME = "";
-        //│
         //○アクセス内容を確認
         if (server.method() == HTTP_OPTIONS)
         {route204(server); return;}
@@ -153,6 +151,19 @@ private:
       //│
       //●受信データを取込む
       ON_RECIVE();
+      if (POP_FRAME == "") return;
+      //│＼（リクエストがない場合）
+      //│ ▼終了：早期リターン
+      //│
+      //●コンテキストを更新する
+      adpFnBase::SETUP_CTX(
+        MY_AID,   // 通信アダプタID
+        0,        // 接続スロットID(ダミー値)
+        POP_FRAME // 求めたフレーム
+      );
+      //│
+      //●ハンドラの主処理を実施する
+      HANDLE_CORE();
       //┴
     }); /* onNotFound */
     //┴
@@ -214,21 +225,10 @@ public:
     //┴
   //│
   //○┐【主処理】
-    //●フレームを求める
+    //●処理をルーティングへ移譲する
+    //│※ルーティングは非同期処理になるため
+    //│  後続処理をこの関数内に実装できない
     MY_NET->handleClient();
-    if (POP_FRAME == "") return;
-    //│＼（リクエストがない場合）
-    //│ ▼終了：早期リターン
-    //│
-    //●コンテキストを更新する
-    adpFnBase::SETUP_CTX(
-      MY_AID,   // 通信アダプタID
-      0,        // 接続スロットID(ダミー値)
-      POP_FRAME // 求めたフレーム
-    );
-    //│
-    //●ハンドラの主処理を実施する
-    HANDLE_CORE();
     //┴
   //│
   //○┐【後処理】
